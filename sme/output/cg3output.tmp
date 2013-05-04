@@ -1,0 +1,70 @@
+"<Teaksta>"
+	"teaksta" N Sg Nom @SUBJ> 
+"<Vállje>"
+	"válljet" V TV Ind Prs Sg3 @+FMAINV 
+"<bargobihtá>"
+	"bargo#bihttá" N Sg Acc @<OBJ 
+"<1>"
+	"1" Num Sg Nom @N< 
+"<.>"
+	"." CLB 
+
+"<Loga>"
+	"lohka" N Sg Gen @X 
+"<ja>"
+	"ja" CC @CVP 
+"<tevdne>"
+	"tevdnet" V TV Ind Prs Sg3 @+FMAINV 
+"<2>"
+	"2" Num Sg Acc @<OBJ 
+"<.>"
+	"." CLB 
+
+"<Cealkka>"
+	"cealkka" N Sg Nom @HNOUN 
+"<ja>"
+	"ja" CC @CNP 
+"<govva>"
+	"govva" N Sg Nom @HNOUN 
+"<3>"
+	"3" Num Sg Nom @N< 
+"<.>"
+	"." CLB 
+
+"<Mii>"
+	"mii" Pron Interr Sg Nom @SUBJ> 
+"<lea>"
+	"leat" V IV Ind Prs Sg3 @+FMAINV 
+"<riekta>"
+	"riekta" A Sg Nom @<SPRED 
+"<?>"
+	"?" CLB 
+
+"<4>"
+	"4" Num Sg Nom @HNOUN 
+"<.>"
+	"." CLB 
+
+"<Loga>"
+	"lohkat" <vdic> V TV Imprt Sg2 @+FMAINV 
+"<teavstta>"
+	"teaksta" N Sg Acc @<OBJ 
+"<ja>"
+	"ja" CC @CVP 
+"<tevdne>"
+	"tevdnet" V TV Ind Prs Sg3 @+FMAINV 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom @<SUBJ 
+"</>"
+	"/" PUNCT 
+"<Statped>"
+	"Statped" N Prop Org Sg Nom @<SUBJ 
+"<©>"
+	"©" N ABBR @X 
+"<2013>"
+	"2013" Num Sg Nom @N< 
+"<Kommenttat>"
+	"Kommenttat" ? @X 
+"<prográmmii>"
+	"prográmma" N Sg Ill @<ADVL 
+
