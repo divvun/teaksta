@@ -9,9 +9,9 @@ String activity = request.getParameter("activity");
 <h2>Try it out:</h2>
 
 <!-- <p>
-This form lets you get an idea of what VIEW can do, but it may have trouble accessing or displaying
+This form lets you get an idea of what Teaksta can do, but it may have trouble accessing or displaying
 some pages.  For the best results, use the  
-<a href="index.jsp?content=firefox-extension">VIEW firefox extension</a>.
+<a href="index.jsp?content=firefox-extension">Teaksta firefox extension</a>.
 </p> -->
 
 <p> Practise North Saami grammar on the web pages that you choose yourself. </p>

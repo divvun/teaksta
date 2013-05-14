@@ -85,6 +85,11 @@ span.wertiview {
 	font-weight: bold !important;
 }
 
+.colorizeStyleVerbConjugation {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
 
 /* UI */
 #wertiview-inst-notification {

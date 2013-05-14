@@ -33,37 +33,37 @@ if (version != null) {
 <p>
 <b>4/24/2012: Updates for Firefox 11</b>
 <ul>
-<li>VIEW extension version 0.6 is compatible with Firefox 11</li>
+<li>Teaksta extension version 0.6 is compatible with Firefox 11</li>
 </ul>
 </p>
 <p>
 <b>2/1/2012: Updates for Firefox 10</b>
 <ul>
-<li>VIEW extension version 0.5 is compatible with Firefox 10</li>
+<li>Teaksta extension version 0.5 is compatible with Firefox 10</li>
 </ul>
 </p>
 <p>
 <b>1/30/2012: Updates for Firefox 9</b>
 <ul>
-<li>VIEW extension version 0.4 is compatible with Firefox 9
+<li>Teaksta extension version 0.4 is compatible with Firefox 9
 </ul>
 </p>
 <p>
 <b>10/6/2011: Updates for Firefox 7 and 8 Beta</b>
 <ul>
-<li>VIEW extension version 0.3 is compatible with Firefox 7 and 8
+<li>Teaksta extension version 0.3 is compatible with Firefox 7 and 8
 </ul>
 </p>
 <p>
 <b>9/7/2011: Updates for Firefox 6.0</b>
 <ul>
-<li>VIEW extension version 0.2 is compatible with Firefox 6.0
+<li>Teaksta extension version 0.2 is compatible with Firefox 6.0
 </ul>
 </p>
 <p>
-<b>6/14/2011: First version of VIEW</b> 
+<b>6/14/2011: First version of Teaksta</b> 
 <ul>
-<li>VIEW firefox extension version 0.1</li>
+<li>Teaksta firefox extension version 0.1</li>
 <li>Determiner and preposition activities for German and Spanish (beta!)</li>
 <li>Ser vs. estar for Spanish (beta!)</li>
 </ul>

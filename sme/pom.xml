@@ -30,6 +30,11 @@
 			<version>2.2.2-incubating</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.1</version>
+		</dependency>
+		<dependency>
 			<groupId>trove</groupId>
 			<artifactId>trove</artifactId>
 			<version>1.0.2</version>
@@ -229,7 +234,7 @@
 							<basedir>${basedir}/src/main/resources/firefox-extension/werti/chrome/content</basedir>
 							<outputDir>js-lib</outputDir>
                             <outputBasedir>${basedir}/src/main/webapp</outputBasedir>
-							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
+							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,verbconjugation.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
 							
 							<replacements>
 								<replacement>

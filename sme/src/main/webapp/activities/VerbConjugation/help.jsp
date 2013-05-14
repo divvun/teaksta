@@ -1,7 +1,7 @@
 
 <div class="text">
 
-<h2>Negation forms of verbs</h2>
+<h2>Conjugation of verbs</h2>
 
 <ul>
 <li>
@@ -9,7 +9,7 @@
 Color
 </div>
 <div class="InstructionBody">
-In the text, Teaksta shows you the negation verb forms in <font color="#ff8200"><b>orange</b></font>.
+In the text, Teaksta shows you the finite (conjugated) verb forms in <font color="#ff8200"><b>orange</b></font>.
 </div>
 </li>
 <li>
@@ -17,7 +17,7 @@ In the text, Teaksta shows you the negation verb forms in <font color="#ff8200">
 Click
 </div>
 <div class="InstructionBody">
-Click on each negation verb form you find in the text and Teaksta will show you whether
+Click on each conjugated verb form you find in the text and Teaksta will show you whether
 you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 </div>
 </li>

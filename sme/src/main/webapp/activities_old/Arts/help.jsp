@@ -14,7 +14,7 @@ If you'd like to practice with more types of articles and determiners, try the
 Color
 </div>
 <div class="InstructionBody">
-In the text, VIEW shows you the articles <i>a, an, the</i> in <font color="#ff8200"><b>orange</b></font>.
+In the text, Teaksta shows you the articles <i>a, an, the</i> in <font color="#ff8200"><b>orange</b></font>.
 </div>
 </li>
 <li>
@@ -22,7 +22,7 @@ In the text, VIEW shows you the articles <i>a, an, the</i> in <font color="#ff82
 Click
 </div>
 <div class="InstructionBody">
-Click on each article you find in the text and VIEW will show you whether
+Click on each article you find in the text and Teaksta will show you whether
 you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 </div>
 </li>
@@ -31,7 +31,7 @@ you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wron
 Multiple Choice
 </div>
 <div class="InstructionBody">
-Choose an article from the drop-down list and VIEW will show you whether you guessed 
+Choose an article from the drop-down list and Teaksta will show you whether you guessed 
 <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 You can get help by clicking on <span class="clozeStyleHint">?</span>.
 </div>

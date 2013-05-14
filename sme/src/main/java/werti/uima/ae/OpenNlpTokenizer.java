@@ -21,7 +21,7 @@ import werti.uima.types.annot.Token;
 /**
  * Wrapper for OpenNLP tokenizer.
  * 
- * @author Adriane Boyd
+ * @author Adriane Boyd, Heli Uibo
  */
 public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 
@@ -49,6 +49,8 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 		log.debug("Starting token annotation");
 		
 		String text = jcas.getDocumentText();
+		//log.info("extracted text: " + text);
+		
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
 		

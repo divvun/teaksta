@@ -61,7 +61,7 @@ wertiview.ns(function() {
 		$.fn = $.prototype = jQuery.fn;
 
 		// if there is an input box in the link, disable
-		if ($(this).find('.wertiviewinput').length > 0) {
+		if ($(this).find('wertiviewtoken').length > 0) {  // was: .wertiviewinput
 			return false;
 		}
 

@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Thu May 02 15:24:32 CEST 2013 */
+/* First created by JCasGen Tue May 14 18:58:47 CEST 2013 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
@@ -12,7 +12,7 @@ import org.apache.uima.cas.Type;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Sentence detection based on plain text input.
- * Updated by JCasGen Thu May 02 15:24:32 CEST 2013
+ * Updated by JCasGen Tue May 14 18:58:47 CEST 2013
  * @generated */
 public class PlainTextSentenceAnnotation_Type extends Annotation_Type {
   /** @generated */

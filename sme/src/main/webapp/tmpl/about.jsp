@@ -1,8 +1,8 @@
-<h1>About VIEW</h1>
+<h1>About Teaksta</h1>
 
 <div class="text">
 
-<p>VIEW is an intelligent computer-assisted language learning (ICALL) 
+<p>Teaksta is an intelligent computer-assisted language learning (ICALL) 
 system designed to provide supplementary language learning
 activity resources to language learners. It can be viewed as an intelligent 
 automatic workbook, providing an unlimited 
@@ -10,30 +10,32 @@ number of activities designed to foster awareness of grammatical
 forms and functions. Because it is a web-based system, it can be used anywhere
 there is a computer with internet access.</p>
 
-<p>The VIEW activities are automatically derived from authentic 
-texts, obtained from any web page of interest. The task of retrieving
+<p>The Teaksta activities are automatically derived from authentic 
+texts.
+</p>
+<!--
+, obtained from any web page of interest. The task of retrieving
 texts appropriate for learners is handled by a separate 
 <a href="http://drni.de/zap/ir4ll">Information Retrieval for Language Learning</a> (IR4LL) project.
-</p>
+</p> -->
 
-<p>VIEW uses state-of-the-art Natural Language Processing (NLP)
+<p>Teaksta uses state-of-the-art Natural Language Processing (NLP)
 technology to generate exercises, identifying 
 targeted lexical and phrasal material through a combination 
-of tokenization, lemmatization, morphological analysis, part-of-speech tagging, 
-chunking, and parsing.</p>
+of tokenization, lemmatization, morphological analysis and disambiguation, and shallow syntactic parsing.</p>
 
-<p>The activity types VIEW provides follow a pedagogically motivated
+<p>The activity types Teaksta provides follow a pedagogically motivated
 progression from receptive presentation, to productive
 presentation, to controlled practice. Specifically, activities 
 include the coloring of targeted forms,
 having the learner find and click on targeted forms, and finally, 
 controlled practice activities such as multiple choice, fill-in-the-blank, 
-or editing tasks.  VIEW provides these activity progressions for a 
+or editing tasks.  Teaksta provides these activity progressions for a 
 variety of grammar topics.</p> 
 
-<h2>VIEW History</h2>
+<h2>Teaksta History</h2>
 
-<p>VIEW is a multilingual extension of the <a href="http://purl.org/icall/werti">WERTi 
+<p>Teaksta is an extension of the <a href="http://purl.org/icall/werti">WERTi
 system</a> (Working with English Real Texts), which has been under development since 2006.</p>
 <p>The <a href="http://purl.org/icall/werti-v1">original WERTi system</a> was designed by 
 <a href="http://www.sfs.uni-tuebingen.de/~dm/">Detmar Meurers</a>, 
@@ -56,7 +58,7 @@ We are continually working on new topics and activities and are grateful for ide
 area from Magdalena Leshtanska, Emma Li, Iliana Simova, Maria Tchalakova, and Tatiana Vodolazova.
 </p>
 <p>
-The <strong>North Saami version of VIEW</strong> has been set up by <a mailto="heli1401@gmail.com">Heli Uibo</a>. The exercise types (topics) have been worked out by Lene Antonsen.
+<strong>Teaksta - the North Saami version of WERTi</strong> has been set up by <a mailto="heli1401@gmail.com">Heli Uibo</a>. The exercise types (topics) have been worked out by Lene Antonsen.
 </p>
 
 <h2>References</h2>

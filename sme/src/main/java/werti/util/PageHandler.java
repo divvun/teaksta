@@ -2,6 +2,7 @@ package werti.util;
 
 import javax.servlet.ServletException;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -49,7 +50,10 @@ public class PageHandler {
 		if (preprocessor != null && postprocessor != null) {
 			try { // to process
 				JCas cas = preprocessor.newJCas();
-				cas.setDocumentText(text);
+				String normalised_text = StringEscapeUtils.unescapeHtml4(text); // convert HTML entities to characters, if there are any
+				log.info("normalised text: " + normalised_text);
+				// add the normalised text to cas
+				cas.setDocumentText(normalised_text);
 				cas.setDocumentLanguage(lang);
 				preprocessor.process(cas);
 				postprocessor.process(cas);

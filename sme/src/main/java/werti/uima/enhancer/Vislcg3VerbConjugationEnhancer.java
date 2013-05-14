@@ -29,31 +29,31 @@ import werti.util.StringListIterable;
  * @author Heli Uibo
  *
  */
-public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
+public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3ConNegEnhancer.class);
+		Logger.getLogger(Vislcg3VerbConjugationEnhancer.class);
 	
-	private List<String> connegTags;
+	private List<String> finverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
 	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Conjunction tags "+connegTags);
+        log.info("Finte verb tags "+finverbTags);
 		super.initialize(context);
-		connegTags = Arrays.asList(((String)context.getConfigParameterValue("connegTags")).split(","));
+		finverbTags = Arrays.asList(((String)context.getConfigParameterValue("finverbTags")).split(","));
 	}
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting ConNeg enhancement");
+		log.info("Starting VerbConjugation enhancement");
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : connegTags) {
+		for (String conT : finverbTags) {
 			classCounts.put(conT, 0);
 			log.info("Tag: "+conT);
 		}
@@ -61,7 +61,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
-		for (String conT: connegTags) {
+		for (String conT: finverbTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
 			// CGToken prev = null;
@@ -131,7 +131,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiview" + conT + " \" lemma=\"" + lemma + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation \" lemma=\"" + lemma + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -153,7 +153,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		// (chunk)
 		//log.info("Enhancement stack is "
 		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
-		log.info("Finished conjunction enhancement");
+		log.info("Finished verb conjugation enhancement");
 	}
 	
 	/*
@@ -168,12 +168,23 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
+		/*
 		for (String rtag : reading) {
 			if (tag.equals(rtag)) {
 			    log.info(cgr + " contains " + tag);
 				return true;
 			}
+		} */
+		String reading_str = "";
+		for (String rtag : reading) {
+			reading_str = reading_str + rtag + " ";
 		}
+		
+		if (reading_str.indexOf(tag) > 0) {
+            log.info(cgr + " contains " + tag);
+            return true;
+        }
+
 		//log.info(cgr + " does not contain " + tag);
 		return false;
 	}
@@ -189,7 +200,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
             }
 		}
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
-		/*
+		/* 
 		try {
             byte[] b = lemma.getBytes();
             lemma_utf8 = new String(b,"UTF-8");
@@ -198,6 +209,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
             System.out.println(e);
         }*/
 		//log.info(cgr + " does not contain " + tag);
+		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
 

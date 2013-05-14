@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Thu May 02 15:24:32 CEST 2013 */
+/* First created by JCasGen Tue May 14 18:58:47 CEST 2013 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,7 +11,7 @@ import org.apache.uima.jcas.cas.NonEmptyStringList;
 
 
 /** A reading in a constraint grammar cohort.
- * Updated by JCasGen Thu May 02 15:24:32 CEST 2013
+ * Updated by JCasGen Tue May 14 18:58:47 CEST 2013
  * XML source: /Users/mslm/view/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class CGReading extends NonEmptyStringList {

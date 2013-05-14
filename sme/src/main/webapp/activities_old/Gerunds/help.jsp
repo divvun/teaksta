@@ -8,7 +8,7 @@
 Color
 </div>
 <div class="InstructionBody">
-In the text, VIEW shows you the occurrences of:
+In the text, Teaksta shows you the occurrences of:
 <ul>
 <li>gerunds in <font color="#FF8200"><b>orange</b></font>,</li>
 <li>to-infinitives in <font color="#9331C4"><b>purple</b></font>,</li>
@@ -22,7 +22,7 @@ The clue phrases are verbs or fixed expressions which can help you decide whethe
 Click
 </div>
 <div class="InstructionBody">
-VIEW colors the gerunds and to-infinitives 
+Teaksta colors the gerunds and to-infinitives 
 in the text, and prompts you to click on their corresponding clue phrases.
 <br/>
 If your first guess is <font color="red"><b>wrong</b></font>,
@@ -34,7 +34,7 @@ try again until you get it <font color="green"><b>right</b></font>.
 Multiple Choice
 </div>
 <div class="InstructionBody">
-Choose either the infinitive or the gerund from the drop-down list and VIEW will show you 
+Choose either the infinitive or the gerund from the drop-down list and Teaksta will show you 
 whether you guessed  <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 You can get help by clicking on <span class="clozeStyleHint">?</span>.
 </div>

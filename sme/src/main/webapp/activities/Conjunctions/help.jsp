@@ -9,7 +9,7 @@
 Color
 </div>
 <div class="InstructionBody">
-In the text, VIEW shows you the conjunctions in <font color="#ff8200"><b>orange</b></font>.
+In the text, Teaksta shows you the conjunctions in <font color="#ff8200"><b>orange</b></font>.
 </div>
 </li>
 <li>
@@ -17,7 +17,7 @@ In the text, VIEW shows you the conjunctions in <font color="#ff8200"><b>orange<
 Click
 </div>
 <div class="InstructionBody">
-Click on each conjunction you find in the text and VIEW will show you whether
+Click on each conjunction you find in the text and Teaksta will show you whether
 you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 </div>
 </li>
@@ -26,7 +26,7 @@ you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wron
 Multiple Choice
 </div>
 <div class="InstructionBody">
-Choose a conjunction from the drop-down list and VIEW will show you whether you guessed 
+Choose a conjunction from the drop-down list and Teaksta will show you whether you guessed 
 <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 You can get help by clicking on <img src="images/hint.jpg" alt="hint" />.
 </div>

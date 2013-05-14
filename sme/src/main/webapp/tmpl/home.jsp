@@ -1,8 +1,8 @@
 <h1>Welcome</h1>
 
-<p><b>VIEW</b> is an 
+<p><b>Teaksta</b> is an 
 ICALL system designed to provide supplementary language learning activities using
-authentic texts selected by the learner. VIEW is a multilingual extension of 
+authentic texts selected by the learner. Teaksta is an extension of
 <a href="http://purl.org/icall/werti">Working with English Real Texts (WERTi)</a>,
 which has been under development since 2006.</p>
 

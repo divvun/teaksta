@@ -3,7 +3,7 @@
 <div class="text">
 	
 <p>
-VIEW currently supports four different types of activities
+Teaksta currently supports four different types of activities
 for a number of grammar topics.
 </p>
 

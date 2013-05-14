@@ -8,7 +8,7 @@
 <head>
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
 		<link type="text/css" href="/WERTisme/werti.css" rel="stylesheet" />
-		<title>Welcome to VIEW</title>
+		<title>Welcome to Teaksta</title>
 </head>
 <body>
 <div id="topcontainer">
@@ -18,7 +18,7 @@
 		<div id="navbar">
 			<ul>
 			    <li><a href="/WERTisme/index.jsp?content=home">Home</a></li>
-				<li><a href="/WERTisme/index.jsp?content=about">About VIEW</a></li>
+				<li><a href="/WERTisme/index.jsp?content=about">About Teaksta</a></li>
 				<!--<li><a href="/WERTisme/index.jsp?content=intro">Getting Started</a></li> -->
 				<li><a href="/WERTisme/index.jsp?content=activities">Topics and Activities</a>
 					<ul>
@@ -40,7 +40,7 @@
 			String content = request.getParameter("content");
 			String blurb = "";
 			if (content == null || content.equals("home")) {
-			    blurb = "<!--<p id=\"blurb\"><b>VIEWsme</b> is an " + 
+			    blurb = "<!--<p id=\"blurb\"><b>Teakstasme</b> is an " + 
 			            "ICALL system designed to provide supplementary language learning activities using " +
 			            "authentic North Saami texts selected by the learner.</p>-->";
 			}

@@ -1,70 +1,1001 @@
-"<Teaksta>"
-	"teaksta" N Sg Nom @SUBJ> 
-"<Vállje>"
-	"válljet" V TV Ind Prs Sg3 @+FMAINV 
-"<bargobihtá>"
-	"bargo#bihttá" N Sg Acc @<OBJ 
-"<1>"
-	"1" Num Sg Nom @N< 
+"<Ovdasiidu>"
+	"ovda#siidu" N Sg Nom 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom 
+"<Sámit>"
+	"sápmi" N Pl Nom 
+"<Doaibma>"
+	"doaibma" N Sg Nom 
+"<Olggosaddimat>"
+	"olggos#addin" N Pl Nom 
+	"olggo#saddit" V* TV* Der/n N Pl Nom 
+	"olggos#addit" V* TV* Der/n N Pl Nom 
+"<Proeavttat>"
+	"prošeakta" N Pl Nom 
+"<Etsi>"
+	"Etsi" ? 
+"<Suomeksi>"
+	"Suomeksi" ? 
+"<Davvisamegillii>"
+	"Davvisamegillii" ? 
+"<Anarâkielân>"
+	"Anarâkielân" ? 
+"<Nuõrttsää´m>"
+	"Nuõrttsää´m" ? 
+"<In>"
+	"ii" V IV Neg Ind Sg1 @+FAUXV 
+"<english>"
+	"english" ? 
+"<Dokumeantat>"
+	"dokumeanta" N Sg Nom PxSg2 
+"<|>"
+	"pipe" CLB 
+"<Oktavuohta>"
+	"oktavuohta" N Sg Nom 
+"<|>"
+	"pipe" CLB 
+"<Liŋkkat>"
+	"liŋka" N Pl Nom 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom 
+"<|>"
+	"pipe" CLB 
+"<Saamelaiskäräjät>"
+	"Saamelaiskäräjät" ? 
+"<|>"
+	"pipe" CLB 
+"<FI–99870>"
+	"FI–99870" ? 
+"<INAR>"
+	"INAR" N ACR Sg Nom 
+	"INAR" N ACR Sg Gen 
+	"INAR" N ACR Sg Acc 
+"<I>"
+	"I" Num Nom 
+"<tel>"
+	"tel" N ABBR Gen 
+	"tel" N ABBR Nom 
+	"tel" N ABBR Acc 
+"<+358-(0>"
+	"+358-(0" ? 
+"<)10>"
+	")10" ? 
+"<839>"
+	"839" Num Sg Acc 
+	"839" Num Sg Gen 
+	"839" Num Sg Nom 
+"<3100>"
+	"3100" Num Sg Gen 
+	"3100" Num Sg Acc 
+	"3100" Num Sg Nom 
+"<info(at>"
+	"info(at" ? 
+"<)samediggi.fi>"
+	")samediggi.fi" ? 
+"<Bures>"
+	"Bure" N Prop Mal Sg Loc 
+"<boahtin>"
+	"boahtit" V IV Actio Nom 
+	"boahtit" V* IV* Der/n N Sg Gen 
+	"boahtin" N Sg Gen 
+	"boahtit" V* IV* Der/n N Sg Nom 
+	"boahtin" N Sg Nom 
+"<Sámedikki>"
+	"Sámediggi" N Prop Org Sg Gen 
+	"Sámediggi" N Prop Org Sg Acc 
+"<ruoktosiidduide>"
+	"ruoktosiidduide" ? 
 "<.>"
 	"." CLB 
 
-"<Loga>"
-	"lohka" N Sg Gen @X 
-"<ja>"
-	"ja" CC @CVP 
-"<tevdne>"
-	"tevdnet" V TV Ind Prs Sg3 @+FMAINV 
-"<2>"
-	"2" Num Sg Acc @<OBJ 
-"<.>"
-	"." CLB 
-
-"<Cealkka>"
-	"cealkka" N Sg Nom @HNOUN 
-"<ja>"
-	"ja" CC @CNP 
-"<govva>"
-	"govva" N Sg Nom @HNOUN 
-"<3>"
-	"3" Num Sg Nom @N< 
-"<.>"
-	"." CLB 
-
-"<Mii>"
-	"mii" Pron Interr Sg Nom @SUBJ> 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom 
 "<lea>"
 	"leat" V IV Ind Prs Sg3 @+FMAINV 
-"<riekta>"
-	"riekta" A Sg Nom @<SPRED 
-"<?>"
-	"?" CLB 
-
-"<4>"
-	"4" Num Sg Nom @HNOUN 
+"<Suoma>"
+	"Suopma" N Prop Plc Sg Gen 
+	"Suopma" N Prop Plc Sg Gen Allegro 
+"<sápmelaččaid>"
+	"sápmelaš" A Pl Acc 
+	"sápmelaš" A Pl Gen 
+	"sápmelaš" Hum N Pl Acc 
+	"sápmelaš" Hum N Pl Gen 
+"<alimus>"
+	"allat" A Superl Sg Nom 
+"<politihkálas>"
+	"politihkálas" ? 
+"<doaibmaorgána>"
+	"doaibma#orgána" Org N Sg Nom 
+"<mii>"
+	"mii" Pron Rel Sg Nom 
+"<válljejuvvo>"
+	"válljet" V* TV Der/PassL V Ind Prs Sg3 @+FMAINV 
+"<juohke>"
+	"juohke" Pron Indef 
+"<njealját>"
+	"njealját" A Ord Attr 
+"<jagi>"
+	"jahki" Time N Sg Gen 
 "<.>"
 	"." CLB 
 
-"<Loga>"
-	"lohkat" <vdic> V TV Imprt Sg2 @+FMAINV 
-"<teavstta>"
-	"teaksta" N Sg Acc @<OBJ 
+"<OKTAVUOHTA>"
+	"OKTAVUOHTA" ? 
+"<Nettilehti>"
+	"Nettilehti" ? 
+"<neahttaaviisa>"
+	"neahtta#aviisa" Org Txt N Sg Nom 
+"<nettiaavis>"
+	"nettiaavis" ? 
+"<Ovdasiidu>"
+	"ovda#siidu" N Sg Nom 
+"<Áigeguovdil>"
+	"áige#guovdil" A Sg Gen 
+	"áige#guovdil" A Sg Nom 
+	"áige#guovdil" A Sg Acc 
+"<Áillohačča>"
+	"Áillohaš" N Prop Mal Sg Gen 
+	"Áillohaš" N Prop Mal Sg Acc 
+"<70-jagi>"
+	"70-#jahki" Time N Sg Acc 
+	"70-#jahki" Time N Sg Gen 
+"<ávvudankonsearta>"
+	"ávvudan#konsearta" N Sg Nom 
+"<Sajosis>"
+	"Sajosis" ? 
+"<skábmamanus>"
+	"skábma#mannu" N Sg Loc 
+	"skábma#manus" N Sg Gen 
+	"skábma#manus" N Sg Nom 
+	"skábma#manus" N Sg Acc 
+"<Sámekulturguovddáš>"
+	"Sáme#kultur#guovddáš" Plc N Sg Acc 
+	"Sáme#kultur#guovddáš" Plc N Sg Nom 
+	"sáme#kultur#guovddáš" Org N Sg Nom 
+	"sáme#kultur#guovddáš" Plc N Sg Nom 
+	"sáme#kultur#guovddáš" Org N Sg Gen 
+	"Sáme#kultur#guovddáš" Org N Sg Nom 
+	"Sáme#kultur#guovddáš" Org N Sg Gen 
+	"sáme#kultur#guovddáš" Plc N Sg Acc 
+	"sáme#kultur#guovddáš" Org N Sg Acc 
+	"sáme#kultur#guovddáš" Plc N Sg Gen 
+	"Sáme#kultur#guovddáš" Org N Sg Acc 
+	"Sáme#kultur#guovddáš" Plc N Sg Gen 
+"<Sajosis>"
+	"Sajosis" ? 
+"<ordnejuvvo>"
+	"ordnet" V* TV Der/PassL V Ind Prs Sg3 @+FMAINV 
+	"ordnet" V* TV Der/PassL V Imprt Sg2 @+FMAINV 
+"<máilmmi>"
+	"má#ilbmi" N Sg Gen 
+	"má#ilbmi" N Sg Acc 
+"<beakkánamos>"
+	"beakkán" A Superl Attr 
+"<dáiddáriidda>"
+	"dáiddár" Hum N Pl Ill 
+"<gulli>"
+	"gullat" V* TV* Actor N Sg Acc 
+	"gulli" Hum N Actor Sg Nom 
+	"gulli" Hum N Actor Sg Acc 
+	"gullat" V* TV* Actor N Sg Nom 
+"<Nils-Aslak>"
+	"Nils-#Aslak" N Prop Mal Sg Attr 
+"<Valkeapää>"
+	"Valkeapää" N Prop Sur Sg Nom 
+"<,>"
+	"," CLB 
+"<Áillohačča>"
+	"Áillohaš" N Prop Mal Sg Acc 
+	"Áillohaš" N Prop Mal Sg Gen 
+"<,>"
+	"," CLB 
+"<ávvudankonsearta>"
+	"ávvudan#konsearta" N Sg Nom 
+"<9.11.2013>"
+	"9.11.2013" Num Sg Nom 
+	"9.11.2013" Num Sg Gen 
+	"9.11.2013" Num Sg Acc 
+"<.>"
+	"." CLB 
+
+"<Davvisámegiela>"
+	"davvi#sáme#giella" N Sg Gen 
+"<giellabargi>"
+	"giella#bargi" Hum N Actor Sg Nom 
+	"giella#bargat" V* TV* Actor N Sg Nom 
+	"giella#bargi" Hum N Actor Sg Acc 
+	"giella#bargat" V* TV* Actor N Sg Acc 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom 
+"<almmuha>"
+	"almmuhit" V TV Ind Prs Sg3 @+FMAINV 
+"<ohcan>"
+	"ohcat" V TV PrfPrc @>N 
+"<láhkái>"
+	"láhki" N Sg Ill 
+	"láhkái" Adv 
+"<davviriikkalaš>"
+	"davvi#riikkalaš" A Attr 
+"<sámegiela>"
+	"sáme#giella" N Sg Acc 
+	"sáme#giella" N Sg Gen 
+"<fága>"
+	"fága" N Sg Gen 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CNP 
+"<resursaguovddáa>"
+	"resursa#guovddáš" Org Plc N Sg Gen 
+	"resursa#guovddáš" Plc N Sg Gen 
+"<vuođđudanprošeavtta>"
+	"vuođđudan#prošeakta" N Sg Acc 
+"<,>"
+	"," CLB 
+"<Sámi>"
+	"Sápmi" N Prop Plc Sg Gen 
+"<Giellagáldu>"
+	"giella#gáldu" N Sg Nom 
+"<mearreáigásaš>"
+	"mearre#áigásaš" A Attr 
+"<davvisámegiela>"
+	"davvi#sáme#giella" N Sg Gen 
+	"davvi#sáme#giella" N Sg Acc 
+"<giellabargi>"
+	"giella#bargi" Hum N Actor Sg Gen 
+	"giella#bargat" V* TV* Actor N Sg Nom 
+	"giella#bargi" Hum N Actor Sg Acc 
+	"giella#bargat" V* TV* Actor N Sg Acc 
+	"giella#bargat" V TV PrsPrc 
+	"giella#bargat" V* TV* Actor N Sg Gen 
+	"giella#bargi" Hum N Actor Sg Nom 
+"<barggu>"
+	"bargu" Plc N Sg Acc 
+	"bargu" Plc N Sg Gen 
+"<.>"
+	"." CLB 
+
+"<Bargu>"
+	"bargu" Plc N Sg Nom 
+"<álgá>"
+	"álgit" V IV Ind Prs Sg3 @+FMAINV 
+"<dakkaviđe>"
+	"dakka#viđe" Adv 
 "<ja>"
 	"ja" CC @CVP 
-"<tevdne>"
-	"tevdnet" V TV Ind Prs Sg3 @+FMAINV 
-"<Sámediggi>"
-	"Sámediggi" N Prop Org Sg Nom @<SUBJ 
-"</>"
-	"/" PUNCT 
-"<Statped>"
-	"Statped" N Prop Org Sg Nom @<SUBJ 
-"<©>"
-	"©" N ABBR @X 
+"<bistá>"
+	"bistit" V IV Ind Prs Sg3 @+FMAINV 
+"<31.5.2014>"
+	"31.5.2014" Num Sg Gen 
+	"31.5.2014" Num Sg Acc 
+	"31.5.2014" Num Sg Nom 
+"<rádjai>"
+	"rádjai" Po 
+	"rádjai" Adv 
+"<.>"
+	"." CLB 
+
+"<Giellabargi>"
+	"giella#bargi" Hum N Actor Sg Gen 
+	"giella#bargat" V* TV* Actor N Sg Nom 
+	"giella#bargi" Hum N Actor Sg Acc 
+	"giella#bargat" V* TV* Actor N Sg Acc 
+	"giella#bargi" Hum N Actor Sg Nom 
+	"giella#bargat" V* TV* Actor N Sg Gen 
+"<bargguide>"
+	"bargu" Plc N Pl Ill 
+"<gullet>"
+	"gullet" V IV Inf @-FMAINV 
+	"gullet" V IV Ind Prs Sg2 @+FMAINV 
+	"gullat" V TV Ind Prs Pl3 @+FMAINV 
+"<giellagáhtten>"
+	"giella#gáhtten" N Sg Nom 
+	"giella#gáhttet" V* TV* Der/n N Sg Gen 
+	"giella#gáhttet" V* TV* Der/n N Sg Nom 
+	"giella#gáhtten" N Sg Gen 
+"<,>"
+	"," CLB 
+"<giela>"
+	"giella" N Sg Gen 
+"<ovddideapmi>"
+	"ovddidit" V TV Actio Nom 
+	"ovddidit" V* TV* Der/eapmi N Sg Nom 
+"<,>"
+	"," CLB 
+"<terminologiijabargu>"
+	"terminologiija#bargu" Plc N Sg Nom 
+"<,>"
+	"," CLB 
+"<giela>"
+	"giella" N Sg Acc 
+	"giella" N Sg Gen 
+	"giellat" V TV Imprt Sg2 @+FMAINV 
+"<normeren>"
+	"normeret" V TV PrfPrc @>N 
+"<,>"
+	"," CLB 
+"<diehtojuohkin>"
+	"diehto#juohkit" V* TV* Der/n N Sg Nom 
+	"diehto#juohkin" N Sg Nom 
+"<ja>"
+	"ja" CC @CNP 
+"<rávvenbargu>"
+	"rávven#bargu" Plc N Sg Nom 
+"<.>"
+	"." CLB 
+
+"<Giellabargái>"
+	"giella#bargi" Hum N Actor Sg Ill 
+	"giella#bargat" V* TV* Actor N Sg Ill 
+"<sáhttet>"
+	"sáhttit" V IV Ind Prs Pl3 @+FAUXV 
+"<maiddái>"
+	"maiddái" Adv 
+"<biddjot>"
+	"bidjat" V* TV Der/PassS V Inf @-FMAINV 
+"<eará>"
+	"eará" Pron Indef Attr 
+"<barggut>"
+	"bargu" Plc N Pl Nom 
+"<,>"
+	"," CLB 
+"<mat>"
+	"mii" Pron Rel Pl Nom 
+"<gullet>"
+	"gullat" V TV Ind Prs Pl3 @+FMAINV 
+"<davviriikkalaš>"
+	"davvi#riikkalaš" A Attr 
+"<sámegiela>"
+	"sáme#giella" N Sg Gen 
+"<fága>"
+	"fága" N Sg Acc 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CVP 
+"<resursaguovddáa>"
+	"resursa#guovddáš" Org Plc N Sg Gen 
+	"resursa#guovddáš" Plc N Sg Gen 
+"<doibmii>"
+	"doaibma" N Sg Ill 
+	"doibmet" V TV Ind Prt Sg3 @+FMAINV 
+"<.>"
+	"." CLB 
+
+"<Golbma>"
+	"golbma" Num Sg Nom 
+	"golbma" Num Sg Acc 
+"<skihpáračča>"
+	"skihpáraš" Hum N Sg Gen 
+"<>"
+	"–" PUNCT 
+"<girji>"
+	"girji" N Sg Nom 
+"<japána>"
+	"japána" ? 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CNP 
+"<eŋgelasgielaide>"
+	"eŋgelas#giella" N Pl Ill 
+"<Kerttu>"
+	"Kerttu" N Prop Fem Sg Attr 
+"<Vuolab>"
+	"Vuolab" N Prop Sur Sg Gen Allegro 
+	"Vuolab" N Prop Sur Sg Nom 
+"<mánáid>"
+	"mánná" Hum N Pl Gen 
+	"mánná" Hum N Pl Acc 
+"<girji>"
+	"girji" N Sg Nom 
+"<ja>"
+	"ja" CC @CNP 
+"<oahppamateriála>"
+	"oahppa#materiála" N Sg Nom 
+"<">"
+	""" PUNCT 
+"<Golbma>"
+	"golbma" Num Sg Nom 
+	"golbma" Num Sg Acc 
+"<skihpáračča>"
+	"skihpáraš" Hum N Sg Gen 
+"<">"
+	""" PUNCT 
+"<almmuhuvvo>"
+	"almmuhit" V* TV Der/PassL V Ind Prs Sg3 @+FMAINV 
+"<japána>"
+	"japána" ? 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CNP 
+"<eŋgelasgielain>"
+	"eŋgelas#giella" N Pl Loc 
+"<.>"
+	"." CLB 
+
+"<Almmuhandilálašvuohta>"
+	"almmuhan#dilálašvuohta" N Sg Nom 
+"<dollojuvvo>"
+	"doallat" V* TV Der/PassL V Ind Prs Sg3 @+FMAINV 
+"<sámi>"
+	"sápmi" N Sg Gen 
+"<kulturguovddáš>"
+	"kultur#guovddáš" Plc N Sg Acc 
+	"kultur#guovddáš" Plc N Sg Nom 
+	"kultur#guovddáš" Org N Sg Gen 
+	"kultur#guovddáš" Org N Sg Nom 
+	"kultur#guovddáš" Plc N Sg Gen 
+	"kultur#guovddáš" Org N Sg Acc 
+"<Sajosis>"
+	"Sajosis" ? 
+"<maŋŋebárgga>"
+	"maŋŋeb#árga" Time N Sg Gen 
+	"maŋŋeb#árga" Time N Sg Acc 
+"<7.5.2013>"
+	"7.5.2013" Num Sg Date Gen 
+	"7.5.2013" Num Sg Date Nom 
+"<dmu>"
+	"dmu" N ACR Sg Gen 
+"<12.00>"
+	"12.00" Num Sg Nom 
+"<.>"
+	"." CLB 
+
+"<Dilálašvuohta>"
+	"dilálašvuohta" N Sg Nom 
+"<lea>"
+	"leat" V IV Ind Prs Sg3 @+FMAINV 
+"<rabas>"
+	"rabas" A Sg Nom 
+"<buot>"
+	"buot" Pron Indef 
+"<berošteaddjiide>"
+	"berošteaddji" A Pl Ill 
+"<.>"
+	"." CLB 
+
+"<Ijahis>"
+	"idja" Time N* Der/heapmi A Attr 
+"<idja-dáhpahusa>"
+	"idja-dáhpahusa" ? 
+"<várás>"
+	"várá" N Sg Loc 
+	"várás" Adv 
+"<stáhtadoarjja>"
+	"stáhta#doarjja" N Sg Nom 
+"<Ijahis>"
+	"idja" Time N* Der/heapmi A Attr 
+"<idja-eamiálbmogiid>"
+	"idja-#eami#álbmot" Hum Group N Pl Acc 
+	"idja-#eami#álbmot" Hum Group N Pl Gen 
+"<musihkkadáhpáhus>"
+	"musihkka#dáhpáhus" N Sg Nom 
+"<beasai>"
+	"beassat" V IV Ind Prt Sg3 @+FMAINV 
+"<stáhta>"
+	"stáhta" Org Plc N Sg Gen 
+	"stáhta" N Sg Gen 
+"<doarjaga>"
+	"doarjja" N Sg Gen 
+	"doarjja" N Sg Acc 
+"<birei>"
+	"birei" ? 
+"<go>"
+	"go" CS @CNP 
+"<kultur->"
+	"kultuvra" N SgNomCmp RCmpnd 
+	"kultur" N CmpN/Pref RCmpnd 
+"<ja>"
+	"ja" CC @CNP 
+"<valástallanministtar>"
+	"valástallan#ministtar" Hum N Sg Nom 
+"<Paavo>"
+	"Paavo" N Prop Mal Sg Acc 
+	"Paavo" N Prop Mal Sg Nom 
+	"Paavo" N Prop Mal Sg Gen 
+"<Arhinmäki>"
+	"Arhinmäki" ? 
+"<mieđihii>"
+	"mieđihit" V TV Ind Prt Sg3 @X 
+"<10-jagašmátkki>"
+	"10-jagaš#mátki" N Sg Acc 
+	"10-jagaš#mátki" N Sg Nom 
+	"10-jagaš#mátki" N Sg Gen 
+"<ávvudeaddji>"
+	"ávvudit" V* TV* Actor N Sg Nom 
+"<festiválai>"
+	"festiválai" ? 
+"<10>"
+	"10" Num Sg Acc 
+	"10" Num Sg Gen 
+	"10" Num Sg Nom 
+"<000>"
+	"000" Num Sg Nom 
+	"000" Num Sg Acc 
+"<euro>"
+	"euro" N Sg Gen 
+"<kulturdoarjaga>"
+	"kultur#doarjja" N Sg Gen 
+	"kultur#doarjja" N Sg Acc 
+"<mieđihuvvojit>"
+	"mieđihit" V* TV Der/PassL V Ind Prs Pl3 @X 
+"<veikkausvuoitováriin>"
+	"veikkausvuoitováriin" ? 
+"<.>"
+	"." CLB 
+
+"<Ijahis>"
+	"idja" Time N* Der/heapmi A Attr 
+"<idja>"
+	"idja" Time N Sg Nom 
+"<lassin>"
+	"lassi" N Ess 
+"<doarjaga>"
+	"doarjja" N Sg Gen 
+	"doarjja" N Sg Acc 
+"<birei>"
+	"birei" ? 
+"<bohte>"
+	"boahtit" V IV Ind Prt Pl3 @+FMAINV 
+"<logi>"
+	"lohki" N Sg Acc 
+	"lohki" N Sg Gen 
+	"logi" Num Sg Nom 
+	"logi" Num Sg Gen 
+	"logi" Num Sg Acc 
+"<eará>"
+	"eará" Pron Indef Attr 
+	"eará" Pron Indef Sg Acc 
+	"eará" Pron Indef Sg Nom 
+	"eará" Pron Indef Sg Gen 
+"<ođđa>"
+	"ođas" A Attr 
+"<dáhpahusa>"
+	"dáhpahusa" ? 
+"<.>"
+	"." CLB 
+
+"<Sámiid>"
+	"sápmi" N Pl Gen 
+"<boarrásiidbarggu>"
+	"boarrásiid#bargu" Plc N Sg Gen 
+	"boarrásiid#bargu" Plc N Sg Acc 
+"<ovddidanbeaivvit>"
+	"ovddidan#beaivi" Time N Pl Nom 
+"<II>"
+	"II" Num Acc 
+	"II" N ACR Sg Nom 
+	"II" A Ord 
+	"II" Num Gen 
+	"II" N ACR Sg Acc 
+	"II" Num Nom 
+	"II" N ACR Sg Gen 
+"<I>"
+	"I" Num Nom 
+"<22.5.2013>"
+	"22.5.2013" Num Sg Acc 
+"<Sámedikki>"
+	"Sámediggi" N Prop Org Sg Gen 
+"<hálddašan>"
+	"hálddašeapmi" N Sg Gen 
+	"hálddašit" V TV Ind Prs Sg1 @+FMAINV 
+	"hálddašit" V* TV* Der/eapmi N Sg Gen 
+"<SaKaste–Sámiid>"
+	"SaKaste–Sámiid" ? 
+"<sosiála>"
+	"sosiála" A Sg Acc 
+	"sosiála" A Sg Nom 
+	"sosiála" A Sg Gen 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CNP 
+"<dearvvavuođabálvalusaid>"
+	"dearvvavuođabálvalusaid" ? 
+"<ovddidan-ráhkadus>"
+	"ovddidan-#ráhkadus" N Sg Nom 
+"<–>"
+	"–" PUNCT 
+"<fidnu>"
+	"fidnu" N Sg Nom 
+"<lágida>"
+	"lágidit" V TV Ind Prs Sg3 @+FMAINV 
+"<goalmmát>"
+	"goalmmát" A Ord Attr 
+"<geardde>"
+	"geardi" N Sg Gen Allegro 
+	"geardde" Adv 
+"<sámiid>"
+	"sápmi" N Pl Gen 
+"<boarrásiidbarggu>"
+	"boarrásiid#bargu" Plc N Sg Gen 
+	"boarrásiid#bargu" Plc N Sg Acc 
+"<ovddidanbeivviid>"
+	"ovddidan#beaivi" Time N Pl Acc 
+	"ovddidan#beaivi" Time N Pl Gen 
+"<.>"
+	"." CLB 
+
+"<Fidnus>"
+	"fidnu" N Sg Loc 
+"<ovddiduvvojit>"
+	"ovddidit" V* TV Der/PassL V Ind Prs Pl3 @+FMAINV 
+"<sámegielat>"
+	"sáme#gielat" A Attr 
+"<bálvalusfálaldagat>"
+	"bálvalus#fálaldat" N Pl Nom 
+"<ja>"
+	"ja" CC @CNP 
+"<sámegiela>"
+	"sáme#giella" N Sg Acc 
+	"sáme#giella" N Sg Gen 
+"<ja>"
+	"ja" CC @CNP 
+"<kultuvrra>"
+	"kultuvra" N Sg Acc 
+	"kultuvra" N Sg Gen 
+"<vuhtii>"
+	"vuhtii" Adv 
+"<váldi>"
+	"váldit" V* TV* Actor N Sg Gen 
+	"váldi" N Actor Sg Acc 
+	"váldit" V* TV* Actor N Sg Acc 
+	"váldit" V TV PrsPrc 
+	"váldi" Org N Sg Nom 
+	"váldi" N Actor Sg Gen 
+	"váldi" N Actor Sg Nom 
+	"váldit" V* TV* Actor N Sg Nom 
+"<doaibma-geavadagat>"
+	"doaibma-geavadagat" ? 
+"<sihke>"
+	"sihke" CC 
+"<nannejuvvo>"
+	"nannet" V* TV Der/PassL V Ind Prs Sg3 @X 
+"<bargoveaga>"
+	"bargo#veahka" Hum Group N Sg Acc 
+	"bargo#veahka" Hum Group N Sg Gen 
+"<máhttin>"
+	"máhttit" V TV Actio Acc @+FMAINV 
+	"máhttit" V* TV* Actor N Ess @+FMAINV 
+	"máhttit" V* TV* Der/n N Sg Gen @+FMAINV 
+	"máhttit" V* TV* Der/n N Sg Nom @+FMAINV 
+	"máhttit" V TV Actio Nom @+FMAINV 
+	"máhttit" V* TV* Actor N Sg Loc @+FMAINV 
+"<.>"
+	"." CLB 
+
+"<Sámiid>"
+	"sápmi" N Pl Gen 
+"<kultur->"
+	"kultuvra" N SgNomCmp RCmpnd 
+	"kultur" N CmpN/Pref RCmpnd 
+"<ja>"
+	"ja" CC @CNP 
+"<giellabeassedoaibma>"
+	"giella#beasse#doaibma" N Sg Nom 
+"<jagi>"
+	"jahki" Time N Sg Gen 
 "<2013>"
-	"2013" Num Sg Nom @N< 
-"<Kommenttat>"
-	"Kommenttat" ? @X 
-"<prográmmii>"
-	"prográmma" N Sg Ill @<ADVL 
+	"2013" Num Sg Nom 
+"<Riikkabeaivvit>"
+	"riikka#beaivi" Time N Pl Nom 
+	"riikka#beaivi" Org N Pl Nom 
+"<dohkkehii>"
+	"dohkkehit" V TV Ind Prt Sg3 @+FMAINV 
+"<stáhta>"
+	"stáhta" Org Plc N Sg Acc 
+	"stáhta" N Sg Acc 
+"<jagi>"
+	"jahki" Time N Sg Gen 
+"<2013>"
+	"2013" Num Sg Nom 
+	"2013" Num Sg Gen 
+"<bušeahtas>"
+	"bušeahtta" N Sg Loc 
+"<sierramearreruđa>"
+	"sierra#mearre#ruhta" N Sg Acc 
+"<sámiid>"
+	"sápmi" N Pl Gen 
+"<kultur->"
+	"kultuvra" N SgNomCmp RCmpnd 
+	"kultur" N CmpN/Pref RCmpnd 
+"<ja>"
+	"ja" CC @CNP 
+"<giellabeassedoibmii>"
+	"giella#beasse#doaibma" N Sg Ill 
+"<sámiid>"
+	"sápmi" N Pl Gen 
+"<ruovttuguovllus>"
+	"ruovttu#guovlu" Plc N Sg Loc 
+"<.>"
+	"." CLB 
+
+"<Ruhtadeapmi>"
+	"ruhtadit" V* TV* Der/eapmi N Sg Nom 
+	"ruhtadeapmi" N Sg Nom 
+"<juhkkojuvvo>"
+	"juohkit" V* TV Der/PassL V Ind Prs Sg3 @X 
+	"juhkat" V* TV Der/PassL V Ind Prs Sg3 @X 
+"<sámedikki>"
+	"sáme#diggi" N Sg Gen 
+	"sáme#diggi" Org Build N Sg Gen 
+"<bokte>"
+	"bokte" Po 
+"<doaimma>"
+	"doaibma" N Sg Gen 
+	"doaibma" N Sg Acc 
+"<ordnejeaddji>"
+	"ordnejeaddji" N Actor Sg Gen 
+	"ordnet" V* TV* Actor N Sg Nom 
+	"ordnet" V* TV* Actor N Sg Acc 
+	"ordnejeaddji" N Actor Sg Nom 
+	"ordnejeaddji" N Actor Sg Acc 
+	"ordnet" V* TV* Actor N Sg Gen 
+"<surggiide>"
+	"suorgi" N Pl Ill 
+"<.>"
+	"." CLB 
+
+"<Oahpahus>"
+	"oahpahit" V TV Imprt Sg3 @+FMAINV 
+	"oahpahus" N Sg Nom 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CVP 
+"<kulturministeria>"
+	"kulturministeria" ? 
+"<mieđihii>"
+	"mieđihit" V TV Ind Prt Sg3 @+FMAINV 
+"<sámediggái>"
+	"sáme#diggi" Org Build N Sg Ill 
+	"sáme#diggi" N Sg Ill 
+"<stáhtadoarjjan>"
+	"stáhta#doarjja" N Ess 
+"<550>"
+	"550" Num Sg Gen 
+	"550" Num Sg Nom 
+	"550" Num Sg Acc 
+"<000>"
+	"000" Num Sg Acc 
+"<euro>"
+	"euro" N Sg Acc 
+	"euro" N Sg Nom 
+"<anárašgiela>"
+	"anáraš#giella" N Sg Gen 
+	"anáraš#giella" N Sg Acc 
+"<,>"
+	"," CLB 
+"<nuortalašgiela>"
+	"nuortalaš#giella" N Sg Acc 
+	"nuortalaš#giella" N Sg Gen 
+"<ja>"
+	"ja" CC @CNP 
+"<davvisámegiela>"
+	"davvi#sáme#giella" N Sg Gen 
+	"davvi#sáme#giella" N Sg Acc 
+"<giellabeassedoaimmaide>"
+	"giella#beasse#doaibma" N Pl Ill 
+"<.>"
+	"." CLB 
+
+"<Sámegielat>"
+	"sáme#gielat" A Sg Acc 
+	"sáme#gielat" A Sg Nom 
+	"sáme#gielat" A Sg Gen 
+	"Sáme#giella" N Pl Nom 
+	"sáme#giella" N Pl Nom 
+"<sode-bálválusat>"
+	"sode-bálválusat" ? 
+"<ja>"
+	"ja" CC @CVP 
+"<beaivedikun>"
+	"beaive#dikšun" N Sg Gen 
+	"beaive#dikšut" V* TV* Der/n N Sg Gen 
+"<jagi>"
+	"jahki" Time N Sg Acc 
+"<2013>"
+	"2013" Num Sg Nom 
+"<Lappi>"
+	"Lappi" N Prop Plc Sg Gen 
+"<guovlohálddašandoaimmahat>"
+	"guovlo#hálddašan#doaimmahat" Org Plc N Sg Nom 
+"<lea>"
+	"leat" V IV Ind Prs Sg3 @+FAUXV 
+"<nannen>"
+	"nannet" V TV PrfPrc @-FMAINV 
+"<8.3.2013>"
+	"8.3.2013" Num Sg Date Gen 
+"<Sámediggi>"
+	"Sámediggi" N Prop Org Sg Nom 
+"<ja>"
+	"ja" CC @CNP 
+"<sámeguovllu>"
+	"sáme#guovlu" Plc N Sg Gen 
+"<gielddaid>"
+	"gielda" Org Plc N Pl Acc 
+"<dahkan>"
+	"dahkat" V TV Actio Nom 
+"<soahpamušaid>"
+	"soahpamuš" N Pl Gen 
+	"soahpamuš" N Pl Acc 
+"<sámegielat>"
+	"sáme#gielat" A Attr 
+"<sosiála>"
+	"sosiála" A Attr 
+"<->"
+	"-" PUNCT 
+"<ja>"
+	"ja" CC @CNP 
+"<dearvvašvuođabálvalusaid>"
+	"dearvvašvuođa#bálvalus" N Pl Acc 
+	"dearvvašvuođa#bálvalus" N Pl Gen 
+"<ja>"
+	"ja" CC @CNP 
+"<beaivedivššu>"
+	"beaive#dikšu" Plc N Sg Gen 
+	"beaive#dikšu" Plc N Sg Acc 
+	"beaive#dikšu" N Sg Acc 
+	"beaive#dikšu" N Sg Gen 
+"<dorvvasteapmái>"
+	"dorvvastit" V* TV* Der/eapmi N Sg Ill 
+"<čujuhuvvon>"
+	"čujuhit" V* TV Der/PassL V Ind Prs Sg1 @+FMAINV 
+	"čujuhit" V* TV* Der/PassL Der/n N Sg Nom 
+"<mearreruđaid>"
+	"mearre#ruhta" N Pl Gen 
+	"mearre#ruhta" N Pl Acc 
+"<geavaheamis>"
+	"geavahit" V* TV* Der/eapmi N Sg Loc 
+	"geavahit" V TV Actio Loc 
+	"geavaheapmi" N Sg Loc 
+"<jagi>"
+	"jahki" Time N Sg Gen 
+"<2013>"
+	"2013" Num Sg Nom 
+"<.>"
+	"." CLB 
+
+"<Kaleandar>"
+	"kaleandar" N Sg Nom 
+	"kaleandar" N Sg Acc 
+	"kaleandar" N Sg Gen 
+"<ti>"
+	"ti" ? 
+"<14.05.2013>"
+	"14.05.2013" Num Sg Date Gen 
+"<,>"
+	"," CLB 
+"<08:30>"
+	"08:30" ? 
+"<->"
+	"-" PUNCT 
+"<17>"
+	"17" Num Sg Acc 
+	"17" Num Sg Nom 
+	"17" Num Sg Gen 
+"<:00>"
+	":00" ? 
+"<Hallituksen>"
+	"Hallituksen" ? 
+"<kokous/>"
+	"kokous/" ? 
+"<Stivrra>"
+	"stivra" Org N Sg Acc 
+	"stivra" Org N Sg Gen 
+"<čoahkkin/>"
+	"čoahkkin/" ? 
+"<Stiivrâ>"
+	"Stiivrâ" ? 
+"<čuákkim/>"
+	"čuákkim/" ? 
+"<Halltõõzz>"
+	"Halltõõzz" ? 
+"<sååbbar>"
+	"sååbbar" ? 
+"<ke>"
+	"ke" ? 
+"<22.05.2013>"
+	"22.05.2013" Num Sg Date Gen 
+"<,>"
+	"," CLB 
+"<12:00>"
+	"12:00" ? 
+"<->"
+	"-" PUNCT 
+"<17>"
+	"17" Num Sg Acc 
+	"17" Num Sg Nom 
+	"17" Num Sg Gen 
+"<:00>"
+	":00" ? 
+"<Skuvlen->"
+	"skuvlet" V* TV* Der/n N SgCmp RCmpnd 
+	"skuvlen" N SgCmp RCmpnd 
+"<ja>"
+	"ja" CC @CNP 
+"<oahppamat>"
+	"oahppat" V* TV* Der/n N Pl Nom 
+"<ldg/>"
+	"ldg/" ? 
+"<kovlim>"
+	"kovlim" ? 
+"<->"
+	"-" PUNCT 
+"<já>"
+	"já" Interj 
+"<oppâmat>"
+	"oppâmat" ? 
+"<ldk/>"
+	"ldk/" ? 
+"<koou´ljem>"
+	"koou´ljem" ? 
+"<da>"
+	"da" ? 
+"<mat>"
+	"mii" Pron Rel Pl Nom 
+"<sååbbar/>"
+	"sååbbar/" ? 
+"<Koul>"
+	"Koul" ? 
+"<ja>"
+	"ja" CC @CNP 
+"<oppimat>"
+	"oppimat" ? 
+"<ltk>"
+	"ltk" ? 
+"<Njulgenbálgat>"
+	"Njulgenbálgat" ? 
+"<Ságadoalli>"
+	"sága#doalli" N Sg Nom 
+	"sága#doalli" Hum N Actor Sg Acc 
+	"sága#doallat" V* TV* Actor N Sg Acc 
+	"sága#doalli" Hum N Actor Sg Gen 
+	"sága#doallat" V* TV* Actor N Sg Gen 
+	"sága#doallat" V* TV* Actor N Sg Nom 
+	"sága#doalli" Hum N Actor Sg Nom 
+"<blogga>"
+	"blogga" N Sg Nom 
+"<Ságadoalli>"
+	"sága#doalli" N Sg Nom 
+	"sága#doalli" Hum N Actor Sg Acc 
+	"sága#doallat" V* TV* Actor N Sg Acc 
+	"sága#doalli" Hum N Actor Sg Gen 
+	"sága#doallat" V* TV* Actor N Sg Gen 
+	"sága#doallat" V* TV* Actor N Sg Nom 
+	"sága#doalli" Hum N Actor Sg Nom 
+"<Cealkámuat>"
+	"cealkámuš" N Pl Nom 
+"<Sáhkavuorut>"
+	"sáhka#vuorru" Time N Pl Nom 
+	"sáhka#vuorru" N Pl Nom 
+"<Dieđáhusat>"
+	"dieđáhus" N Pl Nom 
+"<Ohcan>"
+	"ohca" N Ess 
+"<láhkái>"
+	"láhki" N Sg Ill 
+	"láhkái" Adv 
+"<Ođasvuorká>"
+	"ođas#vuorká" Plc N Sg Nom 
+"<Leavgabeaivvit>"
+	"leavga#beaivi" Time N Pl Nom 
+"<Artihkal>"
+	"artihkal" N Sg Nom 
+"<8(j>"
+	"8(j" ? 
+"<)>"
+	")" PUNCT RIGHT 
+"<:a>"
+	":a" ? 
+"<ollauhttin>"
+	"ollašuhttit" V* TV* Actor N Sg Loc 
+	"ollašuhttit" V* TV* Der/n N Sg Gen 
+	"ollašuhttit" V TV Actio Nom 
+	"ollašuhttit" V* TV* Actor N Ess 
+	"ollašuhttit" V* TV* Der/n N Sg Nom 
+"<Nuorisoneuvosto>"
+	"Nuorisoneuvosto" ? 
 

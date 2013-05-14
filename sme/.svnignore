@@ -1,4 +1,4 @@
 desc/operators/vislcg3Pipe.xml
 src/main/java/werti/uima/ae/Vislcg3Annotator.java
-src/main/java/werti/util/HMTLEnhancer.java
+src/main/java/werti/util/HTMLEnhancer.java
 target

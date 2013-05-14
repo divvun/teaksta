@@ -6,7 +6,7 @@
 
 <p>
 Download the <a href="firefox-extension/view-latest.xpi">latest 
-version of the VIEW extension</a>.
+version of the Teaksta extension</a>.
 </p>
 
 <p>Firefox will ask you if you want 
@@ -17,7 +17,7 @@ proceed with the installation.
 <h2>User Agreement</h2>
 
 <p>
-When you use VIEW to enhance a web page, the content of the web page is sent
+When you use Teaksta to enhance a web page, the content of the web page is sent
 to our server for linguistic analysis.  We may gather some 
 information about this web page in order to find out what kinds of web pages 
 users are interested in enhancing and how users interact with enhanced web pages.
@@ -50,7 +50,7 @@ We will never release any identifying information about our users.
 <h2>License</h2>
 
 <p>
-The VIEW firefox extension is distributed under the MIT License:
+The Teaksta firefox extension is distributed under the MIT License:
 </p>
 
 <blockquote>

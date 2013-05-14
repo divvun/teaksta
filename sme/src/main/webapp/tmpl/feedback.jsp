@@ -2,7 +2,7 @@
 
 <div class="text">
 
-<p>Please use this form to send us feedback or report problems with VIEW.</p>
+<p>Please use this form to send us feedback or report problems with Teaksta.</p>
 
 <p>All fields are optional, but a URL that demonstrates the problem is helpful for any bug reports.</p>
 
