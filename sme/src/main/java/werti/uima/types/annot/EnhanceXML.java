@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Tue May 14 18:58:47 CEST 2013 */
+/* First created by JCasGen Fri Jun 14 00:00:43 CEST 2013 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,8 +11,8 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** Annotation spanning an <enhance></enhance> tag.
- * Updated by JCasGen Tue May 14 18:58:47 CEST 2013
- * XML source: /Users/mslm/view/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Fri Jun 14 00:00:43 CEST 2013
+ * XML source: /Users/mslm/main/apps/view/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class EnhanceXML extends Annotation {
   /** @generated

@@ -234,7 +234,7 @@
 							<basedir>${basedir}/src/main/resources/firefox-extension/werti/chrome/content</basedir>
 							<outputDir>js-lib</outputDir>
                             <outputBasedir>${basedir}/src/main/webapp</outputBasedir>
-							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,verbconjugation.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
+							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,verbconjugation.js,infiniteverbs.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
 							
 							<replacements>
 								<replacement>
@@ -256,9 +256,9 @@
                 <version>1.1</version>  <!-- added by Heli -->
                 <configuration>
                     <url>http://localhost:8080/manager/html</url>
-                    <warFile>/Users/mslm/view/sme/target/WERTisme.war</warFile>
+                    <warFile>/Users/mslm/main/apps/view/sme/target/WERTisme.war</warFile>
                     <server>localhost</server>
-                   <!-- <path>/WERTisme</path>  -->
+                    <path>/teaksta</path>
                 </configuration>
             </plugin>
 		</plugins>

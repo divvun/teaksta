@@ -58,7 +58,7 @@ We are continually working on new topics and activities and are grateful for ide
 area from Magdalena Leshtanska, Emma Li, Iliana Simova, Maria Tchalakova, and Tatiana Vodolazova.
 </p>
 <p>
-<strong>Teaksta - the North Saami version of WERTi</strong> has been set up by <a mailto="heli1401@gmail.com">Heli Uibo</a>. The exercise types (topics) have been worked out by Lene Antonsen.
+<strong>Teaksta - the North Saami version of WERTi</strong> has been set up by <a href="mailto:heli1401@gmail.com">Heli Uibo</a>. The exercise types (topics) have been worked out by Lene Antonsen.
 </p>
 
 <h2>References</h2>

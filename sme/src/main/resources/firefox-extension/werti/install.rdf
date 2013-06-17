@@ -23,6 +23,7 @@
     <em:contributor>Chris Kovach</em:contributor>
     <em:contributor>Cory Shain</em:contributor>    
     <em:contributor>Marion Zepf</em:contributor>
+    <em:contributor>Heli Uibo</em:contributor>
     <em:targetApplication RDF:resource="rdf:#$VL9.O3"/>
   </RDF:Description>
   <RDF:Description RDF:about="rdf:#$VL9.O3"

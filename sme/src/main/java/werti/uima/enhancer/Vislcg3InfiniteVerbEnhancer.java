@@ -30,15 +30,14 @@ import werti.util.StringListIterable;
  * @author Heli Uibo
  *
  */
-public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
+public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3ConNegEnhancer.class);
+		Logger.getLogger(Vislcg3InfiniteVerbEnhancer.class);
 	
-	private List<String> connegTags;
+	private List<String> infiniteverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-	private final String preprocessLoc = "/Users/mslm/main/gt/script/preprocess";
     private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
 	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/isme-GG.restr.fst";
@@ -46,19 +45,19 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Conjunction tags "+connegTags);
+        log.info("Infinite verb tags "+infiniteverbTags);
 		super.initialize(context);
-		connegTags = Arrays.asList(((String)context.getConfigParameterValue("connegTags")).split(","));
+		infiniteverbTags = Arrays.asList(((String)context.getConfigParameterValue("infiniteverbTags")).split(","));
 	}
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting ConNeg enhancement");
+		log.info("Starting InfiniteVerb enhancement");
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : connegTags) {
+		for (String conT : infiniteverbTags) {
 			classCounts.put(conT, 0);
 			log.info("Tag: "+conT);
 		}
@@ -66,7 +65,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
-		for (String conT: connegTags) {
+		for (String conT: infiniteverbTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
 			// CGToken prev = null;
@@ -125,10 +124,10 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 				
 				// case 2: chunk start tag
 				if (containsTag(reading, conT)) {
-				    // get lemma from the reading
+				    // get lemma from the CG reading
 				    String lemma = getLemma(reading);
-				    //log.info("lemma to be added as a span attribute: "+lemma);
-				    String distractors = getDistractors(lemma);
+				    // generate the distractors, based on the lemma of the hit
+                    String distractors = getDistractors(lemma);
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -137,8 +136,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiview" + conT + " \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\" >";
-					log.info(spanStartTag);
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
+					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
 					classCounts.put(conT, newId);
@@ -159,7 +158,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		// (chunk)
 		//log.info("Enhancement stack is "
 		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
-		log.info("Finished conjunction enhancement");
+		log.info("Finished infinite verb enhancement");
 	}
 	
 	/*
@@ -174,12 +173,23 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
+		/*
 		for (String rtag : reading) {
 			if (tag.equals(rtag)) {
 			    log.info(cgr + " contains " + tag);
 				return true;
 			}
+		} */
+		String reading_str = "";
+		for (String rtag : reading) {
+			reading_str = reading_str + rtag + " ";
 		}
+		
+		if (reading_str.indexOf(tag) > 0) {  // Tag string contains Ind Prs or Ind Prt but not ConNeg
+            log.info(cgr + " contains " + tag);
+            return true;
+        }
+
 		//log.info(cgr + " does not contain " + tag);
 		return false;
 	}
@@ -195,7 +205,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
             }
 		}
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
-		/*
+		/* 
 		try {
             byte[] b = lemma.getBytes();
             lemma_utf8 = new String(b,"UTF-8");
@@ -204,71 +214,75 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
             System.out.println(e);
         }*/
 		//log.info(cgr + " does not contain " + tag);
+		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
-	
-	private String getDistractors(String lemma) {
-	   String[] distract_forms = {"V+VGen", "V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Inf"};
-	   String str, word, result = "";
-	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
+    
+    private String getDistractors(String lemma) {
+        String[] distract_forms = {"V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prs+Du1", "V+Ind+Prs+Du2", "V+Ind+Prs+Du3", "V+Ind+Prs+Pl2", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Ind+Prt+Du1", "V+Ind+Prt+Du2", "V+Ind+Prt+Du3", "V+Ind+Prt+Pl2"};
+        
+        String str, word, result = "";
+        // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
         long timestamp = System.currentTimeMillis();
-
+        
         String inputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSTinput"+timestamp+".tmp";
         String outputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSToutput"+timestamp+".tmp";
-
-        //create temporary files for saving cg3 input and output                                                   
-
+        
+        //create temporary files for saving cg3 input and output
+        
         Writer inputfile = null;
-
+        
 		try {
             inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
             for (int j=0; j < distract_forms.length; j++) {
-	           inputfile.write(lemma + "+" + distract_forms[j] + "\n");
+                inputfile.write(lemma + "+" + distract_forms[j] + "\n");
 	        }
 	        inputfile.close();
         }
         catch (FileNotFoundException e) {
-        System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         catch (IOException e) {
-        System.out.println(e.getMessage());
-        }	   
-	   
-	   String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
-	   
+            System.out.println(e.getMessage());
+        }
+        
+        String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
+        
         log.info("Form generation pipeline: "+generationPipeline[2]);
         try {
             Process process = Runtime.getRuntime().exec(generationPipeline);
             process.waitFor();
         	
             BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
-
+            
             while ((str = outputfile.readLine()) != null) {
-		      StringTokenizer tok = new StringTokenizer(str);
-		      while (tok.hasMoreTokens()) {
-                word = tok.nextToken();
-                if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-                    result = result + word + " ";
+                StringTokenizer tok = new StringTokenizer(str);
+                while (tok.hasMoreTokens()) {
+                    word = tok.nextToken();
+                    if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
+                        result = result + word + " ";
+                    }
                 }
-              }
             }
             log.info("Generated forms read from the outputfile: "+result);
-        
+            
             outputfile.close();
             // Delete the temporary files:
             boolean inputfiledeleted = (new File(inputfileLoc)).delete();
             boolean outputfiledeleted = (new File(outputfileLoc)).delete();
         }
         catch (InterruptedException e) {
-        System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         catch (FileNotFoundException e) {
-        System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }
         catch (IOException e) {
-        System.out.println(e.getMessage());
+            System.out.println(e.getMessage());
         }	  
-
+        
         return result;
     }
+
 }
+

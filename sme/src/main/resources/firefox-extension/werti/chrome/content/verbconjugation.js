@@ -8,8 +8,8 @@
 	maxLength: 5,
 	
 	// candidates for mc options presented to user
-	//types: [],
-	//hitList: [],
+	types: [],
+	hitList: [],
 		
 	remove: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
@@ -128,16 +128,16 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		});
 		//alert("number of tokens: "+tokens.length);
 		//alert("size of hitList: "+wertiview.verbconjugation.hitList.length);
-		for (word in tokens) {
+		/*for (word in tokens) {
 			wertiview.verbconjugation.types.push(word);
 			//alert("word: "+word);
-		}
+		}*/
 		//alert(wertiview.verbconjugation.types.length+" different verbconjugation on page");
 
 		wertiview.verbconjugation.maxLength = wertiview.verbconjugation.MAX_MC;
-		if (wertiview.verbconjugation.maxLength > wertiview.verbconjugation.types.length) {
+		/*if (wertiview.verbconjugation.maxLength > wertiview.verbconjugation.types.length) {
 			wertiview.verbconjugation.maxLength = wertiview.verbconjugation.types.length;
-		}
+		}*/
 
 		/* 
 		$hits.each( function() {
@@ -163,20 +163,33 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 	},
 	
 	mcGetOptions: function($hit, capType){
-	    if (wertiview.verbconjugation.types.length < wertiview.verbconjugation.hitList.length) {
-	       wertiview.lib.shuffleList(wertiview.verbconjugation.types);
-	    }
 		var options = [];
 		var j = 0;
-		while (options.length < wertiview.verbconjugation.maxLength - 1) {
-			if (wertiview.verbconjugation.types[j] != $hit.text().toLowerCase()) {
-				options.push(wertiview.lib.matchCapitalization(wertiview.verbconjugation.types[j], capType));
-			}
+		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
+		wertiview.verbconjugation.types = $hit.attr('distractors').split(" ");
+		if (wertiview.verbconjugation.types.length < wertiview.verbconjugation.hitList.length) {
+	       wertiview.lib.shuffleList(wertiview.verbconjugation.types);
+	    }
+        
+        // Add the distractor forms to the options list:
+        while (j < wertiview.verbconjugation.types.length) {
+            // The forms that are homonymous to the correct form are excluded from the list of options:
+            if (wertiview.verbconjugation.types[j] != $hit.text().toLowerCase() && wertiview.verbconjugation.types[j] != "") 
+            {
+                var homonym = false;
+                var k = 0;
+                while (k < j) //check for homonymes among the distractors
+                { 
+                    if (wertiview.verbconjugation.types[k] == wertiview.verbconjugation.types[j])
+                        homonym = true;
+                    k++;
+                } 
+                if (!homonym)                 options.push(wertiview.lib.matchCapitalization(wertiview.verbconjugation.types[j], capType)); 
+            }
 			j++;
 		}
 		
 		options.push(wertiview.lib.matchCapitalization($hit.text(), capType));
-		
 		wertiview.lib.shuffleList(options);
 		return options;
 

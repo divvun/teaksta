@@ -3,77 +3,70 @@
   <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
   <primitive>false</primitive>
   <delegateAnalysisEngineSpecifiers>
-    <delegateAnalysisEngine key="vislcg3Annotator">
-      <import location="../annotators/vislcg3Annotator.xml"/>
+    <delegateAnalysisEngine key="TokenEnhancer">
+      <import location="../enhancers/TokenEnhancer.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
-      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
-    </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="GenericRelevanceAnnotator">
-      <import location="../annotators/GenericRelevanceAnnotator.xml"/>
-    </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="OpenNlpTokenizer">
-      <import location="../annotators/OpenNlpTokenizer.xml"/>
-    </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="OpenNlpSentenceDetector">
-      <import location="../annotators/OpenNlpSentenceDetector.xml"/>
+    <delegateAnalysisEngine key="vislcg3InfiniteVerbEnhancer">
+      <import location="../enhancers/vislcg3InfiniteVerbEnhancer.xml"/>
     </delegateAnalysisEngine>
   </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
-    <name>vislcg3Pipe</name>
+    <name>vislcg3PostProc_InfiniteVerb</name>
     <description/>
-    <version>1.1</version>
+    <version>1.0</version>
     <vendor/>
     <configurationParameters searchStrategy="language_fallback">
       <configurationParameter>
-        <name>vislcg3Loc</name>
-        <description>Location of vislcg3 binary.</description>
+        <name>Tags</name>
+        <description>A list of tags to mark up, comma separated</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3Annotator/vislcg3Loc</parameter>
+          <parameter>TokenEnhancer/Tags</parameter>
         </overrides>
       </configurationParameter>
       <configurationParameter>
-        <name>vislcg3GrammarLoc</name>
-        <description>Location of CG3 grammar.</description>
+        <name>infiniteverbTags</name>
+        <description>A comma-separated list of infinite verb tags.</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3Annotator/vislcg3GrammarLoc</parameter>
+          <parameter>vislcg3InfiniteVerbEnhancer/infiniteverbTags</parameter>
         </overrides>
       </configurationParameter>
     </configurationParameters>
     <configurationParameterSettings>
-      <nameValuePair>
-        <name>vislcg3Loc</name>
+<!--      <nameValuePair>
+        <name>Tags</name>
         <value>
-          <string>/usr/local/bin/vislcg3</string>
+          <string>blah,blubb</string>
         </value>
-      </nameValuePair>
+      </nameValuePair>  -->
       <nameValuePair>
-        <name>vislcg3GrammarLoc</name>
+        <name>Tags</name>
         <value>
-          <string>/Users/mslm/main/gt/sme/src/sme-onlydis.rle</string>
+          <string>V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Der/PassL V Inf</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
-        <node>EnhanceXMLAnnotator</node>
-        <node>GenericRelevanceAnnotator</node>
-        <node>OpenNlpTokenizer</node>
-        <node>OpenNlpSentenceDetector</node>
-        <node>vislcg3Annotator</node>
+        <node>TokenEnhancer</node>
+        <node>vislcg3InfiniteVerbEnhancer</node>
       </fixedFlow>
     </flowConstraints>
     <fsIndexCollection/>
     <capabilities>
       <capability>
-        <inputs/>
-        <outputs/>
+        <inputs>
+          <type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
+        </inputs>
+        <outputs>
+          <type allAnnotatorFeatures="true">werti.uima.types.Enhancement</type>
+          <type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
+        </outputs>
         <languagesSupported/>
       </capability>
     </capabilities>

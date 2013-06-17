@@ -1,4 +1,4 @@
-	wertiview.negverbs = {
+	wertiview.infiniteverbs = {
 
     // maximum number of instances to turn into exercises (moved to preferences)
 	//MAX_CLOZE: 25,
@@ -16,11 +16,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('body').undelegate('span.wertiviewtoken', 'click', wertiview.negverbs.clickHandler);
-		$('body').undelegate('select.wertiviewinput', 'change', wertiview.negverbs.clozeInputHandler);
-		$('body').undelegate('span.wertiviewhint', 'click', wertiview.negverbs.clozeHintHandler);
-		$('body').undelegate('input.wertiviewinput', 'change', wertiview.negverbs.clozeInputHandler);
-		$('body').undelegate('input.wertiviewhint', 'click', wertiview.negverbs.clozeHintHandler);  // was: span.wertiviewhint
+		$('body').undelegate('span.wertiviewtoken', 'click', wertiview.infiniteverbs.clickHandler);
+		$('body').undelegate('select.wertiviewinput', 'change', wertiview.infiniteverbs.clozeInputHandler);
+		$('body').undelegate('span.wertiviewhint', 'click', wertiview.infiniteverbs.clozeHintHandler);
+		$('body').undelegate('input.wertiviewinput', 'change', wertiview.infiniteverbs.clozeInputHandler);
+		$('body').undelegate('input.wertiviewhint', 'click', wertiview.infiniteverbs.clozeHintHandler);  // was: span.wertiviewhint
 		
 		$('.wertiviewinput').each( function() {
 			$(this).replaceWith($(this).data('wertiviewanswer'));
@@ -34,11 +34,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
+		$('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
 	},
 	
 	colorizeSpan: function(span, topic) {
-span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
+span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
 	},
 
 	click: function(contextDoc) {
@@ -50,13 +50,13 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
 
 		// conjunction markup
-		$('span.wertiviewRELEVANT').find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
+		$('span.wertiviewRELEVANT').find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
 
 		// correct cursor inside wertiviewtokens within multi-word spans
 		//$('span.wertiviewRELEVANT').find('span.wertiviewconjunction').css({'cursor': 'text'});
 		
 		// handle click
-		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.negverbs.clickHandler); 
+		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.infiniteverbs.clickHandler); 
 	},
 
 	clickHandler: function(event) {
@@ -66,7 +66,7 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 		
-		if($(this).hasClass('wertiviewConNeg')) {  // was: wertiviewhit
+		if($(this).hasClass('wertiviewVerbConjugation')) {  // was: wertiviewhit
 			$(this).addClass('clickStyleCorrect');
 		} else {
 			$(this).addClass('clickStyleIncorrect');
@@ -114,29 +114,29 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		$.fn = $.prototype = jQuery.fn;
 		
 		// get potential spans
-		var $hits = $('span.wertiviewConNeg');
+		var $hits = $('span.wertiviewVerbConjugation');
 		
 		//var hitList = [];
 		var tokens = [];
-		wertiview.negverbs.types = [];  // answer options that will be displayed  as a drop-down list
-		wertiview.negverbs.hitList = [];  // words that will be turned to exercises
+		wertiview.infiniteverbs.types = [];
+		wertiview.infiniteverbs.hitList = [];
 		//alert($hits.length+" hits");
 		$hits.each( function() {
-			wertiview.negverbs.hitList.push($(this));
+			wertiview.infiniteverbs.hitList.push($(this));
 			//alert($(this).text());
 			tokens[$(this).text().toLowerCase()] = 1;
 		});
 		//alert("number of tokens: "+tokens.length);
-		//alert("size of hitList: "+wertiview.negverbs.hitList.length);
-		//for (word in tokens) {
-		//	wertiview.negverbs.types.push(word);
+		//alert("size of hitList: "+wertiview.infiniteverbs.hitList.length);
+		/*for (word in tokens) {
+			wertiview.infiniteverbs.types.push(word);
 			//alert("word: "+word);
-		//}
-		//alert(wertiview.negverbs.types.length+" different negverbs on page");
+		}*/
+		//alert(wertiview.infiniteverbs.types.length+" different infiniteverbs on page");
 
-		wertiview.negverbs.maxLength = wertiview.negverbs.MAX_MC;
-		/*if (wertiview.negverbs.maxLength > wertiview.negverbs.types.length) {
-			wertiview.negverbs.maxLength = wertiview.negverbs.types.length;
+		wertiview.infiniteverbs.maxLength = wertiview.infiniteverbs.MAX_MC;
+		/*if (wertiview.infiniteverbs.maxLength > wertiview.infiniteverbs.types.length) {
+			wertiview.infiniteverbs.maxLength = wertiview.infiniteverbs.types.length;
 		}*/
 
 		/* 
@@ -154,11 +154,11 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 			} 
 		}); */
 
-		wertiview.activity.mc(contextDoc, wertiview.negverbs.hitList, 
-				wertiview.negverbs.clozeInputHandler, 
-				wertiview.negverbs.clozeHintHandler, 
-				wertiview.negverbs.mcGetOptions, 
-				wertiview.negverbs.mcGetCorrectAnswer);
+		wertiview.activity.mc(contextDoc, wertiview.infiniteverbs.hitList, 
+				wertiview.infiniteverbs.clozeInputHandler, 
+				wertiview.infiniteverbs.clozeHintHandler, 
+				wertiview.infiniteverbs.mcGetOptions, 
+				wertiview.infiniteverbs.mcGetCorrectAnswer);
 
 	},
 	
@@ -166,28 +166,28 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		var options = [];
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
-		wertiview.negverbs.types = $hit.attr('distractors').split(" ");
-		if (wertiview.negverbs.types.length < wertiview.negverbs.hitList.length) {
-	       wertiview.lib.shuffleList(wertiview.negverbs.types);
-	    }
+		wertiview.infiniteverbs.types = $hit.attr('distractors').split(" ");
+	    wertiview.lib.shuffleList(wertiview.infiniteverbs.types);
         
         // Add the distractor forms to the options list:
-        while (options.length < wertiview.negverbs.maxLength - 1) {
+        while (j < wertiview.infiniteverbs.types.length && options.length < wertiview.infiniteverbs.MAX_MC - 1) {
             // The forms that are homonymous to the correct form are excluded from the list of options:
-            if (wertiview.negverbs.types[j] != $hit.text().toLowerCase()) {
-            options.push(wertiview.lib.matchCapitalization(wertiview.negverbs.types[j], capType)); 
+            if (wertiview.infiniteverbs.types[j] != $hit.text().toLowerCase() && wertiview.infiniteverbs.types[j] != "") 
+            {
+                var homonym = false;
+                var k = 0;
+                while (k < j) //check for homonymes among the distractors
+                { 
+                    if (wertiview.infiniteverbs.types[k] == wertiview.infiniteverbs.types[j])
+                        homonym = true;
+                    k++;
+                } 
+                if (!homonym)                 options.push(wertiview.lib.matchCapitalization(wertiview.infiniteverbs.types[j], capType)); 
             }
-		
-		/*while (options.length < wertiview.negverbs.maxLength - 1) {
-			if (wertiview.negverbs.types[j] != $hit.text().toLowerCase()) {
-				options.push(wertiview.lib.matchCapitalization(wertiview.negverbs.types[j], capType));
-			}
-        */
 			j++;
 		}
 		
 		options.push(wertiview.lib.matchCapitalization($hit.text(), capType));
-		
 		wertiview.lib.shuffleList(options);
 		return options;
 
@@ -206,7 +206,7 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		
 		// get potential spans
 		//var $hits = $('span.wertiviewRELEVANT').find('span.wertiviewconjunction');
-		var $hits = $('span.wertiviewConNeg');
+		var $hits = $('span.wertiviewVerbConjugation');
 
 		var hitList = [];
 		$hits.each( function() {
@@ -220,10 +220,10 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		});*/
 
 		wertiview.activity.cloze(contextDoc, hitList, 
-				wertiview.negverbs.clozeInputHandler, 
-				wertiview.negverbs.clozeHintHandler, 
-				wertiview.negverbs.mcGetCorrectAnswer,
-				wertiview.negverbs.clozeAddBaseform);
+				wertiview.infiniteverbs.clozeInputHandler, 
+				wertiview.infiniteverbs.clozeHintHandler, 
+				wertiview.infiniteverbs.mcGetCorrectAnswer,
+				wertiview.infiniteverbs.clozeAddBaseform);
 	},
 	
 	clozeAddBaseform: function($hit, capType, $){

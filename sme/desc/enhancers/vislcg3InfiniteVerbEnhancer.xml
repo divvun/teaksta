@@ -2,23 +2,16 @@
 <analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
 <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
 <primitive>true</primitive>
-<annotatorImplementationName>werti.uima.ae.Vislcg3Annotator</annotatorImplementationName>
+<annotatorImplementationName>werti.uima.enhancer.Vislcg3InfiniteVerbEnhancer</annotatorImplementationName>
 <analysisEngineMetaData>
-<name>vislcg3Annotator</name>
+<name>vislcg3InfiniteVerbEnhancer</name>
 <description></description>
 <version>1.0</version>
 <vendor></vendor>
 <configurationParameters>
 <configurationParameter>
-<name>vislcg3Loc</name>
-<description>Location of vislcg3 binary.</description>
-<type>String</type>
-<multiValued>false</multiValued>
-<mandatory>true</mandatory>
-</configurationParameter>
-<configurationParameter>
-<name>vislcg3GrammarLoc</name>
-<description>Location of CG3 grammar.</description>
+<name>infiniteverbTags</name>
+<description>A comma-separated list of tags marking the negation forms of verbs.</description>
 <type>String</type>
 <multiValued>false</multiValued>
 <mandatory>true</mandatory>
@@ -26,15 +19,9 @@
 </configurationParameters>
 <configurationParameterSettings>
 <nameValuePair>
-<name>vislcg3Loc</name>
+<name>infiniteverbTags</name>
 <value>
-<string>/usr/local/bin/vislcg3</string>
-</value>
-</nameValuePair>
-<nameValuePair>
-<name>vislcg3GrammarLoc</name>
-<value>
-<string>/Users/mslm/main/gt/sme/src/Nsme-dis.rle</string>
+<string>V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Der/PassL V Inf</string>
 </value>
 </nameValuePair>
 </configurationParameterSettings>
@@ -52,9 +39,11 @@
 <capabilities>
 <capability>
 <inputs>
-<type allAnnotatorFeatures="true">werti.uima.types.annot.Token</type>
+<type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
+<type allAnnotatorFeatures="true">werti.uima.types.Enhancement</type>
 </inputs>
 <outputs>
+<type allAnnotatorFeatures="true">werti.uima.types.Enhancement</type>
 <type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
 </outputs>
 <languagesSupported/>

@@ -8,8 +8,8 @@
 	maxLength: 5,
 	
 	// candidates for mc options presented to user
-	//types: [],
-	//hitList: [],
+	types: [],
+	hitList: [],
 		
 	remove: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
@@ -118,8 +118,8 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		
 		//var hitList = [];
 		var tokens = [];
-		wertiview.negverbs.types = [];
-		wertiview.negverbs.hitList = [];
+		wertiview.negverbs.types = [];  // answer options that will be displayed  as a drop-down list
+		wertiview.negverbs.hitList = [];  // words that will be turned to exercises
 		//alert($hits.length+" hits");
 		$hits.each( function() {
 			wertiview.negverbs.hitList.push($(this));
@@ -128,16 +128,16 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		});
 		//alert("number of tokens: "+tokens.length);
 		//alert("size of hitList: "+wertiview.negverbs.hitList.length);
-		for (word in tokens) {
-			wertiview.negverbs.types.push(word);
+		//for (word in tokens) {
+		//	wertiview.negverbs.types.push(word);
 			//alert("word: "+word);
-		}
+		//}
 		//alert(wertiview.negverbs.types.length+" different negverbs on page");
 
 		wertiview.negverbs.maxLength = wertiview.negverbs.MAX_MC;
-		if (wertiview.negverbs.maxLength > wertiview.negverbs.types.length) {
+		/*if (wertiview.negverbs.maxLength > wertiview.negverbs.types.length) {
 			wertiview.negverbs.maxLength = wertiview.negverbs.types.length;
-		}
+		}*/
 
 		/* 
 		$hits.each( function() {
@@ -163,15 +163,26 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 	},
 	
 	mcGetOptions: function($hit, capType){
-	    if (wertiview.negverbs.types.length < wertiview.negverbs.hitList.length) {
-	       wertiview.lib.shuffleList(wertiview.negverbs.types);
-	    }
 		var options = [];
 		var j = 0;
-		while (options.length < wertiview.negverbs.maxLength - 1) {
+		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
+		wertiview.negverbs.types = $hit.attr('distractors').split(" ");
+		if (wertiview.negverbs.types.length < wertiview.negverbs.hitList.length) {
+	       wertiview.lib.shuffleList(wertiview.negverbs.types);
+	    }
+        
+        // Add the distractor forms to the options list:
+        while (options.length < wertiview.negverbs.maxLength - 1) {
+            // The forms that are homonymous to the correct form are excluded from the list of options:
+            if (wertiview.negverbs.types[j] != $hit.text().toLowerCase()) {
+            options.push(wertiview.lib.matchCapitalization(wertiview.negverbs.types[j], capType)); 
+            }
+		
+		/*while (options.length < wertiview.negverbs.maxLength - 1) {
 			if (wertiview.negverbs.types[j] != $hit.text().toLowerCase()) {
 				options.push(wertiview.lib.matchCapitalization(wertiview.negverbs.types[j], capType));
 			}
+        */
 			j++;
 		}
 		

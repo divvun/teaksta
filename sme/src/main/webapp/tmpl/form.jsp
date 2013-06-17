@@ -25,9 +25,7 @@ some pages.  For the best results, use the
 
 <label><input type="radio" name="client.enhancement" value="colorize" checked="checked" />Colorize</label>&nbsp;
 <label><input type="radio" name="client.enhancement" value="click" />Click</label>&nbsp;
-<% if (activity.equals("Conjunctions")) { %>
 <label><input type="radio" name="client.enhancement" value="mc" />Multiple Choice</label>&nbsp;
-<% } %>
 <label><input type="radio" name="client.enhancement" value="cloze" />Practice</label>
 
 <br /><br />

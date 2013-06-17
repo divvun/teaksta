@@ -21,7 +21,6 @@ Click on each conjugated verb form you find in the text and Teaksta will show yo
 you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 </div>
 </li>
-<!--
 <li>
 <div class="InstructionHeader">
 Multiple Choice
@@ -31,7 +30,7 @@ Choose a form from the drop-down list and Teaksta will show you whether you gues
 <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 You can get help by clicking on <img src="images/hint.jpg" alt="hint" />.
 </div>
-</li> -->
+</li>
 <li>
 <div class="InstructionHeader">
 Practice

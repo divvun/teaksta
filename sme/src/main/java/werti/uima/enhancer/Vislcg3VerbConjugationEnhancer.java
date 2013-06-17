@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
+import java.util.StringTokenizer;
 import java.io.*;
 
 import org.apache.log4j.Logger;
@@ -37,6 +38,9 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> finverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
+    private final String lookupLoc = "/Users/mslm/bin/lookup";
+    private final String lookupFlags = "-flags mbTT -utf8";
+	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/isme-GG.restr.fst";
 	
 	@Override
 	public void initialize(UimaContext context)
@@ -120,9 +124,12 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 				
 				// case 2: chunk start tag
 				if (containsTag(reading, conT)) {
-				    // get lemma from the reading
+				    // get lemma from the CG reading
 				    String lemma = getLemma(reading);
-				    //log.info("lemma to be added as a span attribute: "+lemma);
+                    // get tense and person from the CG reading
+                    String[] tags = getTensePerson(reading);
+				    // generate the distractors, based on the lemma, tense and person of the hit
+                    String distractors = getDistractors(lemma, tags);
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -131,7 +138,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation \" lemma=\"" + lemma + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -180,7 +187,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if (reading_str.indexOf(tag) > 0) {
+		if ((reading_str.indexOf(tag) > 0) && (reading_str.indexOf("ConNeg") < 0)) {  // Tag string contains Ind Prs or Ind Prt but not ConNeg
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -212,5 +219,102 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
+    
+    private String[] getTensePerson(CGReading cgr) {
+		StringListIterable reading = new StringListIterable(cgr);
+		String tense = "", person = "";
+        String[] tags = new String[2];
+		// Obtain tense and person from the CG reading.
+		for (String rtag : reading) {
+            log.info("rtag:"+rtag);
+            if ((rtag == "Prs") || (rtag == "Prt"))
+                tense = rtag;
+            if ((rtag.length() == 3) && ((rtag.charAt(2) == '1') || (rtag.charAt(2) == '2') || (rtag.charAt(2) == '3')))
+                person = rtag;
+		}
+        tags[0] = tense;
+        tags[1] = person;
+		return tags;
+	}
+
+    private String getDistractors(String lemma, String[] tags) {
+        String[] distract_forms = {"V+Ind+Prs+ConNeg", "V+Ind+Prt+ConNeg", "V+VGen", ""};
+        
+        String tense = tags[0];
+        String person = tags[1];
+        //If the verb is in Prs then generate a distractor of the same lemma, the same person, but Prt.
+        
+        if (tense == "Prs") {
+            distract_forms[3] = "V+Ind+Prt+"+person;
+        }
+        else {
+            distract_forms[3] = "V+Ind+Prs+"+person;
+        }
+        
+        log.info("wrong tense distractor:"+distract_forms[3]);
+        
+        String str, word, result = "";
+        // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
+        long timestamp = System.currentTimeMillis();
+        
+        String inputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSTinput"+timestamp+".tmp";
+        String outputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSToutput"+timestamp+".tmp";
+        
+        //create temporary files for saving cg3 input and output
+        
+        Writer inputfile = null;
+        
+		try {
+            inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
+            for (int j=0; j < distract_forms.length; j++) {
+                inputfile.write(lemma + "+" + distract_forms[j] + "\n");
+	        }
+	        inputfile.close();
+        }
+        catch (FileNotFoundException e) {
+            System.out.println(e.getMessage());
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        
+        String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
+        
+        log.info("Form generation pipeline: "+generationPipeline[2]);
+        try {
+            Process process = Runtime.getRuntime().exec(generationPipeline);
+            process.waitFor();
+        	
+            BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
+            
+            while ((str = outputfile.readLine()) != null) {
+                StringTokenizer tok = new StringTokenizer(str);
+                while (tok.hasMoreTokens()) {
+                    word = tok.nextToken();
+                    if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
+                        result = result + word + " ";
+                    }
+                }
+            }
+            log.info("Generated forms read from the outputfile: "+result);
+            
+            outputfile.close();
+            // Delete the temporary files:
+            boolean inputfiledeleted = (new File(inputfileLoc)).delete();
+            boolean outputfiledeleted = (new File(outputfileLoc)).delete();
+        }
+        catch (InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+        catch (FileNotFoundException e) {
+            System.out.println(e.getMessage());
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        }	  
+        
+        return result;
+    }
 
 }
+
