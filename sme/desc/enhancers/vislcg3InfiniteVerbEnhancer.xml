@@ -21,7 +21,7 @@
 <nameValuePair>
 <name>infiniteverbTags</name>
 <value>
-<string>V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Der/PassL V Inf</string>
+<string>V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Inf, Ind Prs ConNeg, Ind Prt ConNeg</string>
 </value>
 </nameValuePair>
 </configurationParameterSettings>

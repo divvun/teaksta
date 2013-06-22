@@ -34,11 +34,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
+		$('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
 	},
 	
 	colorizeSpan: function(span, topic) {
-span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
+span.find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
 	},
 
 	click: function(contextDoc) {
@@ -50,7 +50,7 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
 
 		// conjunction markup
-		$('span.wertiviewRELEVANT').find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
+		$('span.wertiviewRELEVANT').find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
 
 		// correct cursor inside wertiviewtokens within multi-word spans
 		//$('span.wertiviewRELEVANT').find('span.wertiviewconjunction').css({'cursor': 'text'});
@@ -66,7 +66,7 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 		
-		if($(this).hasClass('wertiviewVerbConjugation')) {  // was: wertiviewhit
+		if($(this).hasClass('wertiviewInfiniteVerb')) {  // was: wertiviewhit
 			$(this).addClass('clickStyleCorrect');
 		} else {
 			$(this).addClass('clickStyleIncorrect');
@@ -114,7 +114,7 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		$.fn = $.prototype = jQuery.fn;
 		
 		// get potential spans
-		var $hits = $('span.wertiviewVerbConjugation');
+		var $hits = $('span.wertiviewInfiniteVerb');
 		
 		//var hitList = [];
 		var tokens = [];
@@ -206,7 +206,7 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		
 		// get potential spans
 		//var $hits = $('span.wertiviewRELEVANT').find('span.wertiviewconjunction');
-		var $hits = $('span.wertiviewVerbConjugation');
+		var $hits = $('span.wertiviewInfiniteVerb');
 
 		var hitList = [];
 		$hits.each( function() {

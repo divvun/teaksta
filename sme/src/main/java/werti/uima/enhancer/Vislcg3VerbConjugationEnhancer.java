@@ -40,12 +40,12 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/isme-GG.restr.fst";
+	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
 	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Finte verb tags "+finverbTags);
+        log.info("Finite verb tags "+finverbTags);
 		super.initialize(context);
 		finverbTags = Arrays.asList(((String)context.getConfigParameterValue("finverbTags")).split(","));
 	}
@@ -175,6 +175,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
+		String[] person = {"Sg1", "Sg2", "Sg3", "Du1", "Du2", "Du3", "Pl1", "Pl2", "Pl3"};
 		/*
 		for (String rtag : reading) {
 			if (tag.equals(rtag)) {
@@ -187,10 +188,12 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if ((reading_str.indexOf(tag) > 0) && (reading_str.indexOf("ConNeg") < 0)) {  // Tag string contains Ind Prs or Ind Prt but not ConNeg
-            log.info(cgr + " contains " + tag);
-            return true;
-        }
+		for (int i = 0; i < person.length; i++) {
+			if ((reading_str.indexOf(tag) > 0) && (reading_str.indexOf(person[i]) > 0)) {  // Tag string contains Ind Prs or Ind Prt and one of the person tags
+				log.info(cgr + " contains " + tag);
+				return true;
+			}
+		}
 
 		//log.info(cgr + " does not contain " + tag);
 		return false;
@@ -238,20 +241,20 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	}
 
     private String getDistractors(String lemma, String[] tags) {
-        String[] distract_forms = {"V+Ind+Prs+ConNeg", "V+Ind+Prt+ConNeg", "V+VGen", ""};
+        String[] distract_forms = {"V+Ind+Prs+ConNeg", "V+Ind+Prt+ConNeg", "V+Inf", "V+Actio+Ess", ""};
         
         String tense = tags[0];
         String person = tags[1];
         //If the verb is in Prs then generate a distractor of the same lemma, the same person, but Prt.
         
         if (tense == "Prs") {
-            distract_forms[3] = "V+Ind+Prt+"+person;
+            distract_forms[4] = "V+Ind+Prt+"+person;
         }
         else {
-            distract_forms[3] = "V+Ind+Prs+"+person;
+            distract_forms[4] = "V+Ind+Prs+"+person;
         }
         
-        log.info("wrong tense distractor:"+distract_forms[3]);
+        log.info("wrong tense distractor:"+distract_forms[4]);
         
         String str, word, result = "";
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users

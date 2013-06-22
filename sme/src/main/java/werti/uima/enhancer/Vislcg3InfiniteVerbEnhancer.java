@@ -40,7 +40,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/isme-GG.restr.fst";
+	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
 	
 	@Override
 	public void initialize(UimaContext context)
@@ -136,7 +136,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewInfiniteVerb \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -173,19 +173,12 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
-		/*
-		for (String rtag : reading) {
-			if (tag.equals(rtag)) {
-			    log.info(cgr + " contains " + tag);
-				return true;
-			}
-		} */
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if (reading_str.indexOf(tag) > 0) {  // Tag string contains Ind Prs or Ind Prt but not ConNeg
+		if (reading_str.indexOf(tag) > 0) {  // Tag string contains the given tag sequence as a substring
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -219,7 +212,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	}
     
     private String getDistractors(String lemma) {
-        String[] distract_forms = {"V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prs+Du1", "V+Ind+Prs+Du2", "V+Ind+Prs+Du3", "V+Ind+Prs+Pl2", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Ind+Prt+Du1", "V+Ind+Prt+Du2", "V+Ind+Prt+Du3", "V+Ind+Prt+Pl2"};
+        String[] distract_forms = {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prs+Du1", "V+Ind+Prs+Du2", "V+Ind+Prs+Du3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Ind+Prt+Du1", "V+Ind+Prt+Du2", "V+Ind+Prt+Du3"};
         
         String str, word, result = "";
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users

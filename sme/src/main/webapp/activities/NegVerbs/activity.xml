@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_ConNeg.xml"/>
-				<entry key="connegTags" value="ConNeg" overridable="yes"/>  
+				<entry key="connegTags" value="Ind Prs ConNeg, Ind Prt ConNeg" overridable="yes"/>  
 			</post>
 		</lang>
 	</server-cfg>

@@ -41,7 +41,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	private final String preprocessLoc = "/Users/mslm/main/gt/script/preprocess";
     private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/isme-GG.restr.fst";
+	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
 	
 	@Override
 	public void initialize(UimaContext context)
@@ -137,7 +137,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiview" + conT + " \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\" >";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewConNeg \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\" >";
 					log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -174,12 +174,16 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
+		String reading_str = "";
 		for (String rtag : reading) {
-			if (tag.equals(rtag)) {
-			    log.info(cgr + " contains " + tag);
-				return true;
-			}
+			reading_str = reading_str + rtag + " ";
 		}
+		
+		if (reading_str.indexOf(tag) > 0) {  // Tag string contains Ind Prs ConNeg or Ind Prt ConNeg
+            log.info(cgr + " contains " + tag);
+            return true;
+        }
+		
 		//log.info(cgr + " does not contain " + tag);
 		return false;
 	}
@@ -208,7 +212,7 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	}
 	
 	private String getDistractors(String lemma) {
-	   String[] distract_forms = {"V+VGen", "V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Inf"};
+	   String[] distract_forms = {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3"};
 	   String str, word, result = "";
 	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
         long timestamp = System.currentTimeMillis();

@@ -167,12 +167,10 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
 		wertiview.verbconjugation.types = $hit.attr('distractors').split(" ");
-		if (wertiview.verbconjugation.types.length < wertiview.verbconjugation.hitList.length) {
-	       wertiview.lib.shuffleList(wertiview.verbconjugation.types);
-	    }
+		wertiview.lib.shuffleList(wertiview.verbconjugation.types);
         
         // Add the distractor forms to the options list:
-        while (j < wertiview.verbconjugation.types.length) {
+        while (j < wertiview.verbconjugation.types.length && options.length < wertiview.verbconjugation.MAX_MC - 1) {
             // The forms that are homonymous to the correct form are excluded from the list of options:
             if (wertiview.verbconjugation.types[j] != $hit.text().toLowerCase() && wertiview.verbconjugation.types[j] != "") 
             {

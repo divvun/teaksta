@@ -71,41 +71,7 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		} else {
 			$(this).addClass('clickStyleIncorrect');
 		} 
-		//$(this).css({'cursor': 'auto'});
-        
-		// not within a relevant phrase
-		/*if ($(this).parents('.wertiviewRELEVANT').length == 0) {
-			$(this).addClass('clickStyleIncorrect');
-			return false;
-		}
-
-		// an already colored conjunction
-		var isColored = false;
-
-		if ($(this).hasClass('wertiviewconjunction') || $(this).find('.wertiviewconjunction').length > 0) {
-			isColored = true;
-		}
-
-		if (isColored) {
-			return false;
-		}
-
-		// TODO: if this is a clue
-		var isClue = false;
-
-		if ($(this).hasClass('wertiviewCLU-BOTHMEANDIFF') || $(this).hasClass('wertiviewCLU-BOTHMEANSAME') || 
-				$(this).hasClass('wertiviewCLU-FIXEDEXP') || $(this).hasClass('wertiviewCLU-GERONLY') || 
-				$(this).hasClass('wertiviewCLU-INFONLY') || 
-				$(this).find('.wertiviewCLU-BOTHMEANDIFF, .wertiviewCLU-BOTHMEANSAME, .wertiviewCLU-FIXEDEXP, .wertiviewCLU-GERONLY, .wertiviewCLU-INFONLY').length > 0) {
-			isClue = true;
-		}
-		
-		if (isClue) {
-			$(this).addClass('clickStyleCorrect');
-		} else {
-			$(this).addClass('clickStyleIncorrect');
-		}*/
-		return false;
+        return false;
 	},
 	
 	mc: function(contextDoc) {
@@ -167,14 +133,12 @@ span.find('span.wertiviewConNeg').addClass('colorizeStyleNegVerbs');
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
 		wertiview.negverbs.types = $hit.attr('distractors').split(" ");
-		if (wertiview.negverbs.types.length < wertiview.negverbs.hitList.length) {
-	       wertiview.lib.shuffleList(wertiview.negverbs.types);
-	    }
+        wertiview.lib.shuffleList(wertiview.negverbs.types);
         
         // Add the distractor forms to the options list:
         while (options.length < wertiview.negverbs.maxLength - 1) {
             // The forms that are homonymous to the correct form are excluded from the list of options:
-            if (wertiview.negverbs.types[j] != $hit.text().toLowerCase()) {
+            if (wertiview.negverbs.types[j] != $hit.text().toLowerCase() && wertiview.negverbs.types[j] != "") {
             options.push(wertiview.lib.matchCapitalization(wertiview.negverbs.types[j], capType)); 
             }
 		
