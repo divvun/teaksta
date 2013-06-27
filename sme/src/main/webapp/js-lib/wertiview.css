@@ -90,6 +90,21 @@ span.wertiview {
 	font-weight: bold !important;
 }
 
+.colorizeStyleInfiniteVerbs {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
+.colorizeStyleSubstantiveSingular {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
+.colorizeStyleSubstantivePlural {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
 
 /* UI */
 #wertiview-inst-notification {

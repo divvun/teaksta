@@ -30,93 +30,34 @@ import werti.util.StringListIterable;
  * @author Heli Uibo
  *
  */
-public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
+public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3VerbConjugationEnhancer.class);
+		Logger.getLogger(Vislcg3NounPlEnhancer.class);
 	
-	private List<String> finverbTags;
+	private List<String> NPlTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
 	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String facitgenFST = " /Users/mslm/main/gt/sme/bin/isme-norm.fst";
-	
-	/**
-	 * A runnable class that reads from a reader (that may
-	 * be fed by {@link Process}) and puts stuff read into a variable.
-	 * @author nott
-	 */
-	public class ExtCommandConsume2String implements Runnable {
-		
-		private BufferedReader reader;
-		private boolean finished;
-		private String buffer;
-		
-		/**
-		 * @param reader the reader to read from.
-		 */
-		public ExtCommandConsume2String(BufferedReader reader) {
-			super();
-			this.reader = reader;
-			finished = false;
-			buffer = "";
-		}
-		
-		/**
-		 * Reads from the reader linewise and puts the result to the buffer.
-		 * See also {@link #getBuffer()} and {@link #isDone()}.
-		 */
-		public void run() {
-			String line = null;
-			try {
-				while ( (line = reader.readLine()) != null ) {
-					buffer += line + "\n";
-				}
-			} catch (IOException e) {
-				log.error("Error in reading from external command.", e);
-			}
-			finished = true;
-		}
-		
-		/**
-		 * @return true if the reader read by this class has reached its end.
-		 */
-		public boolean isDone() {
-			return finished;
-		}
-		
-		/**
-		 * @return the string collected by this class or null if the stream has not reached
-		 * its end yet.
-		 */
-		public String getBuffer() {
-			if ( ! finished ) {
-				return null;
-			}
-			
-			return buffer;
-		}
-		
-	}
 	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Finite verb tags "+finverbTags);
+        log.info("Noun Sg tags "+NPlTags);
 		super.initialize(context);
-		finverbTags = Arrays.asList(((String)context.getConfigParameterValue("finverbTags")).split(","));
+		NPlTags = Arrays.asList(((String)context.getConfigParameterValue("NPlTags")).split(","));
 	}
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting VerbConjugation enhancement");
+		log.info("Starting Noun Pl enhancement");
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : finverbTags) {
+		for (String conT : NPlTags) {
 			classCounts.put(conT, 0);
 			log.info("Tag: "+conT);
 		}
@@ -124,7 +65,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
-		for (String conT: finverbTags) {
+		for (String conT: NPlTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
 			// CGToken prev = null;
@@ -185,15 +126,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 				if (containsTag(reading, conT)) {
 				    // get lemma from the CG reading
 				    String lemma = getLemma(reading);
-                    // get tense and person from the CG reading
-                    String[] tags = getTensePerson(reading);
-					log.info("tense:"+tags[0]+"person:"+tags[1]);
-				    // generate the distractors, based on the lemma, tense and person of the hit
-                    String distractors = getDistractors(lemma, tags);
-					// generate the correct answer(s) using the iFST
-					String tagsequence = "+V+Ind+"+tags[0]+"+"+tags[1];
-					log.info("tags:"+tagsequence);
-					String answer = getCorrectAnswer(lemma,tagsequence); 
+				    // generate the distractors, based on the lemma of the hit
+                    String distractors = getDistractors(lemma);
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -202,7 +136,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewVerbConjugation\" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\" answer=\"" + answer + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -224,7 +158,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		// (chunk)
 		//log.info("Enhancement stack is "
 		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
-		log.info("Finished verb conjugation enhancement");
+		log.info("Finished N Sg enhancement");
 	}
 	
 	/*
@@ -239,25 +173,15 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	 */
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
-		String[] person = {"Sg1", "Sg2", "Sg3", "Du1", "Du2", "Du3", "Pl1", "Pl2", "Pl3"};
-		/*
-		for (String rtag : reading) {
-			if (tag.equals(rtag)) {
-			    log.info(cgr + " contains " + tag);
-				return true;
-			}
-		} */
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		for (int i = 0; i < person.length; i++) {
-			if ((reading_str.indexOf(tag) > 0) && (reading_str.indexOf(person[i]) > 0)) {  // Tag string contains Ind Prs or Ind Prt and one of the person tags
-				log.info(cgr + " contains " + tag);
-				return true;
-			}
-		}
+		if (reading_str.indexOf(tag) > 0) {  // Tag string contains the given tag sequence as a substring
+            log.info(cgr + " contains " + tag);
+            return true;
+        }
 
 		//log.info(cgr + " does not contain " + tag);
 		return false;
@@ -287,38 +211,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		return lemma;
 	}
     
-    private String[] getTensePerson(CGReading cgr) {
-		StringListIterable reading = new StringListIterable(cgr);
-		String tense = "", person = "";
-        String[] tags = new String[2];
-		// Obtain tense and person from the CG reading.
-		for (String rtag : reading) {
-            log.info("rtag:"+rtag);
-            if ((rtag.compareTo("Prs") == 0) || (rtag.compareTo("Prt") == 0))
-                tense = rtag;
-            if ((rtag.length() == 3) && ((rtag.charAt(2) == '1') || (rtag.charAt(2) == '2') || (rtag.charAt(2) == '3')))
-                person = rtag;
-		}
-        tags[0] = tense;
-        tags[1] = person;
-		return tags;
-	}
-
-    private String getDistractors(String lemma, String[] tags) {
-        String[] distract_forms = {"V+Ind+Prs+ConNeg", "V+Ind+Prt+ConNeg", "V+Inf", "V+Actio+Ess", ""};
-        
-        String tense = tags[0];
-        String person = tags[1];
-        //If the verb is in Prs then generate a distractor of the same lemma, the same person, but Prt.
-        
-        if (tense == "Prs") {
-            distract_forms[4] = "V+Ind+Prt+"+person;
-        }
-        else {
-            distract_forms[4] = "V+Ind+Prs+"+person;
-        }
-        
-        log.info("wrong tense distractor:"+distract_forms[4]);
+    private String getDistractors(String lemma) {
+        String[] distract_forms = {"N+Sg+Nom, N+Sg+Acc, N+Sg+Gen, N+Sg+Ill, N+Sg+Loc, N+Sg+Com"};
         
         String str, word, result = "";
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
@@ -382,42 +276,6 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
         
         return result;
     }
-	
-	private String getCorrectAnswer(String lemma, String tagsequence) {
-		String word, result = "";
-		String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + tagsequence + "\" | " + lookupLoc + " " + lookupFlags + " " + facitgenFST};
-		
-		log.info("Form generation pipeline: "+generationPipeline[2]);
-		try {
-			Process process = Runtime.getRuntime().exec(generationPipeline);
-			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
-			ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromIFST);
-			Thread stdoutConsumerThread = new Thread(stdoutConsumer, "FST STDOUT consumer");
-			stdoutConsumerThread.start();
-			try {
-				stdoutConsumerThread.join();
-			} catch (InterruptedException e) {
-				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
-				return null;
-			}
-		
-			fromIFST.close();
-			String iFSToutput = stdoutConsumer.getBuffer();
-			StringTokenizer tok = new StringTokenizer(iFSToutput);
-			while (tok.hasMoreTokens()) {
-				word = tok.nextToken();
-				log.info("ifst output:"+word);
-				if (!word.contains("+") && !word.contains("-")) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-					result = result + word + " ";
-				}
-			}
-		}
-		catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-		log.info("Generated forms read from the outputfile: "+result);	  
-		return result;
-	}
 
 }
 

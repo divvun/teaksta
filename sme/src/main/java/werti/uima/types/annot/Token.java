@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Thu Jun 20 12:21:05 CEST 2013 */
+/* First created by JCasGen Tue Jun 25 20:21:11 CEST 2013 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,8 +11,8 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** A relevant Token with PoS information attached.
- * Updated by JCasGen Thu Jun 20 12:21:05 CEST 2013
- * XML source: /Users/mslm/main/apps/view/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Tue Jun 25 20:21:11 CEST 2013
+ * XML source: /Users/mslm/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class Token extends Annotation {
   /** @generated

@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Thu Jun 20 12:21:05 CEST 2013 */
+/* First created by JCasGen Tue Jun 25 20:21:11 CEST 2013 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas;
@@ -15,7 +15,7 @@ import org.apache.uima.jcas.cas.TOP_Type;
 
 /** A node annotation, representing both leaf nodes of a graph, as well as internal nodes.
         Note that this node type can represent n-ary circular graphs, including multiple parent nodes. Any restriction to this, if it is desired, should originate from the implementation.
- * Updated by JCasGen Thu Jun 20 12:21:05 CEST 2013
+ * Updated by JCasGen Tue Jun 25 20:21:11 CEST 2013
  * @generated */
 public class Node_Type extends TOP_Type {
   /** @generated */
