@@ -11,7 +11,7 @@
 <configurationParameters>
 <configurationParameter>
 <name>NPlTags</name>
-<description>A comma-separated list of tags marking the singular forms of substantives.</description>
+<description>A comma-separated list of tags marking the plural forms of substantives.</description>
 <type>String</type>
 <multiValued>false</multiValued>
 <mandatory>true</mandatory>

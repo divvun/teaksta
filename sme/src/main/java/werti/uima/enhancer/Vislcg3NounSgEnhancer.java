@@ -193,8 +193,13 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
+	
+		/* This does not work. But how to know which exercise type the user has chosen?
+		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && Enhancement.type == "cloze") {
+			return false;
+		} */
 		
-		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'. Proper nouns are excluded.
+		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/") && !reading_str.contains("Qst")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'. Proper nouns are excluded.
             log.info(cgr + " contains " + tag);
             return true;
         }

@@ -320,7 +320,51 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
         
         log.info("wrong tense distractor:"+distract_forms[4]);
         
-        String str, word, result = "";
+        String str, word, result = "", generationInput = "";
+        
+        for (int j=0; j < distract_forms.length; j++) {
+            generationInput += lemma + "+" + distract_forms[j] + "\n";
+            //generationInput += lemma + "+v1+" + distract_forms[j] + "\n";
+        }
+        String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
+				
+        log.info("Form generation pipeline: "+generationPipeline[2]);
+        try {
+	       Process process = Runtime.getRuntime().exec(generationPipeline);
+
+			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
+			ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromIFST);
+			Thread stdoutConsumerThread = new Thread(stdoutConsumer, "FST STDOUT consumer");
+			stdoutConsumerThread.start();
+			try {
+				stdoutConsumerThread.join();
+			} catch (InterruptedException e) {
+				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
+				return null;
+			}
+					
+			fromIFST.close();
+			String iFSToutput = stdoutConsumer.getBuffer();
+			StringTokenizer tok = new StringTokenizer(iFSToutput);
+			while (tok.hasMoreTokens()) {
+				word = tok.nextToken();
+				log.info("ifst output:"+word);
+				if (!word.contains("+") && !word.contains("-")) {  // forms that could not be generated are excluded, as well as input strings of the iFST
+					result = result + word + " ";
+				}
+			}
+			
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        
+        log.info("Generated forms read from the outputfile: "+result);	  
+        return result;
+    }
+
+        
+        /*
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
         long timestamp = System.currentTimeMillis();
         
@@ -381,7 +425,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
         }	  
         
         return result;
-    }
+    } */
 	
 	private String getCorrectAnswer(String lemma, String tagsequence) {
 		String word, result = "";

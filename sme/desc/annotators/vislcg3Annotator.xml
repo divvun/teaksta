@@ -17,8 +17,15 @@
 <mandatory>true</mandatory>
 </configurationParameter>
 <configurationParameter>
-<name>vislcg3GrammarLoc</name>
-<description>Location of CG3 grammar.</description>
+<name>vislcg3DisGrammarLoc</name>
+<description>Location of CG3 grammar for morphological disambiguation.</description>
+<type>String</type>
+<multiValued>false</multiValued>
+<mandatory>true</mandatory>
+</configurationParameter>
+<configurationParameter>
+<name>vislcg3SyntGrammarLoc</name>
+<description>Location of CG3 grammar for shallow syntactic parsing.</description>
 <type>String</type>
 <multiValued>false</multiValued>
 <mandatory>true</mandatory>
@@ -32,9 +39,15 @@
 </value>
 </nameValuePair>
 <nameValuePair>
-<name>vislcg3GrammarLoc</name>
+<name>vislcg3DisGrammarLoc</name>
 <value>
-<string>/Users/mslm/main/gt/sme/src/Nsme-dis.rle</string>
+<string>/Users/mslm/main/gt/sme/src/sme-dis.rle</string>
+</value>
+</nameValuePair>
+<nameValuePair>
+<name>vislcg3SyntGrammarLoc</name>
+<value>
+<string>/Users/mslm/main/gt/sme/src/smi-syn.rle</string>
 </value>
 </nameValuePair>
 </configurationParameterSettings>

@@ -236,6 +236,10 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		  $baseform.text(' (' + lemmaform + ')');
 		  $hit.append($baseform);
 	},
+	
+	/*clozeGetAcceptedAnswers: function($hit) {
+	   return $hit.attr('answer').split(" ");
+    }*/
 
 	clozeInputHandler: function(event) {
 		var jQuery = wertiview.jQuery;
@@ -244,23 +248,33 @@ span.find('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugatio
 		  $.fn = $.prototype = jQuery.fn;
 
 		var nextInput;
+		//var answeroptions = clozeGetAcceptedAnswers($this);
 
 		// if the answer is correct, turn into text, else color text within input
+		//var j = 0;
+		//var correct = false;
+		//alert("answer:"+answeroptions[j]);
+		//(while j < answeroptions.length) {
+		//	if (answeroptions[j] == $(this).data('wertiviewanswer').toLowerCase()) {						 
 		if($(this).val().toLowerCase() == $(this).data('wertiviewanswer').toLowerCase()) {
-			$text = $("<span>");
-			$text.addClass('wertiview');
-			$text.addClass('clozeStyleCorrect');
-			$text.text($(this).data('wertiviewanswer'));
-			if($(this).data('wertiviewnexthit')) {   
-				nextInput = $(this).data('wertiviewnexthit');
-			}
-			wertiview.lib.replaceInput($(this).parent(), $text);
-
+                $text = $("<span>");
+                $text.addClass('wertiview');
+                $text.addClass('clozeStyleCorrect');
+                $text.text($(this).data('wertiviewanswer'));
+                if($(this).data('wertiviewnexthit')) {   
+				    nextInput = $(this).data('wertiviewnexthit');
+			     }
+                wertiview.lib.replaceInput($(this).parent(), $text);
+                //correct = true;
 			/*// focus next input
 			if(nextInput) {
 				$("#" + nextInput).get(0).focus();
 			}*/
-		} else {
+			//}
+			//j++;
+		} 
+		
+		else {
 			$(this).addClass('clozeStyleIncorrect');
 		}
 	},

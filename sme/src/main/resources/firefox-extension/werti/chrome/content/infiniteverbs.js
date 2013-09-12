@@ -34,11 +34,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
+		$('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerbs');
 	},
 	
 	colorizeSpan: function(span, topic) {
-span.find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
+span.find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerbs');
 	},
 
 	click: function(contextDoc) {
@@ -50,7 +50,7 @@ span.find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
 		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
 
 		// conjunction markup
-		$('span.wertiviewRELEVANT').find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerb');
+		$('span.wertiviewRELEVANT').find('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerbs');
 
 		// correct cursor inside wertiviewtokens within multi-word spans
 		//$('span.wertiviewRELEVANT').find('span.wertiviewconjunction').css({'cursor': 'text'});

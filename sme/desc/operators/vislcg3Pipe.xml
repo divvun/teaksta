@@ -36,13 +36,23 @@
         </overrides>
       </configurationParameter>
       <configurationParameter>
-        <name>vislcg3GrammarLoc</name>
-        <description>Location of CG3 grammar.</description>
+        <name>vislcg3DisGrammarLoc</name>
+        <description>Location of CG3 disambiguation grammar.</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3Annotator/vislcg3GrammarLoc</parameter>
+          <parameter>vislcg3Annotator/vislcg3DisGrammarLoc</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>vislcg3SyntGrammarLoc</name>
+        <description>Location of CG3 grammar for shallow syntactic parsing.</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>true</mandatory>
+        <overrides>
+          <parameter>vislcg3Annotator/vislcg3SyntGrammarLoc</parameter>
         </overrides>
       </configurationParameter>
     </configurationParameters>
@@ -54,9 +64,15 @@
         </value>
       </nameValuePair>
       <nameValuePair>
-        <name>vislcg3GrammarLoc</name>
+        <name>vislcg3DisGrammarLoc</name>
         <value>
-          <string>/Users/mslm/main/gt/sme/src/sme-onlydis.rle</string>
+          <string>/Users/mslm/main/gt/sme/src/sme-dis.rle</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>vislcg3SyntGrammarLoc</name>
+        <value>
+          <string>/Users/mslm/main/gt/sme/src/smi-syn.rle</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>

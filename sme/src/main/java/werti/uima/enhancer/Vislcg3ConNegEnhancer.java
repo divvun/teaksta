@@ -43,6 +43,64 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
     private final String lookupFlags = "-flags mbTT -utf8";
 	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
 	
+	/**
+	 * A runnable class that reads from a reader (that may
+	 * be fed by {@link Process}) and puts stuff read into a variable.
+	 * @author nott
+	 */
+	public class ExtCommandConsume2String implements Runnable {
+		
+		private BufferedReader reader;
+		private boolean finished;
+		private String buffer;
+		
+		/**
+		 * @param reader the reader to read from.
+		 */
+		public ExtCommandConsume2String(BufferedReader reader) {
+			super();
+			this.reader = reader;
+			finished = false;
+			buffer = "";
+		}
+		
+		/**
+		 * Reads from the reader linewise and puts the result to the buffer.
+		 * See also {@link #getBuffer()} and {@link #isDone()}.
+		 */
+		public void run() {
+			String line = null;
+			try {
+				while ( (line = reader.readLine()) != null ) {
+					buffer += line + "\n";
+				}
+			} catch (IOException e) {
+				log.error("Error in reading from external command.", e);
+			}
+			finished = true;
+		}
+		
+		/**
+		 * @return true if the reader read by this class has reached its end.
+		 */
+		public boolean isDone() {
+			return finished;
+		}
+		
+		/**
+		 * @return the string collected by this class or null if the stream has not reached
+		 * its end yet.
+		 */
+		public String getBuffer() {
+			if ( ! finished ) {
+				return null;
+			}
+			
+			return buffer;
+		}
+		
+	}
+	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -213,12 +271,56 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	
 	private String getDistractors(String lemma) {
 	   String[] distract_forms = {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3"};
-	   String str, word, result = "";
+	   
+		String str, word, result = "", generationInput = "";
+        
+        for (int j=0; j < distract_forms.length; j++) {
+            generationInput += lemma + "+" + distract_forms[j] + "\n";
+            //generationInput += lemma + "+v1+" + distract_forms[j] + "\n";
+        }
+        String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
+		
+        log.info("Form generation pipeline: "+generationPipeline[2]);
+        try {
+			Process process = Runtime.getRuntime().exec(generationPipeline);
+			
+			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
+			ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromIFST);
+			Thread stdoutConsumerThread = new Thread(stdoutConsumer, "FST STDOUT consumer");
+			stdoutConsumerThread.start();
+			try {
+				stdoutConsumerThread.join();
+			} catch (InterruptedException e) {
+				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
+				return null;
+			}
+			
+			fromIFST.close();
+			String iFSToutput = stdoutConsumer.getBuffer();
+			StringTokenizer tok = new StringTokenizer(iFSToutput);
+			while (tok.hasMoreTokens()) {
+				word = tok.nextToken();
+				log.info("ifst output:"+word);
+				if (!word.contains("+") && !word.contains("-")) {  // forms that could not be generated are excluded, as well as input strings of the iFST
+					result = result + word + " ";
+				}
+			}
+			
+        }
+        catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        
+        log.info("Generated forms read from the outputfile: "+result);	  
+        return result;
+    }
+}	
+		/* String str, word, result = "";
 	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
         long timestamp = System.currentTimeMillis();
 
-        String inputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSToutput"+timestamp+".tmp";
+        String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
+        String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
 
         //create temporary files for saving cg3 input and output                                                   
 
@@ -275,4 +377,4 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 
         return result;
     }
-}
+} */

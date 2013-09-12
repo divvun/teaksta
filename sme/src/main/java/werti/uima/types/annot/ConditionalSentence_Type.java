@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Tue Jun 25 20:21:11 CEST 2013 */
+/* First created by JCasGen Thu Sep 12 13:52:35 CEST 2013 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
@@ -13,7 +13,7 @@ import org.apache.uima.cas.impl.FeatureImpl;
 import org.apache.uima.cas.Feature;
 
 /** A sentence containing a conditional.
- * Updated by JCasGen Tue Jun 25 20:21:11 CEST 2013
+ * Updated by JCasGen Thu Sep 12 13:52:35 CEST 2013
  * @generated */
 public class ConditionalSentence_Type extends SentenceAnnotation_Type {
   /** @generated */
