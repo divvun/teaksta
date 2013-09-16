@@ -19,6 +19,7 @@ import werti.uima.types.annot.CGReading;
 import werti.uima.types.annot.CGToken;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
+import werti.server.WERTiServlet;
 
 /**
  * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
@@ -198,6 +199,16 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && Enhancement.type == "cloze") {
 			return false;
 		} */
+		
+		log.info(WERTiServlet.context.context);
+		//log.info("requestInfo.type:"+requestInfo.type);
+		//log.info("requestInfo.activity:"+requestInfo.activity);
+		//String enhancementType = request.getParameter("activity");
+		//String enhancementType = PostRequest.activity;
+		//ActivityConfiguration config = loadActivitiesAndProcessors(req, requestInfo.topic);
+		//String enhancementType = config.getClientValue("en", "enhancement");
+		//log.info("config getClientvalue:"+enhancementType);
+		//if (requestInfo.type.matches("practice"))
 		
 		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/") && !reading_str.contains("Qst")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'. Proper nouns are excluded.
             log.info(cgr + " contains " + tag);

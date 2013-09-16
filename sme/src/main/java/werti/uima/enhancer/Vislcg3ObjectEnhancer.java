@@ -178,7 +178,7 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if (reading_str.indexOf(tag) > 0) {  // Tag string contains the given tag sequence as a substring
+		if (reading_str.contains(tag) && reading_str.contains("Acc")) {  // Tag string contains the given tag sequence as a substring, plus it is in the accusative case.
             log.info(cgr + " contains " + tag);
             return true;
         }
