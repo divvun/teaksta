@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_Subject.xml"/>
-				<entry key="SubjTags" value="SUBJ" overridable="yes"/>
+				<entry key="SubjTags" value="SUBJ,mod_subj,compl_subj" overridable="yes"/>
 			</post>
 		</lang>
 	</server-cfg>
