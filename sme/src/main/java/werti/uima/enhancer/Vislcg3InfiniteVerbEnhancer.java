@@ -38,9 +38,9 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> infiniteverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/Users/mslm/bin/lookup";
+    private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
+	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may

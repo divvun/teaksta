@@ -38,9 +38,9 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> advTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/Users/mslm/bin/lookup";
+    private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
+	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
 	
 	@Override
 	public void initialize(UimaContext context)
@@ -178,7 +178,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if (reading_str.indexOf(tag) > 0) {  // Tag string contains the given tag sequence as a substring
+		if (reading_str.contains(tag) && (reading_str.contains(" N ") || reading_str.contains(" Pron ") || (tag.compareTo("ADVL")>0))) {  // Tag string contains the given tag sequence as a substring. Only noun phrases as adverbials. 
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -210,72 +210,5 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
-    
-    private String getDistractors(String lemma) {
-        String[] distract_forms = {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prs+Du1", "V+Ind+Prs+Du2", "V+Ind+Prs+Du3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Ind+Prt+Du1", "V+Ind+Prt+Du2", "V+Ind+Prt+Du3"};
-        
-        String str, word, result = "";
-        // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
-        long timestamp = System.currentTimeMillis();
-        
-        String inputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/view/sme/output/iFSToutput"+timestamp+".tmp";
-        
-        //create temporary files for saving cg3 input and output
-        
-        Writer inputfile = null;
-        
-		try {
-            inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
-            for (int j=0; j < distract_forms.length; j++) {
-                inputfile.write(lemma + "+" + distract_forms[j] + "\n");
-	        }
-	        inputfile.close();
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        
-        String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
-        
-        log.info("Form generation pipeline: "+generationPipeline[2]);
-        try {
-            Process process = Runtime.getRuntime().exec(generationPipeline);
-            process.waitFor();
-        	
-            BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
-            
-            while ((str = outputfile.readLine()) != null) {
-                StringTokenizer tok = new StringTokenizer(str);
-                while (tok.hasMoreTokens()) {
-                    word = tok.nextToken();
-                    if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-                        result = result + word + " ";
-                    }
-                }
-            }
-            log.info("Generated forms read from the outputfile: "+result);
-            
-            outputfile.close();
-            // Delete the temporary files:
-            boolean inputfiledeleted = (new File(inputfileLoc)).delete();
-            boolean outputfiledeleted = (new File(outputfileLoc)).delete();
-        }
-        catch (InterruptedException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }	  
-        
-        return result;
-    }
-
 }
 

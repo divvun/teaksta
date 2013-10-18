@@ -38,10 +38,10 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> finverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/Users/mslm/bin/lookup";
+    private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String facitgenFST = " /Users/mslm/main/gt/sme/bin/isme-norm.fst";
+	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
+	private final String facitgenFST = " /home/heli/main/gt/sme/bin/isme-norm.fst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -368,8 +368,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
         long timestamp = System.currentTimeMillis();
         
-        String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
+        String inputfileLoc = "/home/teaksta/output/iFSTinput"+timestamp+".tmp";
+        String outputfileLoc = "/home/teaksta/output/iFSToutput"+timestamp+".tmp";
         
         //create temporary files for saving cg3 input and output
         
