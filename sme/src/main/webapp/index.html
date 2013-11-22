@@ -19,7 +19,7 @@
                 y[0].value=act;
                 var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
-            }
+		}                
         </script>
         
     </head>
@@ -95,7 +95,7 @@
                 <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')"> Conjunctions</li>
                 <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subject</a></li>
                 <li><a href="#" id="Object" onclick="setActivity('Object')">Object</a></li>
-                <li><a href="#" id="Adverbial">Adverbial</a></li>
+                <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbial</a></li>
                 <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantive Singular</a></li>
                 <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantive Plural</a></li>
                 <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')"> Verb Conjugation</a></li>
@@ -157,7 +157,7 @@
                 <select class="exercisetype" name="client.enhancement">
                     <option value="colorize" selected>colorize</option>
                     <option value="click">click</option>
-                    <option value="mc">multiple choice</option>
+		    <option value="mc">multiple choice</option>
                     <option value="cloze">practice</option>
                 </select>
             </td></tr>
