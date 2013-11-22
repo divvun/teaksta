@@ -86,6 +86,8 @@ public class WERTiServlet extends HttpServlet {
 	private Processors processors;
 	
 	public static OpenIDConsumer openidConsumer = null;
+	
+	public static String enhancement_type; // colorize, click, mc or cloze
 
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
@@ -135,6 +137,9 @@ public class WERTiServlet extends HttpServlet {
 		
 		String url = req.getParameter("url");
 		String activity = req.getParameter("activity");
+		String enhancement = req.getParameter("client.enhancement");
+		//log.info("enhancement type"+enhancement);
+		enhancement_type = enhancement;
 		String lang = req.getParameter("language");
 		if (lang == null) {
 			lang = "en";

@@ -36,6 +36,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		Logger.getLogger(Vislcg3NounSgEnhancer.class);
 	
+	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NSgTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
@@ -113,6 +114,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Noun Sg enhancement");
+		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
@@ -140,15 +142,24 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
+				String lemma = "", stemtype = "", distractors = "";
 				
-				if (containsTag(reading, conT)) {
-				    // get lemma from the CG reading
-				    String lemma = getLemma(reading);
-					// get stemtype from the CG reading, if any of these: G3, G7, NomAg
-					String stemtype = getStemType(reading);
-					// generate the distractors, based on the lemma of the hit
-					String distractors = getDistractors(lemma, stemtype);
-					
+				if (containsTag(reading, conT, enhancement_type)) {
+					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
+						// get lemma from the CG reading
+						lemma = getLemma(reading);
+					}
+				    if (enhancement_type.equals("mc")) {
+						boolean prop = false;
+						// Proper nouns have the tag "Prop" in the morphological information. This is needed when generating distractors. 
+						if (containsTag(reading, "Prop", enhancement_type)) {
+							prop = true;
+						}
+						// get stemtype from the CG reading, if any of these: G3, G7, NomAg
+						stemtype = getStemType(reading);
+						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
+						distractors = getDistractors(lemma, stemtype, prop);
+					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -185,32 +196,25 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
 	
+	
 	/*
 	 * Determines whether the given reading contains the given tag
 	 */
-	private boolean containsTag(CGReading cgr, String tag) {
+	private boolean containsTag(CGReading cgr, String tag, String enhancement_type) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
 	
-		/* This does not work. But how to know which exercise type the user has chosen?
-		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && Enhancement.type == "cloze") {
+		//log.info("enhancement type is:"+enhancement_type);
+		// If the exercise type is "practice" (cloze) then the derived forms, forms with clitics and proper nouns are excluded from the selection.
+		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {
+			log.info("derived form or form with clitics");
 			return false;
-		} */
+		}
 		
-		log.info(WERTiServlet.context.context);
-		//log.info("requestInfo.type:"+requestInfo.type);
-		//log.info("requestInfo.activity:"+requestInfo.activity);
-		//String enhancementType = request.getParameter("activity");
-		//String enhancementType = PostRequest.activity;
-		//ActivityConfiguration config = loadActivitiesAndProcessors(req, requestInfo.topic);
-		//String enhancementType = config.getClientValue("en", "enhancement");
-		//log.info("config getClientvalue:"+enhancementType);
-		//if (requestInfo.type.matches("practice"))
-		
-		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/") && !reading_str.contains("Qst")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'. Proper nouns are excluded.
+		if (reading_str.contains(tag) && reading_str.contains(" N ")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'.
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -272,11 +276,14 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    private String getDistractors(String lemma, String stemtype) {
+    private String getDistractors(String lemma, String stemtype, boolean propernoun) {
         String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess"};
         
-        String str, word, result = "", generationInput = "";
-                
+        String str, word, result = "", generationInput = "", propN = "";
+		if (propernoun) {
+			propN = "+Prop";
+		}
+		
 		try {
             
 			if (lemma.contains("#")) {
@@ -311,12 +318,12 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
 					if (stemtype != "") {
-						generationInput += lemma + "+N+" + stemtype + "+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + stemtype + "+" + distract_forms[j] + "\n";
+						generationInput += lemma + propN + "+N+" + stemtype + "+" + distract_forms[j] + "\n";
+						generationInput += lemma + propN + "+v1+N+" + stemtype + "+" + distract_forms[j] + "\n";
 					}
 					else {
-						generationInput += lemma + "+N+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + distract_forms[j] + "\n";
+						generationInput += lemma + propN + "+N+" + distract_forms[j] + "\n";
+						generationInput += lemma + propN + "+v1+N+" + distract_forms[j] + "\n";
 					}
 				}
 			}
