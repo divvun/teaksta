@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="sme">
 	<head>
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	    <title>Teaksta - working with authentic North Sámi texts</title>
@@ -29,9 +29,8 @@
 	<div id="page">
         <table id="headermenu">
             <tr>
-                <td style="width:70%; height:110px; text-align:center; font-size:24px; color:#FFFFFF; background-image:url('images/werti_bg_orange.png')">Teaksta - working with authentic North Sámi texts</td>
-                <td style="width:20%; padding-bottom:30px; text-align:center"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:60%; height:auto"/></br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/></a></td>
-                <td style="width:10%; padding-bottom:30px; text-align:center; background-image:url('images/oahpa_bgr.png'); background-size: 50px"><a style="color:#FFFFFF; text-decoration:none" href="http://kursa.oahpa.no">KURSA</a></td>
+                <td style="width:90%; height:110px; text-align:center; font-size:24px; color:#FFFFFF; background-color:#e98300;">TEAKSTA – Bargga teavsttaiguin!</td>
+                <td style="width:10%; padding-bottom:30px; text-align:center; background-color:#e98300"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:60%; height:auto"/><!--</br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/>--></a></td>
             </tr>
         </table>
 		<!-- <a class="hide" href="#content">Skip to content</a> -->
@@ -90,52 +89,27 @@
             
             <div id="navbar">
                 <img width="120" height="120" border="0" src="images/littleman.png" alt="Game logo" />
-                <div class="bigheader">TEAKSTA</div>
+                <div class="bigheader">Fáttát</div>
                 <ul class="sidelist">
-                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')"> Conjunctions</li>
-                <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subject</a></li>
-                <li><a href="#" id="Object" onclick="setActivity('Object')">Object</a></li>
-                <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbial</a></li>
-                <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantive Singular</a></li>
-                <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantive Plural</a></li>
-                <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')"> Verb Conjugation</a></li>
-                <li><a href="#" id="NegVerbs" onclick="setActivity('NegVerbs')">Negative Verb Forms</a></li>
-                <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')"> Infinite Verb Forms</a></li>
+                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</li>
+                <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subjeakta</a></li>
+                <li><a href="#" id="Object" onclick="setActivity('Object')">Objeakta</a></li>
+                <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</a></li>
+                <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</a></li>
+                <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</a></li>
+                <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</a></li>
+                <li><a href="#" id="NegVerbs" onclick="setActivity('NegVerbs')">Biehttalanvearbbat</a></li>
+                <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</a></li>
                 </ul>
             </div>
             
-            <strong>Reference materials</strong>
+            <strong>Resurssat</strong>
             <ul class="sidelist small">
-               <!-- {% ifequal LANGUAGE_CODE "fi" %}
-                <li><a target="_blank" href="http://sanit.oahpa.no/sme/fin" class="interface">{% trans_to "Dictionary" "sme" %}<span class="invisible">{% trans "Dictionary" %}</span></a></li>
-                {% else %} -->
-                <li><a target="_blank" href="http://sanit.oahpa.no/sme/nob">Dictionary</a></li>
-                <!-- {% endifequal %}
-                {% ifequal LANGUAGE_CODE "sme" %}
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html" class="interface">{% trans_to "Grammar" "sme" %}<span class="invisible">{% trans "Grammar" %}</span></a></li>
-                {% endifequal %}
-                {% ifequal LANGUAGE_CODE "fi" %}
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html" class="interface">{% trans_to "Grammar" "sme" %}<span class="invisible">{% trans "Grammar" %}</span></a></li>
-                {% endifequal %}
-                {% ifequal LANGUAGE_CODE "en" %}
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.eng.html" class="interface">{% trans_to "Grammar" "sme" %}<span class="invisible">{% trans "Grammar" %}</span></a></li>
-                {% endifequal %}
-                {% ifequal LANGUAGE_CODE "no" %} -->
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.nob.html">Grammar</a></li>
-                <!-- {% endifequal %}
-                {% ifequal LANGUAGE_CODE "sv" %}
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.nob.html" class="interface">{% trans_to "Grammar" "sme" %}<span class="invisible">{% trans "Grammar" %}</span></a></li>
-                {% endifequal %}
-            </ul>
-            
-            <strong class="interface">{% trans_to "Online courses" "sme" %}<span class="invisible">{% trans "Online courses" %}</span></strong>
-            <ul class="sidelist small">
-                {% if user.is_authenticated %}
-                <li><a href="{% url univ_oahpa.courses.views.courses_main %}" class="interface">{% trans_to "View progress" "sme" %}<span class="invisible">{% trans "View progress" %}</span></a></li>
-                <li><a href="{% url univ_oahpa.courses.urls.logout %}" class="interface">{% trans_to "Log out" "sme" %}<span class="invisible">{% trans "Log out" %}</span></a></li>
-                {% else %}
-                <li><a href="{% url courses_login %}" class="interface"> {% trans_to "Log in" "sme" %}<span class="invisible">{% trans "Log in" %}</span></a></li>
-                {% endif %} -->
+                <li><a target="_blank" href="http://sanit.oahpa.no/sme/nob">Neahttasátnegirji</a></li>
+                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a></li>
+                <li><a target="_blank" href="http://kursa.oahpa.no">Oahpa giela!</a></li>
+                <li><a href="teaksta_birra.html">Teaksta-prográmma birra</a></li>
+                <li><a href="about_teaksta.html">About Teaksta</a></li>
             </ul>
             
         </div>
@@ -145,12 +119,12 @@
             <div id="game_right_float">
                 <div id="instructions">
                     <!-- <p id="instruct"></p> -->
-                    <p>Instructions here...</p>
+                    <p>Vállje fáttá gurutfálus.</p>
                 </div>
             </div>
 
             <div id="settings" style="padding:20px">
-            <table width="280px"><tr><td style="width:50%"><b>Exercise type:</b></td>
+            <table width="280px"><tr><td style="width:50%"><b>Hárjehus:</b></td>
             <td>
             <form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
                 <input type="hidden" name="activity" id="activity" value="" />
@@ -164,9 +138,7 @@
             </table>
             </br>
             </br>
-                <b>Choose a text:</b>
-                </br>
-                (list of pages recommended by a teacher)
+                <b>Vállje siiddu:</b>
                 </br>
                 ........
                 </br>
@@ -174,9 +146,11 @@
                 </br>
                 ........
                 </br>
+                ........
                 </br>
                 </br>
-                You can also practice North Sámi grammar on the web pages that you choose yourself.
+                </br>
+                <b>You can also practice North Sámi grammar on the web pages that you choose yourself.</b>
                 </br>
                 </br>
                 <b>URL:</b>&nbsp; <input type="text" name="url" size="100"/>
@@ -186,14 +160,22 @@
                 </br>
                 
             </form>
+            <div class="searchBox">
+                <b>Use <img src="images/google_logo.jpg" height="16px"/> search for finding a page that you like:</b>
+                <form method="get" action="http://www.google.com/search"> 
+                    <input type="text" name="query" class="searchField" />
+                    <input type="hidden" name="sitesearch" value="http://avvir.no">
+                    <input type="submit" value="Oza" class="searchSubmit">
+                </form>
+            </div>  
             </div>
                         
         </div>
         </div>
         <div id="footer">
 			<div id="copyright">
-                <p>Copyright 2013 Universitetet i Troms&oslash;<br />
-                Contact &nbsp; oahpa@hum.uit.no</p>
+                <p>Copyright 2013 UiT Norgga árktalaš universitehta<br />
+                Váldde oktavuođa minguin &nbsp; oahpa@hum.uit.no</p>
 			</div>
         </div>
     </body>

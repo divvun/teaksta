@@ -113,7 +113,9 @@ h3 {
 
 #page {
 	position: relative;
-	margin: 3em auto ;
+	margin-left: 12em; // was: margin: 3em auto
+    margin-right: auto;
+    margin-top: .5em;
 	padding: .25em;
 	background-color: #FFF;
 	border: 1px solid #144ea6;
@@ -428,7 +430,7 @@ div#game hr {
 #leftcontent {
 	position: absolute;
 	top: .9em; /* was 5em */
-	left: -10em; /* was -8.5em */
+	left: -8.5em; /* was -8.5em */
 	z-index: −1;
 	width: 9em;
 }
