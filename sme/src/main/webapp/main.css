@@ -387,8 +387,8 @@ div#instructions {
 	border: 1px solid #CCC;
 	padding: 10px;
 	margin-top: 1.25em;
+	margin-left: -2em;
 	margin-bottom: 1em;
-
 	font-size: 95%;	
 }
 
@@ -430,7 +430,7 @@ div#game hr {
 #leftcontent {
 	position: absolute;
 	top: .9em; /* was 5em */
-	left: -8.5em; /* was -8.5em */
+	left: -8.8em; /* was -8.5em */
 	z-index: −1;
 	width: 9em;
 }
