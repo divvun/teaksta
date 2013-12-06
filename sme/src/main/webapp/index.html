@@ -8,6 +8,7 @@
         <link rel="stylesheet" type="text/css" href="main.css"/>
         <script type="text/javascript">
             function setActivity(act) {
+                //alert("selected activity:"+act);
                 var lists=document.getElementsByTagName("li");
                 for (var i=0; i<lists.length; i++) {
                     var link=lists[i].getElementsByTagName("a");
@@ -17,20 +18,20 @@
                 x.style.color="#e98300";
                 var y=document.getElementsByName("activity");
                 y[0].value=act;
-                var z=document.getElementById("instruct");
+                //var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
 		}                
         </script>
         
     </head>
 
-<body>
+<body onload="setActivity('SubstantiveSingular')">
     
 	<div id="page">
         <table id="headermenu">
             <tr>
                 <td style="width:80%; height:110px; text-align:center; font-size:24px; color:#FFFFFF; background-color:#e98300;">KONTEAKSTA – Bargga teavsttaiguin!</td>
-                <td style="width:20%; padding-bottom:30px; text-align:center; background-color:#e98300"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:80%; height:auto"/><!--</br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/>--></a></td>
+                <td style="width:20%; padding-bottom:20px; text-align:center; background-color:#e98300"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:80%; height:auto"/><!--</br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/>--></a></td>
             </tr>
         </table>
 		<!-- <a class="hide" href="#content">Skip to content</a> -->
@@ -90,15 +91,17 @@
             <div id="navbar">
                 <img width="120" border="0" src="images/littleman.png" alt="Game logo" />
                 <div class="bigheader">Fáttát</div>
-                <ul class="sidelist">
-                <li><b>Sátneluohkát:</b></li>
+                <div class="smallheader">Sátneluohkát:</div>
+                <ul class="sidelist">                
                 <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</a></li>
                 <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</a></li>
                 <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</a></li>
                 <li><a href="#" id="NegVerbs" onclick="setActivity('NegVerbs')">Biehttalanvearbbat</a></li>
                 <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</a></li>
-                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</li>
-                <li><b>Cealkkalahtut:</b></li>
+                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</a></li>
+                </ul>
+                <div class="smallheader">Cealkkalahtut:</div>
+                <ul class="sidelist">
                 <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subjeakta</a></li>
                 <li><a href="#" id="Object" onclick="setActivity('Object')">Objeakta</a></li>
                 <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</a></li>
@@ -133,7 +136,7 @@
                 <select class="exercisetype" name="client.enhancement">
                     <option value="colorize" selected>Geahča ivdnejuvvon sániid</option>
                     <option value="click">Coahkkal rivttes sániid!</option>
-		    <option value="mc">Vállje rivttes sániid!</option>
+		            <option value="mc">Vállje rivttes sániid!</option>
                     <option value="cloze">Čále rivttes sániid!</option>
                 </select>
             </td></tr>

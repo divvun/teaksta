@@ -214,7 +214,7 @@ ul#games_menu li {
 
 #footer {
 	margin-top: 1.5em;
-	margin-bottom: .75em;
+	margin-bottom: 1.5em;
 	font-size: 80%;
 	
 }
@@ -409,6 +409,11 @@ div.tooltip {
 	font-size: 95%;
 }
 
+div.searchBox {
+    margin-top: 1em;
+    margin-bottom: 1.5em;
+}
+
 /* TODO: copyright position */
 
 
@@ -429,7 +434,7 @@ div#game hr {
 
 #leftcontent {
 	position: absolute;
-	top: .9em; /* was 5em */
+	top: .5em; /* was 5em */
 	left: -8.8em; /* was -8.5em */
 	z-index: −1;
 	width: 9em;
@@ -444,6 +449,15 @@ div#game hr {
 	color: #144ea6;
 }
 
+#leftcontent .smallheader {
+	text-align: left;
+	font-weight: 1000;
+    margin: 0;
+	font-size: 90%;
+	letter-spacing: 1px;
+	color: #000000;
+}
+
 #leftcontent img {
 	display: block;
 	margin: 0 auto;
@@ -455,7 +469,7 @@ div#game hr {
 }
 
 #leftcontent ul.sidelist {
-	margin-bottom: 1.75em;
+	margin-bottom: .5em; /* was: 1.75em */
 	margin-top: .25em;
 }
 
