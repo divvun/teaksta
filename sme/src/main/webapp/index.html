@@ -167,11 +167,29 @@
             </form>
             <div class="searchBox">
                 <b><img src="images/google_logo.jpg" height="16px"/> veahkeha gávdnat siiddu mii lea miellagiddevaš dutnje:</b>
-                <form method="get" action="http://www.google.com/search"> 
-                    <input type="text" name="query" class="searchField" />
-                    <input type="hidden" name="sitesearch" value="http://avvir.no">
+                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse"> 
+                    <input type="hidden" name="cref" value="" />  
+                    <input type="hidden" name="ie" value="utf-8" />
+                    <input type="hidden" name="hl" value="" /> 
+                    <input type="text" name="q" class="searchField" />
+                    <input type="hidden" name="query" class="searchField" value="leat" /> 
+                    <input type="hidden" name="siteurl" value="avvir.no">
+                    <input type="hidden" name="sitesearch" value="samediggi.no"> 
                     <input type="submit" value="Oza" class="searchSubmit">
-                </form>
+                </form> -->
+                <script>
+                (function() {
+                var cx = '015063317359877268294:is3s0ajf2yi';
+                var gcse = document.createElement('script');
+                gcse.type = 'text/javascript';
+                gcse.async = true;
+                gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+        '//www.google.com/cse/cse.js?cx=' + cx;
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(gcse, s);
+                })();
+                </script>
+                <gcse:search></gcse:search>
             </div>  
             </div>
                         
