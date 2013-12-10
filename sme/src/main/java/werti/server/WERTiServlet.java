@@ -136,6 +136,11 @@ public class WERTiServlet extends HttpServlet {
 		}
 		
 		String url = req.getParameter("url");
+		// accept url-s without http://
+		if (!url.contains("http://")) {
+			url = "http://" + url;
+		}
+		
 		String activity = req.getParameter("activity");
 		String enhancement = req.getParameter("client.enhancement");
 		//log.info("enhancement type"+enhancement);
