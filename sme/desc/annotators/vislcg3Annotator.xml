@@ -66,6 +66,7 @@
 <capability>
 <inputs>
 <type allAnnotatorFeatures="true">werti.uima.types.annot.Token</type>
+<type allAnnotatorFeatures="true">werti.uima.types.annot.SentenceAnnotation</type> <!-- test -->
 </inputs>
 <outputs>
 <type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>

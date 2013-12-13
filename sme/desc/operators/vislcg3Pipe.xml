@@ -18,6 +18,9 @@
     <delegateAnalysisEngine key="OpenNlpSentenceDetector">
       <import location="../annotators/OpenNlpSentenceDetector.xml"/>
     </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="HTMLSentenceAnnotator">
+      <import location="../annotators/HTMLSentenceAnnotator.xml"/>
+    </delegateAnalysisEngine>
   </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
     <name>vislcg3Pipe</name>
@@ -82,6 +85,7 @@
         <node>GenericRelevanceAnnotator</node>
         <node>OpenNlpTokenizer</node>
         <node>OpenNlpSentenceDetector</node>
+        <node>HTMLSentenceAnnotator</node>
         <node>vislcg3Annotator</node>
       </fixedFlow>
     </flowConstraints>

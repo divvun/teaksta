@@ -49,6 +49,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		Logger.getLogger(Vislcg3Annotator.class);
 
+	private final String CGSentenceBoundaryToken = ".";
 	private String vislcg3Loc;
 	private String vislcg3DisGrammarLoc;
 	private String vislcg3SyntGrammarLoc;
@@ -212,11 +213,30 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 			log.info("original tokens:"+originalTokens.size());
             log.info("new tokens:"+newTokens.size());
+			
+			int j = 0; // counter for new tokens
+			CGToken newT = null;
+			String reading = "";
             // complete new tokens with information from old ones
 			for (int i = 0; i < originalTokens.size(); i++) {
 				Token origT = originalTokens.get(i);
-				CGToken newT = newTokens.get(i);
+				if (j < newTokens.size()) {
+					newT = newTokens.get(j);
+					reading = newT.getReadings().get(0).toString();
+				}
+				//log.info("Token: "+origT.getCoveredText()+" CGToken:"+reading);
+				
+				// Skip the fullstop tokens that were added in order to treat headings as separate sentences.
+				while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
+					j++;
+					if (j < newTokens.size()) {
+						newT = newTokens.get(j);
+						reading = newT.getReadings().get(0).toString();
+						//log.info("Token: "+origT.getCoveredText()+" new CGToken:"+reading);
+					}
+				}
                 copy(origT, newT);
+				j++;
                 //log.info("new token begins at: " + newT.getBegin());
                 // update CAS
 				jcas.removeFsFromIndexes(origT);
@@ -260,8 +280,14 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		boolean atSentBoundary = true;
 
 		for (Token t : tokenList) {
+			atSentBoundary = false;
 			String coveredText = t.getCoveredText();
             result.append(coveredText);
+			// Add sentence boundaries after headings <h1-6>. 
+			if (sentenceEnds.contains(t.getEnd()) && !coveredText.matches("[.!?()]+")) {
+				result.append("\n" + CGSentenceBoundaryToken);
+				atSentBoundary = true;
+			}
             result.append("\n"); // each token on a separate line
 		}
 		log.info("text to be parsed: "+result.toString());

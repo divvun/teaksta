@@ -26,7 +26,11 @@ public class EnhanceXMLAnnotator extends JCasAnnotator_ImplBase {
 		
 		log.debug("Starting markup recognition");
 		
-		final String s = cas.getDocumentText().toLowerCase();
+		String s = cas.getDocumentText().toLowerCase(); // was: final String s
+		
+		//Set fullstops after heading texts.
+		/*s = s.replace("</h1>",".</h1>");
+		s = s.replace("</h2>",".</h2>");*/
 
 		// regex to match the <e> enhance spans
 		Pattern enhancePatt = Pattern.compile("<e( [^>]*)?>(.*?)</e>", Pattern.DOTALL);

@@ -8,20 +8,39 @@
     <description/>
     <version>1.0</version>
     <vendor/>
-    <configurationParameters/>
-    <configurationParameterSettings/>
+    <configurationParameters>
+      <configurationParameter>
+        <name>sentenceModelFileLocation</name>
+        <description>location of the model file</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+      </configurationParameter>
+    </configurationParameters>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>sentenceModelFileLocation</name>
+        <value>
+          <string>../../src/main/resources/models/opennlp-sentdetect/EnglishSD.bin</string>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
     <typeSystemDescription>
       <imports>
         <import location="../WERTiTypeSystem.xml"/>
       </imports>
     </typeSystemDescription>
-    <typePriorities/>
+    <typePriorities>
+      <imports>
+        <import location="../WERTiTypePriorities.xml"/>
+      </imports>
+    </typePriorities>
     <fsIndexCollection/>
     <capabilities>
       <capability>
         <inputs/>
         <outputs>
-          <type allAnnotatorFeatures="true">werti.uima.types.annot.SentenceAnnotation</type>
+          <type allAnnotatorFeatures="true">werti.uima.types.annot.PlainTextSentenceAnnotation</type> <!-- was: SentenceAnnotation, but I added the HTMLSentenceAnnotator in between in the pipeline -->
         </outputs>
         <languagesSupported/>
       </capability>

@@ -50,7 +50,8 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 		
 		String text = jcas.getDocumentText();
 		//log.info("extracted text: " + text);
-		
+		//log.info("jcas.getDocumentText() returns: "+text);
+				
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
 		

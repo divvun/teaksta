@@ -19,6 +19,7 @@ import org.apache.uima.resource.ResourceInitializationException;
 import werti.WERTiContext;
 import werti.WERTiContext.WERTiContextException;
 import werti.uima.types.annot.SentenceAnnotation;
+import werti.uima.types.annot.PlainTextSentenceAnnotation;
 import werti.uima.types.annot.Token;
 
 /**
@@ -53,9 +54,12 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
-		log.debug("Starting sentence detection");
+		log.info("Starting sentence detection");
 		
 		String text = jcas.getDocumentText();
+		//Set fullstops after heading texts.
+		/* text = text.replace("</h",".</h"); */
+		
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
 		
@@ -98,10 +102,11 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 			int sentenceEnd = endMatcher.find() ? endMatcher.start() : sentenceStr.length();
 			int start = previousOffset + sentenceBegin;
 			int end = previousOffset + sentenceEnd;
-			SentenceAnnotation sentence = new SentenceAnnotation(jcas, start, end);
+			//log.info(sentenceStr+" "+start+" "+end);
+			PlainTextSentenceAnnotation sentence = new PlainTextSentenceAnnotation(jcas, start, end);
 			sentence.addToIndexes();
 		} 
 		
-		log.debug("Finished sentence detection");
+		log.info("Finished sentence detection");
 	}	
 }

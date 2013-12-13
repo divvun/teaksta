@@ -8,6 +8,7 @@ import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.text.AnnotationIndex;
 import org.apache.uima.jcas.JCas;
+import org.apache.uima.cas.FSIterator;
 
 import werti.uima.types.annot.PlainTextSentenceAnnotation;
 import werti.uima.types.annot.RelevantText;
@@ -28,22 +29,22 @@ public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 	
 	// HTML tags that typically indicate sentence breaks, but not necessarily
 	// a shift in content type
-	private static Pattern htmlBreakPattern = Pattern.compile(".*(<li|</li>|<ul|</ul>|<ol|</ol>).*", Pattern.DOTALL);
+	private static Pattern htmlBreakPattern = Pattern.compile(".*(<li|</li>|<ul|</ul>|<ol|</ol>|<h[1..6]|</h[1-6]).*", Pattern.DOTALL); // heading1..6 added by Heli
 	
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
-		log.debug("Starting HTML sentence detection");
+		log.info("Starting HTML sentence detection");
 		final AnnotationIndex sentIndex = jcas.getAnnotationIndex(PlainTextSentenceAnnotation.type);
 		final AnnotationIndex rtIndex = jcas.getAnnotationIndex(RelevantText.type);
 				
-		final Iterator<PlainTextSentenceAnnotation> sit = sentIndex.iterator();
+		final Iterator <PlainTextSentenceAnnotation> sit = sentIndex.iterator();
 		
 		while (sit.hasNext()) {
 			final PlainTextSentenceAnnotation s = sit.next();
-			final Iterator<RelevantText> rtit = rtIndex.subiterator(s, true, false);
+			final Iterator <RelevantText> rtit = rtIndex.subiterator(s, true, false);
 
-			String prevRTContentType = "";	// content of previous text span (to detect a change)
+			//String prevRTContentType = "";	// content of previous text span (to detect a change)
 			int prevRTEnd = 0;				// end of previous text span in the loop
 			int currentSentStart = -1;		// start of current new sentence under consideration 
 			                                //   (may span multiple text segments)
@@ -51,35 +52,38 @@ public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 			PlainTextSentenceAnnotation lastS = null;
 			while (rtit.hasNext()) {
 				final RelevantText t = rtit.next();
+				//log.info("Relevant text "+t.getCoveredText());
 				
 				// initialize in first loop
 				if (currentSentStart == -1) {
 					currentSentStart = t.getBegin();
-					prevRTContentType = t.getHtmlContentType();
+					//prevRTContentType = t.getHtmlContentType();
 					prevRTEnd = s.getBegin();
 				}
 				
 				// if the current type is different from the previous type,
 				// add a sentence covering the last saved start to the end of
 				// the previous added sentence
-				final String currContentType = t.getHtmlContentType();
+				/*final String currContentType = t.getHtmlContentType();
 				if (!prevRTContentType.equals(currContentType)) {
 					SentenceAnnotation sentence = new SentenceAnnotation(jcas, currentSentStart, prevRTEnd);
 					sentence.addToIndexes();
 					currentSentStart = t.getBegin();
 					lastAddedSentEnd = prevRTEnd;
 					prevRTContentType = currContentType;
-				}
+				}*/
 				
+								
 				// if a sentence boundary was not just added but any of the 
 				// HTML tags in the pattern appear between the previous rt span and 
 				// the current one, insert a sentence boundary
 				if (currentSentStart != t.getBegin() && htmlBreakPattern.matcher(jcas.getDocumentText().substring(prevRTEnd, t.getBegin()).toLowerCase()).matches()) {
+					//log.info("sentence boundary from HTML");
 					SentenceAnnotation sentence = new SentenceAnnotation(jcas, currentSentStart, prevRTEnd);
 					sentence.addToIndexes();
 					currentSentStart = t.getBegin();
 					lastAddedSentEnd = prevRTEnd;
-					prevRTContentType = currContentType;
+					//prevRTContentType = currContentType;
 				}
 				
 				prevRTEnd = t.getEnd();
@@ -100,6 +104,6 @@ public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 			}
 		}
 
-		log.debug("Finished HTML sentence detection");
+		log.info("Finished HTML sentence detection");
 	}	
 }

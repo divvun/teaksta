@@ -32,6 +32,7 @@ import weka.core.SerializationHelper;
 import weka.filters.Filter;
 import weka.filters.unsupervised.attribute.Remove;
 
+import werti.uima.types.annot.SentenceAnnotation;
 import werti.uima.types.annot.PlainTextSentenceAnnotation;
 import werti.uima.types.annot.RelevantText;
 import werti.uima.types.annot.Token;
@@ -240,13 +241,13 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		// desc/annotator/HtmlContentTypeAnnotator.xml, can switch to 
 		// WERTiContext later)
 		// some API examples are here: https://svn.scms.waikato.ac.nz/svn/weka/branches/stable-3-6/wekaexamples/src/main/java/wekaexamples/classifiers/WekaDemo.java
-		log.debug("Loading model");
+		log.info("Loading model");
 		String modelFileName =  (String)aContext.getConfigParameterValue("htmlContentModelLocation");
 		try {
 			cls = (Classifier) SerializationHelper.read(modelFileName);
 		}
 		catch (Exception e) {
-			log.debug("could not load model " + modelFileName);
+			log.info("could not load model " + modelFileName);
 			return;
 		}
 				
@@ -255,10 +256,10 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			smoother = (Classifier) SerializationHelper.read(smoothingModelFileName);
 		}
 		catch (Exception e) {
-			log.debug("could not load smoother model " + smoothingModelFileName);
+			log.info("could not load smoother model " + smoothingModelFileName);
 			StackTraceElement[] stackTrace = e.getStackTrace();
 			for (StackTraceElement element : stackTrace){
-				log.debug(element.toString());
+				log.info(element.toString());
 			}
 			return;
 		}
@@ -284,7 +285,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			classToCss.put(classFeatureValues[i], cssClasses[i]);
 		}
 
-		log.debug("Starting HTML content type annotation");
+		log.info("Starting HTML content type annotation");
 		
 		// reset all document-dependent variables
 		id = new HashMap<Element,Integer>();
@@ -297,6 +298,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		
 		// get HTML from CAS
 		String htmlString = cas.getDocumentText();
+		
 		// parse with Jsoup
 		Document doc = Jsoup.parse(htmlString);
 		// find all wertiview spans
@@ -306,11 +308,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		final AnnotationIndex rtIndex = cas.getAnnotationIndex(RelevantText.type);
 		tokenIndex = cas.getAnnotationIndex(Token.type);
 		sentIndex = cas.getAnnotationIndex(PlainTextSentenceAnnotation.type);
-		//log.debug("sentence beginnings:");
+		//log.info("sentence beginnings:");
 		Iterator<PlainTextSentenceAnnotation> sentIt = sentIndex.iterator();
-		/*while (sentIt.hasNext()){
-			log.debug(sentIt.next().getBegin());
-		}*/
+		while (sentIt.hasNext()){
+			//log.info(sentIt.next().getBegin());
+		}
 		// iterator over relevant text pieces for feature extraction
 		final Iterator<RelevantText> rtIt = rtIndex.iterator();
 		// iterator for document counts
@@ -432,11 +434,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			try{
 				int classificationIdx = (int) cls.classifyInstance(inst);
 				classification = classFeatureValues[classificationIdx];
-				log.debug("classified as: " + classification);
+				log.info("classified as: " + classification);
 			}
 			catch (Exception exception){
 				// instances that cause trouble are regarded as boilerplate
-				log.debug("could not be classified; exception: " + exception);
+				log.info("could not be classified; exception: " + exception);
 			}
 			// cache the classification
 			classificationCache.add(classification);
@@ -459,11 +461,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 				try {
 					int classificationIdx = (int) smoother.classifyInstance(inst);
 					classification = cssClasses[classificationIdx];
-					//log.debug("classified as: " + classification);
+					log.info("classified as: " + classification);
 				} 
 				catch (Exception exception) {
 					// instances that cause trouble are ignored
-					log.debug("could not be classified; exception: " + exception);
+					log.info("could not be classified; exception: " + exception);
 				}
 			}
 			
@@ -472,7 +474,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		}
 		log.debug("done smoothing.");
 		
-		log.debug("Finished HTML content type annotation");
+		log.info("Finished HTML content type annotation");
 	}
 
 	/**
