@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="sme">
+	<head>
+		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+	    <title>Konteaksta - working with authentic North Sámi texts</title>
+		
+        <link rel="stylesheet" type="text/css" href="main.css"/>
+        <script type="text/javascript">
+            function setActivity(act) {
+                //alert("selected activity:"+act);
+                var lists=document.getElementsByTagName("li");
+                for (var i=0; i<lists.length; i++) {
+                    var link=lists[i].getElementsByTagName("a");
+                    link[0].style.color="#144ea6";
+                }
+                var x=document.getElementById(act);
+                x.style.color="#e98300";
+                var y=document.getElementsByName("activity");
+                y[0].value=act;
+                //var z=document.getElementById("instruct");
+                //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
+		}                
+        </script>
+        
+    </head>
+
+<body onload="setActivity('SubstantiveSingular')">
+    
+	<div id="page">
+        <table id="headermenu">
+            <tr>
+                <td style="width:80%; height:110px; text-align:center; font-size:24px; color:#FFFFFF; background-color:#e98300;">KONTEAKSTA – Bargga teavsttaiguin!</td>
+                <td style="width:20%; padding-bottom:20px; text-align:center; background-color:#e98300"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:80%; height:auto"/><!--</br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/>--></a></td>
+            </tr>
+        </table>
+		<!-- <a class="hide" href="#content">Skip to content</a> -->
+		
+        <!-- <div id="language_options">
+		{% block language_select %}
+		
+			{% get_current_language as LANGUAGE_CODE %}
+			<form action="/{{ URL_PREFIX }}/i18n/setlang/" method="post" name="newlang">
+				<dl>
+					<dt><label for="language_select" class="interface">{% trans_to "Interface language" "sme" %}<span class="invisible">{% trans "Interface language" %}</span></label></dt>
+					<dd>
+						<input name="next" type="hidden" value="{% block pagename %}{% endblock %}" />
+						<select id="language_select" name="language" onChange="javascript:this.form.submit();">
+						
+						{% ifequal LANGUAGE_CODE "no" %}
+							<option value="no" selected="selected">Norsk</option>
+						{% else %}
+							<option value="no">Norsk</option>
+						{% endifequal %}
+						
+						{% ifequal LANGUAGE_CODE "sme" %}
+							<option value="sme" selected="selected">Davvisámi</option>
+						{% else %}
+							<option value="sme">Davvisámi</option>
+						{% endifequal %}
+						
+						{% ifequal LANGUAGE_CODE "en" %}
+							<option value="en" selected="selected">English</option>
+						{% else %}
+							<option value="en">English</option>
+						{% endifequal %}
+
+						{% ifequal LANGUAGE_CODE "sv" %}
+							<option value="sv" selected="selected">Svenska</option>
+						{% else %}
+							<option value="sv">Svenska</option>
+						{% endifequal %}
+							  
+						{% ifequal LANGUAGE_CODE "fi" %}
+						 	<option value="fi" selected="selected">Suomi</option> 
+						{% else %}
+						 	<option value="fi">Suomi</option> 
+						{% endifequal %}
+						 
+					</select>
+					</dd>
+				</dl>
+				<input type="submit" class="hide" value="submit" />
+			</form>
+		{% endblock %}
+        </div> -->
+		
+        <div id="content">
+		<div id="leftcontent">
+            
+            <div id="navbar">
+                <img width="120" border="0" src="images/littleman.png" alt="Game logo" />
+                <div class="bigheader">Fáttát</div>
+                <div class="smallheader">Sátneluohkát:</div>
+                <ul class="sidelist">                
+                <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</a></li>
+                <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</a></li>
+                <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</a></li>
+                <li><a href="#" id="NegVerbs" onclick="setActivity('NegVerbs')">Vearbba biehttalanhápmi</a></li>
+                <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</a></li>
+                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</a></li>
+                </ul>
+                <div class="smallheader">Cealkkalahtut:</div>
+                <ul class="sidelist">
+                <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subjeakta</a></li>
+                <li><a href="#" id="Object" onclick="setActivity('Object')">Objeakta</a></li>
+                <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</a></li>
+                </ul>
+            </div>
+            
+            <div class="bigheader">Resurssat</div>
+            <ul class="sidelist small">
+                <li><a target="_blank" href="http://sanit.oahpa.no/sme/nob">Neahttasátnegirji</a></li>
+                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a></li>
+                <li><a target="_blank" href="http://kursa.oahpa.no">Oahpa giela!-kursa</a></li>
+                <li><a href="teaksta_birra.html">Konteaksta-prográmma birra</a></li>
+                <li><a href="about_teaksta.html">About Konteaksta</a></li>
+            </ul>
+            
+        </div>
+        
+        <div id="rightcontent">
+            <a name="content" class="hide">&nbsp;</a>
+            <div id="game_right_float">
+                <div id="instructions">
+                    <!-- <p id="instruct"></p> -->
+                    <p>Vállje vuos fáttá gurut fálus, </br>de válljet hárjehusa ja </br>loahpas válljet neahttasiiddu.</p>
+                </div>
+            </div>
+
+            <div id="settings" style="padding:20px">
+            <table width="350px"><tr><td style="width:50%"><b>Vállje hárjehusa:</b></td>
+            <td>
+            <form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
+                <input type="hidden" name="activity" id="activity" value="" />
+                <select class="exercisetype" name="client.enhancement">
+                    <option value="colorize" selected>Geahča ivdnejuvvon sániid</option>
+                    <option value="click">Coahkkal rivttes sániid!</option>
+		            <option value="mc">Vállje rivttes sániid!</option>
+                    <option value="cloze">Čále rivttes sániid!</option>
+                </select>
+            </td></tr>
+            </table>
+            </br>
+            </br>
+                <b>Vállje neahttasiiddu:</b>
+                </br>
+                ........
+                </br>
+                ........
+                </br>
+                ........
+                </br>
+                ........
+                </br>
+                </br>
+                </br>
+                <b>Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet:</b>
+                </br>
+                </br>
+                <b>URL:</b>&nbsp; <input type="text" name="url" size="100"/>
+                &nbsp;
+                <input type="submit" value="Mana!" class="activityFormSubmit" />&nbsp;</br>(rahpasa ođđa láses)
+                </br>
+                </br>
+                
+            </form>
+            <div class="searchBox">
+                <b><img src="images/google_logo.jpg" height="16px"/> veahkeha gávdnat siiddu mii lea miellagiddevaš dutnje:</b>
+                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse"> 
+                    <input type="hidden" name="cref" value="" />  
+                    <input type="hidden" name="ie" value="utf-8" />
+                    <input type="hidden" name="hl" value="" /> 
+                    <input type="text" name="q" class="searchField" />
+                    <input type="hidden" name="query" class="searchField" value="leat" /> 
+                    <input type="hidden" name="siteurl" value="avvir.no">
+                    <input type="hidden" name="sitesearch" value="samediggi.no"> 
+                    <input type="submit" value="Oza" class="searchSubmit">
+                </form> -->
+                <script>
+                (function() {
+                var cx = '015063317359877268294:is3s0ajf2yi';
+                var gcse = document.createElement('script');
+                gcse.type = 'text/javascript';
+                gcse.async = true;
+                gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+        '//www.google.com/cse/cse.js?cx=' + cx;
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(gcse, s);
+                })();
+                </script>
+                <gcse:search></gcse:search>
+                (Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)   
+            </div>
+            </div>
+                        
+        </div>
+        </div>
+        <div id="footer">
+			<div id="copyright">
+                <p>Copyright 2013 UiT Norgga árktalaš universitehta<br />
+                Váldde oktavuođa minguin: <a href="mailto:oahpa@hum.uit.no">oahpa@hum.uit.no</a></p>
+			</div>
+        </div>
+    </body>
+</html>
+        
