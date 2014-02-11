@@ -6,12 +6,12 @@
   <analysisEngineMetaData>
     <name>MaltParser</name>
     <description/>
-    <version>1.0</version>
+    <version>1.5</version>
     <vendor/>
     <configurationParameters>
       <configurationParameter>
         <name>parserModelFileLocation</name>
-        <description>location of the model file</description>
+        <description>../../../src/main/resources/models/maltparser/rus-test.mco</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>false</mandatory>
