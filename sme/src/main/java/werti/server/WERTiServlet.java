@@ -77,7 +77,7 @@ public class WERTiServlet extends HttpServlet {
 	public static WERTiContext context;
 	
 	// maximum amount of of ms to wait for a web-page to load
-	private static final int MAX_WAIT = 1000 * 10; // 10 seconds
+	private static final int MAX_WAIT = 1000 * 20; // 20 seconds, was: 10
 
 	public static final long serialVersionUID = 10;
 	
@@ -137,7 +137,8 @@ public class WERTiServlet extends HttpServlet {
 		
 		String url = req.getParameter("url");
 		// accept url-s without http://
-		if (!url.contains("http://")) {
+		log.info("url:"+url);
+		if (!url.contains("http")) {
 			url = "http://" + url;
 		}
 		
@@ -151,14 +152,17 @@ public class WERTiServlet extends HttpServlet {
 		}
 
 		ActivityConfiguration config = loadActivitiesAndProcessors(req, activity); //track this
+		log.info("config:"+config);
 
 		// merge config with request parameters
 		mergeConfigParams(config, req);
 
 		URL u = new URL(url);
+		log.info("URL again:"+u);
 		Document htmlDoc;
 		try {
 			htmlDoc = Jsoup.parse(u, MAX_WAIT);
+			log.info("page source:"+htmlDoc);
 		} catch (IOException ioe) {
 			throw new ServletException("Webpage retrieval failed.");
 		}

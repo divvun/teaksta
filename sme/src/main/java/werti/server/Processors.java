@@ -39,7 +39,7 @@ public class Processors {
 		for (String activity : activities) {
 			ActivityConfiguration config = activities.getActivity(activity);
 			log.info("Config:"+config);
-			//log.info("Activity:"+activity);
+			log.info("Activity:"+activity);
 			
 			Set<String> langs = config.getLanguages();
 			
@@ -59,7 +59,9 @@ public class Processors {
 
 				try { // to initialize UIMA components
 					preMap.get(l).put(activity, initAE(loadDescriptor(preDesc), config.getServerPreConfigAsProp(l)));
+					log.info("preMap"+preMap);
 					postMap.get(l).put(activity, initAE(loadDescriptor(postDesc), config.getServerPostConfigAsProp(l)));
+					log.info("postMap"+postMap);
 				} catch (InvalidXMLException ixmle) {
 					log.fatal("Error initializing XML code. Invalid?", ixmle);
 					throw new ServletException("", ixmle);
