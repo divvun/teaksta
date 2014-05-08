@@ -21,7 +21,7 @@
 <nameValuePair>
 <name>NSgTags</name>
 <value>
-<string>Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess</string>
+<string>N Fem Sg, N Msc Sg, N Neu Sg</string>
 </value>
 </nameValuePair>
 </configurationParameterSettings>

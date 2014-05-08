@@ -40,9 +40,9 @@ some pages.  For the best results, use the
 <p>Some example sites with colorizing:</p>
 
 <ul>
-<li><a target="_blank" href="/WERTisme/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fen.wikipedia.org%2Fwiki%2FComputer-assisted_language_learning&client.enhancement=colorize">Wikipedia</a> (computer-assisted language learning)</li>
-<li><a target="_blank" href="/WERTisme/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fwww.guardian.co.uk%2Fenvironment%2Fgreen-living-blog%2F2009%2Foct%2F29%2Fcar-free-cities-neighbourhoods&client.enhancement=colorize">The Guardian</a> (car-free cities)</li>
-<li><a target="_blank" href="/WERTisme/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fpublicliterature.org%2Fbooks%2Femma%2F&client.enhancement=colorize">Public Literature</a> (Emma by Jane Austen)</li>
+<li><a target="_blank" href="/WERTirus/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fen.wikipedia.org%2Fwiki%2FComputer-assisted_language_learning&client.enhancement=colorize">Wikipedia</a> (computer-assisted language learning)</li>
+<li><a target="_blank" href="/WERTirus/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fwww.guardian.co.uk%2Fenvironment%2Fgreen-living-blog%2F2009%2Foct%2F29%2Fcar-free-cities-neighbourhoods&client.enhancement=colorize">The Guardian</a> (car-free cities)</li>
+<li><a target="_blank" href="/WERTirus/WERTiServlet?activity=<%= activity %>&url=http%3A%2F%2Fpublicliterature.org%2Fbooks%2Femma%2F&client.enhancement=colorize">Public Literature</a> (Emma by Jane Austen)</li>
 </ul>
 -->
 <p>

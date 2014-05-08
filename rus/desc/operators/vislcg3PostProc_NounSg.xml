@@ -38,18 +38,18 @@
       </configurationParameter>
     </configurationParameters>
     <configurationParameterSettings>
-      <nameValuePair>
+     <!--  <nameValuePair>
         <name>Tags</name>
         <value>
           <string>blah,blubb</string>
         </value>
-      </nameValuePair> 
-     <!--   <nameValuePair>
+      </nameValuePair> --> 
+        <nameValuePair>
         <name>Tags</name>
         <value>
-          <string>Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess</string>
+          <string>N Fem Sg, N Msc Sg, N Neu Sg</string>
         </value>
-      </nameValuePair> -->
+      </nameValuePair>
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>

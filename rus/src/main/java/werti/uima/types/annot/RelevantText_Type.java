@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Sat Sep 14 02:11:41 CEST 2013 */
+/* First created by JCasGen Wed May 07 20:43:31 CEST 2014 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
@@ -14,7 +14,7 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Optional annotation to specify which text to work on.
- * Updated by JCasGen Sat Sep 14 02:11:41 CEST 2013
+ * Updated by JCasGen Wed May 07 20:43:31 CEST 2014
  * @generated */
 public class RelevantText_Type extends Annotation_Type {
   /** @generated */

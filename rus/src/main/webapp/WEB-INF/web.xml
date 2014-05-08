@@ -5,7 +5,7 @@
     "http://java.sun.com/dtd/web-app_2_3.dtd">
 <web-app>
     <!-- General description of your web application -->
-    <display-name>WERTisme</display-name>
+    <display-name>WERTirus</display-name>
     <description>Learning languages interactively on the WEB</description>
 
     <context-param>

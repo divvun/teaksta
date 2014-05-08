@@ -28,13 +28,13 @@
       <nameValuePair>
         <name>htmlContentModelLocation</name>
         <value>
-          <string>/Users/mslm/main/apps/teaksta/sme/src/main/resources/models/html-content/model.bin</string>
+          <string>/home/ruskonteaksta/src/main/resources/models/html-content/model.bin</string>
         </value>
       </nameValuePair>
       <nameValuePair>
         <name>htmlContentSmootherModelLocation</name>
         <value>
-          <string>/Users/mslm/main/apps/teaksta/sme/src/main/resources/models/html-content/smoother.bin</string>
+          <string>/home/ruskonteaksta/src/main/resources/models/html-content/smoother.bin</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>

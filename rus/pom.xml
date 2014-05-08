@@ -256,9 +256,9 @@
                 <version>1.1</version>  <!-- added by Heli -->
                 <configuration>
                     <url>http://localhost:8080/manager/html</url>
-                    <warFile>/Users/mslm/main/apps/view/rus/target/WERTirus.war</warFile>
-                    <server>localhost</server>
-                    <path>/teaksta</path>
+                    <warFile>/home/ruskonteaksta/target/WERTirus.war</warFile>
+                    <server>gtlab.uit.no</server>
+                    <path>/WERTirus</path>
                 </configuration>
             </plugin>
 		</plugins>

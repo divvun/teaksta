@@ -7,8 +7,8 @@
 <%@page import="werti.util.ActivitiesSessionLoader"%><html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 		<meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
-		<link type="text/css" href="/teaksta/werti.css" rel="stylesheet" />
-		<title>Welcome to Teaksta</title>
+		<link type="text/css" href="/WERTirus/werti.css" rel="stylesheet" />
+		<title>Welcome to Russian Konteaksta</title>
 </head>
 <body>
 <div id="topcontainer">
@@ -17,10 +17,10 @@
 		</div>
 		<div id="navbar">
 			<ul>
-			    <li><a href="/teaksta/index.jsp?content=home">Home</a></li>
-				<li><a href="/teaksta/index.jsp?content=about">About Teaksta</a></li>
-				<!--<li><a href="/teaksta/index.jsp?content=intro">Getting Started</a></li> -->
-				<li><a href="/teaksta/index.jsp?content=activities">Topics and Activities</a>
+			    <li><a href="/WERTirus/index.jsp?content=home">Home</a></li>
+				<li><a href="/WERTirus/index.jsp?content=about">About Teaksta</a></li>
+				<!--<li><a href="/WERTirus/index.jsp?content=intro">Getting Started</a></li> -->
+				<li><a href="/WERTirus/index.jsp?content=activities">Topics and Activities</a>
 					<ul>
 						<%
 						
@@ -29,12 +29,12 @@
 
 						for (String basename : acts) {
 							String displayName = acts.getActivity(basename).getName();
-							out.println("<li><a href=\"/teaksta/index.jsp?content=activity-help&amp;activity=" + URLEncoder.encode(basename, "UTF-8")  + "\">" + displayName + "</a></li>");
+							out.println("<li><a href=\"/WERTirus/index.jsp?content=activity-help&amp;activity=" + URLEncoder.encode(basename, "UTF-8")  + "\">" + displayName + "</a></li>");
 						}
 						%>
 					</ul>
 				</li>
-				<!-- <li><a href="/teaksta/index.jsp?content=firefox-extension">Firefox Extension</a></li> -->
+				<!-- <li><a href="/WERTirus/index.jsp?content=firefox-extension">Firefox Extension</a></li> -->
 			</ul>
 			<% 
 			String content = request.getParameter("content");

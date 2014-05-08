@@ -60,7 +60,7 @@ public class HTMLEnhancer {
     		+ thisUrl + "/js-lib/jquery-1.4.2.min.js"
     		+ "\"></script>";
     	
-    	final String werticoreJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
+    	final String wertiviewJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/werti.js"
     		+ "\"></script>";
     	
@@ -72,8 +72,8 @@ public class HTMLEnhancer {
     		+ thisUrl + "/js-lib/notification.js"
     		+ "\"></script>";
     	
-    	final String werticoreCSS = "<link type=\"text/css\" rel=\"stylesheet\" href=\""
-    		+ thisUrl + "/js-lib/werticore.css"
+    	final String wertiviewCSS = "<link type=\"text/css\" rel=\"stylesheet\" href=\""
+    		+ thisUrl + "/js-lib/wertiview.css"
     		+ "\"></link>";
 
     	final String libJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
@@ -85,27 +85,27 @@ public class HTMLEnhancer {
     		+ "\"></script>";
     	
     	final String loadJS = "<script type=\"text/javascript\" language=\"javascript\">\n" +
-    	"werticore.jQuery(document).ready(function() { werticore.jQuery('body').data('werticore-topic', '" + activity + "');\n" +
+    	"wertiview.jQuery(document).ready(function() { wertiview.jQuery('body').data('wertiview-topic', '" + activity + "');\n" +
     	"var topic = \"" + activityCat + "\";\n" +
     	"var activity = \"" + enhancement + "\";\n" +
-		"if (!window['werticore'][topic] || !window['werticore'][topic][activity]) {\n" +
+		"if (!window['wertiview'][topic] || !window['wertiview'][topic][activity]) {\n" +
 		"    alert(\"The selected activity is not available for this topic.  Please choose a different activity.\");\n" +
 		"} else {\n" +
-    	"    werticore." + activityCat + "." + enhancement + "();\n" +
+    	"    wertiview." + activityCat + "." + enhancement + "();\n" +
     	"}\n" +
     	"});\n" +
     	"</script>\n";
     	
     	htmlDoc.head().append(jqueryJS);
-    	htmlDoc.head().append(werticoreJS);
+    	htmlDoc.head().append(wertiviewJS);
     	htmlDoc.head().append(blurJS);
     	htmlDoc.head().append(notificationJS);
-    	htmlDoc.head().append(werticoreCSS);
+    	htmlDoc.head().append(wertiviewCSS);
     	htmlDoc.head().append(libJS);
     	htmlDoc.head().append(activityJS);
     	htmlDoc.head().append(loadJS);
     	
-    	htmlDoc.select("span.werticore").select("span").attr("style", EnhancerUtils.addedSpanStyle);
+    	htmlDoc.select("span.wertiview").select("span").attr("style", EnhancerUtils.addedSpanStyle);
     	
        	return htmlDoc.html();
     }
