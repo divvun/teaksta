@@ -1,8 +1,11 @@
 package werti.util;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.uima.jcas.JCas;
+import org.apache.log4j.Logger;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -17,6 +20,7 @@ import werti.server.ActivityConfiguration;
  */
 public class HTMLEnhancer {
 	private JCas cas;
+	private static final Logger log = Logger.getLogger(HTMLEnhancer.class);
 	
 	/**
 	 * @param cCas CAS with annotations for the topic
@@ -31,28 +35,58 @@ public class HTMLEnhancer {
 	 * @return an HTML string containing enhancements
 	 */
     public String enhance(final String activity, final String baseurl, 
-    		HttpServletRequest req, ActivityConfiguration config, String servletContextName) {
+    		HttpServletRequest req, ActivityConfiguration config, String servletContextName) throws UnsupportedEncodingException{
+		
+		HashMap<String, String> dict = new HashMap<String, String>(); // translations of topics and activities to North Sámi
+		dict.put("SubstantiveSingular", "Substantive singular");
+		dict.put("SubstantivePlural", "Substantive plural");
+		dict.put("VerbConjugation", "Verb conjugation");
+		dict.put("NegVerbs", "Negation forms of verbs");
+		dict.put("InfiniteVerbs", "Infinite verbs");
+		dict.put("Conjunctions", "Conjunctions");
+		dict.put("Subject", "Subject");
+		dict.put("Object", "Object");
+		dict.put("Adverbial", "Adverbial");
+		dict.put("colorize", "Higlight the words");
+		dict.put("click", "Click on the words!");
+		dict.put("mc", "Select the correct word form!");
+		dict.put("cloze", "Fill in the correct word form!");
+		
     	String enhancement = req.getParameter("client.enhancement");
     	String activityCat = activity.toLowerCase();
+		
+		// get the translations of the topic and the exercise type from the small dictionary
+		String activity_eng = dict.get(activity); 
+		String enhancement_eng = dict.get(enhancement);
+		
     	String htmlString = EnhancerUtils.casToEnhanced(cas, enhancement);
-    	
-    	// replace <e> tags with werti spans
-    	// (this should probably be done with a real tree traversal, but it was causing me headaches and
-    	// a search and replace is probably sufficient and quicker)
-    	htmlString = htmlString.replace("<e>", "<span class=\"werti\">");
-    	htmlString = htmlString.replace("</e>", "</span>");
 
+		// replace <e> tags with wertiview spans
+		// (this should probably be done with a real tree traversal, but it was causing me headaches and
+		// a search and replace is probably sufficient and quicker)
+    	htmlString = htmlString.replace("<e>", "<span class=\"wertiview\">");
+    	htmlString = htmlString.replace("</e>", "</span>");
+    	
     	Document htmlDoc = Jsoup.parse(htmlString);
     	
     	// add base url
     	Element base = htmlDoc.createElement("base");
     	base.attr("href", baseurl);
     	htmlDoc.head().appendChild(base);
+		
+		// Write the chosen topic and activity into the page title. So the user has a short reminder about the exercise. 
+		String topic_activity = activity_eng + ": " + enhancement_eng; 
+		String customised_title = new String(topic_activity.getBytes(), "UTF-8"); // encode the title string as utf8
+		Element title = htmlDoc.select("title").first();
+		title.text(customised_title);
 
     	// add js libraries
     	String thisUrl = req.getRequestURL().toString();
-    	thisUrl = thisUrl.replaceFirst("(?<=" + servletContextName + ").*", "");
-    	if (activity.matches("Dets")) {
+    	log.info("requestURL:"+thisUrl);
+        thisUrl = thisUrl.replace("/WERTiServlet","");
+        log.info("removed WERTiServlet:"+thisUrl);
+    	//thisUrl = thisUrl.replaceFirst("(?<=" + servletContextName + ").*", "");
+    	if (activity.matches("Arts") || activity.matches("Dets")) {
     		activityCat = "pos";
     	}
     	
@@ -61,7 +95,7 @@ public class HTMLEnhancer {
     		+ "\"></script>";
     	
     	final String wertiviewJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
-    		+ thisUrl + "/js-lib/werti.js"
+    		+ thisUrl + "/js-lib/wertiview.js"
     		+ "\"></script>";
     	
     	final String blurJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
@@ -73,14 +107,18 @@ public class HTMLEnhancer {
     		+ "\"></script>";
     	
     	final String wertiviewCSS = "<link type=\"text/css\" rel=\"stylesheet\" href=\""
-    		+ thisUrl + "/js-lib/wertiview.css"
+    		+ thisUrl + "/js-lib/wertiview.css"  // was: view.css
     		+ "\"></link>";
 
     	final String libJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/lib.js"
     		+ "\"></script>";
-    	
+
     	final String activityJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
+    		+ thisUrl + "/js-lib/activity.js"
+    		+ "\"></script>";
+    	
+    	final String topicJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/" + activityCat + ".js"
     		+ "\"></script>";
     	
@@ -89,12 +127,14 @@ public class HTMLEnhancer {
     	"var topic = \"" + activityCat + "\";\n" +
     	"var activity = \"" + enhancement + "\";\n" +
 		"if (!window['wertiview'][topic] || !window['wertiview'][topic][activity]) {\n" +
-		"    alert(\"The selected activity is not available for this topic.  Please choose a different activity.\");\n" +
+		"    alert(\"topic \"+topic+\" activity \"+ activity + \"The selected activity is not available for this topic.  Please choose a different activity.\");\n" +
 		"} else {\n" +
     	"    wertiview." + activityCat + "." + enhancement + "();\n" +
     	"}\n" +
     	"});\n" +
     	"</script>\n";
+		
+
     	
     	htmlDoc.head().append(jqueryJS);
     	htmlDoc.head().append(wertiviewJS);
@@ -103,6 +143,7 @@ public class HTMLEnhancer {
     	htmlDoc.head().append(wertiviewCSS);
     	htmlDoc.head().append(libJS);
     	htmlDoc.head().append(activityJS);
+    	htmlDoc.head().append(topicJS);
     	htmlDoc.head().append(loadJS);
     	
     	htmlDoc.select("span.wertiview").select("span").attr("style", EnhancerUtils.addedSpanStyle);
