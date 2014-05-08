@@ -51,7 +51,7 @@ public class PageHandler {
 			try { // to process
 				JCas cas = preprocessor.newJCas();
 				String normalised_text = StringEscapeUtils.unescapeHtml4(text); // convert HTML entities to characters, if there are any
-				log.info("normalised text: " + normalised_text);
+				// log.info("normalised text: " + normalised_text);
 				// add the normalised text to cas
 				cas.setDocumentText(normalised_text);
 				cas.setDocumentLanguage(lang);

@@ -40,10 +40,11 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> NSgTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/usr/local/bin/lookup";
+	// local paths:
+    private final String lookupLoc = "/Users/mslm/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String FST = " /home/heli/main/gt/sme/bin/sme.fst";
+	private final String invertedFST = " /Users/mslm/main/langs/rus/src/generator-gt-desc.xfst";
+	private final String FST = " /Users/mslm/main/langs/rus/src/analyser-gt-desc.xfst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -136,13 +137,13 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+				}*/ // Temporarily commented out because there are very few words that have one morphological reading.
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
-				String lemma = "", stemtype = "", distractors = "";
+				String lemma = "", gender = "", distractors = "";
 				
 				if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
@@ -156,9 +157,9 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 							prop = true;
 						}
 						// get stemtype from the CG reading, if any of these: G3, G7, NomAg
-						stemtype = getStemType(reading);
+						gender = getGender(reading);
 						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
-						distractors = getDistractors(lemma, stemtype, prop);
+						distractors = getDistractors(lemma, gender, prop);
 					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
@@ -226,23 +227,23 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Obtains the stem type from the morphological analysis if any (G3,G7,NomAg)
 	 */
-	private String getStemType(CGReading cgr) {
-		String stemtype = "";
+	private String getGender(CGReading cgr) {
+		String gender = "";
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
-		if (reading_str.contains("G3")) {
-			stemtype = "G3";
+		if (reading_str.contains("Fem")) {
+			gender = "Fem";
 		}
-		else if (reading_str.contains("G7")) {
-			stemtype = "G7";
+		else if (reading_str.contains("Msc")) {
+			gender = "Msc";
 		}
-		else if (reading_str.contains("NomAg")) {
-			stemtype = "NomAg";
+		else if (reading_str.contains("Neu")) {
+			gender = "Neu";
 		}
-		return stemtype;
+		return gender;
 	}
 		
 	/* 
@@ -276,8 +277,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    private String getDistractors(String lemma, String stemtype, boolean propernoun) {
-        String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess"};
+    private String getDistractors(String lemma, String gender, boolean propernoun) {
+        String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Loc", "Sg+Dat", "Sg+Ins"};
         
         String str, word, result = "", generationInput = "", propN = "";
 		if (propernoun) {
@@ -317,14 +318,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					if (stemtype != "") {
-						generationInput += lemma + propN + "+N+" + stemtype + "+" + distract_forms[j] + "\n";
-						generationInput += lemma + propN + "+v1+N+" + stemtype + "+" + distract_forms[j] + "\n";
-					}
-					else {
-						generationInput += lemma + propN + "+N+" + distract_forms[j] + "\n";
-						generationInput += lemma + propN + "+v1+N+" + distract_forms[j] + "\n";
-					}
+					generationInput += lemma + "+N+" + gender + "+" + distract_forms[j] + "\n";
 				}
 			}
 				
