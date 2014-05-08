@@ -40,12 +40,16 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> NSgTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
+        private final String lookupLoc = "/usr/local/bin/lookup";                             
+        private final String lookupFlags = "-flags mbTT -utf8";                                
+        private final String invertedFST = " /opt/smi/rus/bin/generator-gt-desc.xfst";   
+        private final String FST = " /opt/smi/rus/bin/analyser-gt-desc.xfst";
 	// local paths:
-    private final String lookupLoc = "/Users/mslm/bin/lookup";
-    private final String lookupFlags = "-flags mbTT -utf8";
+        /*private final String lookupLoc = "/Users/mslm/bin/lookup";
+        private final String lookupFlags = "-flags mbTT -utf8";
 	private final String invertedFST = " /Users/mslm/main/langs/rus/src/generator-gt-desc.xfst";
 	private final String FST = " /Users/mslm/main/langs/rus/src/analyser-gt-desc.xfst";
-	
+	*/
 	/**
 	 * A runnable class that reads from a reader (that may
 	 * be fed by {@link Process}) and puts stuff read into a variable.

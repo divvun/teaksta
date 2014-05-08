@@ -90,7 +90,7 @@
             <div id="navbar">
                 <img width="120" border="0" src="images/littleman.png" alt="Game logo" />
                 <div class="bigheader">Exercise topics</div>
-                <div class="smallheader">Word inflection:</div>
+                <!-- <div class="smallheader">Word inflection:</div> -->
                 <ul class="sidelist">                
                 <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantives in singular</a></li>
                 <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantives in plural</a></li>
@@ -99,13 +99,13 @@
                 <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinite verb forms</a></li>
                 <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Conjunctions</a></li>
                 </ul>
-                <div class="smallheader">Syntactic functions:</div>
+                <!-- <div class="smallheader">Syntactic functions:</div>
                 <ul class="sidelist">
                 <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subject</a></li>
                 <li><a href="#" id="Object" onclick="setActivity('Object')">Object</a></li>
                 <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbial</a></li>
-                </ul>
-            </div>
+                </ul> -->
+            </div> 
             
             <div class="bigheader">Resources</div>
             <ul class="sidelist small">
@@ -155,39 +155,26 @@
                 </br>
                 </br> -->
                 <b>Enter the URL of the web site you want to practice the Russian grammar on:</b>
-                </br>
                 <input type="text" name="url" size="100"/>
                 &nbsp;
-                <input type="submit" value="Go!" class="activityFormSubmit" />&nbsp;</br>(opens in a new window)
+                <input type="submit" value="Go!" class="activityFormSubmit" />&nbsp;</br>(opens in a new tab)
                 </br>
                 </br>
                 
             </form>
             <div class="searchBox">
                 <b>Use <img src="images/google_logo.jpg" height="16px"/> search for finding web pages to work with:</b>
-                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse"> 
+               <form method="get" id="searchbox" action="http://www.google.com/search" target="_blank"> 
                     <input type="hidden" name="cref" value="" />  
                     <input type="hidden" name="ie" value="utf-8" />
                     <input type="hidden" name="hl" value="" /> 
                     <input type="text" name="q" class="searchField" />
-                    <input type="hidden" name="query" class="searchField" value="leat" /> 
+		    <input type="hidden" name="lr" value="lang_ru" />
+                    <!-- <input type="hidden" name="query" class="searchField" value="leat" /> 
                     <input type="hidden" name="siteurl" value="avvir.no">
-                    <input type="hidden" name="sitesearch" value="samediggi.no"> 
-                    <input type="submit" value="Oza" class="searchSubmit">
-                </form> -->
-                <script>
-                (function() {
-                var cx = '015063317359877268294:is3s0ajf2yi';
-                var gcse = document.createElement('script');
-                gcse.type = 'text/javascript';
-                gcse.async = true;
-                gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
-        '//www.google.com/cse/cse.js?cx=' + cx;
-                var s = document.getElementsByTagName('script')[0];
-                s.parentNode.insertBefore(gcse, s);
-                })();
-                </script>
-                <gcse:search></gcse:search>
+                    <input type="hidden" name="sitesearch" value="samediggi.no"> --> 
+                    <input type="submit" value="Search" class="searchSubmit">
+                </form> 
                 (If you find a page you like then copy its address into the URL field and click 'Go!')   
             </div>
             </div>
