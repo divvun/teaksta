@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_NounPl.xml"/>
-				<entry key="NPlTags" value="Pl Nom, Pl Acc, Pl Gen, Pl Ill, Pl Loc, Pl Com, Ess" overridable="yes"/>   <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Pl + case. -->
+				<entry key="NPlTags" value="Pl Nom, Pl Acc, Pl Gen, Pl Ill, Pl Loc, Pl Com" overridable="yes"/>   <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Pl + case. -->
 			</post>
 		</lang>
 	</server-cfg>
