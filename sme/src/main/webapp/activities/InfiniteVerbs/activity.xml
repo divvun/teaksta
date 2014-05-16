@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_InfiniteVerb.xml"/>
-				<entry key="infiniteverbTags" value="V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Inf, Ind Prs ConNeg, Ind Prt ConNeg" overridable="yes"/>  
+				<entry key="infiniteverbTags" value="PrfPrc, VGen, VAbess, Ger, Actio Ess, Inf, Ind Prs ConNeg, Ind Prt ConNeg" overridable="yes"/>  
 			</post>
 		</lang>
 	</server-cfg>
