@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_VerbConjugation.xml"/>
-				<entry key="finverbTags" value="Ind Prs, Ind Prt" overridable="yes"/>  
+				<entry key="finverbTags" value="Ind Prs, Ind Prt, Imprt, Cond Prs, Pot Prs, Neg Ind" overridable="yes"/>  
 			</post>
 		</lang>
 	</server-cfg>
