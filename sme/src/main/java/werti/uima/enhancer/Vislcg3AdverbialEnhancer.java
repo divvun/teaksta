@@ -74,60 +74,21 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+					}*/
 
-				// analyze reading
-				CGReading reading = cgt.getReadings(0);
-				//log.info("next reading: "+reading);
-				/*
-				// annotation of each token individually
-				if (containsTag(reading, conT)) {
-					Enhancement e = new Enhancement(cas);
-					
-					// determine token position within chunk
-					String tokenPosition = CHUNK_BEGIN_SUFFIX;
-					if (containsTag(reading, conT + CHUNK_INSIDE_SUFFIX)) {
-						tokenPosition = CHUNK_INSIDE_SUFFIX;
-					}
-					// increment id
-					int newId = classCounts.get(conT) + 1;
-					classCounts.put(conT, newId);
-					
-					e.setBegin(cgt.getBegin());
-					e.setEnhanceStart("<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + 
-							"\" class=\"wertiviewconjunction wertiview" + conT + " werti" + conT + tokenPosition + "\">");
-					e.setEnd(cgt.getEnd());
-					e.setEnhanceEnd("</span>");
-					
-					cas.addFsToIndexes(e);
-				} 
-				*/
+				// analyze reading(s)
+				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
+				    CGReading reading = cgt.getReadings(i); 
 				
-				/* annotation of spans across tokens */	
-				/*			 
-				// case 1: started enhancement but current reading doesn't
-				// have a chunk inside tag					
-                    if (!enhancements.empty() && enhancements.peek().getEnhanceStart().contains(conT)
-								&& !containsTag(reading, conT)) {
-					// finish enhancement
-					Enhancement e = enhancements.pop();
-					e.setEnd(prev.getEnd());
-					e.setEnhanceEnd("</span>");
-					e.setRelevant(true);
-					// update CAS
-					cas.addFsToIndexes(e);
-					log.debug("Completed chunk " + conT + "-" + classCounts.get(conT) + " at pos " + e.getEnd());
-				}
-				*/
+				    //log.info("next reading: "+reading);
 				
-				// case 2: chunk start tag
-				if (containsTag(reading, conT)) {
-				    // get lemma from the CG reading
-				    // String lemma = getLemma(reading); - not needed for exercises on syntactic functions
-				    // generate the distractors, based on the lemma of the hit
-                    //String distractors = getDistractors(lemma); - not needed for syntactic functions
+				    if (containsTag(reading, conT)) {
+					// get lemma from the CG reading
+					// String lemma = getLemma(reading); - not needed for exercises on syntactic functions
+					// generate the distractors, based on the lemma of the hit
+					//String distractors = getDistractors(lemma); - not needed for syntactic functions
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -147,8 +108,9 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 					// update CAS
 					cas.addFsToIndexes(e);
 					//e.addToIndexes();
-					//log.info("Started conjunction " + conT + "-" + newId + " at pos " + e.getBegin());
-				}
+					break;
+				    } // if
+				}  // for
 
 				//prev = cgt;
 			}

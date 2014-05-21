@@ -19,6 +19,7 @@ import werti.uima.types.annot.CGReading;
 import werti.uima.types.annot.CGToken;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
+import werti.server.WERTiServlet;
 
 /**
  * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
@@ -40,8 +41,8 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String FST = " /home/heli/main/gt/sme/bin/sme.fst";
+	private final String invertedFST = " /opt/smi/sme/bin/isme-GG.restr.fst";
+	private final String FST = " /opt/smi/sme/bin/sme.fst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -113,6 +114,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Noun Pl enhancement");
+		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
@@ -122,8 +124,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			log.info("Tag: "+conT);
 		}
 
-		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
-		// spans are enhanced
+		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which spans are enhanced
 		
 		for (String conT: NPlTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
@@ -134,62 +135,29 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+					}*/
 
-				// analyze reading
-				CGReading reading = cgt.getReadings(0);
-				//log.info("next reading: "+reading);
-				/*
-				// annotation of each token individually
-				if (containsTag(reading, conT)) {
-					Enhancement e = new Enhancement(cas);
-					
-					// determine token position within chunk
-					String tokenPosition = CHUNK_BEGIN_SUFFIX;
-					if (containsTag(reading, conT + CHUNK_INSIDE_SUFFIX)) {
-						tokenPosition = CHUNK_INSIDE_SUFFIX;
+				// analyze reading(s)
+				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
+				    CGReading reading = cgt.getReadings(i); 
+								
+				    String lemma = "", stemtype = "", distractors = "";
+				    if (containsTag(reading, conT, enhancement_type)) {
+					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
+					    // get lemma from the CG reading
+					    lemma = getLemma(reading);
 					}
-					// increment id
-					int newId = classCounts.get(conT) + 1;
-					classCounts.put(conT, newId);
-					
-					e.setBegin(cgt.getBegin());
-					e.setEnhanceStart("<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + 
-							"\" class=\"wertiviewconjunction wertiview" + conT + " werti" + conT + tokenPosition + "\">");
-					e.setEnd(cgt.getEnd());
-					e.setEnhanceEnd("</span>");
-					
-					cas.addFsToIndexes(e);
-				} 
-				*/
-				
-				/* annotation of spans across tokens */	
-				/*			 
-				// case 1: started enhancement but current reading doesn't
-				// have a chunk inside tag					
-                    if (!enhancements.empty() && enhancements.peek().getEnhanceStart().contains(conT)
-								&& !containsTag(reading, conT)) {
-					// finish enhancement
-					Enhancement e = enhancements.pop();
-					e.setEnd(prev.getEnd());
-					e.setEnhanceEnd("</span>");
-					e.setRelevant(true);
-					// update CAS
-					cas.addFsToIndexes(e);
-					log.debug("Completed chunk " + conT + "-" + classCounts.get(conT) + " at pos " + e.getEnd());
-				}
-				*/
-				
-				// case 2: chunk start tag
-				if (containsTag(reading, conT)) {
-				    // get lemma from the CG reading
-				    String lemma = getLemma(reading);
-					// get stemtype from the CG reading, if any of these: G3, G7, NomAg
-					String stemtype = getStemType(reading);
-				    // generate the distractors, based on the lemma of the hit
-                    String distractors = getDistractors(lemma, stemtype);
+					if (enhancement_type.equals("mc")) {
+					    // get stemtype from the CG reading, if any of these: G3, G7, NomAg
+					    stemtype = getStemType(reading);
+ 
+					    // generate the distractors, based on the lemma of the hit
+					    distractors = getDistractors(lemma, stemtype);
+					}
+					// Delete # from the lemma of compound words
+					lemma = lemma.replace("#","");
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -209,8 +177,9 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					// update CAS
 					cas.addFsToIndexes(e);
 					//e.addToIndexes();
-					//log.info("Started conjunction " + conT + "-" + newId + " at pos " + e.getBegin());
-				}
+					break;
+				    } // if
+				} // for
 
 				//prev = cgt;
 			}
@@ -233,17 +202,20 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given reading contains the given tag.
 	 */
-	private boolean containsTag(CGReading cgr, String tag) {
+    private boolean containsTag(CGReading cgr, String tag, String enhancement_type) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
 		
-		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/") && !reading_str.contains("Qst")) {  // Check if the tag string contains the given tag sequence as a substring. Ensure that it is a noun, eliminate proper nouns and derived forms from the selection.
-            log.info(cgr + " contains " + tag);
-            return true;
-        }
+		if (reading_str.contains(tag) && (reading_str.contains("Prop") || reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {  // Check if the tag string contains the given tag sequence as a substring. Ensure that it is a noun, eliminate proper nouns and derived forms from the selection if the exercise type is mc or cloze.
+		    return false;
+		}
+		if (reading_str.contains(tag) && reading_str.contains(" N ")) {
+		    log.info(cgr + " contains " + tag);
+		    return true;
+		}
 
 		//log.info(cgr + " does not contain " + tag);
 		return false;

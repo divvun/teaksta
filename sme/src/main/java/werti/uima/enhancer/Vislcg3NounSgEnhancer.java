@@ -42,8 +42,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String FST = " /home/heli/main/gt/sme/bin/sme.fst";
+	private final String invertedFST = " /opt/smi/sme/bin/isme-GG.restr.fst";
+	private final String FST = " /opt/smi/sme/bin/sme.fst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -136,20 +136,21 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+					}*/
 
-				// analyze reading
-				CGReading reading = cgt.getReadings(0);
-				String lemma = "", stemtype = "", distractors = "";
+				// analyze reading(s)
+				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
+				    CGReading reading = cgt.getReadings(i); 
+				    String lemma = "", stemtype = "", distractors = "";
 				
-				if (containsTag(reading, conT, enhancement_type)) {
+				    if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
 						// get lemma from the CG reading
 						lemma = getLemma(reading);
 					}
-				    if (enhancement_type.equals("mc")) {
+					if (enhancement_type.equals("mc")) {
 						boolean prop = false;
 						// Proper nouns have the tag "Prop" in the morphological information. This is needed when generating distractors. 
 						if (containsTag(reading, "Prop", enhancement_type)) {
@@ -160,6 +161,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
 						distractors = getDistractors(lemma, stemtype, prop);
 					}
+					// Delete # from the lemma of compound words if any
+					lemma = lemma.replace("#","");
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -179,8 +182,9 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 					// update CAS
 					cas.addFsToIndexes(e);
 					//e.addToIndexes();
-					//log.info("Started conjunction " + conT + "-" + newId + " at pos " + e.getBegin());
-				}
+				        break;
+				    } // if
+				} // for
 
 				//prev = cgt;
 			}

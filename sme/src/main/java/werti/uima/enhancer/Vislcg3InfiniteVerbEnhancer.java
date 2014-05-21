@@ -40,7 +40,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
     private final String lookupLoc = "/usr/local/bin/lookup";
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
+	private final String invertedFST = " /opt/smi/sme/bin/isme-GG.restr.fst";
 	
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -132,60 +132,19 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+					}*/
 
-				// analyze reading
-				CGReading reading = cgt.getReadings(0);
-				//log.info("next reading: "+reading);
-				/*
-				// annotation of each token individually
-				if (containsTag(reading, conT)) {
-					Enhancement e = new Enhancement(cas);
-					
-					// determine token position within chunk
-					String tokenPosition = CHUNK_BEGIN_SUFFIX;
-					if (containsTag(reading, conT + CHUNK_INSIDE_SUFFIX)) {
-						tokenPosition = CHUNK_INSIDE_SUFFIX;
-					}
-					// increment id
-					int newId = classCounts.get(conT) + 1;
-					classCounts.put(conT, newId);
-					
-					e.setBegin(cgt.getBegin());
-					e.setEnhanceStart("<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + 
-							"\" class=\"wertiviewconjunction wertiview" + conT + " werti" + conT + tokenPosition + "\">");
-					e.setEnd(cgt.getEnd());
-					e.setEnhanceEnd("</span>");
-					
-					cas.addFsToIndexes(e);
-				} 
-				*/
+				// analyze reading(s)
+				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
+				    CGReading reading = cgt.getReadings(i); 
 				
-				/* annotation of spans across tokens */	
-				/*			 
-				// case 1: started enhancement but current reading doesn't
-				// have a chunk inside tag					
-                    if (!enhancements.empty() && enhancements.peek().getEnhanceStart().contains(conT)
-								&& !containsTag(reading, conT)) {
-					// finish enhancement
-					Enhancement e = enhancements.pop();
-					e.setEnd(prev.getEnd());
-					e.setEnhanceEnd("</span>");
-					e.setRelevant(true);
-					// update CAS
-					cas.addFsToIndexes(e);
-					log.debug("Completed chunk " + conT + "-" + classCounts.get(conT) + " at pos " + e.getEnd());
-				}
-				*/
-				
-				// case 2: chunk start tag
-				if (containsTag(reading, conT)) {
-				    // get lemma from the CG reading
-				    String lemma = getLemma(reading);
-				    // generate the distractors, based on the lemma of the hit
-                    String distractors = getDistractors(lemma);
+				    if (containsTag(reading, conT)) {
+					// get lemma from the CG reading
+					String lemma = getLemma(reading);
+					// generate the distractors, based on the lemma of the hit
+					String distractors = getDistractors(lemma);
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -205,8 +164,9 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 					// update CAS
 					cas.addFsToIndexes(e);
 					//e.addToIndexes();
-					//log.info("Started conjunction " + conT + "-" + newId + " at pos " + e.getBegin());
-				}
+					break;
+				    } // if
+				} // for
 
 				//prev = cgt;
 			}
