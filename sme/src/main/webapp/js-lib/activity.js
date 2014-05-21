@@ -409,7 +409,7 @@
         	wertiview.prefError();
         }
         if (hitList.length < 20) {
-            numExercises = hitList.length - 2;
+            numExercises = hitList.length;
         }
         //alert("nr of exercises: "+numExercises);
         
