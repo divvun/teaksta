@@ -135,10 +135,12 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			// go through tokens
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
-				// more than one reading? don't mark up!
-				/*if (!isSafe(cgt)) {
+				if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
+				// more than one reading? don't mark up for exercise types mc and cloze
+				    if (!isSafe(cgt)) {
 					continue;
-					}*/
+				    }
+				}
 
 				// analyze reading(s)
 				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.

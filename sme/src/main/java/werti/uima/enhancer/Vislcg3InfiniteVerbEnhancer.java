@@ -19,6 +19,7 @@ import werti.uima.types.annot.CGReading;
 import werti.uima.types.annot.CGToken;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
+import werti.server.WERTiServlet;
 
 /**
  * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
@@ -34,12 +35,13 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
 		Logger.getLogger(Vislcg3InfiniteVerbEnhancer.class);
+        private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	
 	private List<String> infiniteverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/usr/local/bin/lookup";
-    private final String lookupFlags = "-flags mbTT -utf8";
+        private final String lookupLoc = "/usr/local/bin/lookup";
+        private final String lookupFlags = "-flags mbTT -utf8";
 	private final String invertedFST = " /opt/smi/sme/bin/isme-GG.restr.fst";
 	
 	/**
@@ -111,6 +113,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting InfiniteVerb enhancement");
+		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
@@ -131,10 +134,12 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 			// go through tokens
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
-				// more than one reading? don't mark up!
-				/*if (!isSafe(cgt)) {
+				if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
+				    // more than one reading? don't mark up!
+				    if (!isSafe(cgt)) {
 					continue;
-					}*/
+				    }
+				}
 
 				// analyze reading(s)
 				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
