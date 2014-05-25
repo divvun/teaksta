@@ -9,6 +9,8 @@
         <script type="text/javascript">
             function setActivity(act) {
                 //alert("selected activity:"+act);
+                var linkpage=document.getElementsByTagName("object");
+                linkpage[0].data="activities/"+act+"/recommended_pages.html";
                 var lists=document.getElementsByTagName("li");
                 for (var i=0; i<lists.length; i++) {
                     var link=lists[i].getElementsByTagName("a");
@@ -20,7 +22,7 @@
                 y[0].value=act;
                 //var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
-		}                
+		 }         
         </script>
         
     </head>
@@ -144,21 +146,13 @@
             </br>
             </br>
                 <b>Vállje neahttasiiddu:</b>
-                </br>
-                ........
-                </br>
-                ........
-                </br>
-                ........
-                </br>
-                ........
-                </br>
-                </br>
+                <OBJECT data="" width="500px" >
+                </OBJECT>
                 </br>
                 <b>Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet:</b>
                 </br>
                 </br>
-                <b>URL:</b>&nbsp; <input type="text" name="url" size="100"/>
+                <b>URL:</b>&nbsp; <input type="text" name="url" value="" size="100"/>
                 &nbsp;
                 <input type="submit" value="Mana!" class="activityFormSubmit" />&nbsp;</br>(rahpasa ođđa láses)
                 </br>
