@@ -147,7 +147,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
-				String lemma = "", gender = "", distractors = "";
+				String lemma = "", gender = "", animacy = "", distractors = "";
 				
 				if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
@@ -160,10 +160,12 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 						if (containsTag(reading, "Prop", enhancement_type)) {
 							prop = true;
 						}
-						// get stemtype from the CG reading, if any of these: G3, G7, NomAg
+						// get gender from the CG reading: Fem, Msc, Neu
 						gender = getGender(reading);
+						// get animacy from the CG reading: Anim, Inan                                             
+						animacy = getAnimacy(reading);
 						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
-						distractors = getDistractors(lemma, gender, prop);
+						distractors = getDistractors(lemma, gender, animacy, prop);
 					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
@@ -229,7 +231,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	}
 	
 	/*
-	 * Obtains the stem type from the morphological analysis if any (G3,G7,NomAg)
+	 * Obtains the gender from the morphological analysis if any (Fem, Msc, Neu)
 	 */
 	private String getGender(CGReading cgr) {
 		String gender = "";
@@ -249,6 +251,25 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		}
 		return gender;
 	}
+
+    /*                                                               
+     * Obtains the animacy from the morphological analysis if any (Anim, Inan)                                                             
+    */
+    private String getAnimacy(CGReading cgr) {
+	String animacy = "";
+	StringListIterable reading = new StringListIterable(cgr);
+	String reading_str = "";
+	for (String rtag : reading) {
+	    reading_str = reading_str + rtag + " ";
+	}
+	if (reading_str.contains("Anim")) {
+	    animacy = "Anim";
+	}
+	else if (reading_str.contains("Inan")) {
+	    animacy = "Inan";
+	}
+	return animacy;
+    }
 		
 	/* 
 	 * Obtains the lemma from the CG reading.
@@ -281,7 +302,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    private String getDistractors(String lemma, String gender, boolean propernoun) {
+    private String getDistractors(String lemma, String gender, String animacy, boolean propernoun) {
         String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Loc", "Sg+Dat", "Sg+Ins"};
         
         String str, word, result = "", generationInput = "", propN = "";
@@ -322,7 +343,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					generationInput += lemma + "+N+" + gender + "+" + distract_forms[j] + "\n";
+					generationInput += lemma + "+N+" + gender + "+" + animacy + "+" + distract_forms[j] + "\n";
 				}
 			}
 				

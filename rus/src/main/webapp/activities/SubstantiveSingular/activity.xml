@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_NounSg.xml"/>
-				<entry key="NSgTags" value="N Fem Sg, N Msc Sg, N Neu Sg" overridable="yes"/>
+				<entry key="NSgTags" value="N Fem Anim Sg, N Fem Inan Sg, N Msc Anim Sg, N Msc Inan Sg, N Neu Anim Sg, N Neu Inan Sg" overridable="yes"/>
 			</post>
 		</lang>
 	</server-cfg>
