@@ -54,19 +54,19 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	private String vislcg3DisGrammarLoc;
 	private String vislcg3SyntGrammarLoc;
 	private final String preprocessPipeline = "/home/heli/main/gt/script/preprocess  | hfst-lookup -q /home/heli/main/langs/rus/src/analyser-gt-desc.hfst | /home/heli/main/gt/script/lookup2cg | ";
-	/*private final String preprocessLoc = "/home/heli/main/gt/script/preprocess";
+	private final String preprocessLoc = "/opt/sami/cg/bin/preprocess";
 	private final String abbr = "";
 	private final String lookupLoc = "hfst-lookup";
 	private final String lookupFlags = "-q";
-	private final String fstLoc = " /home/heli/main/langs/rus/src/analyser-gt-desc.hfst";
-	private final String lookup2cgLoc = " | /usr/bin/perl /home/heli/main/gt/script/lookup2cg | ";*/
+	private final String fstLoc = " /opt/smi/rus/bin/analyser-gt-desc.hfst";
+	private final String lookup2cgLoc = " | /usr/bin/perl /home/heli/main/gt/script/lookup2cg | ";
 	//local paths:
-	private final String preprocessLoc = "/Users/mslm/main/gt/script/preprocess";
+	/* private final String preprocessLoc = "/Users/mslm/main/gt/script/preprocess";
 	private final String abbr = "";
 	private final String lookupLoc = "/Users/mslm/bin/lookup";
 	private final String lookupFlags = "";
 	private final String fstLoc = " /Users/mslm/main/langs/rus/src/analyser-gt-desc.xfst";
-	private final String lookup2cgLoc = " | /opt/local/bin/perl /Users/mslm/main/gt/script/lookup2cg | ";
+	private final String lookup2cgLoc = " | /opt/local/bin/perl /Users/mslm/main/gt/script/lookup2cg | "; */
 
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -307,13 +307,13 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	private String runFST_CG(String input) throws IOException,InterruptedException {
 	
 	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
-        long timestamp = System.currentTimeMillis();
+	    long timestamp = System.currentTimeMillis();
 
-        String inputfileLoc = "/Users/mslm/main/apps/teaksta/rus/output/cg3input"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/teaksta/rus/output/cg3output"+timestamp+".tmp";
+	    //String inputfileLoc = "/Users/mslm/main/apps/teaksta/rus/output/cg3input"+timestamp+".tmp";
+	    //String outputfileLoc = "/Users/mslm/main/apps/teaksta/rus/output/cg3output"+timestamp+".tmp";
 
-		//String inputfileLoc = "/home/ruskonteaksta/output/cg3input"+timestamp+".tmp";  
-		//String outputfileLoc = "/home/ruskonteaksta/output/cg3output"+timestamp+".tmp";
+		String inputfileLoc = "/home/ruskonteaksta/output/cg3input"+timestamp+".tmp";  
+		String outputfileLoc = "/home/ruskonteaksta/output/cg3output"+timestamp+".tmp";
 
         //create temporary files for saving cg3 input and output                                                   
         File inputfile = new File(inputfileLoc);
