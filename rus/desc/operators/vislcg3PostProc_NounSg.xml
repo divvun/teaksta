@@ -47,7 +47,7 @@
         <nameValuePair>
         <name>Tags</name>
         <value>
-          <string>N Fem Sg, N Msc Sg, N Neu Sg</string>
+          <string>N Fem Inan Sg, N Fem Anim Sg, N Msc Inan Sg, N Msc Anim Sg, N Neu Inan Sg, N Neu Anim Sg</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>

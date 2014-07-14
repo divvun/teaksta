@@ -21,7 +21,7 @@
 <nameValuePair>
 <name>NPlTags</name>
 <value>
-<string>N Pl Nom, N Pl Acc, N Pl Gen, N Pl Ill, N Pl Loc, N Pl Com, N Ess</string>
+<string>N Fem Inan Pl, N Fem Anim Pl, N Msc Inan Pl, N Msc Anim Pl, N Neu Inan Pl, N Neu Anim Pl</string>
 </value>
 </nameValuePair>
 </configurationParameterSettings>
