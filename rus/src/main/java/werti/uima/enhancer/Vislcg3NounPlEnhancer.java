@@ -19,13 +19,14 @@ import werti.uima.types.annot.CGReading;
 import werti.uima.types.annot.CGToken;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
+import werti.server.WERTiServlet;
 
 /**
  * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
  * {@link werti.ae.Vislcg3Annotator} to enhance spans corresponding 
  * to the tags specified by the activity as tags of negation forms of verbs.
  * 
- * @author Niels Ott?
+ * @author Niels Ott
  * @author Adriane Boyd
  * @author Heli Uibo
  *
@@ -35,14 +36,20 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		Logger.getLogger(Vislcg3NounPlEnhancer.class);
 	
+	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NPlTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/usr/local/bin/lookup";
-    private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /home/heli/main/gt/sme/bin/dict-isme-norm.fst";
-	private final String FST = " /home/heli/main/gt/sme/bin/sme.fst";
-	
+        private final String lookupLoc = "/usr/local/bin/lookup";                             
+        private final String lookupFlags = "-flags mbTT -utf8";                                
+        private final String invertedFST = " /opt/smi/rus/bin/generator-gt-desc.xfst";   
+        private final String FST = " /opt/smi/rus/bin/analyser-gt-desc.xfst";
+	// local paths:
+        /*private final String lookupLoc = "/Users/mslm/bin/lookup";
+        private final String lookupFlags = "-flags mbTT -utf8";
+	private final String invertedFST = " /Users/mslm/main/langs/rus/src/generator-gt-desc.xfst";
+	private final String FST = " /Users/mslm/main/langs/rus/src/analyser-gt-desc.xfst";
+	*/
 	/**
 	 * A runnable class that reads from a reader (that may
 	 * be fed by {@link Process}) and puts stuff read into a variable.
@@ -101,7 +108,6 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		
 	}
 	
-	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -113,6 +119,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Noun Pl enhancement");
+		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
@@ -134,62 +141,32 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				// more than one reading? don't mark up!
-				if (!isSafe(cgt)) {
+				/*if (!isSafe(cgt)) {
 					continue;
-				}
+				}*/ // Temporarily commented out because there are very few words that have one morphological reading.
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
-				//log.info("next reading: "+reading);
-				/*
-				// annotation of each token individually
-				if (containsTag(reading, conT)) {
-					Enhancement e = new Enhancement(cas);
-					
-					// determine token position within chunk
-					String tokenPosition = CHUNK_BEGIN_SUFFIX;
-					if (containsTag(reading, conT + CHUNK_INSIDE_SUFFIX)) {
-						tokenPosition = CHUNK_INSIDE_SUFFIX;
+				String lemma = "", gender = "", animacy = "", distractors = "";
+				
+				if (containsTag(reading, conT, enhancement_type)) {
+					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
+						// get lemma from the CG reading
+						lemma = getLemma(reading);
 					}
-					// increment id
-					int newId = classCounts.get(conT) + 1;
-					classCounts.put(conT, newId);
-					
-					e.setBegin(cgt.getBegin());
-					e.setEnhanceStart("<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + 
-							"\" class=\"wertiviewconjunction wertiview" + conT + " werti" + conT + tokenPosition + "\">");
-					e.setEnd(cgt.getEnd());
-					e.setEnhanceEnd("</span>");
-					
-					cas.addFsToIndexes(e);
-				} 
-				*/
-				
-				/* annotation of spans across tokens */	
-				/*			 
-				// case 1: started enhancement but current reading doesn't
-				// have a chunk inside tag					
-                    if (!enhancements.empty() && enhancements.peek().getEnhanceStart().contains(conT)
-								&& !containsTag(reading, conT)) {
-					// finish enhancement
-					Enhancement e = enhancements.pop();
-					e.setEnd(prev.getEnd());
-					e.setEnhanceEnd("</span>");
-					e.setRelevant(true);
-					// update CAS
-					cas.addFsToIndexes(e);
-					log.debug("Completed chunk " + conT + "-" + classCounts.get(conT) + " at pos " + e.getEnd());
-				}
-				*/
-				
-				// case 2: chunk start tag
-				if (containsTag(reading, conT)) {
-				    // get lemma from the CG reading
-				    String lemma = getLemma(reading);
-					// get stemtype from the CG reading, if any of these: G3, G7, NomAg
-					String stemtype = getStemType(reading);
-				    // generate the distractors, based on the lemma of the hit
-                    String distractors = getDistractors(lemma, stemtype);
+				    if (enhancement_type.equals("mc")) {
+						boolean prop = false;
+						// Proper nouns have the tag "Prop" in the morphological information. This is needed when generating distractors. 
+						if (containsTag(reading, "Prop", enhancement_type)) {
+							prop = true;
+						}
+						// get gender from the CG reading: Fem, Msc, Neu
+						gender = getGender(reading);
+						// get animacy from the CG reading: Anim, Inan                                             
+						animacy = getAnimacy(reading);
+						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
+						distractors = getDistractors(lemma, gender, animacy, prop);
+					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
 					e.setRelevant(true);
@@ -216,10 +193,6 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			}
 		}
 		
-
-		// (chunk)
-		//log.info("Enhancement stack is "
-		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
 		log.info("Finished N Pl enhancement");
 	}
 	
@@ -230,17 +203,25 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
 	
+	
 	/*
-	 * Determines whether the given reading contains the given tag.
+	 * Determines whether the given reading contains the given tag
 	 */
-	private boolean containsTag(CGReading cgr, String tag) {
+	private boolean containsTag(CGReading cgr, String tag, String enhancement_type) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
+	
+		//log.info("enhancement type is:"+enhancement_type);
+		// If the exercise type is "practice" (cloze) then the derived forms, forms with clitics and proper nouns are excluded from the selection.
+		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {
+			log.info("derived form or form with clitics");
+			return false;
+		}
 		
-		if (reading_str.contains(tag) && reading_str.contains(" N ") && !reading_str.contains("Prop") && !reading_str.contains("Der/") && !reading_str.contains("Qst")) {  // Check if the tag string contains the given tag sequence as a substring. Ensure that it is a noun, eliminate proper nouns and derived forms from the selection.
+		if (reading_str.contains(tag) && reading_str.contains(" N ")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'.
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -250,37 +231,60 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	}
 	
 	/*
-	 * Obtains the stem type from the morphological analysis if any (G3,G7,NomAg).
+	 * Obtains the gender from the morphological analysis if any (Fem, Msc, Neu)
 	 */
-	private String getStemType(CGReading cgr) {
-		String stemtype = "";
+	private String getGender(CGReading cgr) {
+		String gender = "";
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
-		if (reading_str.contains("G3")) {
-			stemtype = "G3";
+		if (reading_str.contains("Fem")) {
+			gender = "Fem";
 		}
-		else if (reading_str.contains("G7")) {
-			stemtype = "G7";
+		else if (reading_str.contains("Msc")) {
+			gender = "Msc";
 		}
-		else if (reading_str.contains("NomAg")) {
-			stemtype = "NomAg";
+		else if (reading_str.contains("Neu")) {
+			gender = "Neu";
 		}
-		return stemtype;
+		return gender;
 	}
-	
+
+    /*                                                               
+     * Obtains the animacy from the morphological analysis if any (Anim, Inan)                                                             
+    */
+    private String getAnimacy(CGReading cgr) {
+	String animacy = "";
+	StringListIterable reading = new StringListIterable(cgr);
+	String reading_str = "";
+	for (String rtag : reading) {
+	    reading_str = reading_str + rtag + " ";
+	}
+	if (reading_str.contains("Anim")) {
+	    animacy = "Anim";
+	}
+	else if (reading_str.contains("Inan")) {
+	    animacy = "Inan";
+	}
+	return animacy;
+    }
+		
+	/* 
+	 * Obtains the lemma from the CG reading.
+	 */
 	private String getLemma(CGReading cgr) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String lemma = "", lemma_utf8 = "";
-		// Obtain the lemma from the CG reading.
+	
 		for (String rtag : reading) {
 			if (rtag.charAt(0) == '\"') {
 			    lemma = rtag.substring(1,rtag.length()-1);
 			    log.info(cgr + " lemma: " + lemma);
             }
 		}
+		
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
 		/* 
 		try {
@@ -294,16 +298,22 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
-    
-    private String getDistractors(String lemma, String stemtype) {
-        String[] distract_forms = {"Pl+Nom", "Pl+Acc", "Pl+Gen", "Pl+Ill", "Pl+Loc", "Pl+Com", "Ess"};
-		
-		String str, word, result = "", generationInput = "";
+	
+    /*
+	 * Generates distractors for the multiple choice exercise.
+	 */
+    private String getDistractors(String lemma, String gender, String animacy, boolean propernoun) {
+        String[] distract_forms = {"Pl+Nom", "Pl+Acc", "Pl+Gen", "Pl+Loc", "Pl+Dat", "Pl+Ins"};
+        
+        String str, word, result = "", generationInput = "", propN = "";
+		if (propernoun) {
+			propN = "+Prop";
+		}
 		
 		try {
             
 			if (lemma.contains("#")) {
-				// correct lemma for compound words = morf analysis - N+Sg+Nom
+				// correct lemma for compound words = morf analysis - N+Pl+Nom
 				lemma = lemma.replace("#","");
 				String[] analysisPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + "\" | " + lookupLoc + " " + lookupFlags + " " + FST};
 				log.info("Morph analysis pipeline: "+analysisPipeline[2]);
@@ -324,7 +334,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous 
 				String[] token = analysis[0].split("\t"); // take the first analysis
 				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
-				lemma = lemma.replace("Sg+Nom","");
+				lemma = lemma.replace("Pl+Nom","");
 				log.info("lemma of the compound word: "+lemma);
 				
 				for (int j=0; j < distract_forms.length; j++) {
@@ -333,23 +343,16 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					if (stemtype != "") {
-						generationInput += lemma + "+N+" + stemtype + "+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + stemtype + "+" + distract_forms[j] + "\n";
-					}
-					else {
-						generationInput += lemma + "+N+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + distract_forms[j] + "\n";
-					}
+					generationInput += lemma + "+N+" + gender + "+" + animacy + "+" + distract_forms[j] + "\n";
 				}
 			}
-			
+				
 			String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
-			
+				
 			log.info("Form generation pipeline: "+generationPipeline[2]);
-			
+	
 			Process process2 = Runtime.getRuntime().exec(generationPipeline);
-			
+
 			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process2.getInputStream(), "UTF8"));
 			ExtCommandConsume2String stdoutConsumer2 = new ExtCommandConsume2String(fromIFST);
 			Thread stdoutConsumerThread2 = new Thread(stdoutConsumer2, "FST STDOUT consumer");
@@ -360,7 +363,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
 				return null;
 			}
-			
+					
 			fromIFST.close();
 			String iFSToutput = stdoutConsumer2.getBuffer();
 			StringTokenizer tok = new StringTokenizer(iFSToutput);
@@ -379,71 +382,6 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
         
         log.info("Generated forms read from the outputfile: "+result);	  
         return result;
-		
-        
-        /*
-		String str, word, result = "";
-        // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
-        long timestamp = System.currentTimeMillis();
-        
-        String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
-        
-        //create temporary files for saving cg3 input and output
-        
-        Writer inputfile = null;
-        
-		try {
-            inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
-            for (int j=0; j < distract_forms.length; j++) {
-                inputfile.write(lemma + "+" + distract_forms[j] + "\n");
-	        }
-	        inputfile.close();
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        
-        String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
-        
-        log.info("Form generation pipeline: "+generationPipeline[2]);
-        try {
-            Process process = Runtime.getRuntime().exec(generationPipeline);
-            process.waitFor();
-        	
-            BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
-            
-            while ((str = outputfile.readLine()) != null) {
-                StringTokenizer tok = new StringTokenizer(str);
-                while (tok.hasMoreTokens()) {
-                    word = tok.nextToken();
-                    if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-                        result = result + word + " ";
-                    }
-                }
-            }
-            log.info("Generated forms read from the outputfile: "+result);
-            
-            outputfile.close();
-            // Delete the temporary files:
-            boolean inputfiledeleted = (new File(inputfileLoc)).delete();
-            boolean outputfiledeleted = (new File(outputfileLoc)).delete();
-        }
-        catch (InterruptedException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }	  
-        
-        return result; */
     }
-
 }
 
