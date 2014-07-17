@@ -19,6 +19,10 @@ In addition to overall replacement of the topic, edit the function getDistractor
 
 e) Define a new css-style for the 'colorize' exercise ( .colorizeStyleYourTopic ) in src/main/resources/firefox-extension/werti/chrome/content/wertiview.css
 
+f) Add link to the src/main/webapp/index.html
+
+g) Add mapping to "dict" in src/main/java/werti/util/HTMLEnhancer.java
+
 2. Rebuild and redeploy the package. Restart the web server.
 
 You have to do the following in order to see the effect of your changes: 
