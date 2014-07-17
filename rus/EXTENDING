@@ -33,7 +33,7 @@ b) Building the package can be done by launching the script
 
 in the package root directory.
 
-c) After adding a new topic, it is always recommended to restart Tomcat:
+c) After adding a new topic, restarting Tomcat is always recommended:
 $CATALINA_HOME/bin/shutdown.sh
 $CATALINA_HOME/bin/startup.sh
 
