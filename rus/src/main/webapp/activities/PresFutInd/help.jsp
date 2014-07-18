@@ -1,7 +1,7 @@
 
 <div class="text">
 
-<h2>Declination of substantives in singular</h2>
+<h2>Conjugation of present/future verbs</h2>
 
 <ul>
 <li>
@@ -9,7 +9,7 @@
 Color
 </div>
 <div class="InstructionBody">
-In the text, Teaksta shows you the substantives (only singular forms) in <font color="#ff8200"><b>orange</b></font>.
+In the text, Teaksta shows you the verbs (only pres/fut forms) in <font color="#ff8200"><b>orange</b></font>.
 </div>
 </li>
 <li>
@@ -17,7 +17,7 @@ In the text, Teaksta shows you the substantives (only singular forms) in <font c
 Click
 </div>
 <div class="InstructionBody">
-Click on each substantive singular form you find in the text and Teaksta will show you whether
+Click on each present or future verb you find in the text and Teaksta will show you whether
 you guessed <font color="green"><b>right</b></font> or <font color="red"><b>wrong</b></font>.
 </div>
 </li>
@@ -36,7 +36,7 @@ You can get help by clicking on <img src="images/hint.jpg" alt="hint" />.
 Practice
 </div>
 <div class="InstructionBody">
-Fill in the blanks with the <font color="green"><b>correct</b></font> substantive singular forms.
+Fill in the blanks with the <font color="green"><b>correct</b></font> present/future forms.
 If you guessed <font color="red"><b>wrong</b></font> or you find it too difficult
 you can get help by clicking on <img src="images/hint.jpg" alt="hint" />.
 </div>

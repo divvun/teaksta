@@ -40,7 +40,7 @@ public class HTMLEnhancer {
 		HashMap<String, String> dict = new HashMap<String, String>(); // translations of topics and activities to North Sámi
 		dict.put("SubstantiveSingular", "Substantive singular");
 		dict.put("SubstantivePlural", "Substantive plural");
-		dict.put("GenNouns", "Genitive");
+		dict.put("GenNouns", "Genitive nouns");
 		dict.put("PresFutInd", "Verb conjugation");
 		dict.put("NegVerbs", "Negation forms of verbs");
 		dict.put("InfiniteVerbs", "Infinite verbs");

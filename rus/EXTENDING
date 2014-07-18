@@ -10,7 +10,7 @@ Every time you have to create a new topic (such as SubstantiveSingular, VerbConj
 
 a) Create a new directory YourTopic under src/main/webapp/activities/ by making a copy of an existing sub-directory. Edit the file activity.xml. Change the tag sequences that identify the words you are looking for and the name of the post processing descriptor file (desc/operators/vislcg3PostProc_YourTopic.xml). 
 
-b) Add a new file yourtopic.js under src/main/resources/firefox-extension/werti/chrome/content/ and adapt this file by doing replacements PreviousTopic -> YourTopic.
+b) Add a new file yourtopic.js under src/main/resources/firefox-extension/werti/chrome/content/ and adapt this file by doing replacements PreviousTopic -> YourTopic. Do the same in src/main/webapp/js-lib/.
 
 c) Create new UIMA descriptor files in desc/enhancers/ (vislcg3YourTopic.xml) and in desc/operators/ (vislcg3PostProc_YourTopic.xml). The easiest way: make copies of the corresponding files of any working topic and make the necessary replacements - replace PreviousTopic by YourTopic.
 
