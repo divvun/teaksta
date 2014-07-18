@@ -33,7 +33,7 @@
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3GenNounsEnhancer/GenNounTags</parameter>
+          <parameter>vislcg3GenNounsEnhancer/NGenTags</parameter>
         </overrides>
       </configurationParameter>
     </configurationParameters>
