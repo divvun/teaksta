@@ -6,12 +6,12 @@
     <delegateAnalysisEngine key="TokenEnhancer">
       <import location="../enhancers/TokenEnhancer.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="vislcg3GenNounsEnhancer">
-      <import location="../enhancers/vislcg3GenNounsEnhancer.xml"/>
+    <delegateAnalysisEngine key="vislcg3NounsAccEnhancer">
+      <import location="../enhancers/vislcg3NounsAccEnhancer.xml"/>
     </delegateAnalysisEngine>
   </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
-    <name>vislcg3PostProc_GenNouns</name>
+    <name>vislcg3PostProc_NounsAcc</name>
     <description/>
     <version>1.0</version>
     <vendor/>
@@ -27,13 +27,13 @@
         </overrides>
       </configurationParameter>
       <configurationParameter>
-        <name>NGenTags</name>
-        <description>A comma-separated list of genitive noun tags.</description>
+        <name>NAccTags</name>
+        <description>A comma-separated list of accusative noun tags.</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3GenNounsEnhancer/NGenTags</parameter>
+          <parameter>vislcg3NounsAccEnhancer/NAccTags</parameter>
         </overrides>
       </configurationParameter>
     </configurationParameters>
@@ -47,14 +47,14 @@
         <nameValuePair>
         <name>Tags</name>
         <value>
-          <string>N Fem Anim Sg Gen, N Fem Inan Sg Gen, N Msc Anim Sg Gen, N Msc Inan Sg Gen, N Neu Anim Sg Gen, N Neu Inan Sg Gen, N Fem Anim Pl Gen, N Fem Inan Pl Gen, N Msc Anim Pl Gen, N Msc Inan Pl Gen, N Neu Anim Pl Gen, N Neu Inan Pl Gen</string>
+          <string>N Fem Anim Sg Acc, N Fem Inan Sg Acc, N Msc Anim Sg Acc, N Msc Inan Sg Acc, N Neu Anim Sg Acc, N Neu Inan Sg Acc, N Fem Anim Pl Acc, N Fem Inan Pl Acc, N Msc Anim Pl Acc, N Msc Inan Pl Acc, N Neu Anim Pl Acc, N Neu Inan Pl Acc</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
         <node>TokenEnhancer</node>
-        <node>vislcg3GenNounsEnhancer</node>
+        <node>vislcg3NounsAccEnhancer</node>
       </fixedFlow>
     </flowConstraints>
     <fsIndexCollection/>

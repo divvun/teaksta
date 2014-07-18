@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+<frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+<primitive>true</primitive>
+<annotatorImplementationName>werti.uima.enhancer.Vislcg3NounsLocEnhancer</annotatorImplementationName>
+<analysisEngineMetaData>
+<name>vislcg3NounsLocEnhancer</name>
+<description></description>
+<version>1.0</version>
+<vendor></vendor>
+<configurationParameters>
+<configurationParameter>
+<name>NLocTags</name>
+<description>A comma-separated list of tags marking locative nouns.</description>
+<type>String</type>
+<multiValued>false</multiValued>
+<mandatory>true</mandatory>
+</configurationParameter>
+</configurationParameters>
+<configurationParameterSettings>
+<nameValuePair>
+<name>NLocTags</name>
+<value>
+<string>N Fem Anim Sg Loc, N Fem Inan Sg Loc, N Msc Anim Sg Loc, N Msc Inan Sg Loc, N Neu Anim Sg Loc, N Neu Inan Sg Loc, N Fem Anim Pl Loc, N Fem Inan Pl Loc, N Msc Anim Pl Loc, N Msc Inan Pl Loc, N Neu Anim Pl Loc, N Neu Inan Pl Loc</string>
+</value>
+</nameValuePair>
+</configurationParameterSettings>
+<typeSystemDescription>
+<imports>
+<import location="../vislcg3TypeSystem.xml"/>
+</imports>
+</typeSystemDescription>
+<typePriorities>
+      <imports>
+        <import location="../WERTiTypePriorities.xml"/>
+      </imports>
+    </typePriorities>
+<fsIndexCollection/>
+<capabilities>
+<capability>
+<inputs>
+<type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
+<type allAnnotatorFeatures="true">werti.uima.types.Enhancement</type>
+</inputs>
+<outputs>
+<type allAnnotatorFeatures="true">werti.uima.types.Enhancement</type>
+<type allAnnotatorFeatures="true">werti.uima.types.annot.CGToken</type>
+</outputs>
+<languagesSupported/>
+</capability>
+</capabilities>
+<operationalProperties>
+<modifiesCas>true</modifiesCas>
+<multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+<outputsNewCASes>false</outputsNewCASes>
+</operationalProperties>
+</analysisEngineMetaData>
+<resourceManagerConfiguration/>
+</analysisEngineDescription>

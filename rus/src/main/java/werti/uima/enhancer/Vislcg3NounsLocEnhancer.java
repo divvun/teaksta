@@ -31,13 +31,13 @@ import werti.server.WERTiServlet;
  * @author Heli Uibo
  *
  */
-public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
+public class Vislcg3NounsLocEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3GenNounsEnhancer.class);
+		Logger.getLogger(Vislcg3NounsLocEnhancer.class);
 	
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
-	private List<String> NGenTags;
+	private List<String> NLocTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
         private final String lookupLoc = "/usr/local/bin/lookup";                             
@@ -111,20 +111,20 @@ public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Gen Noun tags "+NGenTags);
+        log.info("Loc Noun tags "+NLocTags);
 		super.initialize(context);
-		NGenTags = Arrays.asList(((String)context.getConfigParameterValue("NGenTags")).split(","));
+		NLocTags = Arrays.asList(((String)context.getConfigParameterValue("NLocTags")).split(","));
 	}
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting Gen Noun enhancement");
+		log.info("Starting Loc Noun enhancement");
 		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : NGenTags) {
+		for (String conT : NLocTags) {
 			classCounts.put(conT, 0);
 			log.info("Tag: "+conT);
 		}
@@ -132,7 +132,7 @@ public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
-		for (String conT: NGenTags) {
+		for (String conT: NLocTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
 			// CGToken prev = null;
@@ -175,7 +175,7 @@ public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewGenNouns \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewNounsLoc \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -193,7 +193,7 @@ public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
 			}
 		}
 		
-		log.info("Finished Gen Noun enhancement");
+		log.info("Finished Loc Noun enhancement");
 	}
 	
 	/*

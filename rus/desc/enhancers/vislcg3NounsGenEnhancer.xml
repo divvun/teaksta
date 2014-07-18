@@ -2,9 +2,9 @@
 <analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
 <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
 <primitive>true</primitive>
-<annotatorImplementationName>werti.uima.enhancer.Vislcg3GenNounsEnhancer</annotatorImplementationName>
+<annotatorImplementationName>werti.uima.enhancer.Vislcg3NounsGenEnhancer</annotatorImplementationName>
 <analysisEngineMetaData>
-<name>vislcg3GenNounsEnhancer</name>
+<name>vislcg3NounsGenEnhancer</name>
 <description></description>
 <version>1.0</version>
 <vendor></vendor>

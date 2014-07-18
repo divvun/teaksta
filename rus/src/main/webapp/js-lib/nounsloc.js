@@ -1,4 +1,4 @@
-	wertiview.gennouns = {
+	wertiview.nounsloc = {
 
     // maximum number of instances to turn into exercises (moved to preferences)
 	//MAX_CLOZE: 25,
@@ -16,11 +16,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('body').undelegate('span.wertiviewtoken', 'click', wertiview.gennouns.clickHandler);
-		$('body').undelegate('select.wertiviewinput', 'change', wertiview.gennouns.clozeInputHandler);
-		$('body').undelegate('span.wertiviewhint', 'click', wertiview.gennouns.clozeHintHandler);
-		$('body').undelegate('input.wertiviewinput', 'change', wertiview.gennouns.clozeInputHandler);
-		$('body').undelegate('input.wertiviewhint', 'click', wertiview.gennouns.clozeHintHandler);  // was: span.wertiviewhint
+		$('body').undelegate('span.wertiviewtoken', 'click', wertiview.nounsloc.clickHandler);
+		$('body').undelegate('select.wertiviewinput', 'change', wertiview.nounsloc.clozeInputHandler);
+		$('body').undelegate('span.wertiviewhint', 'click', wertiview.nounsloc.clozeHintHandler);
+		$('body').undelegate('input.wertiviewinput', 'change', wertiview.nounsloc.clozeInputHandler);
+		$('body').undelegate('input.wertiviewhint', 'click', wertiview.nounsloc.clozeHintHandler);  // was: span.wertiviewhint
 		
 		$('.wertiviewinput').each( function() {
 			$(this).replaceWith($(this).data('wertiviewanswer'));
@@ -34,11 +34,11 @@
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
+		$('span.wertiviewNounsLoc').addClass('colorizeStyleNounsLoc');
 	},
 	
 	colorizeSpan: function(span, topic) {
-span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
+span.find('span.wertiviewNounsLoc').addClass('colorizeStyleNounsLoc');
 	},
 
 	click: function(contextDoc) {
@@ -50,13 +50,13 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
 
 		// conjunction markup
-		$('span.wertiviewRELEVANT').find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
+		$('span.wertiviewRELEVANT').find('span.wertiviewNounsLoc').addClass('colorizeStyleNounsLoc');
 
 		// correct cursor inside wertiviewtokens within multi-word spans
 		//$('span.wertiviewRELEVANT').find('span.wertiviewconjunction').css({'cursor': 'text'});
 		
 		// handle click
-		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.gennouns.clickHandler); 
+		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.nounsloc.clickHandler); 
 	},
 
 	clickHandler: function(event) {
@@ -66,7 +66,7 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
 		$.fn = $.prototype = jQuery.fn;
 		
-		if($(this).hasClass('wertiviewGenNouns')) {  // was: wertiviewhit
+		if($(this).hasClass('wertiviewNounsLoc')) {  // was: wertiviewhit
 			$(this).addClass('clickStyleCorrect');
 		} else {
 			$(this).addClass('clickStyleIncorrect');
@@ -114,29 +114,29 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		$.fn = $.prototype = jQuery.fn;
 		
 		// get potential spans
-		var $hits = $('span.wertiviewGenNouns');
+		var $hits = $('span.wertiviewNounsLoc');
 		
 		//var hitList = [];
 		var tokens = [];
-		wertiview.gennouns.types = [];
-		wertiview.gennouns.hitList = [];
+		wertiview.nounsloc.types = [];
+		wertiview.nounsloc.hitList = [];
 		//alert($hits.length+" hits");
 		$hits.each( function() {
-			wertiview.gennouns.hitList.push($(this));
+			wertiview.nounsloc.hitList.push($(this));
 			//alert($(this).text());
 			tokens[$(this).text().toLowerCase()] = 1;
 		});
 		//alert("number of tokens: "+tokens.length);
-		//alert("size of hitList: "+wertiview.gennouns.hitList.length);
+		//alert("size of hitList: "+wertiview.nounsloc.hitList.length);
 		/*for (word in tokens) {
-			wertiview.gennouns.types.push(word);
+			wertiview.nounsloc.types.push(word);
 			//alert("word: "+word);
 		}*/
-		//alert(wertiview.gennouns.types.length+" different gennouns on page");
+		//alert(wertiview.nounsloc.types.length+" different nounsloc on page");
 
-		wertiview.gennouns.maxLength = wertiview.gennouns.MAX_MC;
-		/*if (wertiview.gennouns.maxLength > wertiview.gennouns.types.length) {
-			wertiview.gennouns.maxLength = wertiview.gennouns.types.length;
+		wertiview.nounsloc.maxLength = wertiview.nounsloc.MAX_MC;
+		/*if (wertiview.nounsloc.maxLength > wertiview.nounsloc.types.length) {
+			wertiview.nounsloc.maxLength = wertiview.nounsloc.types.length;
 		}*/
 
 		/* 
@@ -154,11 +154,11 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 			} 
 		}); */
 
-		wertiview.activity.mc(contextDoc, wertiview.gennouns.hitList, 
-				wertiview.gennouns.clozeInputHandler, 
-				wertiview.gennouns.clozeHintHandler, 
-				wertiview.gennouns.mcGetOptions, 
-				wertiview.gennouns.mcGetCorrectAnswer);
+		wertiview.activity.mc(contextDoc, wertiview.nounsloc.hitList, 
+				wertiview.nounsloc.clozeInputHandler, 
+				wertiview.nounsloc.clozeHintHandler, 
+				wertiview.nounsloc.mcGetOptions, 
+				wertiview.nounsloc.mcGetCorrectAnswer);
 
 	},
 	
@@ -166,23 +166,23 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		var options = [];
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
-		wertiview.gennouns.types = $hit.attr('distractors').split(" ");
-	    wertiview.lib.shuffleList(wertiview.gennouns.types);
+		wertiview.nounsloc.types = $hit.attr('distractors').split(" ");
+	    wertiview.lib.shuffleList(wertiview.nounsloc.types);
         
         // Add the distractor forms to the options list:
-        while (j < wertiview.gennouns.types.length && options.length < wertiview.gennouns.MAX_MC - 1) {
+        while (j < wertiview.nounsloc.types.length && options.length < wertiview.nounsloc.MAX_MC - 1) {
             // The forms that are homonymous to the correct form are excluded from the list of options:
-            if (wertiview.gennouns.types[j] != $hit.text().toLowerCase() && wertiview.gennouns.types[j] != "") 
+            if (wertiview.nounsloc.types[j] != $hit.text().toLowerCase() && wertiview.nounsloc.types[j] != "") 
             {
                 var homonym = false;
                 var k = 0;
                 while (k < j) //check for homonymes among the distractors
                 { 
-                    if (wertiview.gennouns.types[k] == wertiview.gennouns.types[j])
+                    if (wertiview.nounsloc.types[k] == wertiview.nounsloc.types[j])
                         homonym = true;
                     k++;
                 } 
-                if (!homonym)                 options.push(wertiview.lib.matchCapitalization(wertiview.gennouns.types[j], capType)); 
+                if (!homonym)                 options.push(wertiview.lib.matchCapitalization(wertiview.nounsloc.types[j], capType)); 
             }
 			j++;
 		}
@@ -206,7 +206,7 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		
 		// get potential spans
 		//var $hits = $('span.wertiviewRELEVANT').find('span.wertiviewconjunction');
-		var $hits = $('span.wertiviewGenNouns');
+		var $hits = $('span.wertiviewNounsLoc');
 
 		var hitList = [];
 		$hits.each( function() {
@@ -220,10 +220,10 @@ span.find('span.wertiviewGenNouns').addClass('colorizeStyleGenNouns');
 		});*/
 
 		wertiview.activity.cloze(contextDoc, hitList, 
-				wertiview.gennouns.clozeInputHandler, 
-				wertiview.gennouns.clozeHintHandler, 
-				wertiview.gennouns.mcGetCorrectAnswer,
-				wertiview.gennouns.clozeAddBaseform);
+				wertiview.nounsloc.clozeInputHandler, 
+				wertiview.nounsloc.clozeHintHandler, 
+				wertiview.nounsloc.mcGetCorrectAnswer,
+				wertiview.nounsloc.clozeAddBaseform);
 	},
 	
 	clozeAddBaseform: function($hit, capType, $){
