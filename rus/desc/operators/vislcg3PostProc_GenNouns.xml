@@ -27,7 +27,7 @@
         </overrides>
       </configurationParameter>
       <configurationParameter>
-        <name>GenNounTags</name>
+        <name>NGenTags</name>
         <description>A comma-separated list of genitive noun tags.</description>
         <type>String</type>
         <multiValued>false</multiValued>
