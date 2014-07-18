@@ -110,6 +110,11 @@ span.wertiview {
 	font-weight: bold !important;
 }
 
+.colorizeStyleGenNouns {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
 .colorizeStyleSubject {
 	color: #ff8200 !important;
 	font-weight: bold !important;

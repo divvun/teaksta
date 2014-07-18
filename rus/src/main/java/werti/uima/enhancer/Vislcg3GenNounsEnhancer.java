@@ -31,13 +31,13 @@ import werti.server.WERTiServlet;
  * @author Heli Uibo
  *
  */
-public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
+public class Vislcg3GenNounsEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3PresFutIndEnhancer.class);
+		Logger.getLogger(Vislcg3GenNounsEnhancer.class);
 	
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
-	private List<String> VPresFutTags;
+	private List<String> NGenTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
         private final String lookupLoc = "/usr/local/bin/lookup";                             
@@ -111,20 +111,20 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Verb Pres/Fut tags "+VPresFutTags);
+        log.info("Gen Noun tags "+NGenTags);
 		super.initialize(context);
-		VPresFutTags = Arrays.asList(((String)context.getConfigParameterValue("VPresFutTags")).split(","));
+		NGenTags = Arrays.asList(((String)context.getConfigParameterValue("NGenTags")).split(","));
 	}
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting Verb Pres/Fut enhancement");
+		log.info("Starting Gen Noun enhancement");
 		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		// stack for started enhancements (chunk)
 		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
 		// keep track of ids for each annotation class
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : VPresFutTags) {
+		for (String conT : NGenTags) {
 			classCounts.put(conT, 0);
 			log.info("Tag: "+conT);
 		}
@@ -132,7 +132,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
-		for (String conT: VPresFutTags) {
+		for (String conT: NGenTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
 			// CGToken prev = null;
@@ -147,7 +147,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
-				String lemma = "", aspect = "", transitivity = "", distractors = "";
+				String lemma = "", gender = "", animacy = "", distractors = "";
 				
 				if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
@@ -155,12 +155,17 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 						lemma = getLemma(reading);
 					}
 				    if (enhancement_type.equals("mc")) {
-						// get aspect from the CG reading: Impf, Perf
-						aspect = getAspect(reading);
-						// get transitivity from the CG reading: IV, TV                                             
-						transitivity = getTransitivity(reading);
-						// generate the distractors, based on the lemma, aspect, and transitivity
-						distractors = getDistractors(lemma, aspect, transitivity);
+						boolean prop = false;
+						// Proper nouns have the tag "Prop" in the morphological information. This is needed when generating distractors. 
+						if (containsTag(reading, "Prop", enhancement_type)) {
+							prop = true;
+						}
+						// get gender from the CG reading: Fem, Msc, Neu
+						gender = getGender(reading);
+						// get animacy from the CG reading: Anim, Inan                                             
+						animacy = getAnimacy(reading);
+						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
+						distractors = getDistractors(lemma, gender, animacy, prop);
 					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
@@ -170,7 +175,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 					
 					// increment id
 					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewPresFutInd \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
+					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewGenNouns \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
 					e.setEnhanceStart(spanStartTag);					
 					e.setEnhanceEnd("</span>");
@@ -188,7 +193,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 			}
 		}
 		
-		log.info("Finished Verb Pres/Fut enhancement");
+		log.info("Finished Gen Noun enhancement");
 	}
 	
 	/*
@@ -216,7 +221,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 			return false;
 		}
 		
-		if (reading_str.contains(tag) && reading_str.contains(" V ")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'V'.
+		if (reading_str.contains(tag) && reading_str.contains(" N ")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'.
             log.info(cgr + " contains " + tag);
             return true;
         }
@@ -226,41 +231,44 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 	}
 	
 	/*
-	 * Obtains the aspect from the morphological analysis if any (Impf, Perf)
+	 * Obtains the gender from the morphological analysis if any (Fem, Msc, Neu)
 	 */
-	private String getAspect(CGReading cgr) {
-		String aspect = "";
+	private String getGender(CGReading cgr) {
+		String gender = "";
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
-		if (reading_str.contains("Impf")) {
-			aspect = "Impf";
+		if (reading_str.contains("Fem")) {
+			gender = "Fem";
 		}
-		else if (reading_str.contains("Perf")) {
-			aspect = "Perf";
+		else if (reading_str.contains("Msc")) {
+			gender = "Msc";
 		}
-		return aspect;
+		else if (reading_str.contains("Neu")) {
+			gender = "Neu";
+		}
+		return gender;
 	}
 
     /*                                                               
      * Obtains the animacy from the morphological analysis if any (Anim, Inan)                                                             
     */
-    private String getTransitivity(CGReading cgr) {
-	String transitivity = "";
+    private String getAnimacy(CGReading cgr) {
+	String animacy = "";
 	StringListIterable reading = new StringListIterable(cgr);
 	String reading_str = "";
 	for (String rtag : reading) {
 	    reading_str = reading_str + rtag + " ";
 	}
-	if (reading_str.contains("IV")) {
-	    transitivity = "IV";
+	if (reading_str.contains("Anim")) {
+	    animacy = "Anim";
 	}
-	else if (reading_str.contains("TV")) {
-	    transitivity = "TV";
+	else if (reading_str.contains("Inan")) {
+	    animacy = "Inan";
 	}
-	return transitivity;
+	return animacy;
     }
 		
 	/* 
@@ -294,22 +302,18 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    private String getDistractors(String lemma, String aspect, String transitivity) {
-        String tense = "";
-        if (aspect.equals("Impf")) {
-            tense = "Prs";
-        }
-        else if (aspect.equals("Perf")) {
-            tense = "Fut";
-        }
-        String[] distract_forms = {"Sg1", "Sg2", "Sg3", "Pl1", "Pl2", "Pl3"};
+    private String getDistractors(String lemma, String gender, String animacy, boolean propernoun) {
+        String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Loc", "Sg+Dat", "Sg+Ins"};
         
-        String str, word, result = "", generationInput = "";
+        String str, word, result = "", generationInput = "", propN = "";
+		if (propernoun) {
+			propN = "+Prop";
+		}
 		
 		try {
             
 			if (lemma.contains("#")) {
-				// correct lemma for compound words = morf analysis - V+...
+				// correct lemma for compound words = morf analysis - N+Sg+Nom
 				lemma = lemma.replace("#","");
 				String[] analysisPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + "\" | " + lookupLoc + " " + lookupFlags + " " + FST};
 				log.info("Morph analysis pipeline: "+analysisPipeline[2]);
@@ -330,7 +334,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous 
 				String[] token = analysis[0].split("\t"); // take the first analysis
 				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
-				lemma = lemma.replace("Sg1","");
+				lemma = lemma.replace("Sg+Nom","");
 				log.info("lemma of the compound word: "+lemma);
 				
 				for (int j=0; j < distract_forms.length; j++) {
@@ -339,7 +343,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					generationInput += lemma + "+N+" + aspect + "+" + transitivity + "+" + distract_forms[j] + "\n";
+					generationInput += lemma + "+N+" + gender + "+" + animacy + "+" + distract_forms[j] + "\n";
 				}
 			}
 				
