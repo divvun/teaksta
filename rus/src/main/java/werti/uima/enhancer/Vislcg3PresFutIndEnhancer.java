@@ -339,7 +339,7 @@ public class Vislcg3PresFutIndEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					generationInput += lemma + "+N+" + aspect + "+" + transitivity + "+" + distract_forms[j] + "\n";
+					generationInput += lemma + "+V+" + aspect + "+" + transitivity + "+" + distract_forms[j] + "\n";
 				}
 			}
 				
