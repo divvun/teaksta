@@ -33,7 +33,7 @@
 			</pre>
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
-				<pipeline desc="/operators/vislcg3PostProc.xml"/>
+				<pipeline desc="/operators/vislcg3PostProc_Conjunction.xml"/>
 				<entry key="conjunctionTags" value="CC,CS" overridable="yes"/>  
 			</post>
 		</lang>

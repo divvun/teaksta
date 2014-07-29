@@ -47,12 +47,7 @@ public class HTMLEnhancer {
 		dict.put("NounsDat", "Dative nouns");
 		dict.put("NounsIns", "Instrumental nouns");
 		dict.put("PresFutInd", "Verb conjugation");
-		dict.put("NegVerbs", "Negation forms of verbs");
-		dict.put("InfiniteVerbs", "Infinite verbs");
 		dict.put("Conjunctions", "Conjunctions");
-		dict.put("Subject", "Subject");
-		dict.put("Object", "Object");
-		dict.put("Adverbial", "Adverbial");
 		dict.put("colorize", "Higlight the words");
 		dict.put("click", "Click on the words!");
 		dict.put("mc", "Select the correct word form!");

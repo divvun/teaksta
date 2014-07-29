@@ -80,21 +80,6 @@ span.wertiview {
 	font-weight: bold !important;
 }
 
-.colorizeStyleNegVerbs {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
-.colorizeStyleVerbConjugation {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
-.colorizeStyleInfiniteVerbs {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
 .colorizeStylePresFutInd {
 	color: #ff8200 !important;
 	font-weight: bold !important;
@@ -139,22 +124,6 @@ span.wertiview {
 	color: #ff8200 !important;
 	font-weight: bold !important;
 }
-
-.colorizeStyleSubject {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
-.colorizeStyleObject {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
-.colorizeStyleAdverbial {
-	color: #ff8200 !important;
-	font-weight: bold !important;
-}
-
 
 /* UI */
 #wertiview-inst-notification {
