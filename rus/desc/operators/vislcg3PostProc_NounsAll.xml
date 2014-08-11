@@ -6,12 +6,12 @@
     <delegateAnalysisEngine key="TokenEnhancer">
       <import location="../enhancers/TokenEnhancer.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="vislcg3NounPlEnhancer">
-      <import location="../enhancers/vislcg3NounPlEnhancer.xml"/>
+    <delegateAnalysisEngine key="vislcg3NounsAllEnhancer">
+      <import location="../enhancers/vislcg3NounsAllEnhancer.xml"/>
     </delegateAnalysisEngine>
   </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
-    <name>vislcg3PostProc_NounPl</name>
+    <name>vislcg3PostProc_NounsAll</name>
     <description/>
     <version>1.0</version>
     <vendor/>
@@ -27,13 +27,13 @@
         </overrides>
       </configurationParameter>
       <configurationParameter>
-        <name>NPlTags</name>
+        <name>NTags</name>
         <description>A comma-separated list of noun plural tags.</description>
         <type>String</type>
         <multiValued>false</multiValued>
         <mandatory>true</mandatory>
         <overrides>
-          <parameter>vislcg3NounPlEnhancer/NPlTags</parameter>
+          <parameter>vislcg3NounsAllEnhancer/NTags</parameter>
         </overrides>
       </configurationParameter>
     </configurationParameters>
@@ -47,14 +47,14 @@
       <nameValuePair>
         <name>Tags</name>
         <value>
-          <string>N Fem Anim Pl, N Fem Inan Pl, N Msc Anim Pl, N Msc Inan Pl, N Neu Anim Pl, N Neu Inan Pl, N MFN Anim Pl, N MFN Inan Pl</string>
+          <string>N Fem Anim Sg, N Fem Inan Sg, N Msc Anim Sg, N Msc Inan Sg, N Neu Anim Sg, N Neu Inan Sg, N Fem Anim Pl, N Fem Inan Pl, N Msc Anim Pl, N Msc Inan Pl, N Neu Anim Pl, N Neu Inan Pl, N MFN Anim Pl, N MFN Inan Pl</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
         <node>TokenEnhancer</node>
-        <node>vislcg3NounPlEnhancer</node>
+        <node>vislcg3NounsAllEnhancer</node>
       </fixedFlow>
     </flowConstraints>
     <fsIndexCollection/>

@@ -95,6 +95,11 @@ span.wertiview {
 	font-weight: bold !important;
 }
 
+.colorizeStyleNounsAll {
+	color: #ff8200 !important;
+	font-weight: bold !important;
+}
+
 .colorizeStyleNounsNom {
 	color: #ff8200 !important;
 	font-weight: bold !important;

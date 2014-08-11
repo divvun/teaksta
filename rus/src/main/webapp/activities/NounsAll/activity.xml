@@ -3,7 +3,7 @@
 <!-- <!DOCTYPE activity SYSTEM "../activity.dtd"> -->
 <activity version="0.1" enabled="yes">
 	<meta>
-		<name>SubstantivePlural</name>
+		<name>NounsAll</name>
 		<author>Adriane Boyd, Heli Uibo</author>
 	</meta>
 	
@@ -33,8 +33,8 @@
 			</pre>
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
-				<pipeline desc="/operators/vislcg3PostProc_NounPl.xml"/>
-				<entry key="NPlTags" value="N Fem Anim Pl, N Fem Inan Pl, N Msc Anim Pl, N Msc Inan Pl, N Neu Anim Pl, N Neu Inan Pl, N MFN Anim Pl, N MFN Inan Pl" overridable="yes"/>   <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Pl + case. -->
+				<pipeline desc="/operators/vislcg3PostProc_NounsAll.xml"/>
+				<entry key="NTags" value="N Fem Anim Sg, N Fem Inan Sg, N Msc Anim Sg, N Msc Inan Sg, N Neu Anim Sg, N Neu Inan Sg, N Fem Anim Pl, N Fem Inan Pl, N Msc Anim Pl, N Msc Inan Pl, N Neu Anim Pl, N Neu Inan Pl, N MFN Anim Pl, N MFN Inan Pl" overridable="yes"/>   <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Pl + case. -->
 			</post>
 		</lang>
 	</server-cfg>

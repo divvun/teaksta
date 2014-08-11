@@ -38,6 +38,7 @@ public class HTMLEnhancer {
     		HttpServletRequest req, ActivityConfiguration config, String servletContextName) throws UnsupportedEncodingException{
 		
 		HashMap<String, String> dict = new HashMap<String, String>(); // translations of topics and activities to North Sámi
+		dict.put("NounsAll", "Nouns (all)");
 		dict.put("SubstantiveSingular", "Substantive singular");
 		dict.put("SubstantivePlural", "Substantive plural");
 		dict.put("NounsNom", "Nominative nouns");
