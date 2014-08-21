@@ -234,14 +234,14 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 				//log.info("Token: "+origT.getCoveredText()+" CGToken:"+reading);
 				
 				// Skip the fullstop tokens that were added in order to treat headings as separate sentences.
-				while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
+				/*while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
 					j++;
 					if (j < newTokens.size()) {
 						newT = newTokens.get(j);
 						reading = newT.getReadings().get(0).toString();
 						//log.info("Token: "+origT.getCoveredText()+" new CGToken:"+reading);
 					}
-				}
+					}*/
                 copy(origT, newT);
 				j++;
                 //log.info("new token begins at: " + newT.getBegin());
