@@ -129,7 +129,7 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 			log.info("Tag: "+conT);
 		}
 
-		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
+		// iterating over NTags instead of classCounts.keySet() because it is important to control the order in which
 		// spans are enhanced
 		
 		for (String conT: NTags) {
@@ -143,11 +143,11 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 				// more than one reading? don't mark up!
 				/*if (!isSafe(cgt)) {
 					continue;
-				}*/ // Temporarily commented out because there are very few words that have one morphological reading.
+				}*/ // TODO Temporarily commented out because there are very few words that have one morphological reading.
 
 				// analyze reading
 				CGReading reading = cgt.getReadings(0);
-				String lemma = "", gender = "", animacy = "", distractors = "";
+				String lemma = "", gender = "", animacy = "", number = "", distractors = "";
 				
 				if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
@@ -164,8 +164,10 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 						gender = getGender(reading);
 						// get animacy from the CG reading: Anim, Inan                                             
 						animacy = getAnimacy(reading);
+						// get number from the CG reading: Sg, Pl                                             
+						number = getNumber(reading);
 						// generate the distractors, based on the lemma, stemtype and if it is a proper noun or not
-						distractors = getDistractors(lemma, gender, animacy, prop);
+						distractors = getDistractors(lemma, gender, animacy, number, prop);
 					}
 					// make new enhancement
 					Enhancement e = new Enhancement(cas);
@@ -270,6 +272,25 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 	}
 	return animacy;
     }
+
+    /*                                                               
+     * Obtains the number from the morphological analysis if any (Sg, Pl)                                                             
+    */
+    private String getNumber(CGReading cgr) {
+	String number = "";
+	StringListIterable reading = new StringListIterable(cgr);
+	String reading_str = "";
+	for (String rtag : reading) {
+	    reading_str = reading_str + rtag + " ";
+	}
+	if (reading_str.contains("Sg")) {
+	    number = "Sg";
+	}
+	else if (reading_str.contains("Pl")) {
+	    number = "Pl";
+	}
+	return number;
+    }
 		
 	/* 
 	 * Obtains the lemma from the CG reading.
@@ -302,8 +323,8 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    private String getDistractors(String lemma, String gender, String animacy, boolean propernoun) {
-        String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Loc", "Sg+Dat", "Sg+Ins","Pl+Nom", "Pl+Acc", "Pl+Gen", "Pl+Loc", "Pl+Dat", "Pl+Ins"};
+    private String getDistractors(String lemma, String gender, String animacy, String number, boolean propernoun) {
+        String[] distract_forms = {"Nom", "Acc", "Gen", "Loc", "Dat", "Ins"};
         
         String str, word, result = "", generationInput = "", propN = "";
 		if (propernoun) {
@@ -334,7 +355,7 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous 
 				String[] token = analysis[0].split("\t"); // take the first analysis
 				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
-				lemma = lemma.replace("Pl+Nom","");
+				lemma = lemma.replace("Nom","");
 				log.info("lemma of the compound word: "+lemma);
 				
 				for (int j=0; j < distract_forms.length; j++) {
@@ -343,7 +364,7 @@ public class Vislcg3NounsAllEnhancer extends JCasAnnotator_ImplBase {
 			}
 			else {
 				for (int j=0; j < distract_forms.length; j++) {
-					generationInput += lemma + "+N+" + gender + "+" + animacy + "+" + distract_forms[j] + "\n";
+					generationInput += lemma + "+N+" + gender + "+" + animacy + "+" + number + "+" + distract_forms[j] + "\n";
 				}
 			}
 				
