@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
+      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpSentenceDetector">
+      <import location="../annotators/OpenNlpSentenceDetector.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="HTMLContentTypeAnnotator">
+      <import location="../annotators/HTMLContentTypeAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="HTMLSentenceAnnotator">
+      <import location="../annotators/HTMLSentenceAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpTagger">
+      <import location="../annotators/OpenNlpTagger.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="MorphaLemmatizer">
+      <import location="../annotators/MorphaLemmatizer.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="GenericRelevanceAnnotator">
+      <import location="../annotators/relevance/GenericRelevanceAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpTokenizer">
+      <import location="../annotators/OpenNlpTokenizer.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="StanfordDependencyParser">
+      <import location="../annotators/StanfordDependencyParser.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="PassivesConversionStrategyAnnotator">
+      <import location="../annotators/PassivesConversionStrategyAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="DepTreeTransformer">
+      <import location="../annotators/DepTreeTransformer.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="MaltParser">
+      <import location="../annotators/MaltParser.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>Passives</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters>
+      <configurationParameter>
+        <name>parserFilter</name>
+        <description>name of Filter class</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>true</mandatory>
+        <overrides>
+          <parameter>StanfordDependencyParser/parserFilter</parameter>
+        </overrides>
+      </configurationParameter>
+    </configurationParameters>  
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>parserFilter</name>
+        <value>
+          <string>werti.uima.ae.filter.PassiveSentenceFilter</string>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>EnhanceXMLAnnotator</node>
+        <node>GenericRelevanceAnnotator</node>
+        <node>OpenNlpTokenizer</node>
+        <node>OpenNlpSentenceDetector</node>
+        <node>HTMLContentTypeAnnotator</node>
+        <node>HTMLSentenceAnnotator</node>
+        <node>OpenNlpTagger</node>
+        <node>MaltParser</node>
+        <node>PassivesConversionStrategyAnnotator</node>
+        <node>MorphaLemmatizer</node>
+        <node>StanfordDependencyParser</node>
+        <node>DepTreeTransformer</node>
+      </fixedFlow>
+    </flowConstraints>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs/>
+        <outputs/>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

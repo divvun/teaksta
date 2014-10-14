@@ -1,0 +1,29 @@
+Before running mccoy for the first time, copy the WERTi mccoy profile to 
+your own .mozilla directory.  
+
+- on delos: cp -rp ~adriane/.mozilla/mccoy to ~/.mozilla/mccoy
+
+For each new version:
+
+1. Create the new .xpi file src/main/webapp/firefox-extensions/view-0.NN.xpi 
+   (double-check that you have all the right version numbers in install.rdf).
+
+   If you're using the most recent version from src/main/resources without 
+   modifications, this is the file automatically generated as 
+   src/main/webapp/firefox-extension/view.xpi.  When you've
+   successfully verified everything, copy the new .xpi file to
+   src/main/webapp/firefox-extension/view-latest.xpi so that it's also the
+   version that's downloaded for new installs.
+2. Edit update.rdf.dev in src/main/webapp/firefox-extension:
+   Copy the previous <r:li> block and update the version number, the
+   min/max firefox versions as needed, update the download link (to the 
+   view-0.NN.xpi link), and add the sha256sum of the new .xpi file.
+3. Copy update.rdf.dev to update.rdf.  (mccoy destroys the formatting, so it's
+   a lot easier to edit update.rdf.dev each time and let mccoy reformat
+   update.rdf as it desires.)
+4. Run ~adriane/mccoy/mccoy (currently on delos) and enter the password in 
+   ~adriane/mccoy/view-key.txt
+5. Select WERTi Extension.
+6. Click on "Sign" and select the updated update.rdf file.
+7. When you click "Open", update.rdf will be updated in place and mccoy won't 
+   display any further information.

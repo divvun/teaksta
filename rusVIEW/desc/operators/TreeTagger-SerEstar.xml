@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="TreeTagger-helper">
+      <import location="../operators/TreeTagger-helper.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="SerEstarEnhancer">
+      <import location="../enhancers/SerEstarEnhancer.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>TreeTagger-SerEstar</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters>
+    </configurationParameters>
+    <configurationParameterSettings>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>TreeTagger-helper</node>
+        <node>SerEstarEnhancer</node>
+      </fixedFlow>
+    </flowConstraints>
+    <typePriorities>
+      <imports>
+        <import location="../WERTiTypePriorities.xml"/>
+      </imports>
+    </typePriorities>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs/>
+        <outputs/>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

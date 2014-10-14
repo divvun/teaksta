@@ -1,0 +1,52 @@
+How to Setup /usr/local/werti
+=============================
+
+This file describes how to setup the /usr/local/werti directory for VIEW.  Note that the 'core' branch of VIEW does NOT depend on /usr/local/werti , so there is no need to setup that direcory if you're only using the core branch.
+
+/usr/local/werti is a directory that contains external tools that VIEW depends on.  It has two sub-directories:
+bin/
+share/
+
+To get revision 1386 of VIEW to work, you need the following three tools:
+
+1. TreeTagger
+-------------
+
+Follow the installation instructions on
+http://www.ims.uni-stuttgart.de/projekte/corplex/TreeTagger/
+
+Copy your-treetagger-installation/bin/tree-tagger to /usr/local/werti/bin/tree-tagger (setting a link does not work).  Download the English and Spanish (UTF-8) parameter file from the TreeTagger website, unzip them, and place them in /usr/local/werti/share/treetagger/ .  Rename the English file to /usr/local/werti/share/treetagger/english.par (or make a link from the new name to the old name).
+
+2. VISL-CG3
+-----------
+
+Install the following Debian packages:
+automake
+g++
+libicu-dev
+or make sure that you can compile and build C++ code with some other tools.  Download
+http://beta.visl.sdu.dk/download/vislcg3/vislcg3-0.9.7.4879.tar.gz
+(You need exactly this version.)  Extract it and run
+sh autogen.sh --prefix=/some/path/vislcg3
+make
+make install
+(The included documentation for autogen.sh is wrong in that it tells you to specify the installation path as an argument, i.e. without the '--prefix='.)
+
+Then make a link from /usr/local/werti/bin/vislcg3 to /some/path/vislcg3/bin/vislcg3 .
+
+3. Morpha/Morphg
+----------------
+
+Download
+http://www.informatics.sussex.ac.uk/research/groups/nlp/carroll/morph.tar.gz
+and extract it.  There are several pre-compiled binaries in the directory.  You have to select the ones that fit your architecture.  E.g., for Linux, use
+morpha.ix86_linux
+morphg.ix86_linux
+
+Make links to these two binaries at /usr/local/werti/bin/morpha and /usr/local/werti/bin/morphg , respectively.  Also make a link from /usr/local/werti/share/morph/verbstem.list to verbstem.list in the directory where you extracted morph.
+
+
+Side-remark on /usr/local/werti/share
+=====================================
+
+Everything that can be found in /usr/local/werti/share on some SfS servers (e.g., delos) that is NOT mentioned above, is obsolete.  According to Adriane, "it's all been moved to be packaged with the WAR and should be in src/main/resources/models".

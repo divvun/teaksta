@@ -1,0 +1,145 @@
+Install the following Debian packages from your preferred package manager:
+- libsvn-java (version 1.7 or higher for Subclipse 1.8, version 1.6 for 
+  Subclipse 1.6)
+[TODO provide alternative instructions for Mac OS X]
+
+Install Eclipse plugins (required ones):
+- if you don't already have "Eclipse for Java EE Developers", upgrade your 
+  Eclipse version by installing the "Web Tools Platform" (WTP):
+  - add the following to the "Available Sofware Sites" preference:
+    http://download.eclipse.org/releases/indigo/
+    (replace "indigo" with the name of your release)
+  - in "Help > Install New Software", select this site and install everything 
+    in the group "Web, XML, Java EE and OSGi Enterprise Development"
+  - if some things cannot be installed, leave them out and first install 
+    everything you can install. Then repeat the previous step and see if you 
+    can install more now.
+- install "Subclipse" (version 1.6 if libsvn-java is 1.6, or version 1.8 or 
+  higher if libsvn-java is 1.7)
+  - go to 
+    http://subclipse.tigris.org/
+    select "Donwload and Install", and add the "Eclipse update site URL" for 
+    the desired Subclipse version to your "Available Sofware Sites" preference
+  - in Eclipse, go to "Help > Install New Software" again, select the URL you 
+    just added, and install everything that you can install (The version 
+    history visual tool sometimes cannot be installed, but you don't need it 
+    anyway.)
+  - follow these instructions to properly setup JavaHL for Eclipse:
+    http://subclipse.tigris.org/wiki/JavaHL#head-3a1d2d3c54791d2d751794e5d6645f1d77d95b32
+- install "Maven Integration for Eclipse" (m2eclipse or m2e):
+  - go to
+    http://eclipse.org/m2e/download/
+    and add the update URL for the latest m2eclipse release to your 
+    "Available Sofware Sites" preference.
+  - in "Help > Install New Software", select this site and install everything 
+    you can install
+
+Optional Eclipse plugins to install:
+- install the UIMA plugin from its update site:
+  http://www.apache.org/dist/uima/eclipse-update-site
+- install the "log4j-viewer" Eclipse plugin
+[TODO add update site (see patmos)]
+
+Install m2e Plugins:
+- right-click in the Project Explorer, and select "New Project > Checkout Maven
+  Projects from SCM > Find more SCM connectors in the m2e Marketplace"
+- install "m2e-subclipse" and "Maven Integration for WTP" from there
+
+Check out VIEW from the SVN repository:
+- go to "New Project > Checkout Maven Projects from SCM" again
+- set the drop-down box "SCM URL" to "SVN"
+- enter the URL of the VIEW repository. (Do not use the repository root that 
+  ends in "/werti", but a more specific URL!)
+- if you get an error saying "svn: E200007: HTTP authorization method 
+  'Negotiate' is not supported", install the Debian package "sasl2-bin"
+- m2e will complain about some plugins in the "pom.xml" file: "Plugin execution
+  not covered by lifecycle configuration" (exec-maven-plugin, 
+  maven-antrun-plugin, maven-replacer-plugin). Do not do anything about this 
+  bug. Don't apply the quick fix "ignore" offered by Eclipse!
+  - for the plugin "exec-maven-plugin" by "org.codehaus.mojo", the following 
+    fix is available:
+    - in the preferences, go to "Maven > Lifecycle Mappings" and click on 
+      "Open workspace lifecycle mappings metadata". If this button doesn't 
+      exist, try opening (or creating) the file yourself:
+      .../workspace/.metadata/.plugins/org.eclipse.m2e.core/lifecycle-mapping-metadata.xml
+    - Paste the following contents into that file and save it:
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lifecycleMappingMetadata>
+        <pluginExecutions>
+            <pluginExecution>
+                <pluginExecutionFilter>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <versionRange>[1.1,)</versionRange>
+                    <goals>
+                        <goal>java</goal>
+                    </goals>
+                </pluginExecutionFilter>
+                <action>
+                    <execute>
+                        <runOnIncremental>true</runOnIncremental>
+                        <runOnConfiguration>true</runOnConfiguration>
+                    </execute>
+                </action>
+            </pluginExecution>
+        </pluginExecutions>
+      </lifecycleMappingMetadata>
+    - then go to the preferences again, select "Maven > Lifecycle Mappings", 
+      and click "Reload workspace lifecycle mappings metadata"
+    - select from the main menu: "Project > Clean", then select only the VIEW 
+      project, and click "Ok"
+[TODO fix "Plugin execution not covered by lifecycle configuration"]
+- if you're on a slow machine, you might want to switch off automatic building:
+  deselect "Project > Build automatically"
+
+Tell the VIEW add-on to use the local Tomcat6 server instead of that on sifnos:
+- in src/main/resources/firefox-extension/view/chrome/content/view.js, find 
+  the line
+  serverURL: 'http://sifnos.sfs.uni-tuebingen.de/VIEW',
+  and change it to
+  serverURL: 'http://localhost:8080/VIEW',
+- re-build VIEW (if this isn't done automatically)
+- make sure never to commit this change!
+
+Download and install Apache Tomcat 6.0 using Eclipse:
+- go to "Preferences > Server > Runtime Environments"
+- click on the "Add" button on the right
+- select "Apache Tomcat v6.0" (exactly this version), click "Next"
+- if Tomcat6 is already installed somewhere, click "Browse" and select that 
+  location
+- else, click "Download and Install" and select a new location to install 
+  Tomcat6 (e.g., "/opt/tomcat6" or "~/tomcat6")
+
+Create a new Tomcat6 server:
+- make sure the "Servers" view is visible. (Go to "Window > Show view" to make 
+  it appear if it is missing.)
+- right-click inside the "Servers" view and select "New > Server"
+- for "Server runtime environment", select "Apache Tomcat v6.0"
+
+Configure Tomcat6:
+- In the Project Explorer, open "Servers > Tomcat v6.0 Server at localhost". 
+  You will see a list of configuration files for tomcat.
+- Edit the file "catalina.policy":
+  - find the line that says
+    grant codeBase "file:${catalina.base}/webapps/manager/-" {
+  - copy the entire block and replace "${catalina.base}" with 
+    "${catalina.home}" in the copy
+
+Install the external tools in "/usr/local/werti":
+- follow the instructions in "docs/usr-local-werti.txt" in the VIEW trunk 
+  repository
+
+Deploy VIEW to Tomcat6:
+- refresh and build the VIEW project in Eclipse
+- right-click on the "Tomcat v6.0 Server at localhost" in the "Servers" view, 
+  select "Add and remove"
+- move VIEW from the left to the right
+- start/restart the Tomcat6
+
+Test whether VIEW is working:
+- open a browser and go to
+  http://localhost:8080/VIEW
+- use the instructions in this tutorial:
+  http://robertnyman.com/2009/01/24/how-to-develop-a-firefox-extension/
+  to create a new profile in Firefox and link it to the VIEW toolbar in your 
+  working copy of VIEW

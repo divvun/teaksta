@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<!-- Single configuration file for an activity. -->
+<!-- <!DOCTYPE activity SYSTEM "../activity.dtd"> -->
+<activity version="0.1" enabled="yes">
+	<meta>
+		<name>Articles</name>
+		<author>Adriane Boyd</author>
+	</meta>
+
+	<client-cfg></client-cfg>
+	<!--  this is the UIMA AE configuration for the pipeline -->
+	<server-cfg>
+		<lang code="en">
+			<pre lang="en">
+				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
+				<pipeline desc="/operators/OpenNlpTokenizerPipe.xml"/>
+                <entry key="WordEnhancer_Words" value="a,an,the" overridable="yes"/>
+			</pre>
+		</lang>
+	</server-cfg>
+</activity>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="TreeTagger-helper">
+      <import location="../operators/TreeTagger-helper.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="TokenEnhancer">
+      <import location="../enhancers/TokenEnhancer.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>TreeTagger-pos</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters>
+        <configurationParameter>
+            <name>TokenEnhancer_Method</name>
+            <type>String</type>
+            <overrides>
+                <parameter>TokenEnhancer/Method</parameter>
+            </overrides>
+        </configurationParameter>
+        <configurationParameter>
+            <name>TokenEnhancer_Tags</name>
+            <type>String</type>
+            <overrides>
+                <parameter>TokenEnhancer/Tags</parameter>
+            </overrides>
+        </configurationParameter>
+        <configurationParameter>
+            <name>TokenEnhancer_UseLemmaFilter</name>
+            <type>Boolean</type>
+            <overrides>
+                <parameter>TokenEnhancer/UseLemmaFilter</parameter>
+            </overrides>
+        </configurationParameter>
+    </configurationParameters>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>TokenEnhancer_Method</name>
+        <value>
+          <string>Markup</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>TokenEnhancer_Tags</name>
+        <value>
+          <string>in,to</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>TokenEnhancer_UseLemmaFilter</name>
+        <value>
+          <boolean>false</boolean>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>TreeTagger-helper</node>
+        <node>TokenEnhancer</node>
+      </fixedFlow>
+    </flowConstraints>
+    <typePriorities>
+      <imports>
+        <import location="../WERTiTypePriorities.xml"/>
+      </imports>
+    </typePriorities>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs/>
+        <outputs/>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

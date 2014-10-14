@@ -1,0 +1,51 @@
+# Passives
+
+## Stanford Parser/tagger problems
+
+### Misparsing of passive verbs with prepositions
+
+- The man was peed on by the dog.
+- The man was barked at by the dog.
+
+On/at seem to get tagged as IN sometimes, which will confuse the parser into
+falsely believing by is the IN's dependent. Right now I can't think of any
+solution, except maybe training a new model, or hardcoding hideous exceptions
+to deal with it in a rule-based fashion.
+
+### Probably wrong parse tree with intransitive matrix verbs
+
+- The man who was bitten by the dog stank.
+
+(TODO) This sees to cause the parser some confusion, but I haven't yet fully
+checked it, so probably need to do that before starting to whine about it.
+
+### Problematic who elision in relative clauses to NNPs
+
+- Eric, who was bitten by a dog, was shot in the head.
+
+This'll cause Eric & his relative clause to be rendered as "Eric the dog bit"
+which is wrong. We need to insert whom in NNPs. In fact, eliding who fully is
+probably a bad idea anyway.
+
+### Agent/patient detection is a bit off.
+
+- He was found by his colleagues to be a handsome man.
+
+This renders as "His colleagues to be a handsome man find him" instead of "His
+colleagues find him to be a handsome man." The problem is that "His colleagues
+to be a handsome man" is erroneously getting flagged as a constituent. This is
+also due to the nature of the dependency parse Stanford gives us. "is found […]
+to be a handsome man" should be the actual verb phrase here. Right now, we're
+overgenerating. WERTi should detect that these kinds of phrases just aren't
+gonna happen for now.
+
+## Grammatical transformation problems
+
+### Passive infinitivals
+
+- Ed wanted to be convinced by Sarah.
+- Ed wanted Sarah to convince him.
+
+Is there a sufficiently exploitable regularity here? Is it worth doing these
+(i.e. are they common enough?)
+

@@ -1,0 +1,43 @@
+digraph werti {
+	subgraph cluster_Interface {
+		label = "Client";
+		"Web Interface";
+		"Enhanced Content";
+	}
+	subgraph cluster_Server {
+		label = "Server";
+		 "Web Interface" -> "RPC Server";
+		"RPC Server" -> "Web Interface";
+		 "Enhanced Content" ->"RPC Server";
+		"RPC Server" -> "Enhanced Content";
+		"Linguistic Tools";
+		"Web Interface" -> "HTTP Request";
+			"Configuration";
+			"Linguistic Tools";
+		subgraph cluster_Uima {
+			label = "UIMA";
+			//Analysis Engine" -> " Analysis Engine " -> "Analysis Engine " -> " Analysis Engine" 
+			subgraph cluster_CAS {
+				label = CAS
+				"Document Text";
+				"Annotations";
+			}
+				"Document Text" -> "Preprocessing";
+				"Document Text" -> "Linguistic Processing";
+				"Document Text" -> "Postprocessing";
+				"Preprocessing" -> "Annotations" ;
+				"Linguistic Processing" -> "Annotations" ;
+				"Postprocessing" -> "Annotations" ;
+		}
+		"Linguistic Processing" -> "Linguistic Tools";
+		"Linguistic Tools"->"Linguistic Processing" ;
+		"RPC Server" -> "Configuration";
+		"Annotations" -> "Enhancement Engine" -> "Enhanced Content"; 
+		"HTTP Request" -> "Web Content" -> "Document Text";
+	}
+	User ->"Web Interface";
+	"Web Interface" -> "User";
+	//"Enhanced Content" -> "RPC Server";
+	"Enhanced Content" -> "Web Interface";
+	//"Web Interface" -> "RPC Server";
+}

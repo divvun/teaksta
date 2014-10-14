@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>true</primitive>
+  <annotatorImplementationName>werti.uima.ae.OpenNlpTagger</annotatorImplementationName>
+  <analysisEngineMetaData>
+    <name>OpenNlpTagger</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters>
+      <configurationParameter>
+        <name>taggerModelFileLocation</name>
+        <description>location of the model file</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+      </configurationParameter>
+      <configurationParameter>
+        <name>tagdictModelFileLocation</name>
+        <description>location of the tagdict file</description>
+        <type>String</type>
+        <multiValued>false</multiValued>
+        <mandatory>false</mandatory>
+      </configurationParameter>
+    </configurationParameters>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>taggerModelFileLocation</name>
+        <value>
+          <string>/usr/local/werti/share/opennlp-tagger/en-pos-maxent.bin</string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>tagdictModelFileLocation</name>
+        <value>
+          <string>/usr/local/werti/share/opennlp-tagger/tagdict</string>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <typeSystemDescription>
+      <imports>
+        <import location="../WERTiTypeSystem.xml"/>
+      </imports>
+    </typeSystemDescription>
+    <typePriorities>
+      <imports>
+        <import location="../WERTiTypePriorities.xml"/>
+      </imports>
+    </typePriorities>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs>
+        	<type>werti.uima.types.annot.Token</type>
+			<feature>werti.uima.types.annot.Token:sofa</feature>
+		</inputs>
+        <outputs>
+        	<type>werti.uima.types.annot.Token</type>
+			<feature>werti.uima.types.annot.Token:chunk</feature>
+        </outputs>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

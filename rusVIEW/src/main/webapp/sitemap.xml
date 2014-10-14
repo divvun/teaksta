@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 sitemap.xsd">
+
+    <!-- home page (all aliases) -->
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/</loc>
+        <priority>0.1</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=home</loc>
+        <priority>0.1</priority>
+    </url>
+
+    <!-- main categories in navigation bar -->
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=about</loc>
+        <priority>0.5</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=intro</loc>
+        <priority>0.1</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activities</loc>
+        <priority>0.1</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=firefox-extension</loc>
+        <priority>0.8</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=changelog</loc>
+        <priority>0.1</priority>
+    </url>
+
+    <!-- don't index the feedback page until Caroline has re-done it -->
+    <!-- <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=feedback</loc>
+        <priority>0.1</priority>
+    </url> -->
+
+    <!-- individual topics -->
+    <!-- '&' must be escaped as '&amp;' in URLs -->
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=Arts</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=Dets</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=Gerunds</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=NounCoutability</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=PhrasalVerbs</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=Preps</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=SerEstar</loc>
+        <priority>1.0</priority>
+    </url>
+
+    <url>
+        <loc>http://sifnos.sfs.uni-tuebingen.de/VIEW/index.jsp?content=activity-help&amp;activity=WhQuestions</loc>
+        <priority>1.0</priority>
+    </url>
+
+</urlset> 

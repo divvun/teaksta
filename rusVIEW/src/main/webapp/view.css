@@ -1,0 +1,382 @@
+@charset "UTF-8";
+/*
+  CSS Document
+  von Beata Trawinski am 27.11.2008
+ */
+/*
+  **********************************************************
+  Basisdefinitionen Fonts, Standard in allen Browsern = 16px,
+  Definition Body,
+  uebernommen von standard.css der Uni Tuebingen
+  **********************************************************
+ */
+* {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, Helvetica, sans-serif;
+}
+html {
+    height: 100%
+}
+body {
+    background-color:#DDD;
+    padding: 0px;
+    margin: 0px;
+    font-size: 100,01%;
+    min-height:101%;
+}
+form {
+    margin: 0px;
+}
+p, h1, h2, h3, li {
+	padding: 0 0 10px 0;
+}
+blockquote {
+	padding: 0 30px 0 30px;
+}
+#main {
+    width:100%;
+    min-height: 500px;
+    border-top-width: 3px;
+    border-top-style: solid;
+    border-top-color: #A1A1A1;
+}
+/*
+  *********************************************************
+  Definition Seitenumschlag,
+  basiert auf div.css der Uni Tuebingen
+  *********************************************************
+ */
+#wrapper {
+    margin-left: auto;
+    margin-right: auto;
+    width: 910px;
+    border: 3px solid #A1A1A1;
+    text-align:center;
+    margin-top: 10px;
+    background-color: #FFFFFF;
+    height: auto;
+}
+/*
+  *********************************************************
+  Definition Banner, Bilder, Imagemaps
+  *********************************************************
+ */
+#banner {
+    height: 115px;
+}
+#banner a {
+    text-decoration: none;
+    color: #FFFFFF;
+    font-weight: normal;
+    left: 0px;
+    top: 0px;
+    background-color: #FFFFFF;
+    text-align: left;
+    list-style-type: none;
+    border: 0px none;
+}
+#banner a:link {
+    text-decoration: none;
+    border: 0px none;
+}
+#banner a:visited {
+    color: #cc6600;
+}
+#banner a:hover {
+    text-decoration: none;
+    border: 0px none;
+}
+#banner a:active {
+    text-decoration: none;
+    border: 0px none;
+}
+#banner a:focus {
+    text-decoration: none;
+    border: 0px none;
+}
+#banner image {
+    text-decoration: none;
+    border: 0px none;
+}
+
+#banner .center-column {
+	border-left: 3px solid #A1A1A1;
+    border-right: 3px solid #A1A1A1;
+}
+
+/*
+  *********************************************************
+  Definitionen Menue und Navigation,
+  basiert auf div.css der Uni Tuebingen
+  *********************************************************
+ */
+#menulinks {
+    width: 214px;
+    float: left;
+    height: auto;
+    padding: 0px;
+    margin-top:37px;
+    background-color: #FFF;
+    overflow: hidden;
+    font-size: 100%;
+    text-align: left;
+    border-right: 1px #EBEBEB solid;
+    border-top: 1px #EBEBEB solid;
+}
+#menulinks ul {
+    list-style-type: none;
+    padding: 0px;
+    font-size: 75%;
+}
+#menulinks ul li ul {
+    font-size: 90%;
+}
+#menulinks ul a {
+    text-decoration: none;
+    display:block;
+    border-bottom: 1px #EBEBEB solid;
+}
+#menulinks ul li {
+    margin: 0px;
+    padding: 0px;
+    min-height: 18px;
+}
+#menulinks ul li a {
+    color: #929292;
+    font-weight: normal;
+    font-size: 100%;
+    min-height: 18px;
+    background-color: #FFF;
+    padding: 5px 10px 0px 20px;
+    margin: 0px;
+}
+#menulinks ul li ul li {
+    margin-left: 20px;  
+}
+#menulinks ul li a:hover {
+    color:#515151;
+    background-color: #f4f4f4;
+}
+/*
+  *********************************************************
+  Definitionen Hauptteil
+  *********************************************************
+ */
+ /*allgemeine Definition Hauptteil*/
+#mainpartwrapper {
+    width: 690px;
+    margin: 0px 0px 0px 214px;
+    height: auto;
+    background-color: #fff;
+    padding: 0px;
+    font-size: 100%;
+    text-align: left;
+}
+/*Definitione Name*/
+#name {
+    font-size: 140%;
+    padding-left: 20px;
+    padding-bottom: 3px;
+    margin-right: 0px;
+    margin-bottom: 0px;
+    margin-left: 0px;
+    color: #666666;
+    padding-top: 5px;
+    background-color: #DDDDDD;
+    border-top-width: 3px;
+    border-top-style: solid;
+    border-top-color: #A1A1A1;
+    text-align: left;
+}
+/*Definitionen Ueberschrift Hauptteil*/
+h1 {
+    font-size: 150%;
+    border-bottom-style: solid;
+    border-top-style: none;
+    border-right-style: none;
+    border-left-style: none;
+    padding-left: 0px;
+    margin-left: 0px;
+    margin-right: 27px;
+    margin-bottom: 10px;
+    border-bottom-width: 2px;
+    border-bottom-color: #DDDDDD;
+    color: #666666;
+    padding-top: 3px;
+    margin-top: 10px;
+    padding-bottom: 2px;
+}
+h2 {
+	font-size: 110%;
+}
+#paperstitle {
+    font-size: 130%;
+    border-bottom-style: none;
+    border-top-style: none;
+    border-right-style: none;
+    border-left-style: none;
+    padding-left: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    color: #666666;
+    padding-top: 3px;
+    margin-top: 3px;
+    padding-bottom: 2px;
+}
+.years {
+    color:#000000;
+    background-color: #DDDDDD;
+    margin-bottom: 6px;
+    font-size: 100%;
+    text-align: center;
+    margin-top: 6px;
+}
+/*Definition Inhalt Hauptteil*/
+#mainpart {
+    padding-right:20px;
+    padding-left:20px;
+    padding-top:10px;
+    padding-bottom:30px;
+    color:#666666;
+    font-size: 75%;
+}
+#mainpart ul, ol  {
+    line-height: 14px;
+    /*padding: 0px;*/
+    margin: 10px 0px 0px 26px;
+    font-size: 100%;
+}
+/*#mainpart ul {
+	list-style-type: none;
+}*/
+#mainpart ul li {
+    color: #7C7C7C;
+    line-height: 14px;
+}
+#mainpart ol li {
+    color: #7C7C7C;
+    line-height: 14px;
+}
+#mainpart a {
+	text-decoration: none;
+}
+#mainpart a:link {
+    color: #C57500;
+    font-weight: normal;
+}
+#mainpart a:hover {
+    text-decoration: underline;
+}
+#mainpart a:link {
+    color: #C57500;
+}
+#mainpart a:visited {
+    color: #cc6600;
+}
+#mainpart a:focus {
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: #DA8300;
+}
+#mainpart a:active {
+    background-color: #DDDDDD;
+    color: white;
+}
+#mainpart p {
+	margin: 10px 0 10px 0;
+}
+/*
+  *********************************************************
+  Definitionen Footer
+  *********************************************************
+ */
+ /*Footer allgemein*/
+#footerpart {
+    padding-bottom: 5px;
+    padding-top: 5px;
+    background-color: #FFFFFF;
+    letter-spacing:1px;
+    font-size: 65%;
+    font-family: Arial, Helvetica, sans-serif;
+    color:#999;
+    border-top-width: 2px;
+    border-top-style: solid;
+    border-top-color: #DDDDDD;
+    clear:both;
+}
+#footerpart a {
+    color: #666666;
+    text-decoration: none;
+}
+#footerpart a:hover {
+    text-decoration: underline;
+}
+#left {
+    background-color: #FFFFFF;
+    padding-left: 10px;
+}
+#right {
+    background-color: #FFFFFF;
+    padding-right: 20px;
+    margin-right: 10px;
+}
+/*Bibtex-Eintraege*/
+.preformatted {
+    font-family: Courier;
+    font-size: 120%;
+}
+.pre {
+    font-size: 100%;
+    font-family: courier, courier new,
+    monospace;
+    font-weight: normal;
+    font-style: normal;
+    color:#666666;
+    line-height: 12pt;
+    text-decoration: none;
+}
+.code {
+    font-size: 100%;
+    font-family: courier, courier new, monospace;
+    font-weight: normal;
+    font-style: normal;
+    color:#666666;
+    line-height: 12pt;
+    text-decoration: none;
+}
+
+.InstructionHeader {
+	font-weight: bold;
+}
+
+.InstructionBody {
+	margin: 10px 0px 10px 0px;
+}
+
+.screenshot {
+	margin-left: 10px;
+}
+
+.urlInput {
+	width: 400px;
+}
+
+.activityForm {
+	margin: 10px;
+}
+
+.screenshot {
+	margin-left: 10px;
+}
+
+.clozeStyleHint {
+	margin-left: 2px !important;
+	margin-right: 2px !important;
+	padding: 0px 2px 0px 2px;
+	vertical-align: middle !important;
+	cursor: pointer !important;
+	font-size: 100% !important;
+	color: grey !important;
+	border: 1px solid grey;
+}

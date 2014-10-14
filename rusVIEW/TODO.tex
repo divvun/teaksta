@@ -1,0 +1,123 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+%\usepackage{enumerate}
+\usepackage{amsmath}
+%\usepackage{amssymb}
+\usepackage{fullpage}
+\setlength{\parindent}{0cm}
+\begin{document}
+
+\title{VIEW TODO List}
+\author{The VIEW Developers}
+\maketitle
+
+
+
+The name in braces after a task is the person who is currently working on it.
+
+\section{Important}
+
+\begin{itemize}
+\item finish adding user tracking (Marion) 
+\item verify bugs reported on this list and delete them from this list if they are outdated/ already fixed
+\item load models on server startup instead of during the first request
+\item share models between threads wherever possible
+\item find a more efficient way to turn the annotation stored in the CAS into HTML code
+\item React smart on encountering html-entities
+\item Improve tagger:
+	\begin{itemize}
+	\item daemonize
+	\item test multi-language stuff
+	\end{itemize}
+\end{itemize}
+
+\section{Bugs}
+
+\begin{itemize}
+\item fix bug in \verb+werti.uima.ae.OpenNlpSentenceDetector+ (lines 92-105) when using `Phrasal Verbs' topic
+\item \verb+HTMLContentTypeAnnotator+ can only handle pages with a \verb+<body>+ element, no \verb+<frame>+s
+\item Don't screw up on html tags with \verb+&lt;+ and \verb+&gt;+ entities instead of \verb+<+ and \verb+>+.
+\item \verb+WERTi.java+ does not respect \verb+this.server+; line 179
+\item does the HTML annotation really need the tag-name field?
+\item Possible bug with premature \verb+.next()+ call on iterators in \verb+LingPipeTagger+ and others (first sentence is likely not considered)
+\item the webapp sometimes breaks the CSS of the enhanced page, and sometimes tokens get \verb_class="wertiviewhit"_, but no color
+\end{itemize}
+
+\section{Wishlist}
+
+\begin{itemize}
+\item enhance dynamically added web page content to support web applications like Moodle Chat\footnote{There are existing JavaScript implementations to detect modifications of the DOM tree: \url{http://stackoverflow.com/questions/3900151/} and \url{http://prototypejs.org/doc/latest/dom/Event/observe/}}
+\item make terminology consistent in the code: `topic' vs. `activity'
+\item new topic ``word frequency'': color-code the frequency of each word like in a heat-map
+\item put the lingpipe sentence boundary detector to use (we'd have to re-implement its API for this)
+\item implement HTML parser\footnote{\url{http://htmlparser.sourceforge.net/}}
+\item Implement TreeTagger
+\item Use HTML entities in sentence boundary followers (like, for " or similar)
+\item Internationalize the exceptions, logging, whole application following \url{http://java.sun.com/j2se/1.5.0/docs/guide/intl/index.html}
+\item Interactive Passivator
+\end{itemize}
+
+\begin{itemize}
+\item multiple choice and practice:
+	\begin{itemize}
+	\item accept answers as correct based on whether they are grammatically correct, not whether they appear in the original text
+		\begin{itemize}
+		\item grammatically correct alternatives that were not in the original web page text are currently marked as incorrect answers
+		\item if the original web page text contains errors, these are currently marked as correct answers
+		\item account for differences between Rechtschreibreformen in German (e.g., accept ``muss'' as correct even if the original was ``muß'')
+		\end{itemize}
+	\item determiners (and probably other topics): display mc/fib boxed in front of nouns that originally had no determiner and make the empty string an option that the user can choose/enter
+	\item display extra buttons to enter non-ASCII characters into the fib box
+	\end{itemize}
+\item more languages and topics:
+	\begin{itemize}
+	\item German: articles (not determiners)
+	\item German: gender of nouns
+	\item German: haben/sein for past perfect
+	\item French: avoir/être for past perfect
+	\item English passives:
+		\begin{itemize}
+		\item word order variations, heavy NP shift
+		\item identifying agent by-phrases
+		\item re-write some of the existing unreadable code
+		\end{itemize}
+	\item German: Konjunktiv II only (Adriane has implemented this in the `konjexp' branch)
+	\item German: connectives (Zeeshan Mustafa)
+	\item English: verb tenses (Lilyana Nikolova)
+	\item Russian: pronoun inflection
+	\end{itemize}
+\item user interface:
+	\begin{itemize}
+	\item better bug report/ feedback form (Caroline)
+	\item track and log user activity, user accounts (Marion, in the `user-accounts' branch)
+		\begin{itemize}
+		\item data sharing between accounts: students can share their statistics with teacher
+		\end{itemize}
+	\item let user choose which parts of the page to enhance
+		\begin{itemize}
+		\item similar to selection tool in Firebug
+		\end{itemize}
+	\item integrate into Moodle (?)
+	\item add an ``exam mode'':
+		\begin{itemize}
+		\item no immediate feedback to user input
+		\item when finished with the whole web page, user submits answers (using e.g., toolbar button)
+		\item delayed feedback on single errors
+		\item overall score/ grade (option to save in user account, share with teacher)
+		\end{itemize}
+	\item printer-friendly versions of enhanced pages \textit{or} enhance print previews
+	\item VIEW app for smart phones
+	\item find a way to enhance words inside hyperlinks for the click activity (important for Wikipedia)
+	\end{itemize}
+\item perform experiments in a class setting:
+	\begin{itemize}
+	\item Canadian learners of German: Konunktiv II (Ulf Schuetze)
+	\item Spanish learners of English: gerunds/to-infinitives (Martí Quixal)
+	\item American learners of Spanish: business vocabulary (Martí Quixal)
+	\end{itemize}
+\end{itemize}
+
+
+\end{document}

@@ -1,0 +1,279 @@
+DELIMITERS = "<.>" "<..>" "<...>" "<!>" "<?>" "<¶>" ; 
+SOFT-DELIMITERS = "<,>" ;
+
+LIST BOS = (>>>) ; 
+LIST EOS = (<<<) ; 
+
+LIST N = N n ; 
+LIST Pr = Pr pr  ; 
+LIST Pron = Pron prn ;
+LIST Det = Det det ; 
+LIST Num = Num num ; 
+LIST A = A adj ; 
+LIST Adv = Adv adv ; 
+LIST CS = CS cnjsub ; 
+LIST Interj = Interj ij ;
+LIST CC = CC cnjcoo ; 
+LIST V = V vblex vbser vbmod ; 
+LIST Guio = guio ; # GT tag? hyphen (copula)
+
+LIST Percent = ("<[0-9]+%>"r) percent Prcnt ; 
+LIST Roman = roman ; # GT tag?
+LIST Pprep = PObj pprep ; 
+LIST Pers = Pers pers ;
+
+LIST Short = Pred short ;
+LIST Cmp = Cmpar cmp ; # GT tag?
+
+LIST TV = TV tv ; 
+LIST IV = IV iv ; 
+
+LIST Ant = ant ; # GT tag?
+LIST Cog = cog ; # GT tag?
+
+LIST Masc = Msc m ; 
+LIST Fem = Fem f ; 
+LIST Neut = Neut nt ; 
+
+LIST Sg = Sg sg ; 
+LIST Pl = Pl pl ;
+
+LIST DetIndecl = ("её" Det Poss) ("его" Det Poss) ("их" Det Poss) ("её" det pos) ("его" det pos) ("их" det pos) ;
+
+LIST Nom = Nom nom ; 
+LIST Gen = Gen gen ; 
+LIST Dat = Dat dat ;
+LIST Acc = Acc acc ;
+LIST Ins = Ins ins ; 
+LIST Prp = Loc prp ; 
+
+LIST Loc = Loc2 loc ; 
+LIST Par = Gen2 par ; 
+
+LIST Anim = Anim aa an ; 
+LIST Inanim = Inan nn an ; 
+
+LIST Inf = Inf inf ; 
+
+LIST Fin = Pst Pres Fut past pres fut ; 
+
+LIST Pr/V = ("в" Pr) ("в" pr) ;
+LIST Pr/Na = ("на" Pr) ("на" pr) ;
+LIST Pr/Nad = ("над" Pr) ("над" pr) ;
+LIST Pr/Za = ("за" Pr) ("за" pr) ;
+LIST Pr/Po = ("по" Pr) ("по" pr) ;
+LIST Pr/S = ("с" Pr) ("с" pr) ;
+LIST Pr/Dlja = ("для" Pr) ("для" pr) ; 
+LIST Pr/Ot = ("от" Pr) ("от" pr) ;
+LIST Pr/Do = ("до" Pr) ("до" pr) ;
+LIST Pr/Iz = ("из" Pr) ("из" pr) ;
+LIST Pr/Meždu = ("между" Pr) ("между" pr) ;
+LIST Pr/Iz-za = ("из-за" Pr) ("из-за" pr) ;
+LIST Pr/K = ("к" Pr) ("к" pr) ;
+LIST Pr/Protiv = ("против" Pr) ("против" pr) ;
+LIST Pr/Krome = ("кроме" Pr) ("кроме" pr) ;
+LIST Pr/O = ("о" Pr) ("о" pr) ;
+LIST Pr/Posle = ("после" Pr) ("после" pr) ;
+
+LIST Cm = Cm cm ; # GT tag?
+
+LIST O = "о" ; 
+LIST Ja = "я" ; 
+LIST I = "и" ;
+LIST No = "но" ; 
+LIST Samyj = "самый" ; 
+LIST Posle = "после" ;
+LIST Čto = "что" ;
+LIST Nazad = "назад" ;
+
+LIST NumNotNom = "<([0-9])*[023456789]>"r "<([0-9])*11>"r ;
+
+LIST Pjat = "пять" "5" ; 
+LIST Sto = "сто" "100" ; 
+LIST Tysjača = "тысяча" "1000" ; 
+
+LIST Month = "январь" "февраль" "апрель" "май" "июнь" "июль" "сентябрь" "октябрь" "ноябрь" "декябрь" ; 
+LIST Year = "год" "год¹" ("г." Abbr) ("г." abbr) ;
+LIST Century = "век" ; 
+LIST Season = "весна" "лето" "осень" "зима" ;
+LIST TimeOfDay = "день" "вечер" "утро" "ночь" ; 
+
+LIST InsAdv = "часом" ; 
+
+LIST Majusc = ("<[А-Я]>"r) ;
+LIST Minusc = ("<[а-я]>"r) ;
+
+SET Sem/Time = Month | Year | Century | Season | TimeOfDay ;
+
+SET Sem/Distance = ("километр") | ("метр") ; 
+
+SET Sem/Quantity = ("дюжина") ;
+
+SET Sem/Weight = ("килограмм") | ("грамм") ;
+
+SET Sem/Unit = Sem/Time | Sem/Distance | Sem/Weight | Sem/Quantity ; 
+
+SET MascFemNeut = Masc | Fem | Neut ; 
+
+SET NGDAIP = Nom | Gen | Dat | Acc | Ins | Prp ; 
+
+SET SentNotExcl = (".") | ("...") | ("?") ; 
+
+SECTION 
+
+## Non-sentences 
+
+SELECT Nom IF (-1 BOS) (0C N) (1 EOS) ; 
+
+## Safe operations at sentence boundaries
+
+REMOVE Prp IF (-1 BOS) ;
+
+REMOVE Pr IF (1 EOS) ;
+
+REMOVE Det IF (1 EOS) ;
+
+## Safe lexicalised operations
+
+SELECT Adv IF (0 I) (-1 No) ; 
+
+SELECT A + $$NGDAIP IF (-1C Samyj + $$NGDAIP) ;
+
+## Safe operations around punctuation
+
+REMOVE Pr IF (1C Cm) ;
+
+SELECT Posle IF (-1C Cm) ;
+
+REMOVE Interj IF (1 SentNotExcl) ; 
+  # Мне случилось говорить с одним из наших писателей о комизме в жизни, о трудности определить явление, назвать его настоящим словом.
+
+## Safe operations with preposition/adverb ambiguities
+
+REMOVE Pr IF (0C Pr OR Adv) (1C Nom) ;
+
+REMOVE Pr IF (1C Fin) ; 
+
+REMOVE Pr IF (-1C Pr) ; 
+
+REMOVE Pr IF (1C Pr) ; 
+
+## Safe operations after prepositions
+
+REMOVE Nom IF (-1C Pr) ;
+
+REMOVE NGDAIP - Gen IF (-1C* Pr/Dlja OR Pr/Do OR Pr/Ot OR Pr/Iz OR Pr/Iz-za OR Pr/Krome OR Pr/Protiv OR Pr/Posle CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Gen - Ins - Acc IF (-1C* Pr/S CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Acc - Prp IF (-1C* Pr/V OR Pr/Na CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Acc - Dat - Prp IF (-1C* Pr/Po CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Acc - Ins IF (-1C* Pr/Za CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Gen - Ins IF (-1C* Pr/Meždu CBARRIER (*) - Adv - DetIndecl) ; 
+
+REMOVE NGDAIP - Dat IF (-1C* Pr/K CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Prp IF (-1C* Pr/O CBARRIER (*) - Adv - DetIndecl) ;
+
+REMOVE NGDAIP - Ins IF (-1C* Pr/Nad CBARRIER (*) - Adv - DetIndecl) ;
+
+SELECT A + $$NGDAIP IF (0C A) (-1C A + $$NGDAIP LINK -1C* Pr BARRIER (*) - A - Adv - Det) ; 
+
+REMOVE Pers IF (0C Pers OR Det) (NOT 0 Pprep) (-1C Pr) ;
+  # Так что для меня вся моя университетская наука как бы для того только и существовала под конец, чтобы ...
+
+## Safe operations with dates 
+
+SELECT Gen IF (0 Year) (-1 Num LINK -1 Month LINK -1 Pr/V) ;
+
+SELECT Gen IF (0 Year) (-1 Num LINK -1 Month + Gen LINK -1 Num) ; 
+
+SELECT Dat IF (0 Year) (-1 Num LINK -1 Pr/K) ;
+
+REMOVE NGDAIP - Gen - Loc IF (0 Year) (-1 Num LINK -1 Pr/V) ;
+
+SELECT Neut IF (0 Dat) (-1 Year) (1 Nazad) ; 
+
+## Safe operations in some numeral expressions
+
+SELECT Gen IF (-1 Percent) ;
+
+SELECT Gen + Pl IF (-1 Sto OR Tysjača) ;
+
+SELECT Gen + Pl IF (-1* Pjat BARRIER (*) - Adv LINK 0 Nom OR Acc);
+
+## Safe operations with prepositional case
+
+REMOVE Prp IF (-1C Inf)  ; 
+
+REMOVE Prp IF (NOT -1* Pr CBARRIER Gen)  ; 
+
+REMOVE Prp IF (-1C N) ; 
+
+## Safe operations with determiners
+
+REMOVE Det IF (0 Det OR Pron) (1C Fin OR CS OR Pr) ; 
+
+REMOVE Det IF (0 Det OR Pron) (1 Cm LINK 1 CC OR CS) ; 
+
+REMOVE Det IF (0 Det OR Pron) (1C* Fin BARRIER (*) - Adv) ; 
+
+## Safe options with proper names 
+
+SELECT Ant + $$NGDAIP IF (1C Cog + $$NGDAIP) ; 
+
+SELECT Cog + $$NGDAIP IF (-1C Ant + $$NGDAIP) ; 
+
+## Heuristic operations on single-character words 
+
+SELECT Pr (0 O) (1 Prp) ; 
+
+SELECT Pron IF (0 Ja) (-1 BOS OR CS) ; 
+
+## Heuristic operations 
+
+SELECT CS IF (0 Čto) (-1 Cm) (NOT 1* ("?")) ;
+
+REMOVE Fem IF  (0C A) (0C Masc OR Fem) (1C N) (NOT 1 Fem);
+
+REMOVE Masc IF (0C A) (0C Masc OR Neut) (1C N) (NOT 1 Masc);
+
+REMOVE NGDAIP - Prp IF (0C A OR Det) (1C* N + Prp BARRIER NGDAIP - Prp);
+
+REMOVE NGDAIP - Ins IF (0C A OR Det) (1C* N + Ins BARRIER NGDAIP - Ins);
+
+REMOVE Short (-1C Pr) ; 
+
+REMOVE Acc IF (-1* BOS BARRIER (*) - Nom) (0C Nom OR Acc) (NOT 1* TV) (NOT 0 Sem/Time) (NOT 0 Sem/Distance) ; 
+
+SELECT N + $$NGDAIP IF (0 A OR N) (-1C A + $$NGDAIP LINK -1* Pr CBARRIER (*) - $$NGDAIP) (1C N) (NOT 1C N + $$NGDAIP) ; 
+  # По официальным данным правительства Руанды, число погибших составило 937 тысяч человек.
+
+REMOVE Cmp IF (0 Cmp OR Adv) (NOT 1 Guio) ; # (NOT 1 Guio LINK 1 A) ; 
+
+SELECT Cmp IF (0 Cmp OR Adv) (1 Guio LINK 1 A LINK 1 N) ; 
+
+REMOVE Nom IF (-1C NumNotNom) ;
+  #! Для соседних с Руандой государств руандийские события апреля - июля 1994 года вылились в огромное число прибывших беженцев.
+
+SELECT Adv IF (0C InsAdv) ;
+
+REMOVE Adv IF (0C N + Ins OR Adv) (NOT 0 InsAdv) ;
+
+REMOVE Acc (-1C Pr/S) (0 Sem/Unit) ; 
+
+###############################################################################
+
+# над/надо
+# после/посол
+
+
+# REMOVE Acc IF (0 Nom OR Acc) (NOT -1* TV) (NOT -1C* Pr) (NOT 1* TV) ;
+# REMOVE Acc IF (NOT -1* TV) (-1* IV LINK 0 Fin) (NOT 1* TV BARRIER Fin) ;
+
+  # Нападающие выжигали огнем места, где могли спрятаться их жертвы: дома с труднодоступными помещениями, церкви, леса, перелески и т. п.
+
+# Distinguishing between adj/participle: if it gets arguments, it's not an adjective.

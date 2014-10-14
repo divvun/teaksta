@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
+      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpSentenceDetector">
+      <import location="../annotators/OpenNlpSentenceDetector.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="DummyHTMLSentenceAnnotator">
+      <import location="../annotators/DummyHTMLSentenceAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpTagger">
+      <import location="../annotators/OpenNlpTagger.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpChunker">
+      <import location="../annotators/OpenNlpChunker.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="GenericRelevanceAnnotator">
+      <import location="../annotators/relevance/GenericRelevanceAnnotator.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="OpenNlpTokenizer">
+      <import location="../annotators/OpenNlpTokenizer.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="NounCountEnhancer">
+      <import location="../enhancers/NounCountEnhancer.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>OpenNlpChunkerPipe</name>
+    <description/>
+    <version>1.0</version>
+    <vendor/>
+    <configurationParameters searchStrategy="language_fallback">
+      <configurationParameter>
+        <name>NounCountEnhancer_tags</name>
+        <type>String</type>
+        <overrides>
+            <parameter>NounCountEnhancer/tags</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>NounCountEnhancer_countFile</name>
+        <type>String</type>
+        <overrides>
+            <parameter>NounCountEnhancer/countFile</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>NounCountEnhancer_noncountFile</name>
+        <type>String</type>
+        <overrides>
+            <parameter>NounCountEnhancer/noncountFile</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>NounCountEnhancer_bothFile</name>
+        <type>String</type>
+        <overrides>
+            <parameter>NounCountEnhancer/bothFile</parameter>
+        </overrides>
+      </configurationParameter>
+      <configurationParameter>
+        <name>NounCountEnhancer_posFilter</name>
+        <type>String</type>
+        <overrides>
+            <parameter>NounCountEnhancer/posFilter</parameter>
+        </overrides>
+      </configurationParameter>
+    </configurationParameters>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>NounCountEnhancer_tags</name>
+        <value>
+          <string></string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>NounCountEnhancer_countFile</name>
+        <value>
+          <string></string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>NounCountEnhancer_noncountFile</name>
+        <value>
+          <string></string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>NounCountEnhancer_bothFile</name>
+        <value>
+          <string></string>
+        </value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>NounCountEnhancer_posFilter</name>
+        <value>
+          <string></string>
+        </value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>EnhanceXMLAnnotator</node>
+        <node>GenericRelevanceAnnotator</node>
+        <node>OpenNlpTokenizer</node>
+        <node>OpenNlpSentenceDetector</node>
+        <node>DummyHTMLSentenceAnnotator</node>
+        <node>OpenNlpTagger</node>
+        <node>OpenNlpChunker</node>
+        <node>NounCountEnhancer</node>
+      </fixedFlow>
+    </flowConstraints>
+    <fsIndexCollection/>
+    <capabilities>
+      <capability>
+        <inputs/>
+        <outputs/>
+        <languagesSupported/>
+      </capability>
+    </capabilities>
+    <operationalProperties>
+      <modifiesCas>true</modifiesCas>
+      <multipleDeploymentAllowed>true</multipleDeploymentAllowed>
+      <outputsNewCASes>false</outputsNewCASes>
+    </operationalProperties>
+  </analysisEngineMetaData>
+  <resourceManagerConfiguration/>
+</analysisEngineDescription>

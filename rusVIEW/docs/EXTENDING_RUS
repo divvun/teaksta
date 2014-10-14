@@ -1,0 +1,207 @@
+Creating a New Topic/Activity in VIEW
+======================================
+
+Creating a new topic is a little complicated.  First off, the terminology 
+can potentially be confusing, so to clarify:
+
+- topic: the grammar topic being presented, e.g., determiners
+
+- activity: the type of presentation, e.g., colorize, click, multiple 
+  choice, practice
+
+Unfortunately, we haven't always used these names correctly in the 
+directory structure, but we'll try to use them consistently in the 
+instructions below.
+
+It's easiest to start out with a copy of an existing topic and modify it 
+gradually.  In the first section, we'll start out by modifying a copy of 
+the Determiners topic that annotates prepositions instead of determiners.  
+This involves adding a new topic to the web interface and firefox add-on, 
+but doesn't yet involve new annotators.  The second section will discuss 
+how to add new annotators and the third section will discuss how to modify 
+the activities.
+
+Update: By now, a prepositions topic already exists. So, by following the 
+steps below, you would override the exitsing code. This is not a problem if 
+you only want to get familiar with VIEW. In this case, just check out VIEW 
+from SVN another time and use one working copy for playing around (but never 
+committing your changes) and the other for actual development.
+
+How to create a new Topic for Russian
+-------------------------------------
+
+We're going to make a copy of the Russian noun singular topic and modify it to 
+highlight Russian noun plural instead.
+
+1. Make a copy of the topic specification:
+
+Make a copy of the RusNounSingular directory in 'src/main/webapp/activities/RusNounSingular'
+called 'src/main/webapp/activities/RusNounPlural'.
+
+(Yes, this directory should actually be called "topics" to line up with 
+the terminology above.)
+
+2. Edit 'src/main/webapp/activities/RusNounPlural/activity.xml'
+
+a. Change the <name> of the topic to "Russian Noun Plural".
+b. Change <pipeline desc="/operators/vislcg3RusNounSingularPipe.xml"/> to
+<pipeline desc="/operators/vislcg3RusNounPluralPipe.xml"/>
+
+3. Edit 'src/main/webapp/activities/RusNounPlural/help.jsp' for the new topic. 
+ 
+a. Change the header <h1> to RusNounPlural
+b. Replace all occurrences of the old topic with the new topic.
+
+4. Make a copy of the descriptors used for the new topic.
+
+a. Make a copy of vislcg3RusNounSingularPipe.xml in '/desc/operators/vislcg3RusNounSingularPipe.xml'
+called vislcg3RusNounPluralPipe (as specified in activity.xml earlier)
+
+Change  <delegateAnalysisEngine key="vislcg3PostProc_RusNounSingular">
+      <import location="vislcg3PostProc_RusNounSingular.xml"/>
+
+to  <delegateAnalysisEngine key="vislcg3PostProc_RusNounPlural">
+      <import location="vislcg3PostProc_RusNounPlural.xml"/>
+
+Change <parameter>vislcg3PostProc_RusNounSingular/Tags</parameter>
+to <parameter>vislcg3PostProc_RusNounPlural/Tags</parameter>
+
+Change  <name>vislcg3RusNounSingularPipe</name>
+to  <name>vislcg3RusNounPluralPipe</name>
+
+Change <node>vislcg3PostProc_RusNounSingular</node> to
+<node>vislcg3PostProc_RusNounPlural</node>
+
+b. Make a copy of vislcg3PostProc_RusNounSingular.xml in '/desc/operators/vislcg3PostProc_RusNounSingular.xml'
+called vislcg3PostProc_RusNounPlural.xml
+
+Change  <delegateAnalysisEngine key="vislcg3RusNounSingularEnhancer">
+      <import location="../enhancers/vislcg3RusNounSingularEnhancer.xml"/>
+
+to  <delegateAnalysisEngine key="vislcg3RusNounPluralEnhancer">
+      <import location="../enhancers/vislcg3RusNounPluralEnhancer.xml"/>
+
+Change <name>vislcg3PostProc_RusNounSingular</name> to
+<name>vislcg3PostProc_RusNounPlural</name>
+
+Change  <node>vislcg3RusNounSingularEnhancer</node> to
+ <node>vislcg3RusNounPluralEnhancer</node>
+
+c. Make a copy of vislcg3RusNounSingularEnhancer.xml in '/desc/enhancers/vislcg3RusNounSingularEnhancer.xml'
+called vislcg3RusNounPluralEnhancer.xml
+
+Change <annotatorImplementationName>werti.uima.enhancer.Vislcg3RusNounSingularEnhancer</annotatorImplementationName>
+to <annotatorImplementationName>werti.uima.enhancer.Vislcg3RusNounPluralEnhancer</annotatorImplementationName>
+
+Change <name>vislcg3RusNounSingularEnhancer</name> to
+<name>vislcg3RusNounPluralEnhancer</name>
+
+5. Make a copy of the enhancer java class used for the new topic.
+
+a. Make a copy of Vislcg3RusNounSingularEnhancer.java in '/src/main/java/werti/uima/enhancer/Vislcg3RusNounSingularEnhancer.java'
+called Vislcg3RusNounPluralEnhancer.java
+
+b. Change the class description according to the new topic (replace singular with plural), it does not hurt to read it too.
+
+c. Go to the process(JCas cas) method and change the patterns to your liking. We will simply replace the number pattern Sg with Pl
+
+d. Depending on the topic more changes need to be made in here (e.g. distractor generation)
+
+6. Create a new topic in the VIEW firefox extension
+
+a. Make a copy of rusnounsingular.js in '/src/main/resources/firefox-extension/view/chrome/content/rusnounsingular.js'
+called rusnounplural.js (it is very important to take the lowercase version of the directoryname chosen in step #1!)
+
+b. Change the class name wertiview.rusnounsingular = {
+to wertiview.rusnounplural = {
+
+c. Replace every occurrence of colorizeStyleRusNounSingular
+with colorizeStyleRusNounPlural	(as the topic directory is called RusNounPlural)
+
+d. Replace every occurrence of rusnounsingular
+with rusnounplural (as the javascript class is called rusnounplural.js)
+
+e. Add the colorize styles to 
+'src/main/resources/firefox-extension/view/chrome/content/view.css'.
+Just search for the style of colorizeStyleRusNounSingular
+Make a copy and rename it to colorizeStyleRusNounPlural
+Don't forget to change the description to plural, too.
+
+7. Add the new topic to the VIEW toolbar
+
+a. Edit browser.xul in '/src/main/resources/firefox-extension/view/chrome/content/browser.xul'to 
+tell the add-on to load our new topic.
+Make a copy of <script type="application/x-javascript" src="chrome://view/content/rusnounsingular.js" />
+called <script type="application/x-javascript" src="chrome://view/content/rusnounplural.js" />
+
+b. Make a copy of <menuitem id="wertiview-toolbar-topic-RusNounSingular" label="&rusnounsingular;" value="RusNounSingular" />
+called <menuitem id="wertiview-toolbar-topic-RusNounSingular" label="&rusnounsingular;" value="RusNounPlural" />
+Be carefull with the case! It makes a difference.
+
+c. The label 'label="&rusnounplural;"' is needed in 'src/main/resources/firefox-extension/view/locale/en-US/translations.dtd'.
+Edit translations.dtd:VerbPresentTense
+Make a copy of <!ENTITY rusnounsingular "Russian Noun Singular">
+called <!ENTITY rusnounplural "Russian Noun Plural">
+
+If you want to add a new language you need to put it into the toolbar first
+Make a copy of <menuitem id="wertiview-toolbar-language-ru" label="&russian;" value="ru" />
+and replace it with your language of choice.
+After that apply step #7 c.
+
+8. Update the toolbar in '/VIEW/src/main/resources/firefox-extension/view/chrome/content/toolbar.js'
+Go to 'updateTopics: function(lang) {' and add your new topic. Enable and disable topics
+according to the selected language. If you have a new language add it here.
+Just make a copy of wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusNounSingular");
+Rename it to wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusNounPlural"); 
+and place it in the last line of each language.
+for "ru" you change 'disableMenuItem' to 'enableMenuItem'
+
+9. Add rusnounplural.js to the list of files automatically copied to the web form 
+interface javascript directory in '/VIEW/pom.xml' under:
+
+    <plugin>
+        <groupId>com.google.code.maven-replacer-plugin</groupId>
+        ....
+            <filesToInclude>gerunds.js,jquery-1.4.2.min.js,lib.js, (...) ,rusnounsingular.js</filesToInclude>
+
+and 
+
+<outputBasedir>${basedir}/src/main/webapp</outputBasedir>
+<filesToInclude>activity.js,blur.js,gerunds.js,jquery-1.4.2.min.js,lib.js, (...) ,whquestions.js,rusnounsingular.js</filesToInclude>
+
+unfortunately this may not work and you have to copy 
+rusnounplural.js and
+view.css to
+'/src/main/webapp/js-lib/'
+and replace them there.
+
+Normally this step is done automatically by the eclipse maven replacer plugin.
+But if this does not work you have to do it manually. 
+
+If you do that manually edit rusnounplural.js in
+'/src/main/webapp/js-lib/rusnounplural.js'
+Remove wertiview.ns(function() { (first line)
+and 
+}); // REMOVE-WITH-MAVEN-REPLACER-PLUGIN (last line)
+
+Be sure to remove the first and last line though! (the maven plugin does this normally)
+Take a look at other activities to make sure that you removed the right thing.
+
+
+10. In /VIEW/src/main/webapp/tmpl/form.jsp you can modify the page that appears
+when you select an activity in the webapp. Here you can set default values
+for languages and activities, e.g. SerEstar is only available for Spanish.
+
+Be sure that your topic starts with "Rus", because if that's the case then you don't need
+to edit anything.
+
+
+(Note: This automatic copying, which saves a lot of hassle in keeping the 
+extension and web interface in sync, causes eclipse to throw "Resource 
+out of sync" errors every time the servlet is refreshes/restarted.  You need 
+to refresh the src/main/webapp/js-lib directory in the Package Explorer by 
+hand to get rid of the error message.  This is really annoying, but I haven't 
+found a better solution.  If you find one, let me know!)
+
+
+For additional information I suggest you visit '/docs/EXTENDING'
