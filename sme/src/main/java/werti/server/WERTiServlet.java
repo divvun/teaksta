@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.OutputStreamWriter;
+import java.io.FileWriter;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -73,6 +74,8 @@ import weka.filters.Filter;
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
 		Logger.getLogger(WERTiServlet.class);
+	//public static final String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/InputLog.txt";
+	public static final String outputfileLoc = "InputLog.txt";
 
 	public static WERTiContext context;
 	
@@ -182,6 +185,15 @@ public class WERTiServlet extends HttpServlet {
 			String result = ge.enhance(activity, u.toString(), req, config, getServletContext().getServletContextName());
 
 			log.info("Web (" + (System.currentTimeMillis() - startTime) + "): " + req.getParameter("language") + ",  " + activity + ", " + req.getParameter("client.enhancement") + ", " + url + ", " + cas.getDocumentLanguage());
+			// Write the url, topic and enhancement type into the file as well:
+			
+			FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data
+			try {
+				outputfile.write("Topic: " + activity + ", exercise type: " + enhancement + ", URL: " + url + "\n");
+			}
+			finally {
+				outputfile.close();
+			}			
 			
 			try { // to write to the response stream
 				resp.setContentType("text/html");
@@ -207,106 +219,136 @@ public class WERTiServlet extends HttpServlet {
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
 		
-		long startTime = System.currentTimeMillis();
-		log.debug("received POST request");
-		
-		// read request in as string
-		// (gson.fromJson() seems unhappy with req.getReader() as its first argument, don't know why)
-		String line;
-		String requestString = "";
-		BufferedReader reader = req.getReader();
-		while((line = reader.readLine()) != null) {
-			requestString += line;
-		}
+		if (req.getParameter("correctly_clicked") != null) {
+				log.info("LogServlet received POST request");
+				String message = "";
+				//response.setHeader("Cache-Control", "no-cache");
+				//response.setHeader("Pragma", "no-cache");
+				
+				FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data				
+			
+				String extype = req.getParameter("extype");
+				String targetCorrect = req.getParameter("correctly_clicked");
+				String targetTotal = req.getParameter("total_clicked");
+				String targetRatio1 = req.getParameter("ratio1");
+				String targetRatio2 = req.getParameter("ratio2");
+				if (extype.matches("click"))
+					message = "The user has clicked correctly " + targetCorrect + " words out of " + targetTotal + ".";
+				else {
+					message = "The user has written/chosen correctly " + targetCorrect + " words out of " + targetTotal + ".";
+				}
 
-		// parse this string into an object
-		Gson gson = new Gson();
-		PostRequest requestInfo = gson.fromJson(requestString, PostRequest.class);
-
-		// check if this version is supported
-		if (!supportedVersions.contains(requestInfo.version)) {
-			resp.sendError(490);
-			log.info("Add-on, version conflict (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
-			return;
+				try {
+					outputfile.write(message + "\n");
+				}
+				finally {
+					outputfile.close();
+				}
 		}
+		else {
+				
+			long startTime = System.currentTimeMillis();
+			log.debug("received POST request");
 		
-		// if this is an OpenID authentication request, handle it separately
-		if (requestInfo.type.matches("openid-authentication")) {
-			String userSuppliedIdentifier = requestInfo.url;
-			// TODO do something with this info
-			log.debug("requestInfo.document: " + requestInfo.document);
-			if (openidConsumer == null) {
-				String openidReturnToUrl = getOpenIDReturnToUrl(req);
-				openidConsumer = new OpenIDConsumer(openidReturnToUrl, this);
+			// read request in as string
+			// (gson.fromJson() seems unhappy with req.getReader() as its first argument, don't know why)
+			String line;
+			String requestString = "";
+			BufferedReader reader = req.getReader();
+			while((line = reader.readLine()) != null) {
+				requestString += line;
 			}
-			openidConsumer.authRequest(userSuppliedIdentifier, req, resp);
-			return;
-		}
 
-		String lang = requestInfo.language;
-		if (lang == null) {
-			lang = "en";
-		}
+			// parse this string into an object
+			Gson gson = new Gson();
+			PostRequest requestInfo = gson.fromJson(requestString, PostRequest.class);
 
-		ActivityConfiguration config = loadActivitiesAndProcessors(req, requestInfo.topic);
+			// check if this version is supported
+			if (!supportedVersions.contains(requestInfo.version)) {
+				resp.sendError(490);
+				log.info("Add-on, version conflict (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				return;
+			}
 		
-		// check if the requested topic exists
-		if (config == null) {
-			resp.sendError(491);
-			log.info("Add-on, topic doesn't exist (" + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
-			return;
-		}
-		
-		// check if the language-topic combination exists
-		if (config.getPreDesc(lang) == null || config.getPostDesc(lang) == null) {
-			resp.sendError(492);
-			log.info("Add-on, topic doesn't exist for language ("  + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
-			return;
-		}
-		
-		/* // disallow passives
-		if (requestInfo.topic.equals("Passives")) {
-			resp.sendError(491);
-			return;
-		}*/
+			// if this is an OpenID authentication request, handle it separately
+			if (requestInfo.type.matches("openid-authentication")) {
+				String userSuppliedIdentifier = requestInfo.url;
+				// TODO do something with this info
+				log.debug("requestInfo.document: " + requestInfo.document);
+				if (openidConsumer == null) {
+					String openidReturnToUrl = getOpenIDReturnToUrl(req);
+					openidConsumer = new OpenIDConsumer(openidReturnToUrl, this);
+				}
+				openidConsumer.authRequest(userSuppliedIdentifier, req, resp);
+				return;
+			}
 
-		// set enhancement type
-		config.setClientValue(lang, "enhancement", requestInfo.activity);
+			String lang = requestInfo.language;
+			if (lang == null) {
+				lang = "en";
+			}
+
+			ActivityConfiguration config = loadActivitiesAndProcessors(req, requestInfo.topic);
 		
-		// extract the wertiview spans from the document
-		Document doc = Jsoup.parse(requestInfo.document);  
-		String htmlString = spansToETags(doc, "wertiview", true);
+			// check if the requested topic exists
+			if (config == null) {
+				resp.sendError(491);
+				log.info("Add-on, topic doesn't exist (" + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				return;
+			}
 		
-		String result = "";
+			// check if the language-topic combination exists
+			if (config.getPreDesc(lang) == null || config.getPostDesc(lang) == null) {
+				resp.sendError(492);
+				log.info("Add-on, topic doesn't exist for language ("  + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				return;
+			}
 		
-		// handling each type of request
-		if (requestInfo.type.matches("practice")) {
-			PracticeHandler ph = new PracticeHandler(requestInfo);
-			result = ph.process();
-		} else { // should be a "page" request
+			/* // disallow passives
+			 if (requestInfo.topic.equals("Passives")) {
+			 resp.sendError(491);
+			 return;
+			 }*/
+
+			// set enhancement type
+			config.setClientValue(lang, "enhancement", requestInfo.activity);
+		
+			// extract the wertiview spans from the document
+			Document doc = Jsoup.parse(requestInfo.document);  
+			String htmlString = spansToETags(doc, "wertiview", true);
+		
+			String result = "";
+		
+			// handling each type of request
+			if (requestInfo.type.matches("practice")) {
+				PracticeHandler ph = new PracticeHandler(requestInfo);
+				result = ph.process();
+			} else { // should be a "page" request
 			
-			PageHandler ph = new PageHandler(processors, requestInfo.topic, htmlString, lang);
-			JCas cas;
-			cas = ph.process();
+				PageHandler ph = new PageHandler(processors, requestInfo.topic, htmlString, lang);
+				JCas cas;
+				cas = ph.process();
 
-			JSONEnhancer pe = new JSONEnhancer(cas, requestInfo.activity);
-			result = pe.enhance();
+				JSONEnhancer pe = new JSONEnhancer(cas, requestInfo.activity);
+				result = pe.enhance();
 			
-			log.info("Add-on (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.language + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url + ", " + cas.getDocumentLanguage());
-		}	
+				log.info("Add-on (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.language + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url + ", " + cas.getDocumentLanguage());
+			}	
 
-		try { // to write to the response stream
-			//Locale locale = new Locale("se-NO", "");
-			resp.setContentType("text/plain"); // charset=UTF-8");
-			final PrintWriter out = resp.getWriter();
-			//final PrintWriter out = new PrintWriter(new OutputStreamWriter(resp.getOutputStream(), "UTF8"), true);
-			out.write(result);
-			out.close();
-		} catch (IOException ioe) {
-			log.error("Error writing to response stream");
-			throw new ServletException("", ioe);
+			try { // to write to the response stream
+				//Locale locale = new Locale("se-NO", "");
+				resp.setContentType("text/plain"); // charset=UTF-8");
+				final PrintWriter out = resp.getWriter();
+				//final PrintWriter out = new PrintWriter(new OutputStreamWriter(resp.getOutputStream(), "UTF8"), true);
+				out.write(result);
+				out.close();
+			} catch (IOException ioe) {
+				log.error("Error writing to response stream");
+				throw new ServletException("", ioe);
+			}
+		} // else
+		
 		}
-	}
 	
 	/**
 	 * load the activity.xml files for all topics. Initialize the pre- and 

@@ -10,6 +10,12 @@
 	// candidates for mc options presented to user
 	types: [],
 	hitList: [],
+	
+	// the total number of clicks
+	totalclicked : 0,
+	
+	// the total number of correct clicks
+	totalresult : 0,
 		
 	remove: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
@@ -68,8 +74,10 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 		
 		if($(this).hasClass('wertiviewSubstantiveSingular')) {  // was: wertiviewhit
 			$(this).addClass('clickStyleCorrect');
+            wertiview.substantivesingular.updateClickLog(event, "click", 1);
 		} else {
 			$(this).addClass('clickStyleIncorrect');
+			wertiview.substantivesingular.updateClickLog(event, "click", 0);
 		} 
 		//$(this).css({'cursor': 'auto'});
         
@@ -255,6 +263,7 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 				nextInput = $(this).data('wertiviewnexthit');
 			}
 			wertiview.lib.replaceInput($(this).parent(), $text);
+			wertiview.substantivesingular.updateClickLog(event, "cloze", 1);
 
 			/*// focus next input
 			if(nextInput) {
@@ -262,6 +271,7 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 			}*/
 		} else {
 			$(this).addClass('clozeStyleIncorrect');
+			wertiview.substantivesingular.updateClickLog(event, "cloze", 0);
 		}
 	},
 
@@ -289,6 +299,35 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 		}*/
 		
 		return false;
-	}
-	};
+	},
+	
+	updateClickLog: function(event, extype, result) {
+	   var jQuery = wertiview.jQuery;
+	   var contextDoc = event.data.context;
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		$.fn = $.prototype = jQuery.fn;
+
+	   var nr_of_hits = $('span.wertiviewSubstantiveSingular').length;
+	   wertiview.substantivesingular.totalresult += result;
+	   wertiview.substantivesingular.totalclicked++;
+	   var correctclicks = wertiview.substantivesingular.totalresult;
+	   var totalclicks = wertiview.substantivesingular.totalclicked; 
+	   var ratio1 =  correctclicks / totalclicks;
+	   var ratio2 = correctclicks / nr_of_hits;
+	   var dataString = "correct clicks / total clicks " + ratio1 + ", correct clicks / hits on the page " + ratio2;
+	   jQuery.ajax({
+            type: "POST",
+            context: this,
+            url: "http://localhost:8080/teaksta/WERTiServlet", // save data in a log file, without reloading the page
+            data: {extype : extype, correctly_clicked : correctclicks, total_clicked : totalclicks, ratio1 : ratio1, ratio2 : ratio2},
+            success: function() {
+                //display message back to user here
+                //alert("log " + dataString + " saved");
+            }
+        });
+       return false;
+	   //alert("correct clicks / total clicks" + ratio1);
+	   //alert("correct clicks / hits on the page" + ratio2);
+    }
+ 	};
 
