@@ -22,6 +22,7 @@
 		<script type="application/x-javascript" src="chrome://view/content/rusverbperfective.js" />
 		<script type="application/x-javascript" src="chrome://view/content/rusverbimperfective.js" />
 		<script type="application/x-javascript" src="chrome://view/content/ruswordstress.js" />
+		<script type="application/x-javascript" src="chrome://view/content/rusparticiples.js" />
 		<script type="application/x-javascript" src="chrome://view/content/rusverbpasttense.js" />
 		<script type="application/x-javascript" src="chrome://view/content/rusverbpresenttense.js" />
 		<script type="application/x-javascript" src="chrome://view/content/rusadjectivemasculine.js" />
@@ -101,6 +102,7 @@
 						<menuitem id="wertiview-toolbar-topic-RusVerbPerfective" label="&rusverbperfective;" value="RusVerbPerfective" />
 						<menuitem id="wertiview-toolbar-topic-RusVerbImperfective" label="&rusverbimperfective;" value="RusVerbImperfective" />
 						<menuitem id="wertiview-toolbar-topic-RusWordStress" label="&ruswordstress;" value="RusWordStress" />
+						<menuitem id="wertiview-toolbar-topic-RusParticiples" label="&rusparticiples;" value="RusParticiples" />
 						<menuitem id="wertiview-toolbar-topic-RusVerbPastTense" label="&rusverbpasttense;" value="RusVerbPastTense" />
 						<menuitem id="wertiview-toolbar-topic-RusVerbPresentTense" label="&rusverbpresenttense;" value="RusVerbPresentTense" />
 						<menuitem id="wertiview-toolbar-topic-RusAdjectiveMasculine" label="&rusadjectivemasculine;" value="RusAdjectiveMasculine" />

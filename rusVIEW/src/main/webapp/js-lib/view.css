@@ -265,6 +265,12 @@ span.wertiviewtoken {
 	font-weight: bold !important;
 }
 
+/* Russian Participles */
+.colorizeStyleRusParticiples {
+	color: #FF8200 !important;
+	font-weight: bold !important;
+}
+
 /* Russian Past Tense Verbs */
 .colorizeStyleRusVerbPastTense {
 	color: #FF8200 !important;

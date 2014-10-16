@@ -83,6 +83,7 @@ wertiview.ns(function() {
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPerfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbImperfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusWordStress");
+			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusParticiples");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPastTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPresentTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusAdjectiveMasculine");
@@ -105,6 +106,7 @@ wertiview.ns(function() {
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPerfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbImperfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusWordStress");
+			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusParticiples");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPastTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPresentTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusAdjectiveMasculine");
@@ -127,6 +129,7 @@ wertiview.ns(function() {
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPerfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbImperfective");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusWordStress");
+			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusParticiples");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPastTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusVerbPresentTense");
 			wertiview.toolbar.disableMenuItem("wertiview-toolbar-topic-RusAdjectiveMasculine");
@@ -149,6 +152,7 @@ wertiview.ns(function() {
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusVerbPerfective");
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusVerbImperfective");
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusWordStress");
+			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusParticiples");
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusVerbPastTense");
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusVerbPresentTense");
 			wertiview.toolbar.enableMenuItem("wertiview-toolbar-topic-RusAdjectiveMasculine");

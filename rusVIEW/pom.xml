@@ -267,7 +267,7 @@
 							<basedir>${project.build.directory}/classes/firefox-extension/view/chrome/content</basedir>
 							<outputDir>js-lib</outputDir>
                             <outputBasedir>${project.build.directory}/${project.build.finalName}</outputBasedir>
-							<filesToInclude>gerunds.js,jquery-1.4.2.min.js,lib.js,nouncountability.js,passives.js,phrasalverbs.js,pos.js,werti.css,whquestions.js,rusnounsingular.js,rusnounplural.js,rusverbperfective.js,rusverbimperfective.js,ruswordstress.js,rusverbpasttense.js,rusverbpresenttense.js,rusadjectivemasculine.js,rusadjectivefeminine.js,rusadjectiveneutral.js</filesToInclude>
+							<filesToInclude>gerunds.js,jquery-1.4.2.min.js,lib.js,nouncountability.js,passives.js,phrasalverbs.js,pos.js,werti.css,whquestions.js,rusnounsingular.js,rusnounplural.js,rusverbperfective.js,rusverbimperfective.js,ruswordstress.js,rusparticiples.js,rusverbpasttense.js,rusverbpresenttense.js,rusadjectivemasculine.js,rusadjectivefeminine.js,rusadjectiveneutral.js</filesToInclude>
 							<replacements>
 								<replacement>
 									<token>werti.ns\(function\(\) \{</token>
@@ -286,7 +286,7 @@
 							<basedir>${basedir}/src/main/resources/firefox-extension/view/chrome/content</basedir>
 							<outputDir>js-lib</outputDir>
                             <outputBasedir>${basedir}/src/main/webapp</outputBasedir>
-							<filesToInclude>activity.js,blur.js,gerunds.js,jquery-1.4.2.min.js,lib.js,notification.js,nouncountability.js,konjunktiv.js,passives.js,phrasalverbs.js,pos.js,serestar.js,view.css,whquestions.js,rusnounsingular.js,rusnounplural.js,rusverbperfective.js,rusverbimperfective.js,ruswordstress.js,rusverbpasttense.js,rusverbpresenttense.js,rusadjectivemasculine.js,rusadjectivefeminine.js,rusadjectiveneutral.js</filesToInclude>
+							<filesToInclude>activity.js,blur.js,gerunds.js,jquery-1.4.2.min.js,lib.js,notification.js,nouncountability.js,konjunktiv.js,passives.js,phrasalverbs.js,pos.js,serestar.js,view.css,whquestions.js,rusnounsingular.js,rusnounplural.js,rusverbperfective.js,rusverbimperfective.js,ruswordstress.js,rusparticiples.js,rusverbpasttense.js,rusverbpresenttense.js,rusadjectivemasculine.js,rusadjectivefeminine.js,rusadjectiveneutral.js</filesToInclude>
 							
 							<replacements>
 								<replacement>
