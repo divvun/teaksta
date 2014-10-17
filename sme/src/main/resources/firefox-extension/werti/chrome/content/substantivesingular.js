@@ -53,7 +53,16 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 		$.fn = $.prototype = jQuery.fn;
 
 		// change all wertiviewtoken spans to mouseover pointer
-		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
+		$('span.wertiviewtoken').css({'cursor': 'pointer'});
+		var numExercises = $('span.wertiviewSubstantiveSingular').length;
+		jQuery.ajax({
+            type: "POST",
+            url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
+            data: {nr_of_exercises : numExercises},
+            success: function() {
+                //display message back to user here
+            }
+        });
 
 		// conjunction markup
 		$('span.wertiviewRELEVANT').find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiveSingular');
@@ -74,10 +83,10 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 		
 		if($(this).hasClass('wertiviewSubstantiveSingular')) {  // was: wertiviewhit
 			$(this).addClass('clickStyleCorrect');
-            wertiview.substantivesingular.updateClickLog(event, "click", 1);
+            wertiview.substantivesingular.updateClickLog(event, "click", 1, $(this).text(), "");
 		} else {
 			$(this).addClass('clickStyleIncorrect');
-			wertiview.substantivesingular.updateClickLog(event, "click", 0);
+			wertiview.substantivesingular.updateClickLog(event, "click", 0, $(this).text(), "");
 		} 
 		//$(this).css({'cursor': 'auto'});
         
@@ -263,15 +272,14 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 				nextInput = $(this).data('wertiviewnexthit');
 			}
 			wertiview.lib.replaceInput($(this).parent(), $text);
-			wertiview.substantivesingular.updateClickLog(event, "cloze", 1);
-
+			wertiview.substantivesingular.updateClickLog(event, "cloze", 1, $(this).val(), $(this).val());
 			/*// focus next input
 			if(nextInput) {
 				$("#" + nextInput).get(0).focus();
 			}*/
 		} else {
 			$(this).addClass('clozeStyleIncorrect');
-			wertiview.substantivesingular.updateClickLog(event, "cloze", 0);
+			wertiview.substantivesingular.updateClickLog(event, "cloze", 0, $(this).val(), $(this).data('wertiviewanswer'));
 		}
 	},
 
@@ -301,7 +309,7 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
 		return false;
 	},
 	
-	updateClickLog: function(event, extype, result) {
+	updateClickLog: function(event, extype, result, word, facit) {
 	   var jQuery = wertiview.jQuery;
 	   var contextDoc = event.data.context;
 		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
@@ -319,7 +327,8 @@ span.find('span.wertiviewSubstantiveSingular').addClass('colorizeStyleSubstantiv
             type: "POST",
             context: this,
             url: "http://localhost:8080/teaksta/WERTiServlet", // save data in a log file, without reloading the page
-            data: {extype : extype, correctly_clicked : correctclicks, total_clicked : totalclicks, ratio1 : ratio1, ratio2 : ratio2},
+            contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+            data: {extype : extype, nr_of_exercises : nr_of_hits, word : word, facit : facit, correct : result, correctly_clicked : correctclicks, total_clicked : totalclicks, ratio1 : ratio1, ratio2 : ratio2},
             success: function() {
                 //display message back to user here
                 //alert("log " + dataString + " saved");

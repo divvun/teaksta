@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.OutputStreamWriter;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.net.URL;
 import java.util.Arrays;
@@ -218,33 +219,52 @@ public class WERTiServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-		
-		if (req.getParameter("correctly_clicked") != null) {
-				log.info("LogServlet received POST request");
-				String message = "";
-				//response.setHeader("Cache-Control", "no-cache");
-				//response.setHeader("Pragma", "no-cache");
 				
-				FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data				
-			
+		if (req.getParameter("word") != null) {
+				log.info("LogServlet received POST request");
+				String message = "", correct = "";
+					
+				OutputStreamWriter outputfile = new OutputStreamWriter(new FileOutputStream(outputfileLoc, true), "UTF-8");
+				//true -> the new data will be appended to the end of the file, instead of overwriting the file				
+					
 				String extype = req.getParameter("extype");
+				String word = req.getParameter("word"); 
+				String facit = req.getParameter("facit"); 
+				if (req.getParameter("correct").matches("1")) 
+					correct = "yes"; 
+				else 
+					correct = "no";
 				String targetCorrect = req.getParameter("correctly_clicked");
 				String targetTotal = req.getParameter("total_clicked");
-				String targetRatio1 = req.getParameter("ratio1");
-				String targetRatio2 = req.getParameter("ratio2");
+				//String targetRatio1 = req.getParameter("ratio1");
+				//String targetRatio2 = req.getParameter("ratio2");
 				if (extype.matches("click"))
-					message = "The user has clicked correctly " + targetCorrect + " words out of " + targetTotal + ".";
-				else {
-					message = "The user has written/chosen correctly " + targetCorrect + " words out of " + targetTotal + ".";
-				}
-
+					message = "The clicked word: " + word + ". Correct: " + correct + ". The user has clicked correctly " + targetCorrect + " words out of " + targetTotal + ".";
+				else
+					message = "User's answer: " + word + ". Facit: " + facit + ". Correct: " + correct + ". The user has written/chosen correctly " + targetCorrect + " words out of " + targetTotal + ".";
+					
 				try {
+					outputfile.write(message + "\n");
+					}
+				finally {
+					outputfile.close();
+					}
+		}
+		else if (req.getParameter("nr_of_exercises") != null) {
+			log.info("LogServlet received POST request");
+			
+			OutputStreamWriter outputfile = new OutputStreamWriter(new FileOutputStream(outputfileLoc, true), "UTF-8");
+					
+			String nr_of_exercises = req.getParameter("nr_of_exercises"); 
+		
+			String message = "Number of exercises on the page: " + nr_of_exercises + "."; 					
+			try {
 					outputfile.write(message + "\n");
 				}
 				finally {
 					outputfile.close();
 				}
-		}
+			}
 		else {
 				
 			long startTime = System.currentTimeMillis();

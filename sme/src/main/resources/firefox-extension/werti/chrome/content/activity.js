@@ -408,28 +408,42 @@ wertiview.ns(function() {
         	// we should never get here
         	wertiview.prefError();
         }
-        if (hitList.length < 20) {
-            numExercises = hitList.length - 2;
+        
+        var i = 0; // default offset of the first hit that will be turned into an exercise
+        var inc = 1; // default interval between the exercises
+        if (hitList.length <= 10) { // if the number of hits is 10 or less then all the hits will be turned into exercises
+            numExercises = hitList.length; // was: hitList.length - 2;
+        }
+        
+        else {
+            // the number of hits is 10+, so we can choose which hits to turn into exercises
+            var choiceMode = wertiview.getChoiceMode();
+            if (choiceMode == wertiview.pref_random) {
+                wertiview.lib.shuffleList(hitList);
+            }
+            else if (choiceMode == wertiview.pref_first) {
+        	   i = wertiview.getFirstOffset();
+            }
+            else if (choiceMode == wertiview.pref_intervals){
+        	   inc = wertiview.getIntervalSize();
+            }
+            else {
+        	   // we should never get here
+        	   wertiview.prefError();
+            }
         }
         //alert("nr of exercises: "+numExercises);
-        
-        // choose which hits to turn into exercises
-        var i = 0;
-        var inc = 1;
-        var choiceMode = wertiview.getChoiceMode();
-        if (choiceMode == wertiview.pref_random) {
-            wertiview.lib.shuffleList(hitList);
-        }
-        else if (choiceMode == wertiview.pref_first) {
-        	i = wertiview.getFirstOffset();
-        }
-        else if (choiceMode == wertiview.pref_intervals){
-        	inc = wertiview.getIntervalSize();
-        }
-        else {
-        	// we should never get here
-        	wertiview.prefError();
-        }
+        jQuery.ajax({
+            type: "POST",
+            url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
+            data: {nr_of_exercises : numExercises},
+            success: function() {
+                //display message back to user here
+            }
+        });
+
+        //alert("offset of the first hit: "+i);
+        //alert("interval size: "+inc);
         
         // generate the exercises
         //alert("generating exercises");
@@ -548,6 +562,16 @@ wertiview.ns(function() {
         	// we should never get here
         	wertiview.prefError();
         }
+        //alert("nr of exercises: "+numExercises);
+        jQuery.ajax({
+            type: "POST",
+            url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
+            data: {nr_of_exercises : numExercises},
+            success: function() {
+                //display message back to user here
+            }
+        });
+
         
         // generate the exercises
         for (; numExercises > 0 && i < hitList.length; i += inc){
