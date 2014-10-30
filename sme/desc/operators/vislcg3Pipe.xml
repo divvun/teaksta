@@ -12,8 +12,8 @@
     <delegateAnalysisEngine key="GenericRelevanceAnnotator">
       <import location="../annotators/GenericRelevanceAnnotator.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="OpenNlpTokenizer">
-      <import location="../annotators/OpenNlpTokenizer.xml"/>
+    <delegateAnalysisEngine key="GiellateknoTokenizer">
+      <import location="../annotators/GiellateknoTokenizer.xml"/>
     </delegateAnalysisEngine>
     <delegateAnalysisEngine key="OpenNlpSentenceDetector">
       <import location="../annotators/OpenNlpSentenceDetector.xml"/>
@@ -83,7 +83,7 @@
       <fixedFlow>
         <node>EnhanceXMLAnnotator</node>
         <node>GenericRelevanceAnnotator</node>
-        <node>OpenNlpTokenizer</node>
+        <node>GiellateknoTokenizer</node>
         <node>OpenNlpSentenceDetector</node>
         <node>HTMLSentenceAnnotator</node>
         <node>vislcg3Annotator</node>
