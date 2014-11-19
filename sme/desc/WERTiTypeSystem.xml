@@ -6,6 +6,17 @@
   <vendor/>
   <types>
     <typeDescription>
+      <name>werti.uima.types.global.EnhancementId</name>
+      <description>The enhancement ID of this CAS.</description>
+      <supertypeName>uima.tcas.DocumentAnnotation</supertypeName>
+      <features>
+        <featureDescription>
+          <name>enhId</name>
+          <rangeTypeName>uima.cas.Long</rangeTypeName>
+        </featureDescription>
+      </features>
+    </typeDescription>
+    <typeDescription>
       <name>werti.uima.types.annot.RelevantText</name>
       <description>Optional annotation to specify which text to work on.</description>
       <supertypeName>uima.tcas.Annotation</supertypeName>
