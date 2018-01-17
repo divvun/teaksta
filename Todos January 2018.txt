@@ -1,0 +1,14 @@
+Work on Konteaksta
+
+New tasks
+1. Generation of exercises of local texts.
+2. Generation of exercises of texts in the Korp corpus which is on the server gtweb.uit.no (probably just copy them to gtoahpa and then the task boils down to (1)).
+
+Bugs
+1. For the "practice" exercise for some topics even the correct answer is generated (because of parallel forms the user cannot know which of the forms was occuring in the original text). - this is not working!
+e.g. leamaš
+lei = leai
+
+Other (smaller) todos
+1. Remove the exercise types multiple choice and fill-in-blanks for the topics Subject, Object and Adverbial.
+2. Maybe remove the conjunctions exercise.
