@@ -253,18 +253,21 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
     
     private String[] getTensePerson(CGReading cgr) {
 		StringListIterable reading = new StringListIterable(cgr);
-		String tense = "", person = "";
-        String[] tags = new String[2];
+		String tense = "", person = "", mood = "";
+        String[] tags = new String[3];
 		// Obtain tense and person from the CG reading.
 		for (String rtag : reading) {
             log.info("rtag:"+rtag);
             if ((rtag.compareTo("Prs") == 0) || (rtag.compareTo("Prt") == 0))
                 tense = rtag;
+			if ((rtag.compareTo("Ind") == 0) || (rtag.compareTo("Imprt") == 0) || (rtag.compareTo("Cond") == 0) || (rtag.compareTo("Pot") == 0))
+				mood = rtag;
             if ((rtag.length() == 3) && ((rtag.charAt(2) == '1') || (rtag.charAt(2) == '2') || (rtag.charAt(2) == '3')))
                 person = rtag;
 		}
         tags[0] = tense;
         tags[1] = person;
+		tags[2] = mood;
 		return tags;
 	}
 
@@ -273,15 +276,14 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
         
         String tense = tags[0];
         String person = tags[1];
+		String mood = tags[2];
         //If the verb is in Prs then generate a distractor of the same lemma, the same person, but Prt.
         
-        if (tense == "Prs") {
-            distract_forms[4] = "V+Ind+Prt+"+person;
-        }
-        else {
-            distract_forms[4] = "V+Ind+Prs+"+person;
-        }
-        
+		if (mood.compareTo("Ind") == 0) {
+			distract_forms[4] = "V+"+mood+"+"+tense+"+"+person;
+		}
+		
+                
         log.info("wrong tense distractor:"+distract_forms[4]);
         
         String str, word, result = "", generationInput = "";
