@@ -20,10 +20,27 @@
                 x.style.color="#e98300";
                 var y=document.getElementsByName("activity");
                 y[0].value=act;
+                selectform=document.getElementById("extype");
+                if (act==="Subject" || act==="Object" || act==="Adverbial"){ 
+                    if (selectform.length>2) {
+                        selectform.options[2].remove();
+                        selectform.options[2].remove();
+                    }
+                }
+                else if (selectform.length<3) {
+                    var option=document.createElement("option");
+                    option.value="mc";
+                    option.text="Vállje rivttes sániid!";
+                    selectform.add(option);
+                    var option=document.createElement("option");
+                    option.value="cloze";
+                    option.text="Čále rivttes sániid!";
+                    selectform.add(option);
+                }
                 //var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
 		 }         
-        </script>
+        </script>          
         
     </head>
 
@@ -135,7 +152,7 @@
             <td>
             <form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
                 <input type="hidden" name="activity" id="activity" value="" />
-                <select class="exercisetype" name="client.enhancement">
+                <select id="extype" class="exercisetype" name="client.enhancement">
                     <option value="colorize" selected>Geahča ivdnejuvvon sániid</option>
                     <option value="click">Coahkkal rivttes sániid!</option>
 		            <option value="mc">Vállje rivttes sániid!</option>
