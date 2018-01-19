@@ -1,14 +1,21 @@
-Work on Konteaksta
+Further work on Konteaksta
 
-New tasks
+Important fixes
+1. Fix the paths for Giellatekno linguistic tools in the Konteaksta code! (old infra file names -> new infra file names). Now the transducers from 2013 (sme.fst, isme-GG.restr.fst etc) are used in the online version.
+2. Create a configuration file for the paths (which will not be checked in) and refer to this file from the Java files that use the linguistic tools (these are src/main/java/werti/uima/ae/Vislcg3Annotator.java and all the enhancement files in src/main/java/werti/uima/enhancer/).
+
+Bugs
+1. For the "practice" exercise for some topics even the correct answer is generated (because of parallel forms the user cannot know which of the forms was occuring in the original text). The program should accept all the parallel forms if there are several.
+e.g. leamaš = leamašan (Infinite Verb exercise)
+lei = leai (Finite Verb exercise)
+Now the enhancement is correct (the attribute answer="lei leai" is there if we look at the page's HTML code) but the javascript code fails to accept the parallel form that does not occur in the text. (The code for e.g. Finite Verb exercise is in src/main/webapp/js-lib/verbconjugation.js)
+
+Other (smaller) todos
+1. Remove the exercise types multiple choice and fill-in-blanks for the topics Subject, Object and Adverbial. - Done!
+2. Remove the conjunctions exercise. - Done!
+3. Replace the picture in the upper left corner by the text "Under development".
+
+New things to implement
 1. Generation of exercises of local texts.
 2. Generation of exercises of texts in the Korp corpus which is on the server gtweb.uit.no (probably just copy them to gtoahpa and then the task boils down to (1)).
 
-Bugs
-1. For the "practice" exercise for some topics even the correct answer is generated (because of parallel forms the user cannot know which of the forms was occuring in the original text). - this is not working!
-e.g. leamaš
-lei = leai
-
-Other (smaller) todos
-1. Remove the exercise types multiple choice and fill-in-blanks for the topics Subject, Object and Adverbial.
-2. Maybe remove the conjunctions exercise.
