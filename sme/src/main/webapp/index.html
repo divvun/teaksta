@@ -4,7 +4,7 @@
 	<head>
 		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	    <title>Konteaksta - working with authentic North Sámi texts</title>
-		
+
         <link rel="stylesheet" type="text/css" href="main.css"/>
         <script type="text/javascript">
             function setActivity(act) {
@@ -21,7 +21,7 @@
                 var y=document.getElementsByName("activity");
                 y[0].value=act;
                 selectform=document.getElementById("extype");
-                if (act==="Subject" || act==="Object" || act==="Adverbial"){ 
+                if (act==="Subject" || act==="Object" || act==="Adverbial"){
                     if (selectform.length>2) {
                         selectform.options[2].remove();
                         selectform.options[2].remove();
@@ -39,13 +39,13 @@
                 }
                 //var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
-		 }         
-        </script>          
-        
+		 }
+        </script>
+
     </head>
 
 <body onload="setActivity('SubstantiveSingular')">
-    
+
 	<div id="page">
         <table id="headermenu">
             <tr>
@@ -54,10 +54,10 @@
             </tr>
         </table>
 		<!-- <a class="hide" href="#content">Skip to content</a> -->
-		
+
         <!-- <div id="language_options">
 		{% block language_select %}
-		
+
 			{% get_current_language as LANGUAGE_CODE %}
 			<form action="/{{ URL_PREFIX }}/i18n/setlang/" method="post" name="newlang">
 				<dl>
@@ -65,19 +65,19 @@
 					<dd>
 						<input name="next" type="hidden" value="{% block pagename %}{% endblock %}" />
 						<select id="language_select" name="language" onChange="javascript:this.form.submit();">
-						
+
 						{% ifequal LANGUAGE_CODE "no" %}
 							<option value="no" selected="selected">Norsk</option>
 						{% else %}
 							<option value="no">Norsk</option>
 						{% endifequal %}
-						
+
 						{% ifequal LANGUAGE_CODE "sme" %}
 							<option value="sme" selected="selected">Davvisámi</option>
 						{% else %}
 							<option value="sme">Davvisámi</option>
 						{% endifequal %}
-						
+
 						{% ifequal LANGUAGE_CODE "en" %}
 							<option value="en" selected="selected">English</option>
 						{% else %}
@@ -89,13 +89,13 @@
 						{% else %}
 							<option value="sv">Svenska</option>
 						{% endifequal %}
-							  
+
 						{% ifequal LANGUAGE_CODE "fi" %}
-						 	<option value="fi" selected="selected">Suomi</option> 
+						 	<option value="fi" selected="selected">Suomi</option>
 						{% else %}
-						 	<option value="fi">Suomi</option> 
+						 	<option value="fi">Suomi</option>
 						{% endifequal %}
-						 
+
 					</select>
 					</dd>
 				</dl>
@@ -103,15 +103,15 @@
 			</form>
 		{% endblock %}
         </div> -->
-		
+
         <div id="content">
 		<div id="leftcontent">
-            
+
             <div id="navbar">
-                <img width="120" border="0" src="images/littleman.png" alt="Game logo" />
+								<div class="under_utvikling">Under utvikling</div>
                 <div class="bigheader">Fáttát</div>
                 <div class="smallheader">Sátneluohkát:</div>
-                <ul class="sidelist">                
+                <ul class="sidelist">
                 <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</a></li>
                 <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</a></li>
                 <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</a></li>
@@ -126,7 +126,7 @@
                 <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</a></li>
                 </ul>
             </div>
-            
+
             <div class="bigheader">Resurssat</div>
             <ul class="sidelist small">
                 <li><a target="_blank" href="http://sanit.oahpa.no/sme/nob">Neahttasátnegirji</a></li>
@@ -135,9 +135,9 @@
                 <li><a href="teaksta_birra.html">Konteaksta-prográmma birra</a></li>
                 <li><a href="about_teaksta.html">About Konteaksta</a></li>
             </ul>
-            
+
         </div>
-        
+
         <div id="rightcontent">
             <a name="content" class="hide">&nbsp;</a>
             <div id="game_right_float">
@@ -174,18 +174,18 @@
                 <input type="submit" value="Mana!" class="activityFormSubmit" />&nbsp;</br>(rahpasa ođđa láses)
                 </br>
                 </br>
-                
+
             </form>
             <div class="searchBox">
                 <b><img src="images/google_logo.jpg" height="16px"/> veahkeha gávdnat siiddu mii lea miellagiddevaš dutnje:</b>
-                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse"> 
-                    <input type="hidden" name="cref" value="" />  
+                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse">
+                    <input type="hidden" name="cref" value="" />
                     <input type="hidden" name="ie" value="utf-8" />
-                    <input type="hidden" name="hl" value="" /> 
+                    <input type="hidden" name="hl" value="" />
                     <input type="text" name="q" class="searchField" />
-                    <input type="hidden" name="query" class="searchField" value="leat" /> 
+                    <input type="hidden" name="query" class="searchField" value="leat" />
                     <input type="hidden" name="siteurl" value="avvir.no">
-                    <input type="hidden" name="sitesearch" value="samediggi.no"> 
+                    <input type="hidden" name="sitesearch" value="samediggi.no">
                     <input type="submit" value="Oza" class="searchSubmit">
                 </form> -->
                 <script>
@@ -201,10 +201,10 @@
                 })();
                 </script>
                 <gcse:search></gcse:search>
-                (Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)   
+                (Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)
             </div>
             </div>
-                        
+
         </div>
         </div>
         <div id="footer">
@@ -215,4 +215,3 @@
         </div>
     </body>
 </html>
-        
