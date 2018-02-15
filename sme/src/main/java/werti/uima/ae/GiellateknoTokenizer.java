@@ -30,7 +30,7 @@ import werti.uima.types.annot.Token;
 
 /**
  * Wrapper for "Giellatekno tokenizer" (tokenisation that is specially adapted to North Sámi).
- * 
+ *
  * @author Adriane Boyd, Heli Uibo
  */
 public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
@@ -38,16 +38,20 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	private static Map<String, TokenizerME> tokenizers;
 	private static final Logger log =
 		Logger.getLogger(GiellateknoTokenizer.class);
-	private static final String toolsDir = "/Users/mslm/main/gt/script/";
-	private static final String abbrDir = "/Users/mslm/main/gt/sme/bin/";
+        // Heli's MacBook:
+        /* private static final String toolsDir = "/Users/mslm/main/gt/script/";
+	   private static final String abbrDir = "/Users/mslm/main/gt/sme/bin/"; */
+        // gtlab:
+        private static final String toolsDir = "/opt/smi/sme/bin/"; // was "/home/heli/main/gt/script/"; // /Users/car010/main/gt/script/ locally
+        private static final String abbrDir = "opt/smi/sme/bin/"; // /Users/car010/main/langs/sme/src/ locally
 	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
 
 	public class ExtCommandConsume2String implements Runnable {
-		
+
 		private BufferedReader reader;
 		private boolean finished;
 		private String buffer;
-		
+
 		/**
 		 * @param reader the reader to read from.
 		 */
@@ -57,7 +61,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 			finished = false;
 			buffer = "";
 		}
-		
+
 		/**
 		 * Reads from the reader linewise and puts the result to the buffer.
 		 * See also {@link #getBuffer()} and {@link #isDone()}.
@@ -73,14 +77,14 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 			}
 			finished = true;
 		}
-		
+
 		/**
 		 * @return true if the reader read by this class has reached its end.
 		 */
 		public boolean isDone() {
 			return finished;
 		}
-		
+
 		/**
 		 * @return the string collected by this class or null if the stream has not reached
 		 * its end yet.
@@ -89,17 +93,17 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 			if ( ! finished ) {
 				return null;
 			}
-			
+
 			return buffer;
 		}
-		
+
 	}
-	
+
 	@Override
 	public void initialize(UimaContext aContext)
 			throws ResourceInitializationException {
 		super.initialize(aContext);
-		
+
 		try {
 			tokenizers = new HashMap<String, TokenizerME>();
 			tokenizers.put("en", WERTiContext.request(TokenizerME.class, "en"));
@@ -108,40 +112,41 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		}
 	}
 
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 		log.debug("Starting token annotation");
-		
+
 		String text = jcas.getDocumentText();
 		//log.info("extracted text: " + text);
 		//log.info("jcas.getDocumentText() returns: "+text);
-				
+
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
-		
+
 		// create an empty document
 		for (int i = 0; i < text.length(); i++) {
 			rtext.setCharAt(i, ' ');
 		}
-		
+
 		// put relevant text spans in their proper positions in this empty document
 		final FSIndex tagIndex = jcas.getAnnotationIndex(RelevantText.type);
 		final Iterator<RelevantText> tit = tagIndex.iterator();
-		
+
 		while (tit.hasNext()) {
 			RelevantText t = tit.next();
 			rtext.replace(t.getBegin(), t.getEnd(), t.getCoveredText());
 		}
-		
+
 		final String textString = rtext.toString();
+		//log.info("Relevant text sent to the tokenizer: " + textString);
 		final String lang = jcas.getDocumentLanguage();
 		String tokenised_text = "";
-		
+
 		String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + textString + "\" | " + preprocessCmd};
 		log.info("Preprocessing command: " + tokenisationPipeline[2]);
-		
+
 		try {
 			Process process = Runtime.getRuntime().exec(tokenisationPipeline);
 			BufferedReader fromTokeniser = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
@@ -160,70 +165,95 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		catch (IOException e) {
 			System.out.println(e.getMessage());
 		}
-		
+
 		String[] tokens = null;
-		
+
 		tokens = tokenised_text.split("\n");
-		
+
 		/*if (tokenizers.containsKey(lang)) {
 			tokens = tokenizers.get(lang).tokenize(textString);
 		} else {
 			log.error("No tokenizer for language: " + lang);
 			throw new AnalysisEngineProcessException();
 		}*/
-		
+
 		int skew = 0;
-		
+
 		for (String token : tokens) {
 			// include all tokens that don't consist of whitespace, i.e., prevent
 			// unicode non-breaking space from becoming a token
-			if (token.matches("[^\\p{Z}]+")) {
+		        log.info("next token: "+token);
+			int tokenStart = textString.indexOf(token, skew);
+			log.info("Token "+token+" starts at "+tokenStart);
+
+			if (tokenStart == -1) {
+			    if (textString.indexOf('-',skew) != -1) { // Handle the hyphenated words that are "repaired" by preprocess and thus not found in the original text.
+				String syllable=textString.substring(skew,textString.indexOf('-',skew)-1); // was: token.substring(0,textString.indexOf('-',skew)-1)
+				log.info("part of the word preceding the hyphen: "+syllable);
+				tokenStart = textString.indexOf(syllable, skew); // search the part of the word preceding the hyphen instead of the whole word
+				skew = tokenStart + token.length() + 1; // 1 = length of the hyphen
+			    }
+			    else {
+				skew = 0;
+				continue;
+			    }
+			}
+			else {
+			    /*  if (Character.isLowerCase(textString.charAt(tokenStart+token.length()))) { // The token is not found or the token was only a part of the word that actually occurred in the text.
+				continue;
+			    }
+			    else { */
+				skew = tokenStart + token.length(); // This is the normal case!
+				//}
+			}
+			log.info("and ends at "+skew);
+
+			if (token.matches(".*?[^\\p{Z}].*")) { // was: ("[^\\p{Z}]+"))
 				final Token t = new Token(jcas);
-				skew = textString.indexOf(token, skew);
-				final int start = skew;
-				skew += token.length();
+				final int start = tokenStart;
+				log.info("Token "+token+" will be added to jcas.");
 				t.setBegin(start);
 				t.setEnd(start + token.length());
-				
+
 				int tlen = t.getCoveredText().length();
 
 				// check for leading or trailing unicode quotes or possessives
 				// that the OpenNlp model doesn't separate from the adjacent words
 				if (tlen > 1 && t.getCoveredText().substring(0, 1).matches("‘|“")) {
 					t.setBegin(start + 1);
-					
+
 					final Token t2 = new Token(jcas);
 					t2.setBegin(start);
 					t2.setEnd(start + 1);
 					t2.addToIndexes();
-				} else if (tlen > 1 && t.getCoveredText().substring(tlen - 1, tlen).matches("’|”")) {					
-					t.setEnd(start + token.length() - 1);	
-					
+				} else if (tlen > 1 && t.getCoveredText().substring(tlen - 1, tlen).matches("’|”")) {
+					t.setEnd(start + token.length() - 1);
+
 					final Token t2 = new Token(jcas);
 					t2.setBegin(start + token.length() - 1);
 					t2.setEnd(start + token.length());
 					t2.addToIndexes();
 				} else if (tlen > 2 && t.getCoveredText().substring(tlen - 2, tlen).matches("’s")) {
 					t.setEnd(start + token.length() - 2);
-					
+
 					final Token t2 = new Token(jcas);
 					t2.setBegin(start + token.length() - 2);
 					t2.setEnd(start + token.length() - 1);
 					t2.addToIndexes();
-					
+
 					final Token t3 = new Token(jcas);
 					t3.setBegin(start + token.length() - 1);
 					t3.setEnd(start + token.length());
 					t3.addToIndexes();
-				}
-				
+					}
+
 				t.addToIndexes();
 				if (log.isTraceEnabled()) {
 					log.trace("Token: " + t.getBegin() + " " + t.getCoveredText() + " " + t.getEnd());
 				}
 			}
 		}
-		
+
 		log.debug("Finished token annotation");
 	}
 }
