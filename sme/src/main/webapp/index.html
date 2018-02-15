@@ -31,15 +31,17 @@
                         selectform.options[2].remove();
                         selectform.options[2].remove();
                     }
-                }
-								var option=document.createElement("option");
-								option.value="mc";
-								option.text="Vállje rivttes sániid!";
-								selectform.add(option);
-								var option=document.createElement("option");
-								option.value="cloze";
-								option.text="Čále rivttes sániid!";
-								selectform.add(option);
+                } else if (selectform.length<3) {
+									var option=document.createElement("option");
+									option.value="mc";
+									option.text="Vállje rivttes sániid!";
+									selectform.add(option);
+									var option=document.createElement("option");
+									option.value="cloze";
+									option.text="Čále rivttes sániid!";
+									selectform.add(option);
+								}
+
                 //var z=document.getElementById("instruct");
                 //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
 		 				}
