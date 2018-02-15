@@ -34,11 +34,13 @@ import werti.uima.types.annot.CGToken;
 import werti.uima.types.annot.SentenceAnnotation;
 import werti.uima.types.annot.Token;
 
+import werti.util.Constants;
+
 /**
- * Annotate a text using the external tools - fst-based morph. analyser and vislcg3 
- * shallow syntactic parser. The locations of vislcg3 and the grammar are 
+ * Annotate a text using the external tools - fst-based morph. analyser and vislcg3
+ * shallow syntactic parser. The locations of vislcg3 and the grammar are
  * provided by the activity.
- * 
+ *
  * @author Niels Ott?
  * @author Adriane Boyd
  * @author Heli Uibo
@@ -53,13 +55,13 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	private String vislcg3Loc;
 	private String vislcg3DisGrammarLoc;
 	private String vislcg3SyntGrammarLoc;
-	private final String preprocessPipeline = "/Users/mslm/main/gt/script/preprocess --abbr=/Users/mslm/main/gt/sme/bin/abbr.txt | /Users/mslm/bin/lookup -flags mbTT -utf8 /Users/mslm/main/gt/sme/bin/sme.fst | /Users/mslm/main/gt/script/lookup2cg | ";
-	private final String preprocessLoc = "/Users/mslm/main/gt/script/preprocess";
-	private final String abbr = " --abbr=/Users/mslm/main/gt/sme/bin/abbr.txt | ";
-	private final String lookupLoc = "/Users/mslm/bin/lookup";
-	private final String lookupFlags = "-flags mbTT -utf8";
-	private final String fstLoc = " /Users/mslm/main/gt/sme/bin/sme.fst";
-	private final String lookup2cgLoc = " | /opt/local/bin/perl /Users/mslm/main/gt/script/lookup2cg | ";
+	//private final String preprocessPipeline = Constants.preprocess_Pipeline; // this var is not used
+	private final String preprocessLoc = Constants.preprocess_Loc;
+	private final String abbr = Constants.abbr_file;
+	private final String lookupLoc = Constants.lookup_Loc;
+	private final String lookupFlags = Constants.lookup_Flags;
+	private final String fstLoc = Constants.an_FST;
+	private final String lookup2cgLoc = Constants.lookup_2cgLoc;
 
 	/**
 	 * A runnable class that reads from a reader (that may
@@ -154,7 +156,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			return buffer;
 		}
 
-	}	
+	}
 
 	@Override
 	public void initialize(UimaContext context)
@@ -205,15 +207,15 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			// assert that we got as many tokens back as we provided
 			/*if (newTokens.size() != originalTokens.size()) {
 				throw new IllegalArgumentException("Token list size mismatch: " +
-						"Original tokens: " + originalTokens.size() + ", After CG3: " + newTokens.size()); 
+						"Original tokens: " + originalTokens.size() + ", After CG3: " + newTokens.size());
 			}*/
 			if (newTokens.size() == 0) {
-				throw new IllegalArgumentException("CG3 output is empty!"); 
+				throw new IllegalArgumentException("CG3 output is empty!");
 			}
 
 			log.info("original tokens:"+originalTokens.size());
             log.info("new tokens:"+newTokens.size());
-			
+
 			int j = 0; // counter for new tokens
 			CGToken newT = null;
 			String reading = "";
@@ -225,7 +227,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 					reading = newT.getReadings().get(0).toString();
 				}
 				//log.info("Token: "+origT.getCoveredText()+" CGToken:"+reading);
-				
+
 				// Skip the fullstop tokens that were added in order to treat headings as separate sentences.
 				while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
 					j++;
@@ -276,14 +278,14 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		for (SentenceAnnotation s : sentList) {
 			sentenceEnds.add(s.getEnd());
 		}
-		
+
 		boolean atSentBoundary = true;
 
 		for (Token t : tokenList) {
 			atSentBoundary = false;
 			String coveredText = t.getCoveredText();
             result.append(coveredText);
-			// Add sentence boundaries after headings <h1-6>. 
+			// Add sentence boundaries after headings <h1-6>.
 			if (sentenceEnds.contains(t.getEnd()) && !coveredText.matches("[.!?()]+")) {
 				result.append("\n" + CGSentenceBoundaryToken);
 				atSentBoundary = true;
@@ -298,23 +300,23 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	 * helper for running the pipeline consisting of external tools for morphological analysis (FST) + morph. disambiguation + shallow syntactic analysis (CG). The preprocessing (tokenisation) is done by OpenNlpTokenizer.
 	 */
 	private String runFST_CG(String input) throws IOException,InterruptedException {
-	
-	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
+
+	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
         long timestamp = System.currentTimeMillis();
 
-        String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/cg3input"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/cg3output"+timestamp+".tmp";
+        String inputfileLoc = Constants.inputfile_Loc+timestamp+".tmp";
+        String outputfileLoc = Constants.outputfile_Loc+timestamp+".tmp";
 
-        //create temporary files for saving cg3 input and output                                                   
+        //create temporary files for saving cg3 input and output
         File inputfile = new File(inputfileLoc);
         inputfile.createNewFile();
         File outputfile = new File(outputfileLoc);
         outputfile.createNewFile();
 
-        
+
         //create an input file object and write input (text to be analyzed) to the file cg3inputXXXXX.tmp
 		Writer cg3inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
-		
+
 		try {
         cg3inputfile.write(input);
         }
@@ -323,48 +325,48 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		}
 
 		// compose text analysis pipeline and run a process
-        
+
         // when reading CG input from a file and writing CG output to another file:
         String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
         // There was a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
-		
+
 		// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
 		log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
 		Process process = Runtime.getRuntime().exec(textAnalysisPipeline);
         process.waitFor();
-        
+
         BufferedReader cg3outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
-        
+
 		String result = "";
         String str;
-        
+
 		while ((str = cg3outputfile.readLine()) != null) {
             //str = cg3outputfile.readLine();
 		    result = result + str + "\n";
 		}
         //log.info("Read from cg3outputfile: "+result);
-        
+
         cg3outputfile.close();
-        
+
         inputfile.delete();
         outputfile.delete();
-		
+
         return result;
 	}
-    
+
 
 	/*
 	 * helper for running vislcg3 -- has been replaced by runFST_CG()
 	 */
 	/*private String runVislcg3(String input) throws IOException,InterruptedException {
 		//create an input file object and write input (text to be analyzed) to the file cg3input.tmp
-		String inputfileLoc = "/Users/mslm/view/sme/output/cg3input.tmp";
-		String outputfileLoc = "/Users/mslm/view/sme/output/cg3output.tmp"; 
+		String inputfileLoc = "/Users/car010/view/sme/output/cg3input.tmp";
+		String outputfileLoc = "/Users/car010/view/sme/output/cg3output.tmp";
 		PrintWriter cg3inputfile = new PrintWriter(new BufferedWriter(new FileWriter(inputfileLoc)));
-		
+
 		cg3inputfile.write(input);
 		cg3inputfile.close();
-		
+
 		// compose text analysis pipeline and run a process
 		//String textAnalysisPipeline = "cat " + inputfileLoc + " | " + preprocessPipeline + vislcg3Loc + " -g " + vislcg3GrammarLoc + " > " + outputfileLoc;
 		String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | /opt/local/bin/perl " + preprocessLoc + abbr + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc}; // + " > " + outputfileLoc};
@@ -374,25 +376,25 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 
 		// get input and output streams (are they internally buffered??)
-		
+
 		//BufferedWriter toCG =  new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
 		BufferedReader fromCG = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		BufferedReader errorCG = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
-		
+
 		// take care of VislCG's STDERR inside a special thread.
-		ExtCommandConsume2Logger stderrConsumer = new ExtCommandConsume2Logger(errorCG, "VislCG STDERR: "); 
+		ExtCommandConsume2Logger stderrConsumer = new ExtCommandConsume2Logger(errorCG, "VislCG STDERR: ");
 		Thread stderrConsumerThread = new Thread(stderrConsumer, "VislCG STDERR consumer");
-		stderrConsumerThread.start(); 
+		stderrConsumerThread.start();
 
 		// take care of VislCG's STDOUT in the very same fashion
 		ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromCG);
 		Thread stdoutConsumerThread = new Thread(stdoutConsumer, "VislCG STDOUT consumer");
 		stdoutConsumerThread.start();
-		
+
 
 		// write input to VislCG. VislCG may block the entire pipe if its output
-		// buffers run full. However, they will sooner or later be emptied by 
+		// buffers run full. However, they will sooner or later be emptied by
 		// the consumer threads started above, which will then cause unblocking.
 		//toCG.write(input);
 		//toCG.close();
@@ -417,7 +419,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	 */
 	private List<CGToken> parseCGOutput(String cgOutput, JCas jcas) {
 		ArrayList<CGToken> result = new ArrayList<CGToken>();
-		
+
 		// current token and its readings
 		CGToken current = null;
 		ArrayList<CGReading> currentReadings = new ArrayList<CGReading>();
@@ -425,7 +427,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		String[] cgOutputLines = cgOutput.split("\n+");
 		for (int lineCount = 0; lineCount < cgOutputLines.length; lineCount++) {
 			String line = cgOutputLines[lineCount];
-            
+
             // case 1: new cohort
 			if (line.startsWith("\"<")) {
 				if (current != null) {
