@@ -54,6 +54,8 @@ import com.google.gson.Gson;
 import weka.core.Instances;
 import weka.filters.Filter;
 
+import werti.util.Constants;
+
 /**
  * The server side implementation of the WERTi service.
  *
@@ -75,22 +77,22 @@ import weka.filters.Filter;
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
 		Logger.getLogger(WERTiServlet.class);
-	//public static final String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/InputLog.txt";
+	//public static final String outputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/InputLog.txt";
 	public static final String outputfileLoc = "InputLog.txt";
 
 	public static WERTiContext context;
-	
+
 	// maximum amount of of ms to wait for a web-page to load
 	private static final int MAX_WAIT = 1000 * 20; // 20 seconds, was: 10
 
 	public static final long serialVersionUID = 10;
-	
+
 	public static final Set<String> supportedVersions = new HashSet<String>(Arrays.asList("0.10"));
 
 	private Processors processors;
-	
+
 	public static OpenIDConsumer openidConsumer = null;
-	
+
 	public static String enhancement_type; // colorize, click, mc or cloze
 
 	public void init(ServletConfig config) throws ServletException {
@@ -138,14 +140,14 @@ public class WERTiServlet extends HttpServlet {
 
 			return;
 		}
-		
+
 		String url = req.getParameter("url");
 		// accept url-s without http://
 		log.info("url:"+url);
 		if (!url.contains("http")) {
 			url = "http://" + url;
 		}
-		
+
 		String activity = req.getParameter("activity");
 		String enhancement = req.getParameter("client.enhancement");
 		//log.info("enhancement type"+enhancement);
@@ -173,29 +175,29 @@ public class WERTiServlet extends HttpServlet {
 
 		HTMLUtils.markTextNodes(htmlDoc, htmlDoc.body());
 
-		// TODO: potentially modify jsoup to return unescaped text so that this hack 
+		// TODO: potentially modify jsoup to return unescaped text so that this hack
 		//       can be removed
 		String htmlString = spansToETags(htmlDoc, HTMLUtils.className, false);
 
 		PageHandler ph = new PageHandler(processors, activity, htmlString, lang);
 		JCas cas;
 		cas = ph.process();
-		
+
 		if (cas != null) {
 			HTMLEnhancer ge = new HTMLEnhancer(cas);
 			String result = ge.enhance(activity, u.toString(), req, config, getServletContext().getServletContextName());
 
 			log.info("Web (" + (System.currentTimeMillis() - startTime) + "): " + req.getParameter("language") + ",  " + activity + ", " + req.getParameter("client.enhancement") + ", " + url + ", " + cas.getDocumentLanguage());
 			// Write the url, topic and enhancement type into the file as well:
-			
+
 			FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data
 			try {
 				outputfile.write("Topic: " + activity + ", exercise type: " + enhancement + ", URL: " + url + "\n");
 			}
 			finally {
 				outputfile.close();
-			}			
-			
+			}
+
 			try { // to write to the response stream
 				resp.setContentType("text/html");
 				final PrintWriter out = resp.getWriter();
@@ -209,30 +211,30 @@ public class WERTiServlet extends HttpServlet {
 			throw new ServletException("The selected language/topic/activity combination is not currently available.");
 		}
 	}
-	
+
 	/**
 	 * Annotate according to the topic/activity/text provided in a JSON PostRequestObject.
-	 * 
+	 *
 	 * @param req the servlet request
 	 * @param resp the servlet response
 	 */
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
-				
+
 		if (req.getParameter("word") != null) {
 				log.info("LogServlet received POST request");
 				String message = "", correct = "";
-					
+
 				OutputStreamWriter outputfile = new OutputStreamWriter(new FileOutputStream(outputfileLoc, true), "UTF-8");
-				//true -> the new data will be appended to the end of the file, instead of overwriting the file				
-					
+				//true -> the new data will be appended to the end of the file, instead of overwriting the file
+
 				String extype = req.getParameter("extype");
-				String word = req.getParameter("word"); 
-				String facit = req.getParameter("facit"); 
-				if (req.getParameter("correct").matches("1")) 
-					correct = "yes"; 
-				else 
+				String word = req.getParameter("word");
+				String facit = req.getParameter("facit");
+				if (req.getParameter("correct").matches("1"))
+					correct = "yes";
+				else
 					correct = "no";
 				String targetCorrect = req.getParameter("correctly_clicked");
 				String targetTotal = req.getParameter("total_clicked");
@@ -242,7 +244,7 @@ public class WERTiServlet extends HttpServlet {
 					message = "The clicked word: " + word + ". Correct: " + correct + ". The user has clicked correctly " + targetCorrect + " words out of " + targetTotal + ".";
 				else
 					message = "User's answer: " + word + ". Facit: " + facit + ". Correct: " + correct + ". The user has written/chosen correctly " + targetCorrect + " words out of " + targetTotal + ".";
-					
+
 				try {
 					outputfile.write(message + "\n");
 					}
@@ -252,12 +254,12 @@ public class WERTiServlet extends HttpServlet {
 		}
 		else if (req.getParameter("nr_of_exercises") != null) {
 			log.info("LogServlet received POST request");
-			
+
 			OutputStreamWriter outputfile = new OutputStreamWriter(new FileOutputStream(outputfileLoc, true), "UTF-8");
-					
-			String nr_of_exercises = req.getParameter("nr_of_exercises"); 
-		
-			String message = "Number of exercises on the page: " + nr_of_exercises + "."; 					
+
+			String nr_of_exercises = req.getParameter("nr_of_exercises");
+
+			String message = "Number of exercises on the page: " + nr_of_exercises + ".";
 			try {
 					outputfile.write(message + "\n");
 				}
@@ -266,10 +268,10 @@ public class WERTiServlet extends HttpServlet {
 				}
 			}
 		else {
-				
+
 			long startTime = System.currentTimeMillis();
 			log.debug("received POST request");
-		
+
 			// read request in as string
 			// (gson.fromJson() seems unhappy with req.getReader() as its first argument, don't know why)
 			String line;
@@ -289,7 +291,7 @@ public class WERTiServlet extends HttpServlet {
 				log.info("Add-on, version conflict (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
 				return;
 			}
-		
+
 			// if this is an OpenID authentication request, handle it separately
 			if (requestInfo.type.matches("openid-authentication")) {
 				String userSuppliedIdentifier = requestInfo.url;
@@ -309,21 +311,21 @@ public class WERTiServlet extends HttpServlet {
 			}
 
 			ActivityConfiguration config = loadActivitiesAndProcessors(req, requestInfo.topic);
-		
+
 			// check if the requested topic exists
 			if (config == null) {
 				resp.sendError(491);
 				log.info("Add-on, topic doesn't exist (" + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
 				return;
 			}
-		
+
 			// check if the language-topic combination exists
 			if (config.getPreDesc(lang) == null || config.getPostDesc(lang) == null) {
 				resp.sendError(492);
 				log.info("Add-on, topic doesn't exist for language ("  + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
 				return;
 			}
-		
+
 			/* // disallow passives
 			 if (requestInfo.topic.equals("Passives")) {
 			 resp.sendError(491);
@@ -332,28 +334,28 @@ public class WERTiServlet extends HttpServlet {
 
 			// set enhancement type
 			config.setClientValue(lang, "enhancement", requestInfo.activity);
-		
+
 			// extract the wertiview spans from the document
-			Document doc = Jsoup.parse(requestInfo.document);  
+			Document doc = Jsoup.parse(requestInfo.document);
 			String htmlString = spansToETags(doc, "wertiview", true);
-		
+
 			String result = "";
-		
+
 			// handling each type of request
 			if (requestInfo.type.matches("practice")) {
 				PracticeHandler ph = new PracticeHandler(requestInfo);
 				result = ph.process();
 			} else { // should be a "page" request
-			
+
 				PageHandler ph = new PageHandler(processors, requestInfo.topic, htmlString, lang);
 				JCas cas;
 				cas = ph.process();
 
 				JSONEnhancer pe = new JSONEnhancer(cas, requestInfo.activity);
 				result = pe.enhance();
-			
+
 				log.info("Add-on (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.language + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url + ", " + cas.getDocumentLanguage());
-			}	
+			}
 
 			try { // to write to the response stream
 				//Locale locale = new Locale("se-NO", "");
@@ -367,17 +369,17 @@ public class WERTiServlet extends HttpServlet {
 				throw new ServletException("", ioe);
 			}
 		} // else
-		
+
 		}
-	
+
 	/**
-	 * load the activity.xml files for all topics. Initialize the pre- and 
+	 * load the activity.xml files for all topics. Initialize the pre- and
 	 * postprocessors for each.
 	 * @param req the HTTP request
 	 * @param topicName the topic chosen by the user
 	 * @return the configuration of the activity chosen by the user
 	 */
-	private ActivityConfiguration loadActivitiesAndProcessors(HttpServletRequest req, 
+	private ActivityConfiguration loadActivitiesAndProcessors(HttpServletRequest req,
 			String topicName) throws IOException, ServletException {
 
 		// load activities from/into session
@@ -386,13 +388,13 @@ public class WERTiServlet extends HttpServlet {
 
 		// load processors if necessary
 		loadProcessors(acts); // track this
-		
+
 		return config;
 	}
-	
+
 	/**
-	 * replace all <span class="wertiview"> tags with <e> tags. Copy the 
-	 * wertiview IDs if there are any. Turn the HTML character entities inside 
+	 * replace all <span class="wertiview"> tags with <e> tags. Copy the
+	 * wertiview IDs if there are any. Turn the HTML character entities inside
 	 * the spans/e-tags into unicode characters.
 	 * @param doc the result of a Jsoup parse
 	 * @param className the name of the class of the relevant spans
@@ -400,7 +402,7 @@ public class WERTiServlet extends HttpServlet {
 	 * @return the <html> node as a string
 	 */
 	private String spansToETags(Document doc, String className, boolean haveIds) {
-		// find all added spans using the class name and replace everything inside 
+		// find all added spans using the class name and replace everything inside
 		// the <e> tokens with unescaped unicode characters
 		String htmlString = doc.html();
 		Pattern enhancePatt = Pattern.compile("<span class=\"[^\"]*" + className + "[^\"]*\"( wertiviewid=\"([^\"]*)\")?>(.*?)</span>", Pattern.DOTALL);
@@ -419,7 +421,7 @@ public class WERTiServlet extends HttpServlet {
 
 		return htmlString;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void mergeConfigParams(ActivityConfiguration config, HttpServletRequest req) {
 		Enumeration<String> paramNames = req.getParameterNames();
@@ -450,10 +452,10 @@ public class WERTiServlet extends HttpServlet {
 			}
 		}
 	}
-	
+
 	/**
 	 * If the processors haven't been loaded, load them.
-	 * 
+	 *
 	 * @param acts the list of activities
 	 * @throws IOException
 	 * @throws ServletException
@@ -465,12 +467,12 @@ public class WERTiServlet extends HttpServlet {
 			log.info("Loaded all UIMA processors (" + (System.currentTimeMillis() - startTime) + ")");
 		}
 	}
-	
+
 	private static String getServletBaseUrl(HttpServletRequest req) {
 		String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath();
 		return baseUrl;
 	}
-	
+
 	private static String getOpenIDReturnToUrl(HttpServletRequest req) {
 		String baseUrl = getServletBaseUrl(req);
 		String openidReturnToUrl = baseUrl + "/VIEW?openid_return=true";
