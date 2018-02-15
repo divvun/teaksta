@@ -21,11 +21,13 @@ import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
 import werti.server.WERTiServlet;
 
+import werti.util.Constants;
+
 /**
  * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
- * {@link werti.ae.Vislcg3Annotator} to enhance spans corresponding 
+ * {@link werti.ae.Vislcg3Annotator} to enhance spans corresponding
  * to the tags specified by the activity as tags of negation forms of verbs.
- * 
+ *
  * @author Niels Ott?
  * @author Adriane Boyd
  * @author Heli Uibo
@@ -35,26 +37,26 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
 		Logger.getLogger(Vislcg3NounPlEnhancer.class);
-	
+
 	private List<String> NPlTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-    private final String lookupLoc = "/usr/local/bin/lookup";
-    private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /opt/smi/sme/bin/isme-GG.restr.fst";
-	private final String FST = " /opt/smi/sme/bin/sme.fst";
-	
+  private final String lookupLoc = Constants.lookup_Loc;
+  private final String lookupFlags = Constants.lookup_Flags;
+	private final String invertedFST = Constants.inverted_FST;
+	private final String FST = Constants.an_FST;
+
 	/**
 	 * A runnable class that reads from a reader (that may
 	 * be fed by {@link Process}) and puts stuff read into a variable.
 	 * @author nott
 	 */
 	public class ExtCommandConsume2String implements Runnable {
-		
+
 		private BufferedReader reader;
 		private boolean finished;
 		private String buffer;
-		
+
 		/**
 		 * @param reader the reader to read from.
 		 */
@@ -64,7 +66,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			finished = false;
 			buffer = "";
 		}
-		
+
 		/**
 		 * Reads from the reader linewise and puts the result to the buffer.
 		 * See also {@link #getBuffer()} and {@link #isDone()}.
@@ -80,14 +82,14 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			}
 			finished = true;
 		}
-		
+
 		/**
 		 * @return true if the reader read by this class has reached its end.
 		 */
 		public boolean isDone() {
 			return finished;
 		}
-		
+
 		/**
 		 * @return the string collected by this class or null if the stream has not reached
 		 * its end yet.
@@ -96,13 +98,13 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			if ( ! finished ) {
 				return null;
 			}
-			
+
 			return buffer;
 		}
-		
+
 	}
-	
-	
+
+
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -125,7 +127,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		}
 
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which spans are enhanced
-		
+
 		for (String conT: NPlTags) {
 			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 			// remember previous token so we can getEnd() from it (chunk)
@@ -135,7 +137,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			while (cgTokenIter.hasNext()) {
 				CGToken cgt = (CGToken) cgTokenIter.next();
 				if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
-				    // more than one reading? don't mark up if exercise type is mc or cloze                       
+				    // more than one reading? don't mark up if exercise type is mc or cloze
                                     if (!isSafe(cgt)) {
                                         continue;
                                     }
@@ -143,8 +145,8 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 				// analyze reading(s)
 				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
-				    CGReading reading = cgt.getReadings(i); 
-								
+				    CGReading reading = cgt.getReadings(i);
+
 				    String lemma = "", stemtype = "", distractors = "";
 				    if (containsTag(reading, conT, enhancement_type)) {
 					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
@@ -154,7 +156,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					if (enhancement_type.equals("mc")) {
 					    // get stemtype from the CG reading, if any of these: G3, G7, NomAg
 					    stemtype = getStemType(reading);
- 
+
 					    // generate the distractors, based on the lemma of the hit
 					    distractors = getDistractors(lemma, stemtype);
 					}
@@ -165,12 +167,12 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					e.setRelevant(true);
 					e.setBegin(cgt.getBegin());
 					e.setEnd(cgt.getEnd());
-					
+
 					// increment id
 					newId = classCounts.get(conT) + 1;
 					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewSubstantivePlural \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
 					//log.info(spanStartTag);
-					e.setEnhanceStart(spanStartTag);					
+					e.setEnhanceStart(spanStartTag);
 					e.setEnhanceEnd("</span>");
 					classCounts.put(conT, newId);
 					//log.info(newId);
@@ -186,21 +188,21 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 				//prev = cgt;
 			}
 		}
-		
+
 
 		// (chunk)
 		//log.info("Enhancement stack is "
 		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
 		log.info("Finished N Pl enhancement");
 	}
-	
+
 	/*
 	 * Determines whether the given token is safe, i.e. unambiguous
 	 */
 	private boolean isSafe(CGToken t) {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
-	
+
 	/*
 	 * Determines whether the given reading contains the given tag.
 	 */
@@ -210,7 +212,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		for (String rtag : reading) {
 			reading_str = reading_str + rtag + " ";
 		}
-		
+
 		if (reading_str.contains(tag) && (reading_str.contains("Prop") || reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {  // Check if the tag string contains the given tag sequence as a substring. Ensure that it is a noun, eliminate proper nouns and derived forms from the selection if the exercise type is mc or cloze.
 		    return false;
 		}
@@ -222,7 +224,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		//log.info(cgr + " does not contain " + tag);
 		return false;
 	}
-	
+
 	/*
 	 * Obtains the stem type from the morphological analysis if any (G3,G7,NomAg).
 	 */
@@ -244,7 +246,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		}
 		return stemtype;
 	}
-	
+
 	private String getLemma(CGReading cgr) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String lemma = "", lemma_utf8 = "";
@@ -256,7 +258,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
             }
 		}
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
-		/* 
+		/*
 		try {
             byte[] b = lemma.getBytes();
             lemma_utf8 = new String(b,"UTF-8");
@@ -268,21 +270,21 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		//log.info("lemma encoded in UTF8: " + lemma_utf8);
 		return lemma;
 	}
-    
+
     private String getDistractors(String lemma, String stemtype) {
         String[] distract_forms = {"Pl+Nom", "Pl+Acc", "Pl+Gen", "Pl+Ill", "Pl+Loc", "Pl+Com", "Ess"};
-		
+
 		String str, word, result = "", generationInput = "";
-		
+
 		try {
-            
+
 			if (lemma.contains("#")) {
 				// correct lemma for compound words = morf analysis - N+Sg+Nom
 				lemma = lemma.replace("#","");
 				String[] analysisPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + "\" | " + lookupLoc + " " + lookupFlags + " " + FST};
 				log.info("Morph analysis pipeline: "+analysisPipeline[2]);
 				Process process = Runtime.getRuntime().exec(analysisPipeline);
-				
+
 				BufferedReader fromFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
 				ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromFST);
 				Thread stdoutConsumerThread = new Thread(stdoutConsumer, "FST STDOUT consumer");
@@ -295,12 +297,12 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 				}
 				fromFST.close();
 				String morfanal = stdoutConsumer.getBuffer();
-				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous 
+				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous
 				String[] token = analysis[0].split("\t"); // take the first analysis
 				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
 				lemma = lemma.replace("Sg+Nom","");
 				log.info("lemma of the compound word: "+lemma);
-				
+
 				for (int j=0; j < distract_forms.length; j++) {
 					generationInput += lemma + distract_forms[j] + "\n";
 				}
@@ -317,13 +319,13 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					}
 				}
 			}
-			
+
 			String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
-			
+
 			log.info("Form generation pipeline: "+generationPipeline[2]);
-			
+
 			Process process2 = Runtime.getRuntime().exec(generationPipeline);
-			
+
 			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process2.getInputStream(), "UTF8"));
 			ExtCommandConsume2String stdoutConsumer2 = new ExtCommandConsume2String(fromIFST);
 			Thread stdoutConsumerThread2 = new Thread(stdoutConsumer2, "FST STDOUT consumer");
@@ -334,7 +336,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
 				return null;
 			}
-			
+
 			fromIFST.close();
 			String iFSToutput = stdoutConsumer2.getBuffer();
 			StringTokenizer tok = new StringTokenizer(iFSToutput);
@@ -345,28 +347,28 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					result = result + word + " ";
 				}
 			}
-			
+
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        
-        log.info("Generated forms read from the outputfile: "+result);	  
+
+        log.info("Generated forms read from the outputfile: "+result);
         return result;
-		
-        
+
+
         /*
 		String str, word, result = "";
         // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
         long timestamp = System.currentTimeMillis();
-        
-        String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
-        
+
+        String inputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
+        String outputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
+
         //create temporary files for saving cg3 input and output
-        
+
         Writer inputfile = null;
-        
+
 		try {
             inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
             for (int j=0; j < distract_forms.length; j++) {
@@ -380,16 +382,16 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
         catch (IOException e) {
             System.out.println(e.getMessage());
         }
-        
+
         String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
-        
+
         log.info("Form generation pipeline: "+generationPipeline[2]);
         try {
             Process process = Runtime.getRuntime().exec(generationPipeline);
             process.waitFor();
-        	
+
             BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
-            
+
             while ((str = outputfile.readLine()) != null) {
                 StringTokenizer tok = new StringTokenizer(str);
                 while (tok.hasMoreTokens()) {
@@ -400,7 +402,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
                 }
             }
             log.info("Generated forms read from the outputfile: "+result);
-            
+
             outputfile.close();
             // Delete the temporary files:
             boolean inputfiledeleted = (new File(inputfileLoc)).delete();
@@ -414,10 +416,9 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
         }
         catch (IOException e) {
             System.out.println(e.getMessage());
-        }	  
-        
+        }
+
         return result; */
     }
 
 }
-
