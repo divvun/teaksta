@@ -43,7 +43,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	   private static final String abbrDir = "/Users/mslm/main/gt/sme/bin/"; */
         // gtlab:
         private static final String toolsDir = "/opt/smi/sme/bin/"; // was "/home/heli/main/gt/script/"; // /Users/car010/main/gt/script/ locally
-        private static final String abbrDir = "opt/smi/sme/bin/"; // /Users/car010/main/langs/sme/src/ locally
+        private static final String abbrDir = "/opt/smi/sme/bin/"; // /Users/car010/main/langs/sme/src/ locally
 	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
 
 	public class ExtCommandConsume2String implements Runnable {
