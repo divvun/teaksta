@@ -38,12 +38,12 @@ import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
 
 /**
- * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator} 
+ * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
  * is being used to enhance spans corresponding to the tags specified by the topic
- * and the activity that was chosen by the user. 
+ * and the activity that was chosen by the user.
  * In this case the topic is North Sámi nouns in singular form, use the patterns
  * in the method process() to extract the correct tokens for enhancement.
- * 
+ *
  * @author Niels Ott
  * @author Adriane Boyd
  * @author Heli Uibo
@@ -54,26 +54,26 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
 		Logger.getLogger(Vislcg3NounSingularEnhancer.class);
-	
+
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NSgTags;
-	private final String lookupLoc = "/Users/mslm/bin/lookup"; // "/usr/local/bin/lookup";
+	private final String lookupLoc = "/usr/bin/lookup"; // "/usr/local/bin/lookup" locally;
     private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /Users/mslm/main/langs/sme/src/generator-gt-norm.xfst"; // opt/smi/sme/bin on gtlab
-	private final String FST = " /Users/mslm/main/langs/sme/src/analyser-gt-norm.xfst";
-//  private final String hfstOptLookupLoc = "/usr/local/bin/hfst-optimized-lookup";                    
-//  private final String lookupFlags = "-q"; // was -flags mbTT -utf8 / flags are not possible for the jar     
+	private final String invertedFST = " /opt/smi/sme/bin/generator-gt-norm.xfst"; // opt/smi/sme/bin on gtlab; // /Users/car010/main/langs/sme/src/generator-gt-norm.xfst locally
+	private final String FST = " /opt/smi/sme/bin/analyser-gt-norm.xfst"; // /Users/car010/main/langs/sme/src/analyser-gt-norm.xfst locally
+//  private final String hfstOptLookupLoc = "/usr/local/bin/hfst-optimized-lookup";
+//  private final String lookupFlags = "-q"; // was -flags mbTT -utf8 / flags are not possible for the jar
 	//private final String loadJar = "java -jar";
 	//private final String jarOptLookupLoc = "./rus_resources/hfst-ol.jar";
 	//private final String invertedOptHfstLoc = "./rus_resources/generator-gt-desc.ohfst";
-	
+
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
 		super.initialize(context);
 		NSgTags = Arrays.asList(((String)context.getConfigParameterValue("NSgTags")).split(","));
 	}
-	
+
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		// stop processing if the client has requested it
@@ -102,13 +102,13 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 		FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 
-		// get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users                                                                                            
+		// get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
 		long timestamp = System.currentTimeMillis();
 
-		String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp"; 		
+		String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp";
 		String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+timestamp+".tmp";
 
-		//create temporary files for saving cg3 input and output                                                   
+		//create temporary files for saving cg3 input and output
 		File cg3GeneratorInputFile = new File(cg3GeneratorInputFileLoc);
 		File cg3GeneratorOutputFile = new File(cg3GeneratorOutputFileLoc);
 		try {
@@ -118,28 +118,28 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
-		
+
 		Map<Word, SpanTag> wordToSpanMap = new HashMap<Word, SpanTag>();
-		
+
 		boolean isMcActivity = enhancement_type.equals("mc");
-		
+
 		String hintID = "";
-		
+
 		int hintDistance = 0;
-		
+
 		boolean isValidHint = false;
-		
-		
+
+
 		try {
 			Writer cg3GeneratorInputWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(cg3GeneratorInputFileLoc), "UTF-8"));
 
 			// go through tokens
 			while (cgTokenIter.hasNext()) {
-				
+
 				CGToken cgt = (CGToken) cgTokenIter.next();
-				
+
 				String hintTag = "";
-				
+
 				boolean isValidReading = false;
 				String reading_str = "";
 				String lemma = "";
@@ -152,7 +152,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 					for (String rtag : readingIterator) {
 						currentReadingString += "+" + rtag;
 					}
-					
+
 					// determine if a hint is still valid
 					if(isValidHint){
 						Matcher validHintMatcher = validHintPattern.matcher(currentReadingString);
@@ -167,18 +167,18 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 							//log.info("This tag breaks the connection between hint and noun ="+currentReadingString);
 						}
 					}
-					
+
 					// determine if the current tag is a hint
 					if(hintTag.isEmpty()){
 						Matcher hintMatcher = hintPattern.matcher(currentReadingString);
 						if(hintMatcher.find()){
 							// remove the first "+" and quotes and replace "+" with a "-"
-							hintTag = currentReadingString.substring(1).replace("\"", "").replace("+", "-"); 
+							hintTag = currentReadingString.substring(1).replace("\"", "").replace("+", "-");
 							//log.info(feedbackWord);
 							isValidHint = true;
 						}
 					}
-					
+
 					//log.info("The current reading string is=" + currentReadingString);
 					// don't consider readings that match the exclude pattern, to filter out unlikely readings
 					// (e.g. "и" is a CC in almost all cases, the probability that it is a N is very low)
@@ -194,18 +194,18 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						if(posMatcher.find() && numberMatcher.find()){
 							isValidReading = true;
 							// remove the first "+" and quotes
-							reading_str = currentReadingString.substring(1).replace("\"", ""); 
+							reading_str = currentReadingString.substring(1).replace("\"", "");
 							//log.info("This reading can be considered=" +currentReadingString);
 							// the lemma is the first element of the reading string
 							lemma = reading_str.split("\\+")[0];
 						}
 					}
 				}
-				
+
 				if(isValidReading){
 					//log.info("This reading will be used=" +reading_str);
 					String distractors = "";
-					
+
 					// id's with the "+" symbol have to be escaped, thats why we use a "-" instead
 					String spanReadingString = reading_str.replace("+", "-");
 					// The "<" and ">"symbols also cause problems because these are the tag opening / closing symbol.
@@ -219,20 +219,20 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 					else {
 						idCount.increment();
 					}
-					
+
 					// create a word with begin and end of the current CGToken
 					Word word = new Word(cgt.getBegin(), cgt.getEnd());
-					
-					String spanTagStart = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + spanReadingString, classCounts.get(spanReadingString).value) + 
+
+					String spanTagStart = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + spanReadingString, classCounts.get(spanReadingString).value) +
 							"\" class=\"wertiviewtoken  wertiviewSubstantiveSingular\">";  // was: wertiviewhit
-					
+
 					SpanTag spanTag = new SpanTag(spanTagStart);
-					
+
 					spanTag.addAttribute("lemma", lemma);
-					
+
 					// only add the hint ID if the distance is allowed and the hint still valid
 					// distance = 1 would allow no tokens in between
-					if(!hintID.isEmpty() && 
+					if(!hintID.isEmpty() &&
 							hintDistance < 4 &&
 							isValidHint){
 						spanTag.addAttribute("hintid", hintID);
@@ -240,9 +240,9 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 					// reset the validity of a hint
 					isValidHint = false;
-					
+
 					wordToSpanMap.put(word, spanTag);
-					
+
 					if (isMcActivity) {
 						// generate the distractors, with lemma, gender, animacy, number and case (needed for the form generator)
 						distractors = writeMorphologicalForms(reading_str);
@@ -252,15 +252,15 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						// write the word to the file in order to assign the correct distractors to the correct span
 						cg3GeneratorInputWriter.write(word.toString());
 					} else{
-						
+
 						//log.info("This is the cgt=" + cgt.getCoveredText() + " B="+ word.getBegin() + " E=" + word.getEnd());
-						
+
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
 						e.setBegin(word.getBegin());
 						e.setEnd(word.getEnd());
-						e.setEnhanceStart(spanTag.getSpanTagStart());					
+						e.setEnhanceStart(spanTag.getSpanTagStart());
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
@@ -272,7 +272,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						hintDistance = 0;
 						// create a word with begin and end of the current CGToken
 						Word word = new Word(cgt.getBegin(), cgt.getEnd());
-						
+
 						MutableInt idCount = classCounts.get(hintTag);
 						if (idCount == null) {
 							classCounts.put(hintTag, new MutableInt());
@@ -280,20 +280,20 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						else {
 							idCount.increment();
 						}
-						
+
 						hintID = EnhancerUtils.get_id("WERTi-span-" + hintTag, classCounts.get(hintTag).value);
-						
-						String spanTagStart = "<span id=\"" + hintID + 
+
+						String spanTagStart = "<span id=\"" + hintID +
 								"\" class=\"wertiviewhinttag\">";
-						
+
 						SpanTag spanTag = new SpanTag(spanTagStart);
-						
+
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
 						e.setBegin(word.getBegin());
 						e.setEnd(word.getEnd());
-						e.setEnhanceStart(spanTag.getSpanTagStart());					
+						e.setEnhanceStart(spanTag.getSpanTagStart());
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
@@ -302,30 +302,30 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 				}
 				hintDistance++;
 			}
-			
+
 			cg3GeneratorInputWriter.close();
-			
+
 			if(isMcActivity){
 				// generate distractors only when the activity is "mc" (multiple choice)
-				
+
 				// this was the previous version which required to install hfst on the computer
 
 //				String[] generationPipeline = {
-//						"/bin/sh", 
-//						"-c", 
-//						"/bin/cat " + cg3GeneratorInputFileLoc + 
+//						"/bin/sh",
+//						"-c",
+//						"/bin/cat " + cg3GeneratorInputFileLoc +
 //						" | " + hfstOptLookupLoc + " " + lookupFlags + " " + invertedOptHfstLoc +
 //						" | " + "cut -f1-2"+ // get rid of the weight
-//						" > " + cg3GeneratorOutputFileLoc}; 
-				
+//						" > " + cg3GeneratorOutputFileLoc};
+
 				// the newer version is using hfst-ol.jar to load the .ohfst files (ol = optimized lookup)
-				
+
 				String[] generationPipeline = {
-				"/bin/sh", 
-				"-c", 
-				"/bin/cat " + cg3GeneratorInputFileLoc + 
+				"/bin/sh",
+				"-c",
+				"/bin/cat " + cg3GeneratorInputFileLoc +
 				" | " + lookupLoc + " " + lookupFlags + " " + invertedFST +
-				" > " + cg3GeneratorOutputFileLoc}; 
+				" > " + cg3GeneratorOutputFileLoc};
 
 				log.info("Distractor generation pipeline: "+generationPipeline[2]);
 
@@ -333,63 +333,63 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 				Process process = Runtime.getRuntime().exec(generationPipeline);
 				process.waitFor();
-				
+
 				generateSpanTagWithDistractors(cas, cg3GeneratorOutputFileLoc, wordToSpanMap);
 
 				final long endTimeGenerator = System.currentTimeMillis();
 				generatingDistractorsTotalTime += (endTimeGenerator - startTimeGenerator);
 			}
-			
+
 			// delete the temporary files
 			cg3GeneratorInputFile.delete();
 			cg3GeneratorOutputFile.delete();
-			
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
+
 		log.info("Finished Noun Sg enhancement.");
 		final long endTime = System.currentTimeMillis();
 
 		log.info("Total execution time: " + (endTime - startTime)*0.001 + " seconds." );
 		log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
 	}
-	
+
     /*
      * Create all relevant morphological forms of the current token
 	 * It is the input for the distractor generation
 	 */
     private String writeMorphologicalForms(String reading_str) {
-    	
+
         String[] distractFormsCase = {"+Nom", "+Acc", "+Gen", "+Ill", "+Loc", "+Com", "+Ess"};
-        
+
         String generationInput = "";
 		//log.info("reading string:"+reading_str);
-        
+
         for(String aCase: distractFormsCase){
-        	
+
         	if(reading_str.contains(aCase)){
-        		
+
         		// remove the case marker and the syntactic tag from the reading
                 reading_str = reading_str.substring(0,reading_str.indexOf(aCase));
 				//log.info("reading string without case and syntax tag:"+reading_str);
-        		
-        		// Assign distractorforms from the array 
+
+        		// Assign distractorforms from the array
                 for(String elem: distractFormsCase) {
             		generationInput += reading_str + elem + "\n";
                 }
-                
+
         		break;
         	}
         }
-        
+
         //log.info("generation input:"+generationInput);
-        
+
         return generationInput;
     }
-    
+
     /*
      * The output file from the generator is used to create distractors and is placed into the right place in the span tag.
      * Afterwards an enhancement with the span tag is created and passed to the cas.
@@ -397,12 +397,12 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
     private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap){
 		try {
 			BufferedReader cg3GeneratorOutputReader = new BufferedReader(new InputStreamReader(new FileInputStream(cg3GeneratorOutputFileLoc), "UTF8"));
-		
+
 			String generatorOutput = "";
-			
+
 			Word currentWord = new Word();
 			String distractforms = "";
-			
+
 			while (cg3GeneratorOutputReader.ready()) {
 				String line = cg3GeneratorOutputReader.readLine().trim();
 				if(line.isEmpty()){
@@ -425,7 +425,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						e.setRelevant(true);
 						e.setBegin(begin);
 						e.setEnd(end);
-						e.setEnhanceStart(spanTag.getSpanTagStart());					
+						e.setEnhanceStart(spanTag.getSpanTagStart());
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
@@ -444,7 +444,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						word = tok.nextToken();
 						//log.info("ifst output:"+word);
 						// forms that could not be generated are excluded, as well as input strings of the iFST
-						if (!word.contains("+") && !word.contains("-") && distractorsSet.add(word)) {  
+						if (!word.contains("+") && !word.contains("-") && distractorsSet.add(word)) {
 							distractforms += word + " ";
 						}
 						else{
@@ -463,12 +463,12 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 				}
 				// the generator output for the current token is not fully extracted from the file yet
 				else{
-					generatorOutput += line + " ";	
+					generatorOutput += line + " ";
 				}
 			}
-		
+
 			cg3GeneratorOutputReader.close();
-		
+
 		} catch (UnsupportedEncodingException e1) {
 			e1.printStackTrace();
 		} catch (FileNotFoundException e1) {
@@ -477,11 +477,11 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 			e.printStackTrace();
 		}
     }
-    
+
     /**
      * This class represents a mutable integer value, which is especially useful
      * and fast for counting frequencies inside a map.
-     * 
+     *
      * @author Eduard Schaf
      *
      */
@@ -490,23 +490,23 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
     	  /**
     	   * Increment the mutable int by one.
     	   */
-    	  public void increment () { 
-    		  ++value;      
+    	  public void increment () {
+    		  ++value;
     		  }
     	  /**
     	   * Get the value of the mutable int.
     	   * @return the mutable int value.
     	   */
-    	  public int  get () { 
-    		  return value; 
+    	  public int  get () {
+    		  return value;
     		  }
     	}
-    
+
     /**
      * This class represents a word of two integers
      * which are begin and end. They are used to store
      * the offsets of a given Token.
-     * 
+     *
      * @author Eduard Schaf
      *
      */
@@ -566,15 +566,15 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		private Vislcg3NounSingularEnhancer getOuterType() {
 			return Vislcg3NounSingularEnhancer.this;
 		}
-    	
-    } 
-   
+
+    }
+
    /**
     * This class represents a SpanTag consisting out of
     * the span start tag with possibility to add attributes to the span tag
     * and the span end tag. It is the span surrounding the
     * token that is being enhanced.
-    * 
+    *
     * @author Eduard Schaf
     *
     */
@@ -600,8 +600,8 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		public void setSpanTagEnd(String spanTagEnd) {
 			this.spanTagEnd = spanTagEnd;
 		}
-		
-		
+
+
 		@Override
 		public String toString() {
 			return "SpanTag [spanTagStart=" + spanTagStart + ", spanTagEnd=" + spanTagEnd + "]";
@@ -643,8 +643,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		private Vislcg3NounSingularEnhancer getOuterType() {
 			return Vislcg3NounSingularEnhancer.this;
 		}
-    	
-    }
-    	
-}
 
+    }
+
+}
