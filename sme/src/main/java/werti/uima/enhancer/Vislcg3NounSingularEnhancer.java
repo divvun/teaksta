@@ -37,6 +37,8 @@ import werti.util.CasUtils;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
 
+import werti.util.Constants;
+
 /**
  * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
  * is being used to enhance spans corresponding to the tags specified by the topic
@@ -57,10 +59,10 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NSgTags;
-	private final String lookupLoc = "/usr/bin/lookup"; // "/usr/local/bin/lookup" locally;
-    private final String lookupFlags = "-flags mbTT -utf8";
-	private final String invertedFST = " /opt/smi/sme/bin/generator-gt-norm.xfst"; // opt/smi/sme/bin on gtlab; // /Users/car010/main/langs/sme/src/generator-gt-norm.xfst locally
-	private final String FST = " /opt/smi/sme/bin/analyser-gt-norm.xfst"; // /Users/car010/main/langs/sme/src/analyser-gt-norm.xfst locally
+	private final String lookupLoc = Constants.lookup_Loc;
+  private final String lookupFlags = Constants.lookup_Flags;
+	private final String invertedFST = Constants.inverted_FST;
+	private final String FST = Constants.an_FST;
 //  private final String hfstOptLookupLoc = "/usr/local/bin/hfst-optimized-lookup";
 //  private final String lookupFlags = "-q"; // was -flags mbTT -utf8 / flags are not possible for the jar
 	//private final String loadJar = "java -jar";
