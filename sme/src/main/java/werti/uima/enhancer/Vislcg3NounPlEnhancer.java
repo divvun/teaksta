@@ -1,11 +1,24 @@
 package werti.uima.enhancer;
-
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.StringTokenizer;
-import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
@@ -14,25 +27,31 @@ import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.FSIterator;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
+
+import werti.server.WERTiServlet;
 import werti.uima.types.Enhancement;
 import werti.uima.types.annot.CGReading;
 import werti.uima.types.annot.CGToken;
+import werti.util.CasUtils;
 import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
-import werti.server.WERTiServlet;
 
 import werti.util.Constants;
 
 /**
- * Use the TAG-B TAG-I sequences resulting from the CG3 analysis with
- * {@link werti.ae.Vislcg3Annotator} to enhance spans corresponding
- * to the tags specified by the activity as tags of negation forms of verbs.
+ * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
+ * is being used to enhance spans corresponding to the tags specified by the topic
+ * and the activity that was chosen by the user.
+ * In this case the topic is North Sámi nouns in plural form, use the patterns
+ * in the method process() to extract the correct tokens for enhancement.
  *
  * @author Niels Ott?
  * @author Adriane Boyd
  * @author Heli Uibo
+ * @author Eduard Schaf
  *
  */
+
 public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -41,70 +60,11 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> NPlTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
-  private final String lookupLoc = Constants.lookup_Loc;
+	private final String lookupLoc = Constants.lookup_Loc;
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 	private final String FST = Constants.an_FST;
-
-	/**
-	 * A runnable class that reads from a reader (that may
-	 * be fed by {@link Process}) and puts stuff read into a variable.
-	 * @author nott
-	 */
-	public class ExtCommandConsume2String implements Runnable {
-
-		private BufferedReader reader;
-		private boolean finished;
-		private String buffer;
-
-		/**
-		 * @param reader the reader to read from.
-		 */
-		public ExtCommandConsume2String(BufferedReader reader) {
-			super();
-			this.reader = reader;
-			finished = false;
-			buffer = "";
-		}
-
-		/**
-		 * Reads from the reader linewise and puts the result to the buffer.
-		 * See also {@link #getBuffer()} and {@link #isDone()}.
-		 */
-		public void run() {
-			String line = null;
-			try {
-				while ( (line = reader.readLine()) != null ) {
-					buffer += line + "\n";
-				}
-			} catch (IOException e) {
-				log.error("Error in reading from external command.", e);
-			}
-			finished = true;
-		}
-
-		/**
-		 * @return true if the reader read by this class has reached its end.
-		 */
-		public boolean isDone() {
-			return finished;
-		}
-
-		/**
-		 * @return the string collected by this class or null if the stream has not reached
-		 * its end yet.
-		 */
-		public String getBuffer() {
-			if ( ! finished ) {
-				return null;
-			}
-
-			return buffer;
-		}
-
-	}
-
-
+	
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -115,310 +75,453 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
-		log.info("Starting Noun Pl enhancement");
+	        // stop processing if the client has requested it
+	        if (!CasUtils.isValid(cas)) {
+		   return;
+	        }
+
 		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
-		// stack for started enhancements (chunk)
-		// Stack<Enhancement> enhancements = new Stack<Enhancement>();
-		// keep track of ids for each annotation class
-		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
-		for (String conT : NPlTags) {
-			classCounts.put(conT, 0);
-			log.info("Tag: "+conT);
-		}
+		log.info("Starting Noun Pl enhancement "+enhancement_type+".");
 
-		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which spans are enhanced
+		long generatingDistractorsTotalTime = 0;
+		final long startTime = System.currentTimeMillis();
 
-		for (String conT: NPlTags) {
-			FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
-			// remember previous token so we can getEnd() from it (chunk)
-			// CGToken prev = null;
-			int newId = 0;
-			// go through tokens
-			while (cgTokenIter.hasNext()) {
-				CGToken cgt = (CGToken) cgTokenIter.next();
-				if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
-				    // more than one reading? don't mark up if exercise type is mc or cloze
-                                    if (!isSafe(cgt)) {
-                                        continue;
-                                    }
-                                }
+                Pattern posPattern = Pattern.compile("N\\+");
+                Pattern number_casePattern = Pattern.compile("Pl\\+Nom|Pl\\+Acc|Pl\\+Gen|Pl\\+Ill|Pl\\+Loc|Pl\\+Com|Ess");
 
-				// analyze reading(s)
-				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
-				    CGReading reading = cgt.getReadings(i);
+		Map<String, MutableInt> classCounts = new HashMap<String, MutableInt>();
 
-				    String lemma = "", stemtype = "", distractors = "";
-				    if (containsTag(reading, conT, enhancement_type)) {
-					if (enhancement_type.equals("cloze") || enhancement_type.equals("mc")) {
-					    // get lemma from the CG reading
-					    lemma = getLemma(reading);
-					}
-					if (enhancement_type.equals("mc")) {
-					    // get stemtype from the CG reading, if any of these: G3, G7, NomAg
-					    stemtype = getStemType(reading);
+                FSIterator cgTokenIter = cas.getAnnotationIndex(CGToken.type).iterator();
 
-					    // generate the distractors, based on the lemma of the hit
-					    distractors = getDistractors(lemma, stemtype);
-					}
-					// Delete # from the lemma of compound words
-					lemma = lemma.replace("#","");
-					// make new enhancement
-					Enhancement e = new Enhancement(cas);
-					e.setRelevant(true);
-					e.setBegin(cgt.getBegin());
-					e.setEnd(cgt.getEnd());
+		// get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
 
-					// increment id
-					newId = classCounts.get(conT) + 1;
-					String spanStartTag = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + conT, newId) + "\" class=\"wertiviewtoken  wertiviewSubstantivePlural \" lemma=\"" + lemma + "\" distractors=\"" + distractors + "\">";
-					//log.info(spanStartTag);
-					e.setEnhanceStart(spanStartTag);
-					e.setEnhanceEnd("</span>");
-					classCounts.put(conT, newId);
-					//log.info(newId);
-					// push onto stack
-					//enhancements.push(e);
-					// update CAS
-					cas.addFsToIndexes(e);
-					//e.addToIndexes();
-					break;
-				    } // if
-				} // for
+		long timestamp = System.currentTimeMillis();
 
-				//prev = cgt;
+		String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp";
+		String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+timestamp+".tmp";
+
+		//create temporary files for saving cg3 input and output \
+
+		File cg3GeneratorInputFile = new File(cg3GeneratorInputFileLoc);
+		File cg3GeneratorOutputFile = new File(cg3GeneratorOutputFileLoc);
+
+		try {
+		    cg3GeneratorInputFile.createNewFile();
+		    cg3GeneratorOutputFile.createNewFile();
+
+                } catch (IOException e1) {
+		    e1.printStackTrace();
+                }
+
+		Map<Word, SpanTag> wordToSpanMap = new HashMap<Word, SpanTag>();
+
+                boolean isMcActivity = enhancement_type.equals("mc");
+
+		try {
+		    Writer cg3GeneratorInputWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(cg3GeneratorInputFileLoc), "UTF-8"));
+
+		    // go through tokens
+		    while (cgTokenIter.hasNext()) {
+
+			CGToken cgt = (CGToken) cgTokenIter.next();
+
+			//String hintTag = "";
+
+			boolean isValidReading = false;
+			String reading_str = "";
+			String lemma = "";
+			// select from all readings the first occurrence that is matching pos and number
+			for(int i = 0; i < cgt.getReadings().size(); i++){
+			    CGReading currentReading = cgt.getReadings(i);
+			    //log.info("This is the lemma =" +reading.getHead());
+			    StringListIterable readingIterator = new StringListIterable(currentReading);
+			    String currentReadingString = "";
+			    for (String rtag : readingIterator) {
+				currentReadingString += "+" + rtag;
+			    }
+			    if(!isValidReading){
+				Matcher posMatcher = posPattern.matcher(currentReadingString);
+				Matcher numberMatcher = number_casePattern.matcher(currentReadingString);
+				if(posMatcher.find() && numberMatcher.find()){
+				    isValidReading = true;
+				    // remove the first "+" and quotes
+				    reading_str = currentReadingString.substring(1).replace("\"", "");
+				    //log.info("This reading can be considered=" +currentReadingString);
+				// the lemma is the first element of the reading string
+				lemma = reading_str.split("\\+")[0];
+			    }
 			}
-		}
+		    }
+		    if(isValidReading){
+			log.info("This reading will be used=" +reading_str);
+			String distractors = "";
 
+			// id's with the "+" symbol have to be escaped, thats why we use a "-" instead
+			String spanReadingString = reading_str.replace("+", "-");
+			// The "<" and ">"symbols also cause problems because these are the tag opening / closing symbol.
+			spanReadingString = spanReadingString.replace("<" ,"x");
+			spanReadingString = spanReadingString.replace(">" ,"y");
 
-		// (chunk)
-		//log.info("Enhancement stack is "
-		//		+ (enhancements.empty() ? "empty, OK" : "not empty, WTF??"));
-		log.info("Finished N Pl enhancement");
-	}
-
-	/*
-	 * Determines whether the given token is safe, i.e. unambiguous
-	 */
-	private boolean isSafe(CGToken t) {
-		return t.getReadings() != null && t.getReadings().size() == 1;
-	}
-
-	/*
-	 * Determines whether the given reading contains the given tag.
-	 */
-    private boolean containsTag(CGReading cgr, String tag, String enhancement_type) {
-		StringListIterable reading = new StringListIterable(cgr);
-		String reading_str = "";
-		for (String rtag : reading) {
-			reading_str = reading_str + rtag + " ";
-		}
-
-		if (reading_str.contains(tag) && (reading_str.contains("Prop") || reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {  // Check if the tag string contains the given tag sequence as a substring. Ensure that it is a noun, eliminate proper nouns and derived forms from the selection if the exercise type is mc or cloze.
-		    return false;
-		}
-		if (reading_str.contains(tag) && reading_str.contains(" N ")) {
-		    log.info(cgr + " contains " + tag);
-		    return true;
-		}
-
-		//log.info(cgr + " does not contain " + tag);
-		return false;
-	}
-
-	/*
-	 * Obtains the stem type from the morphological analysis if any (G3,G7,NomAg).
-	 */
-	private String getStemType(CGReading cgr) {
-		String stemtype = "";
-		StringListIterable reading = new StringListIterable(cgr);
-		String reading_str = "";
-		for (String rtag : reading) {
-			reading_str = reading_str + rtag + " ";
-		}
-		if (reading_str.contains("G3")) {
-			stemtype = "G3";
-		}
-		else if (reading_str.contains("G7")) {
-			stemtype = "G7";
-		}
-		else if (reading_str.contains("NomAg")) {
-			stemtype = "NomAg";
-		}
-		return stemtype;
-	}
-
-	private String getLemma(CGReading cgr) {
-		StringListIterable reading = new StringListIterable(cgr);
-		String lemma = "", lemma_utf8 = "";
-		// Obtain the lemma from the CG reading.
-		for (String rtag : reading) {
-			if (rtag.charAt(0) == '\"') {
-			    lemma = rtag.substring(1,rtag.length()-1);
-			    log.info(cgr + " lemma: " + lemma);
-            }
-		}
-		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
-		/*
-		try {
-            byte[] b = lemma.getBytes();
-            lemma_utf8 = new String(b,"UTF-8");
-            }
-        catch (UnsupportedEncodingException e) {
-            System.out.println(e);
-        }*/
-		//log.info(cgr + " does not contain " + tag);
-		//log.info("lemma encoded in UTF8: " + lemma_utf8);
-		return lemma;
-	}
-
-    private String getDistractors(String lemma, String stemtype) {
-        String[] distract_forms = {"Pl+Nom", "Pl+Acc", "Pl+Gen", "Pl+Ill", "Pl+Loc", "Pl+Com", "Ess"};
-
-		String str, word, result = "", generationInput = "";
-
-		try {
-
-			if (lemma.contains("#")) {
-				// correct lemma for compound words = morf analysis - N+Sg+Nom
-				lemma = lemma.replace("#","");
-				String[] analysisPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + "\" | " + lookupLoc + " " + lookupFlags + " " + FST};
-				log.info("Morph analysis pipeline: "+analysisPipeline[2]);
-				Process process = Runtime.getRuntime().exec(analysisPipeline);
-
-				BufferedReader fromFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
-				ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromFST);
-				Thread stdoutConsumerThread = new Thread(stdoutConsumer, "FST STDOUT consumer");
-				stdoutConsumerThread.start();
-				try {
-					stdoutConsumerThread.join();
-				} catch (InterruptedException e) {
-					log.error("Error in joining output consumer of FST with regular thread, going mad.", e);
-					return null;
-				}
-				fromFST.close();
-				String morfanal = stdoutConsumer.getBuffer();
-				String[] analysis = morfanal.split("\n"); // the word may be morhologically ambiguous
-				String[] token = analysis[0].split("\t"); // take the first analysis
-				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
-				lemma = lemma.replace("Sg+Nom","");
-				log.info("lemma of the compound word: "+lemma);
-
-				for (int j=0; j < distract_forms.length; j++) {
-					generationInput += lemma + distract_forms[j] + "\n";
-				}
+			MutableInt idCount = classCounts.get(spanReadingString);
+			if (idCount == null) {
+			    classCounts.put(spanReadingString, new MutableInt());
 			}
 			else {
-				for (int j=0; j < distract_forms.length; j++) {
-					if (stemtype != "") {
-						generationInput += lemma + "+N+" + stemtype + "+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + stemtype + "+" + distract_forms[j] + "\n";
-					}
-					else {
-						generationInput += lemma + "+N+" + distract_forms[j] + "\n";
-						generationInput += lemma + "+v1+N+" + distract_forms[j] + "\n";
-					}
-				}
+			    idCount.increment();
 			}
+			// create a word with begin and end of the current CGToken
+			Word word = new Word(cgt.getBegin(), cgt.getEnd());
 
-			String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
+			String spanTagStart = "<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + spanReadingString, classCounts.get(spanReadingString).value) + "\" class=\"wertiviewtoken  wertiviewSubstantivePlural\">";  // was: wertiviewhit
 
-			log.info("Form generation pipeline: "+generationPipeline[2]);
+                        SpanTag spanTag = new SpanTag(spanTagStart);
 
-			Process process2 = Runtime.getRuntime().exec(generationPipeline);
+                        spanTag.addAttribute("lemma", lemma);
+			wordToSpanMap.put(word, spanTag);
 
-			BufferedReader fromIFST = new BufferedReader(new InputStreamReader(process2.getInputStream(), "UTF8"));
-			ExtCommandConsume2String stdoutConsumer2 = new ExtCommandConsume2String(fromIFST);
-			Thread stdoutConsumerThread2 = new Thread(stdoutConsumer2, "FST STDOUT consumer");
-			stdoutConsumerThread2.start();
-			try {
-				stdoutConsumerThread2.join();
-			} catch (InterruptedException e) {
-				log.error("Error in joining output consumer of VislCG with regular thread, going mad.", e);
-				return null;
+			if (isMcActivity) {
+			    // generate the distractors, with lemma, number and case and save in a file
+				distractors = writeMorphologicalForms(reading_str);
+				cg3GeneratorInputWriter.write(distractors);
+				// write the marker that separates the current distractors from others
+				cg3GeneratorInputWriter.write("ñôŃßĘńŠē\n");
+				// write the word to the file in order to assign the correct distractors to the correct span
+				cg3GeneratorInputWriter.write(word.toString());
+			} else{
+			    // make new enhancement, pass it to the cas
+			    Enhancement e = new Enhancement(cas);
+			    e.setRelevant(true);
+			    e.setBegin(word.getBegin());
+			    e.setEnd(word.getEnd());
+			    e.setEnhanceStart(spanTag.getSpanTagStart());
+			    e.setEnhanceEnd(spanTag.getSpanTagEnd());
+			    // update CAS
+			    cas.addFsToIndexes(e);
+			    //log.info("Enhancement="+e); // testing
 			}
+		    }
+		}
 
-			fromIFST.close();
-			String iFSToutput = stdoutConsumer2.getBuffer();
-			StringTokenizer tok = new StringTokenizer(iFSToutput);
-			while (tok.hasMoreTokens()) {
-				word = tok.nextToken();
-				log.info("ifst output:"+word);
-				if (!word.contains("+") && !word.contains("-")) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-					result = result + word + " ";
-				}
-			}
+		cg3GeneratorInputWriter.close();
 
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+		if(isMcActivity){
+		    // generate distractors only when the activity is "mc" (multiple choice)
+		    String[] generationPipeline = {
+			"/bin/sh",
+			"-c",
+                        "/bin/cat " + cg3GeneratorInputFileLoc +
+                        " | " + lookupLoc + " " + lookupFlags + " " + invertedFST +
+			" > " + cg3GeneratorOutputFileLoc};
 
-        log.info("Generated forms read from the outputfile: "+result);
-        return result;
+		    log.info("Distractor generation pipeline: "+generationPipeline[2]);
 
+		    final long startTimeGenerator = System.currentTimeMillis();
 
-        /*
-		String str, word, result = "";
-        // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
-        long timestamp = System.currentTimeMillis();
+		    Process process = Runtime.getRuntime().exec(generationPipeline);
+		    process.waitFor();
+		    generateSpanTagWithDistractors(cas, cg3GeneratorOutputFileLoc, wordToSpanMap);
 
-        String inputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/iFSTinput"+timestamp+".tmp";
-        String outputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/iFSToutput"+timestamp+".tmp";
+		    final long endTimeGenerator = System.currentTimeMillis();
+		    generatingDistractorsTotalTime += (endTimeGenerator - startTimeGenerator);
+		}
 
-        //create temporary files for saving cg3 input and output
+		// delete the temporary files
+		cg3GeneratorInputFile.delete();
+		cg3GeneratorOutputFile.delete();
 
-        Writer inputfile = null;
+	} catch (IOException e) {
+	    e.printStackTrace();
+	} catch (InterruptedException e) {
+	    e.printStackTrace();
+	}
+        log.info("Finished Noun Pl enhancement.");
+        final long endTime = System.currentTimeMillis();
 
-		try {
-            inputfile = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inputfileLoc), "UTF-8"));
-            for (int j=0; j < distract_forms.length; j++) {
-                inputfile.write(lemma + "+" + distract_forms[j] + "\n");
-	        }
-	        inputfile.close();
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+        log.info("Total execution time: " + (endTime - startTime)*0.001 + " seconds." );
+        log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
+     }
 
-        String[] generationPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > " + outputfileLoc};
+    /*
+    * Create all relevant morphological forms of the current token
+    * It is the input for the distractor generation
+    */
+     private String writeMorphologicalForms(String reading_str) {
 
-        log.info("Form generation pipeline: "+generationPipeline[2]);
-        try {
-            Process process = Runtime.getRuntime().exec(generationPipeline);
-            process.waitFor();
+	 String[] distractFormsCase = {"+Nom", "+Acc", "+Gen", "+Ill", "+Loc", "+Com", "+Ess"};
 
-            BufferedReader outputfile = new BufferedReader(new InputStreamReader(new FileInputStream(outputfileLoc), "UTF8"));
+	 String generationInput = "";
+	 //log.info("reading string:"+reading_str);
 
-            while ((str = outputfile.readLine()) != null) {
-                StringTokenizer tok = new StringTokenizer(str);
-                while (tok.hasMoreTokens()) {
-                    word = tok.nextToken();
-                    if (word.indexOf("+") < 0) {  // forms that could not be generated are excluded, as well as input strings of the iFST
-                        result = result + word + " ";
-                    }
-                }
-            }
-            log.info("Generated forms read from the outputfile: "+result);
+	 for(String aCase: distractFormsCase){
 
-            outputfile.close();
-            // Delete the temporary files:
-            boolean inputfiledeleted = (new File(inputfileLoc)).delete();
-            boolean outputfiledeleted = (new File(outputfileLoc)).delete();
-        }
-        catch (InterruptedException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (FileNotFoundException e) {
-            System.out.println(e.getMessage());
-        }
-        catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+	     if(reading_str.contains(aCase)){
 
-        return result; */
+		 // remove the case marker and the syntactic tag from the reading
+		 reading_str = reading_str.substring(0,reading_str.indexOf(aCase));
+		 //log.info("reading string without case and syntax tag:"+reading_str);
+
+		 // Assign distractorforms from the array
+		 for(String elem: distractFormsCase) {
+		     generationInput += reading_str + elem + "\n";
+		 }
+
+		 break;
+	     }
+	 }
+
+	 //log.info("generation input:"+generationInput);
+
+	 return generationInput;
+     }
+
+     private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap){
+	 try {
+	     BufferedReader cg3GeneratorOutputReader = new BufferedReader(new InputStreamReader(new FileInputStream(cg3GeneratorOutputFileLoc), "UTF8"));
+
+	     String generatorOutput = "";
+
+	     Word currentWord = new Word();
+	     String distractforms = "";
+
+	     while (cg3GeneratorOutputReader.ready()) {
+		 String line = cg3GeneratorOutputReader.readLine().trim();
+		 if(line.isEmpty()){
+		     continue;
+		 }
+		 // generator output was processed, all distractors are created
+		 // assign the distractors to the correct span from the wordToSpanMap
+		 else if(line.startsWith("Word")){
+		     // only enhance tokens with more than one distractor form
+		     if(!distractforms.isEmpty()){
+			 String[] lineParts = line.split("\\s");
+			 int begin = Integer.parseInt(lineParts[1]);
+			 int end = Integer.parseInt(lineParts[2]);
+			 currentWord = new Word(begin, end);
+			 SpanTag spanTag = wordToSpanMap.get(currentWord);
+			 log.info("spantag before adding distractors:"+spanTag);
+			 spanTag.addAttribute("distractors", distractforms);
+			 // make new enhancement, pass it to the cas
+			 Enhancement e = new Enhancement(cas);
+			 e.setRelevant(true);
+			 e.setBegin(begin);
+			 e.setEnd(end);
+			 e.setEnhanceStart(spanTag.getSpanTagStart());
+
+			 e.setEnhanceEnd(spanTag.getSpanTagEnd());
+			 // update CAS
+			 cas.addFsToIndexes(e);
+			 log.info("Enhancement="+e); // testing
+		     }
+		 }
+		 // the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
+		 else if(line.contains("ñôŃßĘńŠē")){
+		     StringTokenizer tok = new StringTokenizer(generatorOutput);
+		     generatorOutput = "";
+		     String word = "";
+		     distractforms = "";
+		     // the distractorsSet's purpose is to filter out duplicates
+		     HashSet<String> distractorsSet = new HashSet<String>();
+		     while (tok.hasMoreTokens()) {
+			 word = tok.nextToken();
+			 //log.info("ifst output:"+word);
+			 // forms that could not be generated are excluded, as well as input strings of the iFST
+			 if (!word.contains("+") && !word.contains("-") && distractorsSet.add(word)) {
+			     distractforms += word + " ";
+			 }
+			 else{
+			     //log.info("Word that was excluded = " + word);
+			 }
+		     }
+		     // remove the whitespace at the end
+		     distractforms = distractforms.trim();
+		     // exclude the distractor if its only one, you need at least 2 distractors for mc
+		     if(distractorsSet.size() < 2) {
+			 distractforms = "";
+		     }
+		     else {
+			 //log.info("This are the chosen distractforms="+distractforms);
+		     }
+		 }
+		 // the generator output for the current token is not fully extracted from the file yet
+		 else{
+		     generatorOutput += line + " ";
+		 }
+	     }
+
+	     cg3GeneratorOutputReader.close();
+
+	 } catch (UnsupportedEncodingException e1) {
+	     e1.printStackTrace();
+	 } catch (FileNotFoundException e1) {
+	     e1.printStackTrace();
+	 } catch (IOException e) {
+	     e.printStackTrace();
+	 }
+     }
+/**
+ * This class represents a mutable integer value, which is especially useful
+ * and fast for counting frequencies inside a map.
+ *
+ * @author Eduard Schaf
+ *
+ */
+public class MutableInt {
+    int value = 1; // note that we start at 1 since we're counting
+    /**
+     * Increment the mutable int by one.
+     */
+    public void increment () {
+	++value;
     }
+    /**
+     * Get the value of the mutable int.
+     * @return the mutable int value.
+     */
+    public int  get () {
+	return value;
+    }
+}
+/**
+ * This class represents a word of two integers
+ * which are begin and end. They are used to store
+ * the offsets of a given Token.
+ *
+ * @author Eduard Schaf
+ *
+ */
+public class Word {
+    private int begin;
+    private int end;
+    public Word(int begin, int end) {
+	this.begin = begin;
+	this.end = end;
+    }
+    public Word() {
+	this.begin = 0;
+	this.end = 0;
+    }
+    public int getBegin() {
+	return begin;
+    }
+    public void setBegin(int begin) {
+	this.begin = begin;
+    }
+    public int getEnd() {
+	return end;
+    }
+    public void setEnd(int end) {
+	this.end = end;
+    }
+    @Override
+    public String toString() {
+	 return "Word " + begin + " " + end + "\n";
+    }
+    @Override
+    public int hashCode() {
+	final int prime = 31;
+	int result = 1;
+	result = prime * result + getOuterType().hashCode();
+	result = prime * result + begin;
+	result = prime * result + end;
+	return result;
+    }
+    @Override
+    public boolean equals(Object obj) {
+	  if (this == obj)
+	      return true;
+	  if (obj == null)
+	      return false;
+	  if (getClass() != obj.getClass())
+	      return false;
+	  Word other = (Word) obj;
+	  if (!getOuterType().equals(other.getOuterType()))
+	      return false;
+	  if (begin != other.begin)
+	      return false;
+	  if (end != other.end)
+	      return false;
+	  return true;
+      }
+    private Vislcg3NounPlEnhancer getOuterType() {
+	return Vislcg3NounPlEnhancer.this;
+    }
+
+}
+/**
+ * This class represents a SpanTag consisting out of
+ * the span start tag with possibility to add attributes to the span tag
+ * and the span end tag. It is the span surrounding the
+ * token that is being enhanced.
+ *
+ * @author Eduard Schaf
+ *
+ */
+public class SpanTag{
+    private String spanTagStart;
+    private String spanTagEnd;
+    public SpanTag(String spanTagStart) {
+	this.spanTagStart = spanTagStart;
+	this.spanTagEnd = "</span>";
+    }
+    public String getSpanTagStart() {
+	return spanTagStart;
+    }
+    public void setSpanTagStart(String spanTagStart) {
+	this.spanTagStart = spanTagStart;
+    }
+    public void addAttribute(String attributeName, String attributeValue) {
+	this.spanTagStart = this.spanTagStart.replace(">", attributeName + "=\"" + attributeValue + "\">");
+    }
+    public String getSpanTagEnd() {
+	return spanTagEnd;
+    }
+    public void setSpanTagEnd(String spanTagEnd) {
+	this.spanTagEnd = spanTagEnd;
+    }
+
+
+    @Override
+	 public String toString() {
+	     return "SpanTag [spanTagStart=" + spanTagStart + ", spanTagEnd=" + spanTagEnd + "]";
+         }
+    @Override
+	 public int hashCode() {
+	     final int prime = 31;
+	     int result = 1;
+	     result = prime * result + getOuterType().hashCode();
+             result = prime * result
+			    + ((spanTagEnd == null) ? 0 : spanTagEnd.hashCode());
+             result = prime * result
+			    + ((spanTagStart == null) ? 0 : spanTagStart.hashCode());
+             return result;
+         }
+     @Override
+        public boolean equals(Object obj) {
+		    if (this == obj)
+			return true;
+		    if (obj == null)
+			return false;
+		    if (getClass() != obj.getClass())
+			return false;
+		    SpanTag other = (SpanTag) obj;
+		    if (!getOuterType().equals(other.getOuterType()))
+			return false;
+		    if (spanTagEnd == null) {
+			if (other.spanTagEnd != null)
+			    return false;
+		    } else if (!spanTagEnd.equals(other.spanTagEnd))
+			return false;
+		    if (spanTagStart == null) {
+			if (other.spanTagStart != null)
+			    return false;
+		    } else if (!spanTagStart.equals(other.spanTagStart))
+			return false;
+		    return true;
+        }
+    private Vislcg3NounPlEnhancer getOuterType() {
+	return Vislcg3NounPlEnhancer.this;
+    }
+
+}
 
 }
