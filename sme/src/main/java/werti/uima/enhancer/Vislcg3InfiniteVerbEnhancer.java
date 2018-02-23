@@ -100,8 +100,10 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
 		//String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp";
 		//String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+timestamp+".tmp";
-		String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+".tmp";
-		String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+".tmp";
+		//String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+".tmp";
+		String cg3GeneratorInputFileLoc = Constants.cg3GeneratorInputFile_Loc;
+		//String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+".tmp";
+		String cg3GeneratorOutputFileLoc = Constants.cg3GeneratorOutputFile_Loc;
 
 		//create temporary files for saving cg3 input and output \
 
