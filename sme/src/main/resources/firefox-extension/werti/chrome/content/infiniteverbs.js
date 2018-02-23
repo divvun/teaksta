@@ -13,7 +13,7 @@
 
 		remove: function(contextDoc) {
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			$('body').undelegate('span.wertiviewtoken', 'click', wertiview.infiniteverbs.clickHandler);
@@ -31,7 +31,7 @@
 
 		colorize: function(contextDoc) {
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			$('span.wertiviewInfiniteVerb').addClass('colorizeStyleInfiniteVerbs');
@@ -43,7 +43,7 @@
 
 		click: function(contextDoc) {
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			// change all wertiviewtoken spans to mouseover pointer
@@ -63,7 +63,7 @@
 			var contextDoc = event.data.context;
 
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			if($(this).hasClass('wertiviewInfiniteVerb')) {  // was: wertiviewhit
@@ -110,7 +110,7 @@
 
 		mc: function(contextDoc) {
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			// get potential spans
@@ -203,7 +203,7 @@
 
 		cloze: function(contextDoc) {
 			var jQuery = wertiview.jQuery;
-			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
 			// get potential spans
@@ -243,7 +243,7 @@
 		clozeInputHandler: function(event) {
 			var jQuery = wertiview.jQuery;
 			var contextDoc = event.data.context;
-		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		  $.fn = $.prototype = jQuery.fn;
 
 			var nextInput;
@@ -279,7 +279,7 @@
 		clozeHintHandler: function(event) {
 			var jQuery = wertiview.jQuery;
 			var contextDoc = event.data.context;
-		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		  $.fn = $.prototype = jQuery.fn;
 
 			var nextInput;
