@@ -6,11 +6,15 @@ package werti.util;
 public final class Constants {
   //LOCAL PATHS:
   /*
-    public static final String lookup_Loc = "/usr/local/bin/lookup";
-    public static final String lookup_Flags = "-flags mbTT -utf8";
+    //public static final String lookup_Loc = "/usr/local/bin/lookup";
+    public static final String lookup_Loc = "/usr/local/bin/hfst-optimized-lookup"; // for new fst
+    //public static final String lookup_Flags = "-flags mbTT -utf8";
+    public static final String lookup_Flags = ""; // for new fst
 
-    public static final String inverted_FST = " /Users/car010/main/langs/sme/src/generator-gt-norm.xfst";
-    public static final String an_FST = " /Users/car010/main/langs/sme/src/analyser-gt-norm.xfst";
+    //public static final String inverted_FST = " /Users/car010/main/langs/sme/src/generator-gt-norm.xfst";
+    public static final String inverted_FST = " /Users/car010/main/langs/sme/src/generator-dict-gt-norm.hfstol"; // new fst
+    //public static final String an_FST = " /Users/car010/main/langs/sme/src/analyser-gt-desc.xfst";
+    public static final String an_FST = " /Users/car010/main/langs/sme/src/analyser-disamb-gt-desc.hfstol"; // new fst
 
     public static final String tools_Dir = "/Users/car010/main/gt/script/";
     public static final String abbr_Dir = "/Users/car010/main/langs/sme/src/";
@@ -22,14 +26,22 @@ public final class Constants {
 
     public static String inputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3input";
     public static String outputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3output";
+
+    public static String vislcg3_Loc = "/usr/local/bin/vislcg3";
+    public static String vislcg3_DisGrammarLoc = "/Users/car010/main/langs/sme/src/syntax/disambiguator.cg3";
+    public static String vislcg3_SyntGrammarLoc = "/Users/car010/main/langs/sme/src/konteaksta.cg3";
   */
 
   //GTOAHPA PATHS:
-    public static final String lookup_Loc = "/usr/bin/lookup";
-    public static final String lookup_Flags = "-flags mbTT -utf8";
+    //public static final String lookup_Loc = "/usr/bin/lookup";
+    public static final String lookup_Loc = "/usr/bin/hfst-optimized-lookup"; // for new fst
+    //public static final String lookup_Flags = "-flags mbTT -utf8";
+    public static final String lookup_Flags = ""; // for new fst
 
-    public static final String inverted_FST = " /opt/smi/sme/bin/generator-oahpa-gt-norm-dial_GG.xfst"; // opt/smi/sme/bin on gtlab;  or " /opt/smi/sme/bin/isme-GG.restr.fst"
-    public static final String an_FST = " /opt/smi/sme/bin/sme.fst";
+    //public static final String inverted_FST = " /opt/smi/sme/bin/generator-oahpa-gt-norm-dial_GG.xfst"; // opt/smi/sme/bin on gtlab;  or " /opt/smi/sme/bin/isme-GG.restr.fst"
+    public static final String inverted_FST = " /opt/smi/sme/bin/generator-dict-gt-norm.hfstol"; // new fst
+    //public static final String an_FST = " /opt/smi/sme/bin/sme.fst";
+    public static final String an_FST = " /opt/smi/sme/bin/analyser-disamb-gt-desc.hfstol"; // new fst
 
     public static final String tools_Dir = "/opt/smi/sme/bin/";
     public static final String abbr_Dir = "/opt/smi/sme/bin/";
