@@ -27,6 +27,9 @@ public final class Constants {
     public static String inputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3input";
     public static String outputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3output";
 
+    public static String cg3GeneratorInputFile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3GeneratorInput.tmp";
+    public static String cg3GeneratorOutputFile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3GeneratorOutput.tmp";
+
     public static String vislcg3_Loc = "/usr/local/bin/vislcg3";
     public static String vislcg3_DisGrammarLoc = "/Users/car010/main/langs/sme/src/syntax/disambiguator.cg3";
     public static String vislcg3_SyntGrammarLoc = "/Users/car010/main/langs/sme/src/konteaksta.cg3";
@@ -53,4 +56,7 @@ public final class Constants {
 
     public static String inputfile_Loc = "/home/teaksta/output/cg3input";
     public static String outputfile_Loc = "/home/teaksta/output/cg3output";
+
+    public static String cg3GeneratorInputFile_Loc = "/home/teaksta/output/cg3GeneratorInput.tmp";
+    public static String cg3GeneratorOutputFile_Loc = "/home/teaksta/output/cg3GeneratorOutput.tmp";
 }
