@@ -1,14 +1,14 @@
-wertiview.ns(function() {
+
 	wertiview.activity = {
 
 	// add wertiview markup
 	add: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
 
 		// identify context document under consideration
-		contextDoc = contextDoc||window.content.document;
+		contextDoc = contextDoc||window.document;
 
 		// disable toolbar button
 		wertiview.toolbar.disableRunButton();
@@ -20,31 +20,31 @@ wertiview.ns(function() {
 		if ($('.wertiview').length > 0) {
 			wertiview.activity.remove(contextDoc);
 		}
-		
+
 		// check for appropriate selections
 		if (options['language'] == "unselected") {
 			alert("Please select a language!");
 			wertiview.toolbar.enableRunButton();
 			return;
 		} else if (options['topic'] == "unselected") {
-			alert("Please select a topic!");
-			wertiview.toolbar.enableRunButton();
-			return;
-		} else if (options['activity'] == "unselected") {
-			alert("Please select an activity!");
-			wertiview.toolbar.enableRunButton();
-			return;
-		}
-		
+				alert("Please select a topic!");
+				wertiview.toolbar.enableRunButton();
+				return;
+			} else if (options['activity'] == "unselected") {
+					alert("Please select an activity!");
+					wertiview.toolbar.enableRunButton();
+					return;
+				}
+
 		var topicName = wertiview.activity.getTopicName(options['topic']);
-		
+
 		// check whether this topic/activity exists as a function
 		if (!window['wertiview'][topicName] || !window['wertiview'][topicName][options['activity']]) {
 			alert("The selected topic and activity are not available.");
 			wertiview.toolbar.enableRunButton();
 			return;
 		}
-		
+
 		var activityFunction = window['wertiview'][topicName][options['activity']];
 
 		if(typeof activityFunction !== 'function') {
@@ -70,7 +70,7 @@ wertiview.ns(function() {
 
 		var textNodes = wertiview.activity.getTextNodesIn(contextDoc.body);
 		var textNodesCopy = wertiview.activity.getTextNodesIn(contextDocCopy.body);
-		
+
 		$(textNodes).each( function() {
 			var thisCopy = textNodesCopy[counter-1];
 			// store span id internally
@@ -84,16 +84,16 @@ wertiview.ns(function() {
 
 			counter += 1;
 		});
-		
-		
+
+
 		wertiview.activity.sendAjaxRequest(contextDocCopy, options, contextDoc);
 	},
-	
+
 	sendAjaxRequest: function(contextDocCopy, options, contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,context||contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,context||contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
+
 		// if spans are found, send to server
 		if ($('span.wertiview', contextDocCopy).length > 0) {
 			var activityData = {};
@@ -111,40 +111,40 @@ wertiview.ns(function() {
 				data: wertiview.nativeJSON.encode(activityData),
 				processData: false,
 				timeout: 60000,
-				success: function(data, textStatus, xhr) { 
+				success: function(data, textStatus, xhr) {
 					if (data) {
-						wertiview.activity.addServerMarkup(data, options, contextDoc); 
+						wertiview.activity.addServerMarkup(data, options, contextDoc);
 					} else {
-						wertiview.activity.ajaxError(xhr, "nodata");
-						wertiview.toolbar.enableRunButton();
-					}
+							wertiview.activity.ajaxError(xhr, "nodata");
+							wertiview.toolbar.enableRunButton();
+						}
 				},
 				error: wertiview.activity.ajaxError
 			});
 		} else {
-			wertiview.blur.remove(contextDoc);
-			wertiview.toolbar.enableRunButton();
-		}
+				wertiview.blur.remove(contextDoc);
+				wertiview.toolbar.enableRunButton();
+			}
 	},
 
 	// add the markup sent from the servlet to the page
 	addServerMarkup: function(data, options, contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
+
 		// parse result from wertiview servlet from JSON into list
 		var dataList = wertiview.nativeJSON.decode(data);
-		
+
 		// identify context document under consideration
-		contextDoc = contextDoc||window.content.document;
+		contextDoc = contextDoc||window.document;
 
 		var counter = 0;
 		var newcontent;
 		var spans = [];
-		
+
 		var textNodes = wertiview.activity.getTextNodesIn(contextDoc.body);
-		
+
 		$(textNodes).each( function() {
 			if ($(this).data('wertiview')) {
 				spans.push($(this));
@@ -154,9 +154,8 @@ wertiview.ns(function() {
 		var length = spans.length;
 		var index = 0;
 		var span;
-		var timer = Components.classes["@mozilla.org/timer;1"]
-					       .createInstance(Components.interfaces.nsITimer);
-		
+		var timer = Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer);
+
 		var addwertiviewspans = function() {
 			while (spans.length > 0) {
 				span = spans.shift();
@@ -182,7 +181,7 @@ wertiview.ns(function() {
 					// replace old content with new content
 					span.replaceWith(newspan);
 				}
-				
+
 				// Firefox needs a break after every 50 changes
 				if (counter % 50 == 0) {
 					return;
@@ -192,10 +191,10 @@ wertiview.ns(function() {
 			wertiview.activity.addActivity(options, contextDoc);
 			wertiview.toolbar.enableRunButton();
 			wertiview.toolbar.enableRestoreButton();
-			
+
 			timer.cancel();
 		};
-		
+
 		timer.initWithCallback(addwertiviewspans, 5, Components.interfaces.nsITimer.TYPE_REPEATING_SLACK);
 		// note that anything after this point will probably
 		// happen BEFORE the addwertiviewspans/timer loop finishes!
@@ -204,7 +203,7 @@ wertiview.ns(function() {
 	// add JS/etc. for activity
 	addActivity: function(options, contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
 
 		var topicName = wertiview.activity.getTopicName(options['topic']);
@@ -231,7 +230,7 @@ wertiview.ns(function() {
 			case 'cloze':
 				// remove click from all links that contain input boxes
 				$('body').delegate('a', 'click', {context: contextDoc}, wertiview.lib.clozeDisableLink);
-				
+
 				activityFunction(contextDoc);
 				wertiview.notification.add("VIEW Practice Activity Ready", contextDoc);
 				wertiview.blur.remove(contextDoc);
@@ -246,11 +245,11 @@ wertiview.ns(function() {
 	// remove wertiview markup
 	remove: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
+
 		// identify context document under consideration
-		contextDoc = contextDoc||window.content.document;
+		contextDoc = contextDoc||window.document;
 
 		var savedOptions = {};
 		savedOptions['language'] = $('body').data('wertiview-language');
@@ -259,9 +258,9 @@ wertiview.ns(function() {
 		$('body').removeData('wertiview-language');
 		$('body').removeData('wertiview-topic');
 		$('body').removeData('wertiview-activity');
-		
+
 		var topicName = wertiview.activity.getTopicName(savedOptions['topic']);
-		
+
 		// if we can't find a topic name, skip the rest of the removal
 		if (topicName == null) {
 			return;
@@ -270,12 +269,12 @@ wertiview.ns(function() {
 		// generate remove function for this topic and make sure
 		// the function exists before calling
 		var removeFunction = window['wertiview'][topicName]['remove'];
-		
+
 		if(typeof removeFunction !== 'function') {
 			alert("Error removing activity.  Please reload the page.");
 			return;
 		}
-		
+
 		removeFunction(contextDoc);
 
 		$('.wertiview').each( function() {
@@ -288,16 +287,16 @@ wertiview.ns(function() {
 		wertiview.notification.remove(contextDoc);
 		wertiview.blur.remove(contextDoc);
 	},
-	
+
 	getTopicName: function(topic) {
 		if (topic == null) {
 			return null;
 		}
-		
+
 		// figure out corresponding topic name
 		var topicName = topic.toLowerCase();
 
-		// exceptions: 
+		// exceptions:
 		//   - Arts and Dets and Preps use the 'pos' topic
 		switch(topic) {
 			case "Arts":
@@ -306,13 +305,13 @@ wertiview.ns(function() {
 				topicName = 'pos';
 				break;
 			default:
-				break; 
+				break;
 		}
-		
+
 		return topicName;
 	},
 
-	ajaxError: function(xhr, textStatus, errorThrown) {       
+	ajaxError: function(xhr, textStatus, errorThrown) {
 		wertiview.toolbar.enableRunButton();
 		wertiview.blur.remove();
 
@@ -349,7 +348,7 @@ wertiview.ns(function() {
 				break;
 		}
 	},
-	
+
 	// adapted from: http://stackoverflow.com/questions/298750/how-do-i-select-text-nodes-with-jquery
 	getTextNodesIn: function(node) {
 	    var textNodes = [];
@@ -369,7 +368,7 @@ wertiview.ns(function() {
 	    getTextNodes(node);
 	    return textNodes;
 	},
-	
+
 	// generate multiple choice exercises
 	// @param hitList list of hits that could be turned into exercises, unwanted instance must be removed in advance
 	// @param getOptionsCallback a function that returns an array of choices to be presented to the user
@@ -377,10 +376,10 @@ wertiview.ns(function() {
 	// @param addProcCallback a function that is called for every exercise (default: wertiview.lib.doNothing)
 	// @param emptyHit if true, the hit text will be erased (default: true)
 	// @param partExercises decimal by which the number of exercises to generate is multiplied in 'fixed number' mode (default: 1.0)
-	mc: function(contextDoc, hitList, inputHandler, hintHandler, 
-			getOptionsCallback, getCorrectAnswerCallback, addProcCallback, 
+	mc: function(contextDoc, hitList, inputHandler, hintHandler,
+			getOptionsCallback, getCorrectAnswerCallback, addProcCallback,
 			emptyHit, partExercises){
-		
+
 		if (typeof addProcCallback == 'undefined'){
 			addProcCallback = wertiview.lib.doNothing;
 		}
@@ -392,118 +391,118 @@ wertiview.ns(function() {
 		}
 
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
-        $.fn = $.prototype = jQuery.fn;
-		
-    	// calculate the number of hits to turn into exercises
-        var numExercises = 0;
-        var fixedOrPercentage = wertiview.getFixedOrPercentage();
-        if (fixedOrPercentage == wertiview.pref_fixedNumber) {
-            numExercises = wertiview.getFixedNumberOfExercises() * partExercises;
-        }
-        else if (fixedOrPercentage == wertiview.pref_percentage) {
-        	numExercises = wertiview.getProportionOfExercisesDec() * hitList.length;
-        }
-        else {
-        	// we should never get here
-        	wertiview.prefError();
-        }
-        
-        var i = 0; // default offset of the first hit that will be turned into an exercise
-        var inc = 1; // default interval between the exercises
-        if (hitList.length <= 10) { // if the number of hits is 10 or less then all the hits will be turned into exercises
-            numExercises = hitList.length; // was: hitList.length - 2;
-        }
-        
-        else {
-            // the number of hits is 10+, so we can choose which hits to turn into exercises
-            var choiceMode = wertiview.getChoiceMode();
-            if (choiceMode == wertiview.pref_random) {
-                wertiview.lib.shuffleList(hitList);
-            }
-            else if (choiceMode == wertiview.pref_first) {
-        	   i = wertiview.getFirstOffset();
-            }
-            else if (choiceMode == wertiview.pref_intervals){
-        	   inc = wertiview.getIntervalSize();
-            }
-            else {
-        	   // we should never get here
-        	   wertiview.prefError();
-            }
-        }
-        //alert("nr of exercises: "+numExercises);
-        jQuery.ajax({
-            type: "POST",
-            url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
-            data: {nr_of_exercises : numExercises},
-            success: function() {
-                //display message back to user here
-            }
-        });
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
+    $.fn = $.prototype = jQuery.fn;
 
-        //alert("offset of the first hit: "+i);
-        //alert("interval size: "+inc);
-        
-        // generate the exercises
-        //alert("generating exercises");
-        for (; numExercises > 0 && i < hitList.length; i += inc){
-        	var $hit = hitList[i];
-        	//alert("next hit: "+$hit);
+		// calculate the number of hits to turn into exercises
+    var numExercises = 0;
+    var fixedOrPercentage = wertiview.getFixedOrPercentage();
+    if (fixedOrPercentage == wertiview.pref_fixedNumber) {
+      numExercises = wertiview.getFixedNumberOfExercises() * partExercises;
+    }
+    else if (fixedOrPercentage == wertiview.pref_percentage) {
+    	numExercises = wertiview.getProportionOfExercisesDec() * hitList.length;
+    }
+    else {
+    	// we should never get here
+    	wertiview.prefError();
+    }
 
-        	// if the span is inside a link, skip (drop-down boxes are weirder 
-    		// than text input boxes, need to investigate further)
-    		if ($hit.parents('a').length > 0) {
-                //alert("this is inside a link");
-    			continue;
-    		}
+    var i = 0; // default offset of the first hit that will be turned into an exercise
+    var inc = 1; // default interval between the exercises
+    if (hitList.length <= 10) { // if the number of hits is 10 or less then all the hits will be turned into exercises
+      numExercises = hitList.length; // was: hitList.length - 2;
+    }
 
-    		var capType = wertiview.lib.detectCapitalization($hit.text());
-        	
-    		// choices for the user
-        	var options = getOptionsCallback($hit, capType);
-        	//alert("answer variants: "+options);
-        	// correct choice
-        	var answer = getCorrectAnswerCallback($hit, capType);
-        	//alert("correct answer: "+answer);
-        	
-        	// e.g., phrasalverbs needs to add colorization to the verb
-        	addProcCallback($hit, capType);
+    else {
+      // the number of hits is 10+, so we can choose which hits to turn into exercises
+      var choiceMode = wertiview.getChoiceMode();
+      if (choiceMode == wertiview.pref_random) {
+        wertiview.lib.shuffleList(hitList);
+      }
+      else if (choiceMode == wertiview.pref_first) {
+	   		i = wertiview.getFirstOffset();
+      }
+      else if (choiceMode == wertiview.pref_intervals){
+	   		inc = wertiview.getIntervalSize();
+      }
+      else {
+	   		// we should never get here
+   			wertiview.prefError();
+      }
+    }
+    //alert("nr of exercises: "+numExercises);
+    jQuery.ajax({
+      type: "POST",
+      url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
+      data: {nr_of_exercises : numExercises},
+      success: function() {
+    		//display message back to user here
+      }
+    });
 
-    		// create select box
-    		var $input = $('<select>');
-    		$input.attr('style','width: auto');
-    		var inputId = $hit.attr('id') + '-select';
-    		$input.attr('id', inputId);
-    		$input.addClass('wertiviewinput');
-    		var $option = $('<option>');
-    		$option.html(" ");
-    		$input.append($option);
-    		for (var j = 0; j < options.length; j++) {
-    			$option = $('<option>');
-    			$option.text(options[j]);
-    			$input.append($option);
-    		}
-    		$input.data('wertivieworiginaltext', $hit.text());
-    		$input.data('wertiviewanswer', answer);
-    		if (emptyHit){
-    			$hit.empty();
-    		}
-    		$hit.append($input);
-    		
-    		// create hint ? button
-    		var $hint = $('<span>');
-    		$hint.attr('id', $hit.attr('id') + '-hint');
-    		$hint.addClass('clozeStyleHint');
-    		$hint.text("?");
-    		$hint.addClass('wertiviewhint');
-    		$hit.append($hint);
+    //alert("offset of the first hit: "+i);
+    //alert("interval size: "+inc);
+
+    // generate the exercises
+    //alert("generating exercises");
+    for (; numExercises > 0 && i < hitList.length; i += inc){
+    	var $hit = hitList[i];
+    	//alert("next hit: "+$hit);
+
+    	// if the span is inside a link, skip (drop-down boxes are weirder
+			// than text input boxes, need to investigate further)
+			if ($hit.parents('a').length > 0) {
+        //alert("this is inside a link");
+				continue;
+			}
+
+			var capType = wertiview.lib.detectCapitalization($hit.text());
+
+			// choices for the user
+    	var options = getOptionsCallback($hit, capType);
+    	//alert("answer variants: "+options);
+    	// correct choice
+    	var answer = getCorrectAnswerCallback($hit, capType);
+			//alert("correct answer: "+answer);
+
+    	// e.g., phrasalverbs needs to add colorization to the verb
+    	addProcCallback($hit, capType);
+
+  		// create select box
+  		var $input = $('<select>');
+  		$input.attr('style','width: auto');
+  		var inputId = $hit.attr('id') + '-select';
+  		$input.attr('id', inputId);
+  		$input.addClass('wertiviewinput');
+  		var $option = $('<option>');
+  		$option.html(" ");
+  		$input.append($option);
+  		for (var j = 0; j < options.length; j++) {
+  			$option = $('<option>');
+  			$option.text(options[j]);
+  			$input.append($option);
+  		}
+  		$input.data('wertivieworiginaltext', $hit.text());
+  		$input.data('wertiviewanswer', answer);
+  		if (emptyHit){
+  			$hit.empty();
+  		}
+  		$hit.append($input);
+
+  		// create hint ? button
+  		var $hint = $('<span>');
+  		$hint.attr('id', $hit.attr('id') + '-hint');
+  		$hint.addClass('clozeStyleHint');
+  		$hint.text("?");
+  		$hint.addClass('wertiviewhint');
+  		$hit.append($hint);
 
     		// count down numExercises until we're finished
 			numExercises--;
-        }
+    }
 
-        $('body').delegate('select.wertiviewinput', 'change', {context: contextDoc}, inputHandler);
+    $('body').delegate('select.wertiviewinput', 'change', {context: contextDoc}, inputHandler);
 		$('body').delegate('span.wertiviewhint', 'click', {context: contextDoc}, hintHandler);
 	},
 
@@ -513,10 +512,10 @@ wertiview.ns(function() {
 	// @param addProcCallback a function that is called for every exercise (default: wertiview.lib.doNothing)
 	// @param emptyHit if true, the hit text will be erased (default: true)
 	// @param partExercises decimal by which the number of exercises to generate is multiplied in 'fixed number' mode (default: 1.0)
-	cloze: function(contextDoc, hitList, inputHandler, hintHandler, 
-			getCorrectAnswerCallback, addProcCallback, 
+	cloze: function(contextDoc, hitList, inputHandler, hintHandler,
+			getCorrectAnswerCallback, addProcCallback,
 			emptyHit, partExercises){
-		
+
 		if (typeof addProcCallback == 'undefined'){
 			addProcCallback = wertiview.lib.doNothing;
 		}
@@ -528,59 +527,59 @@ wertiview.ns(function() {
 		}
 
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
-        $.fn = $.prototype = jQuery.fn;
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
+    $.fn = $.prototype = jQuery.fn;
 
-    	// calculate the number of hits to turn into exercises
-        var numExercises = 0;
-        var fixedOrPercentage = wertiview.getFixedOrPercentage();
-        if (fixedOrPercentage == wertiview.pref_fixedNumber) {
-            numExercises = wertiview.getFixedNumberOfExercises() * partExercises;
-        }
-        else if (fixedOrPercentage == wertiview.pref_percentage) {
-        	numExercises = wertiview.getProportionOfExercisesDec() * hitList.length;
-        }
-        else {
-        	// we should never get here
-        	wertiview.prefError();
-        }
-        
-        // choose which hits to turn into exercises
-        var i = 0;
-        var inc = 1;
-        var choiceMode = wertiview.getChoiceMode();
-        if (choiceMode == wertiview.pref_random) {
-            wertiview.lib.shuffleList(hitList);
-        }
-        else if (choiceMode == wertiview.pref_first) {
-        	i = wertiview.getFirstOffset();
-        }
-        else if (choiceMode == wertiview.pref_intervals){
-        	inc = wertiview.getIntervalSize();
-        }
-        else {
-        	// we should never get here
-        	wertiview.prefError();
-        }
-        //alert("nr of exercises: "+numExercises);
-        jQuery.ajax({
-            type: "POST",
-            url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
-            data: {nr_of_exercises : numExercises},
-            success: function() {
-                //display message back to user here
-            }
-        });
+		// calculate the number of hits to turn into exercises
+    var numExercises = 0;
+    var fixedOrPercentage = wertiview.getFixedOrPercentage();
+    if (fixedOrPercentage == wertiview.pref_fixedNumber) {
+      numExercises = wertiview.getFixedNumberOfExercises() * partExercises;
+    }
+    else if (fixedOrPercentage == wertiview.pref_percentage) {
+    	numExercises = wertiview.getProportionOfExercisesDec() * hitList.length;
+    }
+    else {
+    	// we should never get here
+    	wertiview.prefError();
+    }
 
-        
-        // generate the exercises
-        for (; numExercises > 0 && i < hitList.length; i += inc){
+    // choose which hits to turn into exercises
+    var i = 0;
+    var inc = 1;
+    var choiceMode = wertiview.getChoiceMode();
+    if (choiceMode == wertiview.pref_random) {
+        wertiview.lib.shuffleList(hitList);
+    }
+    else if (choiceMode == wertiview.pref_first) {
+    	i = wertiview.getFirstOffset();
+    }
+    else if (choiceMode == wertiview.pref_intervals){
+    	inc = wertiview.getIntervalSize();
+    }
+    else {
+    	// we should never get here
+    	wertiview.prefError();
+    }
+    //alert("nr of exercises: "+numExercises);
+    jQuery.ajax({
+      type: "POST",
+      url: "http://localhost:8080/teaksta/WERTiServlet", // save data (nr of generated exercises) in a log file, without reloading the page
+      data: {nr_of_exercises : numExercises},
+      success: function() {
+        //display message back to user here
+      }
+    });
+
+
+    // generate the exercises
+    for (; numExercises > 0 && i < hitList.length; i += inc){
 			var $hit = hitList[i];
-			
-    		var capType = wertiview.lib.detectCapitalization($hit.text());
-        	
-        	// correct choice
-        	var answer = getCorrectAnswerCallback($hit, capType);
+
+			var capType = wertiview.lib.detectCapitalization($hit.text());
+
+    	// correct choice
+    	var answer = getCorrectAnswerCallback($hit, capType);
 
 			// create input box
 			var $input = $('<input>');
@@ -593,7 +592,7 @@ wertiview.ns(function() {
 				$hit.empty();
 			}
 			$hit.append($input);
-			
+
 			// create hint ? button
 			var $hint = $('<span>');
 			$hint.attr('id', $hit.attr('id') + '-hint');
@@ -601,19 +600,19 @@ wertiview.ns(function() {
 			$hint.text("?");
 			$hint.addClass('wertiviewhint');
 			$hit.append($hint);
-        	
-        	// e.g., phrasalverbs needs to add colorization to the verb
+
+    	// e.g., phrasalverbs needs to add colorization to the verb
 			// and gerunds needs to display the base form
         	addProcCallback($hit, capType, $);
 
-    		// count down numExercises until we're finished
+  		// count down numExercises until we're finished
 			numExercises--;
 		}
-		
+
 		// figure out next field
 		var prevhit = null;
 		var nexthits = {};
-	
+
 		$('input.wertiviewinput').each( function() {
 			// keep track of links to next input field
 			if (prevhit) {
@@ -621,7 +620,7 @@ wertiview.ns(function() {
 			}
 			prevhit = $(this).attr('id');
 		});
-		
+
 		// add the next input info to each input field
 		$('input.wertiviewinput').each( function() {
 			if (nexthits[$(this).attr('id')]) {
@@ -634,6 +633,5 @@ wertiview.ns(function() {
 		$('body').delegate('input.wertiviewinput', 'change', {context: contextDoc}, inputHandler);
 		$('body').delegate('span.wertiviewhint', 'click', {context: contextDoc}, hintHandler);
 	}
-	
+
 	};
-}); // REMOVE-WITH-MAVEN-REPLACER-PLUGIN
