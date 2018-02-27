@@ -59,4 +59,8 @@ public final class Constants {
 
     public static String cg3GeneratorInputFile_Loc = "/home/teaksta/output/cg3GeneratorInput.tmp";
     public static String cg3GeneratorOutputFile_Loc = "/home/teaksta/output/cg3GeneratorOutput.tmp";
+
+    public static String vislcg3_Loc = "/usr/local/bin/vislcg3";
+    public static String vislcg3_DisGrammarLoc = "/opt/smi/sme/bin/disambiguator.cg3"; // before it was disambiguation.cg3
+    public static String vislcg3_SyntGrammarLoc = "/opt/smi/sme/bin/konteaksta.cg3";
 }
