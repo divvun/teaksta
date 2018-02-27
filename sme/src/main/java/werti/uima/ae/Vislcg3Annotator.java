@@ -48,13 +48,13 @@ import werti.util.Constants;
  */
 public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
-	private static final Logger log =
-		Logger.getLogger(Vislcg3Annotator.class);
+	private static final Logger log = Logger.getLogger(Vislcg3Annotator.class);
 
 	private final String CGSentenceBoundaryToken = ".";
-	private String vislcg3Loc;
-	private String vislcg3DisGrammarLoc;
-	private String vislcg3SyntGrammarLoc;
+	//Add vislcg3Loc, vislcg3DisGrammarLoc and vislcg3SyntGrammarLoc paths to Constants.java
+	private String vislcg3Loc = Constants.vislcg3_Loc;
+	private String vislcg3DisGrammarLoc = Constants.vislcg3_DisGrammarLoc;
+	private String vislcg3SyntGrammarLoc = Constants.vislcg3_SyntGrammarLoc;
 	//private final String preprocessPipeline = Constants.preprocess_Pipeline; // this var is not used
 	private final String preprocessLoc = Constants.preprocess_Loc;
 	private final String abbr = Constants.abbr_file;
@@ -158,6 +158,9 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 	}
 
+/* No need to load vislcg3Loc, vislcg3DisGrammarLoc and vislcg3SyntGrammarLoc from xml
+	since they are now defined in Contants.java
+
 	@Override
 	public void initialize(UimaContext context)
 	throws ResourceInitializationException {
@@ -166,6 +169,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		vislcg3DisGrammarLoc = (String) context.getConfigParameterValue("vislcg3DisGrammarLoc");
 		vislcg3SyntGrammarLoc = (String) context.getConfigParameterValue("vislcg3SyntGrammarLoc");
 	}
+*/
 
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
@@ -201,8 +205,9 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		}*/ // this loop is not needed any more
             //String cg3output = runCG(FSToutput.toString());
             // parse cg output
-			log.info("cg3output"+cg3output);
-			log.info("parsing CG output");
+			//Commenting next lns to reduce output in catalina.out
+			//log.info("cg3output"+cg3output);
+			//log.info("parsing CG output");
 			List<CGToken> newTokens = parseCGOutput(cg3output, jcas);
 			// assert that we got as many tokens back as we provided
 			/*if (newTokens.size() != originalTokens.size()) {
@@ -212,9 +217,9 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			if (newTokens.size() == 0) {
 				throw new IllegalArgumentException("CG3 output is empty!");
 			}
-
-			log.info("original tokens:"+originalTokens.size());
-            log.info("new tokens:"+newTokens.size());
+			//Commenting next lns to reduce output in catalina.out
+			//log.info("original tokens:"+originalTokens.size());
+      //log.info("new tokens:"+newTokens.size());
 
 			int j = 0; // counter for new tokens
 			CGToken newT = null;
@@ -251,8 +256,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		} catch (InterruptedException e) {
 			throw new AnalysisEngineProcessException(e);
 		}
-
-		log.info("Finished visclg3 processing");
+		//Commenting next ln to reduce output in catalina.out
+		//log.info("Finished visclg3 processing");
 	}
 
 	/*
@@ -293,7 +298,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			}
 			result.append("\n"); // each token on a separate line
 		}
-		log.info("text to be parsed: "+result.toString());
+		//Commenting next ln to reduce output in catalina.out
+		//log.info("text to be parsed: "+result.toString());
 		return result.toString();
 	}
 
@@ -307,6 +313,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	// gtlab:
 		String inputfileLoc = Constants.inputfile_Loc+timestamp+".tmp";
 		String outputfileLoc = Constants.outputfile_Loc+timestamp+".tmp";
+		//String inputfileLoc = Constants.inputfile_Loc;
+		//String outputfileLoc = Constants.outputfile_Loc;
 	//Macbook:
 
         /*String inputfileLoc = "/Users/mslm/main/apps/teaksta/sme/output/cg3input"+timestamp+".tmp";
@@ -329,19 +337,21 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		cg3inputfile.close();
 		}
 
-		// compose text analysis pipeline and run a process
-
-        // when reading CG input from a file and writing CG output to another file:
+	// compose text analysis pipeline and run a process
+  // when reading CG input from a file and writing CG output to another file:
 	// gtlab:
+	//Commenting next lns to reduce output in catalina.out
+	//log.info("in="+inputfileLoc);
+	//log.info("out="+outputfileLoc);
 	String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc + " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +  " > " + outputfileLoc};
 	// debugging:
 	//String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | /usr/local/bin/lookup -flags mbTT -utf8 /opt/smi/sme/bin/sme.fst | /home/heli/main/gt/script/lookup2cg | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/sme-dis.rle | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/functions.cg3 > " + outputfileLoc};
 	// Macbook:
-        //String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
-        // There was a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
-
-		// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
-		log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
+  //String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
+	// There is a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
+	// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
+		//Commenting next ln to reduce output in catalina.out
+		//log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
 		Process process = Runtime.getRuntime().exec(textAnalysisPipeline);
         process.waitFor();
 
