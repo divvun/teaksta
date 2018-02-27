@@ -195,7 +195,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 		try {
 			// run vislcg3
-			log.info("running vislcg3");
+			//log.info("running vislcg3");
 			String cg3output = runFST_CG(cg3input);  // was: runVislCG3(cg3input)
 			StringBuilder FSToutput = new StringBuilder();
 			/*for (Token t : originalTokens) {  // A new solution because the tokenisation algorithms of OpenNlpTokeniser and "preprocess" script do not match. Split the fst-cg pipeline, send only one token at a time to fst and the result of the morph analysis of the whole document to vislcg3.
@@ -218,8 +218,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 				throw new IllegalArgumentException("CG3 output is empty!");
 			}
 			//Commenting next lns to reduce output in catalina.out
-			//log.info("original tokens:"+originalTokens.size());
-      //log.info("new tokens:"+newTokens.size());
+			log.info("original tokens:"+originalTokens.size());
+      log.info("new tokens:"+newTokens.size());
 
 			int j = 0; // counter for new tokens
 			CGToken newT = null;
@@ -231,7 +231,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 					newT = newTokens.get(j);
 					reading = newT.getReadings().get(0).toString();
 				}
-				//log.info("Token: "+origT.getCoveredText()+" CGToken:"+reading);
+				log.info("Token: "+origT.getCoveredText()+" CGToken:"+reading);
 
 				// Skip the fullstop tokens that were added in order to treat headings as separate sentences.
 				while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
@@ -239,12 +239,12 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 					if (j < newTokens.size()) {
 						newT = newTokens.get(j);
 						reading = newT.getReadings().get(0).toString();
-						//log.info("Token: "+origT.getCoveredText()+" new CGToken:"+reading);
+						log.info("Token: "+origT.getCoveredText()+" new CGToken:"+reading);
 					}
 				}
                 copy(origT, newT);
 				j++;
-                //log.info("new token begins at: " + newT.getBegin());
+                log.info("new token begins at: " + newT.getBegin());
                 // update CAS
 				jcas.removeFsFromIndexes(origT);
                 jcas.addFsToIndexes(newT);
@@ -340,14 +340,11 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	// compose text analysis pipeline and run a process
   // when reading CG input from a file and writing CG output to another file:
 	// gtlab:
-	//Commenting next lns to reduce output in catalina.out
-	//log.info("in="+inputfileLoc);
-	//log.info("out="+outputfileLoc);
-	String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc + " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +  " > " + outputfileLoc};
+	//String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc + " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +  " > " + outputfileLoc};
 	// debugging:
 	//String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | /usr/local/bin/lookup -flags mbTT -utf8 /opt/smi/sme/bin/sme.fst | /home/heli/main/gt/script/lookup2cg | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/sme-dis.rle | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/functions.cg3 > " + outputfileLoc};
 	// Macbook:
-  //String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
+  String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
 	// There is a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
 	// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
 		//Commenting next ln to reduce output in catalina.out
