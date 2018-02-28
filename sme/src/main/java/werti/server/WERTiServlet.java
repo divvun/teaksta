@@ -169,10 +169,10 @@ public class WERTiServlet extends HttpServlet {
 		log.info("URL again:"+u);
 		Document htmlDoc;
 		try {
-			//htmlDoc = Jsoup.parse(u, MAX_WAIT);
+			htmlDoc = Jsoup.parse(u, MAX_WAIT);
 			//File myinput = new File("/Users/car010/Documents/test.html");
-			File myinput = new File("/home/teaksta/test.html");
-			htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
+			//File myinput = new File("/home/teaksta/test.html");
+			//htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
 			//Commenting next ln to reduce output in catalina.out
 			log.info("page source:"+htmlDoc);
 		} catch (IOException ioe) {
