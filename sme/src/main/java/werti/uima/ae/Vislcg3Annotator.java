@@ -191,11 +191,11 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 		// convert token list to cg input
 		String cg3input = toCG3Input(originalTokens, originalSentences);
-		//log.info("cg3input:"+cg3input);
+		log.info("cg3input:"+cg3input);
 
 		try {
 			// run vislcg3
-			//log.info("running vislcg3");
+			log.info("running vislcg3");
 			String cg3output = runFST_CG(cg3input);  // was: runVislCG3(cg3input)
 			StringBuilder FSToutput = new StringBuilder();
 			/*for (Token t : originalTokens) {  // A new solution because the tokenisation algorithms of OpenNlpTokeniser and "preprocess" script do not match. Split the fst-cg pipeline, send only one token at a time to fst and the result of the morph analysis of the whole document to vislcg3.
@@ -206,8 +206,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
             //String cg3output = runCG(FSToutput.toString());
             // parse cg output
 			//Commenting next lns to reduce output in catalina.out
-			//log.info("cg3output"+cg3output);
-			//log.info("parsing CG output");
+			log.info("cg3output"+cg3output);
+			log.info("parsing CG output");
 			List<CGToken> newTokens = parseCGOutput(cg3output, jcas);
 			// assert that we got as many tokens back as we provided
 			/*if (newTokens.size() != originalTokens.size()) {
@@ -257,7 +257,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			throw new AnalysisEngineProcessException(e);
 		}
 		//Commenting next ln to reduce output in catalina.out
-		//log.info("Finished visclg3 processing");
+		log.info("Finished visclg3 processing");
 	}
 
 	/*
@@ -299,7 +299,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			result.append("\n"); // each token on a separate line
 		}
 		//Commenting next ln to reduce output in catalina.out
-		//log.info("text to be parsed: "+result.toString());
+		log.info("text to be parsed: "+result.toString());
 		return result.toString();
 	}
 
@@ -348,7 +348,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	// There is a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
 	// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
 		//Commenting next ln to reduce output in catalina.out
-		//log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
+		log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
 		Process process = Runtime.getRuntime().exec(textAnalysisPipeline);
         process.waitFor();
 
@@ -361,7 +361,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
             //str = cg3outputfile.readLine();
 		    result = result + str + "\n";
 		}
-        //log.info("Read from cg3outputfile: "+result);
+        log.info("Read from cg3outputfile: "+result);
 
         cg3outputfile.close();
 
