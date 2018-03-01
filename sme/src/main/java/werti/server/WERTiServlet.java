@@ -146,8 +146,10 @@ public class WERTiServlet extends HttpServlet {
 		String url = req.getParameter("url");
 		// accept url-s without http://
 		log.info("url:"+url);
-		if (!url.contains("http")) {
-			url = "http://" + url;
+		if (!url.startsWith("file:/")) {
+			if (!url.contains("http")) {
+				url = "http://" + url;
+			}
 		}
 
 		String activity = req.getParameter("activity");
@@ -169,10 +171,13 @@ public class WERTiServlet extends HttpServlet {
 		log.info("URL again:"+u);
 		Document htmlDoc;
 		try {
-			htmlDoc = Jsoup.parse(u, MAX_WAIT);
-			//File myinput = new File("/Users/car010/Documents/test.html");
+			if (!url.startsWith("file:/")) {
+				htmlDoc = Jsoup.parse(u, MAX_WAIT);
+			} else {
+				File myinput = new File(url.substring(7,url.length()));
+				htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
+			}
 			//File myinput = new File("/home/teaksta/test.html");
-			//htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
 			//Commenting next ln to reduce output in catalina.out
 			log.info("page source:"+htmlDoc);
 		} catch (IOException ioe) {
