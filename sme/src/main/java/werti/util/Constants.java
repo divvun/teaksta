@@ -22,7 +22,7 @@ public final class Constants {
 
     public static final String preprocess_Pipeline = "/Users/car010/main/gt/script/preprocess --abbr=/Users/car010/main/langs/sme/src/abbr.txt | /usr/local/bin/lookup -flags mbTT -utf8 /Users/car010/main/langs/sme/src/analyser-gt-desc.xfst | /Users/car010/main/gt/script/lookup2cg | ";
   	public static final String preprocess_Loc = "/Users/car010/main/gt/script/preprocess";
-  	public static final String lookup_2cgLoc = " | /opt/local/bin/perl /Users/car010/main/gt/script/lookup2cg | ";
+    public static final String lookup_2cgLoc = " | /opt/local/bin/perl /Users/car010/main/gt/script/lookup2cg | ";
 
     public static String inputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3input";
     public static String outputfile_Loc = "/Users/car010/main/apps/teaksta/sme/output/cg3output";
@@ -33,18 +33,20 @@ public final class Constants {
     public static String vislcg3_Loc = "/usr/local/bin/vislcg3";
     public static String vislcg3_DisGrammarLoc = "/Users/car010/main/langs/sme/src/syntax/disambiguator.cg3";
     public static String vislcg3_SyntGrammarLoc = "/Users/car010/main/langs/sme/src/konteaksta.cg3";
-  */
+    */
 
   //GTOAHPA PATHS:
-    //public static final String lookup_Loc = "/usr/bin/lookup";
-    public static final String lookup_Loc = "/usr/bin/hfst-optimized-lookup"; // for new fst
+    public static final String lookup_Loc = "/usr/bin/lookup";
+    //public static final String lookup_Loc = "/usr/bin/hfst-optimized-lookup"; // for new fst
     //public static final String lookup_Flags = "-flags mbTT -utf8";
     public static final String lookup_Flags = ""; // for new fst
 
     //public static final String inverted_FST = " /opt/smi/sme/bin/generator-oahpa-gt-norm-dial_GG.xfst"; // opt/smi/sme/bin on gtlab;  or " /opt/smi/sme/bin/isme-GG.restr.fst"
-    public static final String inverted_FST = " /opt/smi/sme/bin/generator-dict-gt-norm.hfstol"; // new fst
+    //public static final String inverted_FST = " /opt/smi/sme/bin/generator-dict-gt-norm.hfstol"; // new fst
+    public static final String inverted_FST = " /opt/smi/sme/bin/generator-dict-gt-norm.xfst"; // new fst
     //public static final String an_FST = " /opt/smi/sme/bin/sme.fst";
-    public static final String an_FST = " /opt/smi/sme/bin/analyser-disamb-gt-desc.hfstol"; // new fst
+    //public static final String an_FST = " /opt/smi/sme/bin/analyser-disamb-gt-desc.hfstol"; // new fst
+    public static final String an_FST = " /opt/smi/sme/bin/analyser-disamb-gt-desc.xfst"; // new fst
 
     public static final String tools_Dir = "/opt/smi/sme/bin/";
     public static final String abbr_Dir = "/opt/smi/sme/bin/";
