@@ -107,8 +107,10 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		// get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
 		long timestamp = System.currentTimeMillis();
 
-		String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp";
-		String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+timestamp+".tmp";
+		//String cg3GeneratorInputFileLoc = "./output/cg3GeneratorInput"+timestamp+".tmp";
+		//String cg3GeneratorOutputFileLoc = "./output/cg3GeneratorOutput"+timestamp+".tmp";
+		String cg3GeneratorInputFileLoc = Constants.cg3GeneratorInputFile_Loc;
+		String cg3GeneratorOutputFileLoc = Constants.cg3GeneratorOutputFile_Loc;
 
 		//create temporary files for saving cg3 input and output
 		File cg3GeneratorInputFile = new File(cg3GeneratorInputFileLoc);
@@ -124,6 +126,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		Map<Word, SpanTag> wordToSpanMap = new HashMap<Word, SpanTag>();
 
 		boolean isMcActivity = enhancement_type.equals("mc");
+		boolean isClozeActivity = enhancement_type.equals("cloze");
 
 		String hintID = "";
 
@@ -134,6 +137,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 		try {
 			Writer cg3GeneratorInputWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(cg3GeneratorInputFileLoc), "UTF-8"));
+			Writer cg3GeneratorInputWriterCloze = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(cg3GeneratorInputFileLoc), "UTF-8"));
 
 			// go through tokens
 			while (cgTokenIter.hasNext()) {
@@ -207,6 +211,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 				if(isValidReading){
 					//log.info("This reading will be used=" +reading_str);
 					String distractors = "";
+					String lemma_and_analyses = "";
 
 					// id's with the "+" symbol have to be escaped, thats why we use a "-" instead
 					String spanReadingString = reading_str.replace("+", "-");
@@ -247,16 +252,23 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 					if (isMcActivity) {
 						// generate the distractors, with lemma, gender, animacy, number and case (needed for the form generator)
-						distractors = writeMorphologicalForms(reading_str);
+						String analyses_str = reading_str.replace("+<sme>", "");
+						distractors = writeMorphologicalForms(analyses_str);
 						cg3GeneratorInputWriter.write(distractors);
 						// write the marker that separates the current distractors from others
 						cg3GeneratorInputWriter.write("ñôŃßĘńŠē\n");
 						// write the word to the file in order to assign the correct distractors to the correct span
 						cg3GeneratorInputWriter.write(word.toString());
-					} else{
-
+					} else if (isClozeActivity) {
+							// extract lemma and analyses from reading_str and write to file
+							lemma_and_analyses = writeLemmaAndAnalyses(reading_str);
+							cg3GeneratorInputWriterCloze.write(lemma_and_analyses);
+							// write the marker that separates the current lemma+analyses from others
+							cg3GeneratorInputWriterCloze.write("ñôŃßĘńŠē\n");
+							// write the word to the file in order to assign the correct distractors to the correct span
+							cg3GeneratorInputWriterCloze.write(word.toString());
+						} else {
 						//log.info("This is the cgt=" + cgt.getCoveredText() + " B="+ word.getBegin() + " E=" + word.getEnd());
-
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
@@ -342,6 +354,25 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 				generatingDistractorsTotalTime += (endTimeGenerator - startTimeGenerator);
 			}
 
+			if(isClozeActivity){
+		  	// generate possible forms from lemma and analyses
+		    String[] generationPipeline = {
+					"/bin/sh",
+					"-c",
+          "/bin/cat " + cg3GeneratorInputFileLoc +
+          " | " + lookupLoc + " " + lookupFlags + " " + invertedFST +
+					" > " + cg3GeneratorOutputFileLoc};
+
+		    final long startTimeGenerator = System.currentTimeMillis();
+
+		    Process process = Runtime.getRuntime().exec(generationPipeline);
+		    process.waitFor();
+		    generateSpanTagWithPossibleForms(cas, cg3GeneratorOutputFileLoc, wordToSpanMap);
+
+		    final long endTimeGenerator = System.currentTimeMillis();
+		    generatingDistractorsTotalTime += (endTimeGenerator - startTimeGenerator);
+			}
+
 			// delete the temporary files
 			cg3GeneratorInputFile.delete();
 			cg3GeneratorOutputFile.delete();
@@ -391,6 +422,17 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
         return generationInput;
     }
+
+		private String writeLemmaAndAnalyses(String reading_str) {
+
+			String lemma_str = reading_str.substring(0, reading_str.indexOf("+"));
+			String an_tmp = reading_str.substring(reading_str.indexOf("+")+1, reading_str.length());
+			String analyses_str = an_tmp.replace("+<sme>", "");
+			//analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+			String lem_and_an = lemma_str + "+" + analyses_str + "\n";
+
+			return lem_and_an;
+	  }
 
     /*
      * The output file from the generator is used to create distractors and is placed into the right place in the span tag.
@@ -479,6 +521,84 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 			e.printStackTrace();
 		}
     }
+
+		private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap){
+		 	try {
+	   		BufferedReader cg3GeneratorOutputReader = new BufferedReader(new InputStreamReader(new FileInputStream(cg3GeneratorOutputFileLoc), "UTF8"));
+
+	     	String generatorOutput = "";
+
+	     	Word currentWord = new Word();
+	     	String possible_forms = "";
+
+	   		while (cg3GeneratorOutputReader.ready()) {
+			 		String line = cg3GeneratorOutputReader.readLine().trim();
+			 		if(line.isEmpty()){
+			     	continue;
+			 		}
+			 		// generator output was processed, all possible forms are created
+			 		// assign the possible forms to the correct span from the wordToSpanMap
+			 		else if(line.startsWith("Word")){
+		     		if(!possible_forms.isEmpty()){
+				 			String[] lineParts = line.split("\\s");
+							int begin = Integer.parseInt(lineParts[1]);
+							int end = Integer.parseInt(lineParts[2]);
+							currentWord = new Word(begin, end);
+							SpanTag spanTag = wordToSpanMap.get(currentWord);
+							//Commenting next ln to reduce output in catalina.out
+							//log.info("spantag before adding forms:"+spanTag);
+							spanTag.addAttribute("possibleforms", possible_forms);
+							// make new enhancement, pass it to the cas
+							Enhancement e = new Enhancement(cas);
+							e.setRelevant(true);
+							e.setBegin(begin);
+							e.setEnd(end);
+							e.setEnhanceStart(spanTag.getSpanTagStart());
+							e.setEnhanceEnd(spanTag.getSpanTagEnd());
+							// update CAS
+							cas.addFsToIndexes(e);
+							//log.info("Enhancement="+e); // testing
+		     		}
+			 		}
+					// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
+					else if(line.contains("ñôŃßĘńŠē")){
+						StringTokenizer tok = new StringTokenizer(generatorOutput);
+						generatorOutput = "";
+						String word = "";
+						possible_forms = "";
+						// the distractorsSet's purpose is to filter out duplicates
+						HashSet<String> possible_formsSet = new HashSet<String>();
+						while (tok.hasMoreTokens()) {
+					 		word = tok.nextToken();
+					 		//log.info("ifst output:"+word);
+					 		// forms that could not be generated are excluded, as well as input strings of the iFST
+					 		if (!word.contains("+") && !word.contains("-") && possible_formsSet.add(word)) {
+					     	possible_forms += word + " ";
+					 		}
+					 		else{
+				     		//log.info("Word that was excluded = " + word);
+					 		}
+					  }
+						// remove the whitespace at the end
+						possible_forms = possible_forms.trim();
+					}
+					// the generator output for the current token is not fully extracted from the file yet
+					else{
+					  generatorOutput += line + " ";
+					}
+			 	}
+
+		    cg3GeneratorOutputReader.close();
+
+		 	} catch (UnsupportedEncodingException e1) {
+	     		e1.printStackTrace();
+		 		} catch (FileNotFoundException e1) {
+		     		e1.printStackTrace();
+		 			} catch (IOException e) {
+		     			e.printStackTrace();
+		 				}
+		}
+
 
     /**
      * This class represents a mutable integer value, which is especially useful
