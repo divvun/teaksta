@@ -318,6 +318,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 			}
 
 			cg3GeneratorInputWriter.close();
+			cg3GeneratorInputWriterCloze.close();
 
 			if(isMcActivity){
 				// generate distractors only when the activity is "mc" (multiple choice)
