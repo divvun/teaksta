@@ -1,222 +1,223 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="sme">
-	<head>
-		<meta http-equiv="content-type" content="text/html;charset=utf-8" />
-	    <title>Konteaksta - working with authentic North Sámi texts</title>
 
-        <link rel="stylesheet" type="text/css" href="main.css"/>
-        <script type="text/javascript">
-            function setActivity(act) {
-                //alert("selected activity:"+act);
-                var linkpage=document.getElementsByTagName("object");
-								if (act==="Subject" || act==="Object" || act==="Adverbial" || act==="Conjunctions") {
-									linkpage[0].data="";
-								}
-								else {
-									linkpage[0].data="activities/"+act+"/recommended_pages.html";
-								}
-                var lists=document.getElementsByTagName("li");
-                for (var i=0; i<lists.length; i++) {
-                    var link=lists[i].getElementsByTagName("a");
-                    link[0].style.color="#144ea6";
-                }
-                var x=document.getElementById(act);
-                x.style.color="#e98300";
-                var y=document.getElementsByName("activity");
-                y[0].value=act;
-                selectform=document.getElementById("extype");
-                if (act==="Subject" || act==="Object" || act==="Adverbial"){
-                    if (selectform.length>2) {
-                        selectform.options[2].remove();
-                        selectform.options[2].remove();
-                    }
-                } else if (selectform.length<3) {
-									var option=document.createElement("option");
-									option.value="mc";
-									option.text="Vállje rivttes sániid!";
-									selectform.add(option);
-									var option=document.createElement("option");
-									option.value="cloze";
-									option.text="Čále rivttes sániid!";
-									selectform.add(option);
-								}
+<head>
+	<title>Konteaksta - working with authentic North Sámi texts</title>
 
-                //var z=document.getElementById("instruct");
-                //z.innerHTML="activities/"+act+"/help.jsp"; // Todo: insert the relevant help page for each topic in the instruction box.
-		 				}
-        </script>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<!-- Latest compiled and minified CSS, and JS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    </head>
+	<link rel="stylesheet" type="text/css" href="main.css" />
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Rammetto+One" rel="stylesheet">
 
-<body onload="setActivity('SubstantiveSingular')">
+	<script type="text/javascript">
+		function setActivity(act) {
+			var linkpage = document.getElementsByTagName("object");
+			if (act === "Subject" || act === "Object" || act === "Adverbial" || act === "Conjunctions") {
+				linkpage[0].data = "";
+			} else {
+				linkpage[0].data = "activities/" + act + "/recommended_pages.html";
+			}
+			var lists = document.getElementsByClassName("fáttát_list");
+			for (var i = 0; i < lists.length; i++) {
+				var link = lists[i].getElementsByTagName("span");
+				link[0].classList.add("blue_class");
+				link[0].classList.remove("orange_class");
+			}
+			var x = document.getElementById(act);
+			x.classList.remove("blue_class");
+			x.classList.add("orange_class");
+			var y = document.getElementsByName("activity");
+			y[0].value = act;
+			mylist = document.getElementById("ul_extype");
+			var listItems = $("#ul_extype").children();
+			var count = listItems.length;
+			if (act === "Subject" || act === "Object" || act === "Adverbial") {
+					document.getElementById("mc").style.display = "none";
+					document.getElementById("cloze").style.display = "none";
+			} else {
+					document.getElementById("mc").style.display = "inline";
+					document.getElementById("cloze").style.display = "inline";
+				}
+			}
 
-	<div id="page">
-        <table id="headermenu">
-            <tr>
-                <td style="width:80%; height:110px; text-align:center; font-size:24px; color:#FFFFFF; background-color:#e98300;">KONTEAKSTA – Bargga teavsttaiguin!</td>
-                <td style="width:20%; padding-bottom:20px; text-align:center; background-color:#e98300"><a href="http://oahpa.no/davvi"><img src="images/Oahpa_logo0001.png" alt="OAHPA!" style="width:80%; height:auto"/><!--</br><img src="images/morfac_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/morfa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/vasta_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/sahka_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/leksa_small.png" alt="OAHPA!" style="width:15%; height:auto"/><img src="images/numra_small.png" alt="OAHPA!" style="width:15%; height:auto"/>--></a></td>
-            </tr>
-        </table>
-		<!-- <a class="hide" href="#content">Skip to content</a> -->
+		function setEnhancement(en) {
+			var lists = document.getElementsByClassName("hárjehusa_list");
+			for (var i = 0; i < lists.length; i++) {
+				var link = lists[i].getElementsByTagName("span");
+				link[0].classList.add("blue_class");
+				link[0].classList.remove("orange_class");
+			}
+			var x = document.getElementById(en);
+			x.classList.remove("blue_class");
+			x.classList.add("orange_class");
+			var y = document.getElementsByName("client.enhancement");
+			y[0].value = en;
+		}
 
-        <!-- <div id="language_options">
-		{% block language_select %}
+		function setMode_1() {
+			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
+			obj_doc.body.style.display = "inline";
+			document.getElementById('mode_1').classList.remove("blue_class");
+			document.getElementById('mode_1').classList.add("orange_class");
+			document.getElementById("mode_2").classList.add("blue_class");
+			if (document.getElementById("mode_2").classList.contains("orange_class")) {
+				document.getElementById("mode_2").classList.remove("orange_class");
+			}
+			document.getElementById('user_url').style.display = "none";
+		}
+		function setMode_2() {
+			document.getElementById('user_url').style.display = "inline";
+			document.getElementById('mode_2').classList.remove("blue_class");
+			document.getElementById('mode_2').classList.add("orange_class");
+			document.getElementById("mode_1").classList.add("blue_class");
+			if (document.getElementById("mode_1").classList.contains("orange_class")) {
+				document.getElementById("mode_1").classList.remove("orange_class");
+			}
+			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
+			obj_doc.body.style.display = "none";
+		}
+	</script>
 
-			{% get_current_language as LANGUAGE_CODE %}
-			<form action="/{{ URL_PREFIX }}/i18n/setlang/" method="post" name="newlang">
-				<dl>
-					<dt><label for="language_select" class="interface">{% trans_to "Interface language" "sme" %}<span class="invisible">{% trans "Interface language" %}</span></label></dt>
-					<dd>
-						<input name="next" type="hidden" value="{% block pagename %}{% endblock %}" />
-						<select id="language_select" name="language" onChange="javascript:this.form.submit();">
+</head>
 
-						{% ifequal LANGUAGE_CODE "no" %}
-							<option value="no" selected="selected">Norsk</option>
-						{% else %}
-							<option value="no">Norsk</option>
-						{% endifequal %}
+<body onload="setActivity('SubstantiveSingular'); setEnhancement('colorize'); setMode_1();">
 
-						{% ifequal LANGUAGE_CODE "sme" %}
-							<option value="sme" selected="selected">Davvisámi</option>
-						{% else %}
-							<option value="sme">Davvisámi</option>
-						{% endifequal %}
+	<div class="container-fluid container_all">
+		<nav class="navbar navbar-expand-lg navbar-dark bg-primary custom_bcg">
+		<a class="navbar-brand" href="#">KONTEAKSTA</br><span style="font-size:12px; color:white; padding:3px 0px 3px 0px;">Under utvikling!</span></a>
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+	    <span class="navbar-toggler-icon"></span>
+	  </button>
+		<div class="collapse navbar-collapse" id="navbarNavDropdown">
+			<ul class="navbar-nav">
+				<li class="nav-item active">
+					<a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-toggle="modal" data-target="#myModal" href="#">How to</a>
+					<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+					  <div class="modal-dialog" role="document">
+					    <div class="modal-content">
+					      <div class="modal-header">
+									<h5 class="modal-title" id="myModalLabel">How to</h5>
+					      </div>
+					      <div class="modal-body">
+									<p>Vállje vuos fáttá gurut fálus, </br>de válljet hárjehusa ja </br>loahpas válljet neahttasiiddu.&hellip;</p>
+					      </div>
+								<div class="modal-footer">
+					        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					      </div>
+					    </div>
+					  </div>
+					</div>
+				</li>
+				<li class="nav-item dropdown">
+					<a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Resurssat</a>
+					<div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+						<a class="dropdown-item" target="_blank" href="http://sanit.oahpa.no/sme/nob">Neahttasátnegirji</a>
+						<a class="dropdown-item" target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a>
+						<a class="dropdown-item" target="_blank" href="http://kursa.oahpa.no">Oahpa giela!-kursa</a>
+						<a class="dropdown-item" target="_blank" href="teaksta_birra.html">Konteaksta-prográmma birra</a>
+						<a class="dropdown-item" target="_blank" href="about_teaksta.html">About Konteaksta</a>
+					</div>
+				</li>
+			</ul>
+			<span class="navbar-text"><a href="http://oahpa.no/davvi"><img class="img_oahpa" src="images/Oahpa_logo0001.png" align="right" alt="OAHPA!"/></a></span>
+		</div>
+		</nav>
+		<p class="yellow_stripe">&nbsp;</p>
+		<p class="green_stripe">&nbsp;</p>
 
-						{% ifequal LANGUAGE_CODE "en" %}
-							<option value="en" selected="selected">English</option>
-						{% else %}
-							<option value="en">English</option>
-						{% endifequal %}
 
-						{% ifequal LANGUAGE_CODE "sv" %}
-							<option value="sv" selected="selected">Svenska</option>
-						{% else %}
-							<option value="sv">Svenska</option>
-						{% endifequal %}
-
-						{% ifequal LANGUAGE_CODE "fi" %}
-						 	<option value="fi" selected="selected">Suomi</option>
-						{% else %}
-						 	<option value="fi">Suomi</option>
-						{% endifequal %}
-
-					</select>
-					</dd>
-				</dl>
-				<input type="submit" class="hide" value="submit" />
-			</form>
-		{% endblock %}
-        </div> -->
-
-        <div id="content">
-		<div id="leftcontent">
-
-            <div id="navbar">
-								<div class="under_utvikling" style="height: 170px; width: 112px; font-size: 35px; font-style: italic; color: #144ea6;">Under utvikling</div>
-                <div class="bigheader">Fáttát</div>
-                <div class="smallheader">Sátneluohkát:</div>
-                <ul class="sidelist">
-                <li><a href="#" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</a></li>
-                <li><a href="#" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</a></li>
-                <li><a href="#" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</a></li>
-                <li><a href="#" id="NegVerbs" onclick="setActivity('NegVerbs')">Vearbba biehttalanhápmi</a></li>
-                <li><a href="#" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</a></li>
-                <li><a href="#" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</a></li>
-                </ul>
-                <div class="smallheader">Cealkkalahtut:</div>
-                <ul class="sidelist">
-                <li><a href="#" id="Subject" onclick="setActivity('Subject')">Subjeakta</a></li>
-                <li><a href="#" id="Object" onclick="setActivity('Object')">Objeakta</a></li>
-                <li><a href="#" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</a></li>
-                </ul>
-            </div>
-
-            <div class="bigheader">Resurssat</div>
-            <ul class="sidelist small">
-                <li><a target="_blank" href="http://sanit.oahpa.no/sme/nob">Neahttasátnegirji</a></li>
-                <li><a target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a></li>
-                <li><a target="_blank" href="http://kursa.oahpa.no">Oahpa giela!-kursa</a></li>
-                <li><a href="teaksta_birra.html">Konteaksta-prográmma birra</a></li>
-                <li><a href="about_teaksta.html">About Konteaksta</a></li>
-            </ul>
-
-        </div>
-
-        <div id="rightcontent">
-            <a name="content" class="hide">&nbsp;</a>
-            <div id="game_right_float">
-                <div id="instructions">
-                    <!-- <p id="instruct"></p> -->
-                    <p>Vállje vuos fáttá gurut fálus, </br>de válljet hárjehusa ja </br>loahpas válljet neahttasiiddu.</p>
-                </div>
-            </div>
-
-            <div id="settings" style="padding:20px">
-            <table width="350px"><tr><td style="width:50%"><b>Vállje hárjehusa:</b></td>
-            <td>
-            <form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
-                <input type="hidden" name="activity" id="activity" value="" />
-                <select id="extype" class="exercisetype" name="client.enhancement">
-                    <option value="colorize" selected>Geahča ivdnejuvvon sániid</option>
-                    <option value="click">Coahkkal rivttes sániid!</option>
-		            <option value="mc">Vállje rivttes sániid!</option>
-                    <option value="cloze">Čále rivttes sániid!</option>
-                </select>
-            </td></tr>
-            </table>
-            </br>
-            </br>
-                <b>Vállje neahttasiiddu:</b>
-                <OBJECT data="" width="500px" >
-                </OBJECT>
-                </br>
-                <b>Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet:</b>
-                </br>
-                </br>
-                <b>URL:</b>&nbsp; <input type="text" name="url" value="" size="100"/>
-                &nbsp;
-                <input type="submit" value="Mana!" class="activityFormSubmit" />&nbsp;</br>(rahpasa ođđa láses)
-                </br>
-                </br>
-
-            </form>
-            <div class="searchBox">
-                <b><img src="images/google_logo.jpg" height="16px"/> veahkeha gávdnat siiddu mii lea miellagiddevaš dutnje:</b>
-                <!-- <form method="get" id="searchbox_demo" action="http://www.google.com/cse">
-                    <input type="hidden" name="cref" value="" />
-                    <input type="hidden" name="ie" value="utf-8" />
-                    <input type="hidden" name="hl" value="" />
-                    <input type="text" name="q" class="searchField" />
-                    <input type="hidden" name="query" class="searchField" value="leat" />
-                    <input type="hidden" name="siteurl" value="avvir.no">
-                    <input type="hidden" name="sitesearch" value="samediggi.no">
-                    <input type="submit" value="Oza" class="searchSubmit">
-                </form> -->
-                <script>
-                (function() {
-                var cx = '015063317359877268294:is3s0ajf2yi';
-                var gcse = document.createElement('script');
-                gcse.type = 'text/javascript';
-                gcse.async = true;
-                gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
-        '//www.google.com/cse/cse.js?cx=' + cx;
-                var s = document.getElementsByTagName('script')[0];
-                s.parentNode.insertBefore(gcse, s);
-                })();
-                </script>
-                <gcse:search></gcse:search>
-                (Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)
-            </div>
-            </div>
-
-        </div>
-        </div>
-        <div id="footer">
-			<div id="copyright">
-                <p>Copyright 2013 UiT Norgga árktalaš universitehta<br />
-                Váldde oktavuođa minguin: <a href="mailto:oahpa@uit.no">oahpa@uit.no</a></p>
+	<div class="container div_container">
+		<div class="row">
+			<div class="col-3">
+				<h3 class="red_color">Fáttát</h3>
+				<p class="blue_color">Sátneluohkát:</p>
+				<ul class="ul_style">
+					<li class="fáttát_list"><span class="blue_class" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="NegVerbs" onclick="setActivity('NegVerbs')">Vearbba biehttalanhápmi</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</span></li>
+				</ul>
+				<p class="blue_color">Cealkkalahtut:</p>
+				<ul class="ul_style">
+					<li class="fáttát_list"><span class="blue_class" id="Subject" onclick="setActivity('Subject')">Subjeakta</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="Object" onclick="setActivity('Object')">Objeakta</span></li>
+					<li class="fáttát_list"><span class="blue_class" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</span></li>
+				</ul>
 			</div>
-        </div>
-    </body>
+			<div class="col-3">
+				<h3 class="red_color">Hárjehusa</h3>
+				<p class="blue_color">&nbsp;</p>
+				<ul id="ul_extype" class="ul_style">
+					<li class="hárjehusa_list"><span class="blue_class" id="colorize" onclick="setEnhancement('colorize')">Geahča ivdnejuvvon sániid</span></li>
+					<li class="hárjehusa_list"><span class="blue_class" id="click" onclick="setEnhancement('click')">Coahkkal rivttes sániid!</span></li>
+					<li class="hárjehusa_list"><span class="blue_class" id="mc" onclick="setEnhancement('mc')">Vállje rivttes sániid!</span></li>
+					<li class="hárjehusa_list"><span class="blue_class" id="cloze" onclick="setEnhancement('cloze')">Čále rivttes sániid!</span></li>
+				</ul>
+			</div>
+			<div class="col-6">
+				<h3 class="red_color">Materiála</h3>
+				<p class="blue_color">&nbsp;</p>
+				<ul class="ul_style">
+					<li>
+						<div class="row">
+							<form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
+								<input type="hidden" name="activity" id="activity" value="" />
+								<input type="hidden" name="client.enhancement" id="extype" value="" />
+								<h6 class="blue_class" id="mode_1" onclick="setMode_1()">Vállje neahttasiiddu</h5>&nbsp;
+								<OBJECT data="" width="">
+								</OBJECT></br>
+
+								<h6 class="blue_class" id="mode_2" onclick="setMode_2()">Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet</h5>
+								<div id="user_url">
+									<span>URL:</span>&nbsp;
+									<input type="text" name="url" value=""/>&nbsp;
+									<input type="submit" value="Mana!" class="input_sub"/>&nbsp;</br>(rahpasa ođđa láses)
+							</form>
+
+							<img src="images/google_logo.jpg" height="16px"/><p class="bold_lighter_blue">veahkeha gávdnat siiddu mii lea miellagiddevaš dutnje:</p>
+							<script>
+								(function() {
+									var cx = '015063317359877268294:is3s0ajf2yi';
+									var gcse = document.createElement('script');
+									gcse.type = 'text/javascript';
+									gcse.async = true;
+									gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+										'//www.google.com/cse/cse.js?cx=' + cx;
+									var s = document.getElementsByTagName('script')[0];
+									s.parentNode.insertBefore(gcse, s);
+								})();
+							</script>
+							<gcse:search></gcse:search>
+							(Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)
+						</div>
+					</div>
+					</li>
+				</ul>
+			</div>
+	</div>
+</div>
+</div>
+<!--Footer-->
+<div class="footer_div">
+	<p class="grey_stripe">&copy; 2018 UiT Norgga árktalaš universitehta</br>Váldde oktavuođa minguin: <a href="mailto:oahpa@uit.no">oahpa@uit.no</a></p>
+</div>
+
+
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="" crossorigin="anonymous"></script>
+	<script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
+
+</body>
+
 </html>
