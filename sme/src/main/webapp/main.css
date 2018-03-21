@@ -21,7 +21,7 @@
 	font-weight: bold;
 }
 .ul_style {
-	list-style-type:none;
+	list-style-type: none;
 }
 .div_container {
 	margin-top: 30px;
@@ -56,6 +56,13 @@
 .bold_lighter_blue{
 	color: #1959bd;
 	font-weight: bold;
+}
+.li_hline {
+	line-height: 16px;
+	display:block;
+}
+.ul_hline {
+	line-height: 10px;
 }
 #user_url {
 	display: none;
