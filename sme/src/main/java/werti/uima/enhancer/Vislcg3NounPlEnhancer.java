@@ -87,7 +87,18 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 		final long startTime = System.currentTimeMillis();
 
     Pattern posPattern = Pattern.compile("N\\+");
-    Pattern number_casePattern = Pattern.compile("Pl\\+Nom|Pl\\+Acc|Pl\\+Gen|Pl\\+Ill|Pl\\+Loc|Pl\\+Com|Ess");
+    //Pattern number_casePattern = Pattern.compile("Pl\\+Nom|Pl\\+Acc|Pl\\+Gen|Pl\\+Ill|Pl\\+Loc|Pl\\+Com|Ess");
+		//Since the analyses can be the following: N+(Subclass)+(Semclass)+Number+Case(+Possessivesuffix)(+Clitic), all types of optional tags are added so that
+		//for example the reading čáhci+N+<sme>+Sem/Plc_Substnc_Wthr+Sg+Nom that was skipped is now considered valid
+		String nom_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Nom(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String acc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Acc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String gen_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Gen(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ill_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Ill(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String loc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Loc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String com_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Com(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Pl\\+Ess(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
+		String pattern_to_compile = nom_regex+acc_regex+gen_regex+ill_regex+loc_regex+com_regex+ess_regex;
+		Pattern number_casePattern = Pattern.compile(pattern_to_compile);
 
 		Map<String, MutableInt> classCounts = new HashMap<String, MutableInt>();
 
@@ -186,7 +197,8 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 
 			if (isMcActivity) {
 			    // generate the distractors, with lemma, number and case and save in a file
-				distractors = writeMorphologicalForms(reading_str);
+				String analyses_str = reading_str.replace("+<sme>", "");
+				distractors = writeMorphologicalForms(analyses_str);
 				cg3GeneratorInputWriter.write(distractors);
 				// write the marker that separates the current distractors from others
 				cg3GeneratorInputWriter.write("ñôŃßĘńŠē\n");
