@@ -91,10 +91,24 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		final long startTime = System.currentTimeMillis();
 
 		Pattern posPattern = Pattern.compile("N\\+");
-		Pattern numberPattern = Pattern.compile("Sg\\+Nom|Sg\\+Acc|Sg\\+Gen|Sg\\+Ill|Sg\\+Loc|Sg\\+Com|Ess");
+		//Pattern numberPattern = Pattern.compile("Sg\\+Nom|Sg\\+Acc|Sg\\+Gen|Sg\\+Ill|Sg\\+Loc|Sg\\+Com|Ess");
+		//Since the analyses can be the following: N+(Subclass)+(Semclass)+Number+Case(+Possessivesuffix)(+Clitic), all types of optional tags are added so that
+		//for example the reading čáhci+N+<sme>+Sem/Plc_Substnc_Wthr+Sg+Nom that was skipped is now considered valid
+		String nom_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Nom(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String acc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Acc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String gen_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Gen(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ill_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ill(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String loc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Loc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String com_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Com(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ess(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
+		String pattern_to_compile = nom_regex+acc_regex+gen_regex+ill_regex+loc_regex+com_regex+ess_regex;
+		Pattern numberPattern = Pattern.compile(pattern_to_compile);
+
 		// Note that the whole token will be excluded, even when one reading is valid
 		// exclude tokens with readings that are one of the following
-		Pattern excludePattern = Pattern.compile("V\\+|Pl|A\\+(?!.*Pred)|Det|Pr$|Pron|Pcle|Adv|Interj|CC|CS");
+		//Pattern excludePattern = Pattern.compile("V\\+|Pl|A\\+(?!.*Pred)|Det|Pr$|Pron|Pcle|Adv|Interj|CC|CS");
+		//Some readings were excluded although valid, for example +Ta+N+<sme>+Prop+Sem/Plc+Sg+Gen
+		Pattern excludePattern = Pattern.compile("V\\+|Pl\\+|A\\+(?!.*Pred)|Det|Pr$|Pron|Pcle|Adv|Interj|CC|CS");
 		// patterns for the hints
 		Pattern hintPattern = Pattern.compile("Pr$");
 		// the following tags are allowed between hint and noun
