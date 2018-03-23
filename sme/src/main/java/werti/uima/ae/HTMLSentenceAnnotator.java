@@ -18,7 +18,7 @@ import werti.uima.types.annot.Token;
 /**
  * Wrapper for OpenNLP sentence detector.
  * 
- * Depends on {@link Token} Token annotation from {@link OpenNlpTokenizer}.
+ * Depends on {@link Token} Token annotation from {@link GiellateknoTokenizer}. // not OpenNlpTokenizer.
  * 
  * @author Adriane Boyd
  */

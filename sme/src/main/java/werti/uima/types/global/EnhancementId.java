@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Tue Nov 18 13:56:47 CET 2014 */
+/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
 package werti.uima.types.global;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,8 +11,8 @@ import org.apache.uima.jcas.tcas.DocumentAnnotation;
 
 
 /** The enhancement ID of this CAS.
- * Updated by JCasGen Tue Nov 18 13:56:47 CET 2014
- * XML source: /Users/mslm/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * XML source: /export/home/teaksta/desc/vislcg3TypeSystem.xml
  * @generated */
 public class EnhancementId extends DocumentAnnotation {
   /** @generated

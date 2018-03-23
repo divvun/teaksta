@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Sat Sep 14 02:11:41 CEST 2013 */
+/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas;
@@ -14,7 +14,7 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.cas.TOP_Type;
 
 /** Marks a unidirectional edge in a graph. Only the target node is represented, and the name. Edges are supposed to be fields of nodes.
- * Updated by JCasGen Sat Sep 14 02:11:41 CEST 2013
+ * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
  * @generated */
 public class Edge_Type extends TOP_Type {
   /** @generated */

@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Sat Sep 14 02:11:41 CEST 2013 */
+/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,8 +11,8 @@ import org.apache.uima.jcas.cas.FSArray;
 
 
 /** A token with added Constraint Grammar analysis information.
- * Updated by JCasGen Sat Sep 14 02:11:41 CEST 2013
- * XML source: /Users/mslm/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * XML source: /export/home/teaksta/desc/vislcg3TypeSystem.xml
  * @generated */
 public class CGToken extends Token {
   /** @generated

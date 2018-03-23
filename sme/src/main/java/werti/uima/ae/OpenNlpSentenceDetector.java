@@ -25,7 +25,7 @@ import werti.uima.types.annot.Token;
 /**
  * Wrapper for OpenNLP sentence detector.
  * 
- * Depends on {@link Token} Token annotation from {@link OpenNlpTokenizer}.
+ * Depends on {@link Token} Token annotation from {@link GiellateknoTokenizer}. (not OpenNlpTokenizer any more)
  * 
  * @author Adriane Boyd
  */
@@ -33,7 +33,7 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 
 	private static Map<String, SentenceDetectorME> detectors;
 	private static final Logger log =
-		Logger.getLogger(OpenNlpTokenizer.class);
+		Logger.getLogger(OpenNlpSentenceDetector.class);
 	
 	private static final Pattern trailingSpacePattern = Pattern.compile("\\s+$");
 	private static final Pattern sentenceBeginPattern = Pattern.compile("[\\p{L}\\p{N}\\p{P}]");

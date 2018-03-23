@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Tue Nov 18 13:56:47 CET 2014 */
+/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
 package werti.uima.types.global;
 
 import org.apache.uima.jcas.JCas;
@@ -14,7 +14,7 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.DocumentAnnotation_Type;
 
 /** The enhancement ID of this CAS.
- * Updated by JCasGen Tue Nov 18 13:56:47 CET 2014
+ * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
  * @generated */
 public class EnhancementId_Type extends DocumentAnnotation_Type {
   /** @generated */
