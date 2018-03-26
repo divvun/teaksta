@@ -1,21 +1,30 @@
 Further work on Konteaksta
 
 Important fixes
-1. Fix the paths for Giellatekno linguistic tools in the Konteaksta code! (old infra file names -> new infra file names). Now the transducers from 2013 (sme.fst, isme-GG.restr.fst etc) are used in the online version.
-2. Create a configuration file for the paths (which will not be checked in) and refer to this file from the Java files that use the linguistic tools (these are src/main/java/werti/uima/ae/Vislcg3Annotator.java and all the enhancement files in src/main/java/werti/uima/enhancer/).
+1. Fix the paths for Giellatekno linguistic tools in the Konteaksta code! (old infra file names -> new infra file names). Now the transducers from 2013 (sme.fst, isme-GG.restr.fst etc) are used in the online version. - Done!
+2. Create a configuration file for the paths (which will not be checked in) and refer to this file from the Java files that use the linguistic tools (these are src/main/java/werti/uima/ae/Vislcg3Annotator.java and all the enhancement files in src/main/java/werti/uima/enhancer/). - Done! The file is src/main/java/werti/util/Constansts.java, it is checked in with paths for gtoahpa and local paths commented out to make it easier for local test/development.
 
 Bugs
-1. For the "practice" exercise for some topics even the correct answer is generated (because of parallel forms the user cannot know which of the forms was occuring in the original text). The program should accept all the parallel forms if there are several.
+1. For the "practice" exercise for some topics even the correct answer is generated (because of parallel forms the user cannot know which of the forms was occuring in the original text). The program should accept all the parallel forms if there are several. - Done! (not all topics had the attribute 'answer', an attribute 'possibleforms' has been added to the java code for 'cloze' exercise for all topics)
 e.g. leamaš = leamašan (Infinite Verb exercise)
 lei = leai (Finite Verb exercise)
 Now the enhancement is correct (the attribute answer="lei leai" is there if we look at the page's HTML code) but the javascript code fails to accept the parallel form that does not occur in the text. (The code for e.g. Finite Verb exercise is in src/main/webapp/js-lib/verbconjugation.js)
 
+2. Check suggested links because they disappear sometimes after jumping between them - Done!
+
+3. Colorize exercise does not colorize substantive when '_' in Sem/ tags - Done!
+
+4. Colorize exercise should colorize also when there are Der/tags
+
 Other (smaller) todos
 1. Remove the exercise types multiple choice and fill-in-blanks for the topics Subject, Object and Adverbial. - Done!
 2. Remove the conjunctions exercise. - Done!
-3. Replace the picture in the upper left corner by the text "Under development".
+3. Replace the picture in the upper left corner by the text "Under development". - Done!
+
+4. Add About and Grammatihkka in the menu and remove other links in 'Resurssat'
+5. Check if it is possible to close google search results window after clicking one
+6. Check if it is possible to skip content of menus when exercises are generated
 
 New things to implement
-1. Generation of exercises of local texts.
+1. Generation of exercises of local texts. - Works locally, but need at least to implement/add captcha
 2. Generation of exercises of texts in the Korp corpus which is on the server gtweb.uit.no (probably just copy them to gtoahpa and then the task boils down to (1)).
-
