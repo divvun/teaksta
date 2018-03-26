@@ -12,9 +12,12 @@ Now the enhancement is correct (the attribute answer="lei leai" is there if we l
 
 2. Check suggested links because they disappear sometimes after jumping between them - Done!
 
-3. Colorize exercise does not colorize substantive when '_' in Sem/ tags - Done!
+3. Colorize exercise does not colorize substantive when '_' in Sem/ tags - Done! Regex according the pattern: N(+Subclass)(+Semclass)+Number+Case(+Possessivesuffix)(+Clitic) (http://giellatekno.uit.no/doc/lang/sme/docu-sme-grammartags.html)
 
-4. Colorize exercise should colorize also when there are Der/tags
+4. Colorize exercise should colorize also when there are Der/tags. Modify regex according (http://giellatekno.uit.no/doc/lang/sme/docu-sme-grammartags.html):
+  - Finite verbs: V+Transitivity(+Derivation)+Mood+Tense+Person/Number+Clitic - to be checked
+  - Infinite Verbs: V+Transitivity(+Derivation)+Nominal verb form(+Clitic) - to be checked
+  - Other derived forms: V/N+Derivation+Number+Case+(Possessive suffix) - to be checked
 
 Other (smaller) todos
 1. Remove the exercise types multiple choice and fill-in-blanks for the topics Subject, Object and Adverbial. - Done!
