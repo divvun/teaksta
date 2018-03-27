@@ -71,3 +71,8 @@
 	cursor: pointer;
 	color: #ecc637;
 }
+.search_results {
+	border: 1px solid #CCCCCC;
+	border-radius: 10px;
+	padding: 10px;
+}
