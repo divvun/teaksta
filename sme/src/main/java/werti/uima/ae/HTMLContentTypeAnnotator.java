@@ -158,8 +158,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 	// useful lists of tags that can be seen as one 'class' of tags
 	private static final String[] TAGCLASS_LIST = {"li", "ul", "ol"};
 	private static final String[] TAGCLASS_IGNORE = {"script", "noscript", 
-		"form", "object", "embed", "head", "meta", "link", "title", "applet", 
-		"style"};
+		"form", "object", "embed", "head", "meta", "link", "title", "applet", "style", "a"};
 	
 	
 	
@@ -1022,6 +1021,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 				// if this is an IGNORE node, ignore it
 				if (isIgnored(curNode.tagName())){
 					doIgnore = true;
+					log.info(curNode.tagName + " is ignored.");
 				}
 				else{
 					// if it is a werti or annotation span, don't add it
