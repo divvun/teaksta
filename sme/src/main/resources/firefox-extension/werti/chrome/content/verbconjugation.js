@@ -33,7 +33,6 @@
 			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
-			//$('span.wertiviewVerbConjugation').addClass('colorizeStyleVerbConjugation');
 			// check if the span is in a menu link or in a widget, change remaining wertiviewtoken spans to mouseover pointer
 			var spanTags = document.getElementsByClassName('wertiview');
 			for (i = 0; i < spanTags.length; i++) {
@@ -65,9 +64,6 @@
 			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
-			// change all wertiviewtoken spans to mouseover pointer
-			//$('span.wertiviewtoken').css({'cursor': 'pointer'});
-
 			// check if the span is in a menu link or in a widget, change remaining wertiviewtoken spans to mouseover pointer
 			var spanTags = document.getElementsByClassName('wertiview');
 			for (i = 0; i < spanTags.length; i++) {
@@ -98,11 +94,6 @@
 			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
-			/*if($(this).hasClass('wertiviewVerbConjugation')) {  // was: wertiviewhit
-				$(this).addClass('clickStyleCorrect');
-			} else {
-					$(this).addClass('clickStyleIncorrect');
-				}*/
 			//check if parent element is a link, a menu item or a widget
 			var parent_elements = [];
 			var current_element = this;
@@ -148,21 +139,10 @@
 			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
-			// get potential spans
-			//var $hits = $('span.wertiviewVerbConjugation');
-
-			//var hitList = [];
 			var tokens = [];
 			wertiview.verbconjugation.types = [];
 			wertiview.verbconjugation.hitList = [];
-			/*
-			//alert($hits.length+" hits");
-			$hits.each( function() {
-				wertiview.verbconjugation.hitList.push($(this));
-				//alert($(this).text());
-				tokens[$(this).text().toLowerCase()] = 1;
-			});
-			*/
+
 			var spanTags = $('span.wertiviewVerbConjugation');
 			//check if parent element is a link, a menu item or a widget
 			spanTags.each(function(){
@@ -247,12 +227,6 @@
 			var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 			$.fn = $.prototype = jQuery.fn;
 
-			/*var $hits = $('span.wertiviewVerbConjugation');
-
-			var hitList = [];
-			$hits.each( function() {
-				hitList.push($(this));
-			});*/
 			var hitList = [];
 			var spanTags = $('span.wertiviewVerbConjugation');
 			//check if parent element is a link, a menu item or a widget
@@ -349,7 +323,6 @@
 			$text = $("<span>");
 			$text.addClass('wertiview');
 			$text.addClass('clozeStyleProvided');
-			//#$text.text($(this).prev().data('wertiviewanswer'));
 			$text.text(answer_sep);
 			if($(this).prev().data('wertiviewnexthit')) {
 				nextInput = $(this).prev().data('wertiviewnexthit');
