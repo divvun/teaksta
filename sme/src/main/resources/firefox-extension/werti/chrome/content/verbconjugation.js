@@ -124,10 +124,8 @@
 			if (!widget_found && !menu_found && !a_found) {
 				if (this.classList.contains('wertiviewVerbConjugation')) {  // was: wertiviewhit
 					this.classList.add('clickStyleCorrect');
-					wertiview.verbconjugation.updateClickLog(event, "click", 1, $(this).text(), "");
 				} else {
 					this.classList.add('clickStyleIncorrect');
-					wertiview.verbconjugation.updateClickLog(event, "click", 0, $(this).text(), "");
 				}
 			}
 
