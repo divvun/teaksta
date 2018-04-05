@@ -124,10 +124,8 @@
 			if (!widget_found && !menu_found && !a_found) {
 				if (this.classList.contains('wertiviewInfiniteVerb')) {  // was: wertiviewhit
 					this.classList.add('clickStyleCorrect');
-					wertiview.infiniteverbs.updateClickLog(event, "click", 1, $(this).text(), "");
 				} else {
 					this.classList.add('clickStyleIncorrect');
-					wertiview.infiniteverbs.updateClickLog(event, "click", 0, $(this).text(), "");
 				}
 			}
 
