@@ -344,7 +344,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	// debugging:
 	//String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | /usr/local/bin/lookup -flags mbTT -utf8 /opt/smi/sme/bin/sme.fst | /home/heli/main/gt/script/lookup2cg | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/sme-dis.rle | /usr/local/bin/vislcg3 -g /opt/smi/sme/bin/functions.cg3 > " + outputfileLoc};
 	// Macbook:
-  String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
+	//String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc +  " > " + outputfileLoc};
+	String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/cat " + inputfileLoc + " | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3DisGrammarLoc + " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc + " > " + outputfileLoc};
 	// There is a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
 	// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
 		//Commenting next ln to reduce output in catalina.out
