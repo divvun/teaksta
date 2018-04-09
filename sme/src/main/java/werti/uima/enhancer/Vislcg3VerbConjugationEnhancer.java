@@ -87,7 +87,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		final long startTime = System.currentTimeMillis();
 
     Pattern posPattern = Pattern.compile("V\\+");
-    Pattern number_casePattern = Pattern.compile("Ind\\+Prs|Ind\\+Prt|Imprt|Cond\\+Prs|Pot\\+Prs|Neg\\+Ind");
+		//Pattern number_casePattern = Pattern.compile("Ind\\+Prs|Ind\\+Prt|Imprt|Cond\\+Prs|Pot\\+Prs|Neg\\+Ind");
+    Pattern number_casePattern = Pattern.compile("Sg1|Sg2|Sg3|Du1|Du2|Du3|Pl1|Pl2|Pl3");
 
 		Map<String, MutableInt> classCounts = new HashMap<String, MutableInt>();
 
