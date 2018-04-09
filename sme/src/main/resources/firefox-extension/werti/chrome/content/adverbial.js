@@ -1,19 +1,19 @@
 	wertiview.adverbial = {
 
-    // maximum number of instances to turn into exercises (moved to preferences)
+  // maximum number of instances to turn into exercises (moved to preferences)
 	//MAX_CLOZE: 25,
 	// maximum number of items in combobox in mc
 	MAX_MC: 5,
 	// actual number of items in combobox in mc (value is overridden below)
 	maxLength: 5,
-	
+
 	// candidates for mc options presented to user
 	types: [],
 	hitList: [],
-		
+
 	remove: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
 
 		$('body').undelegate('span.wertiviewtoken', 'click', wertiview.adverbial.clickHandler);
@@ -21,7 +21,7 @@
 		$('body').undelegate('span.wertiviewhint', 'click', wertiview.adverbial.clozeHintHandler);
 		$('body').undelegate('input.wertiviewinput', 'change', wertiview.adverbial.clozeInputHandler);
 		$('body').undelegate('input.wertiviewhint', 'click', wertiview.adverbial.clozeHintHandler);  // was: span.wertiviewhint
-		
+
 		$('.wertiviewinput').each( function() {
 			$(this).replaceWith($(this).data('wertiviewanswer'));
 		});
@@ -31,201 +31,236 @@
 
 	colorize: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		$('span.wertiviewAdverbial').addClass('colorizeStyleAdverbial');
+		// check if the span is in a menu link or in a widget, change remaining wertiviewtoken spans to mouseover pointer
+		var spanTags = document.getElementsByClassName('wertiview');
+		for (i = 0; i < spanTags.length; i++) {
+			if (spanTags[i].parentElement.classList) {
+				var patt_widget = /widget/g;
+				var res_widget = patt_widget.test(spanTags[i].parentElement.classList);
+				if (spanTags[i].parentElement.tagName != 'A' && !res_widget)  {
+					if (spanTags[i].hasChildNodes()) {
+						var children = spanTags[i].childNodes;
+						for (var k = 0; k < children.length; k++) {
+							if (children[k].classList) {
+								if (children[k].classList.contains('wertiviewAdverbial')) {
+									children[k].classList.add('colorizeStyleAdverbial');
+								}
+							}
+						}
+					}
+				}
+			}
+		}
 	},
-	
+
 	colorizeSpan: function(span, topic) {
-span.find('span.wertiviewAdverbial').addClass('colorizeStyleAdverbial');
+		span.find('span.wertiviewAdverbial').addClass('colorizeStyleAdverbial');
 	},
 
 	click: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
 
-		// change all wertiviewtoken spans to mouseover pointer
-		$('span.wertiviewtoken').css({'cursor': 'pointer'}); 
+		// check if the span is in a menu link or in a widget, change remaining wertiviewtoken spans to mouseover pointer
+		var spanTags = document.getElementsByClassName('wertiview');
+		for (i = 0; i < spanTags.length; i++) {
+			if (spanTags[i].parentElement.classList) {
+				var patt_widget = /widget/g;
+				var res_widget = patt_widget.test(spanTags[i].parentElement.classList);
+				if (spanTags[i].parentElement.tagName != 'A' && !res_widget)  {
+					if (spanTags[i].hasChildNodes()) {
+						var children = spanTags[i].childNodes;
+						for (var k = 0; k < children.length; k++) {
+							if (children[k].classList) {
+								children[k].style.cursor = "pointer"; //({'cursor': 'pointer'});
+							}
+						}
+					}
+				}
+			}
+		}
 
-		// adverbial markup
-		$('span.wertiviewRELEVANT').find('span.wertiviewAdverbial').addClass('colorizeStyleAdverbial');
-
-		// correct cursor inside wertiviewtokens within multi-word spans
-		//$('span.wertiviewRELEVANT').find('span.wertiviewconjunction').css({'cursor': 'text'});
-		
 		// handle click
-		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.adverbial.clickHandler); 
+		$('body').delegate('span.wertiviewtoken', 'click', {context: contextDoc}, wertiview.adverbial.clickHandler);
 	},
 
 	clickHandler: function(event) {
 		var contextDoc = event.data.context;
 
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
-		if($(this).hasClass('wertiviewAdverbial')) {  // was: wertiviewhit
-			$(this).addClass('clickStyleCorrect');
-		} else {
-			$(this).addClass('clickStyleIncorrect');
-		} 
-		//$(this).css({'cursor': 'auto'});
-        
-		// not within a relevant phrase
-		/*if ($(this).parents('.wertiviewRELEVANT').length == 0) {
-			$(this).addClass('clickStyleIncorrect');
-			return false;
+
+		var parent_elements = [];
+		var current_element = this;
+		while (current_element) {
+			parent_elements.unshift(current_element);
+			current_element = current_element.parentNode;
+		}
+		var widget_found = false;
+		var menu_found = false;
+		var a_found = false;
+
+		for (i = 0; i < parent_elements.length; i++) {
+			var patt_widget = /widget/g;
+			var res_widget = patt_widget.test(parent_elements[i].classList);
+			var patt_menu = /menu/g;
+			var res_menu = patt_menu.test(parent_elements[i].classList);
+			if (res_widget) {
+				widget_found = true;
+			}
+			if (res_menu) {
+				menu_found = true;
+			}
+			if (parent_elements[i].tagName == 'A') {
+				a_found = true;
+			}
 		}
 
-		// an already colored conjunction
-		var isColored = false;
-
-		if ($(this).hasClass('wertiviewconjunction') || $(this).find('.wertiviewconjunction').length > 0) {
-			isColored = true;
+		if (!widget_found && !menu_found && !a_found) {
+			if (this.classList.contains('wertiviewAdverbial')) {  // was: wertiviewhit
+				this.classList.add('clickStyleCorrect');
+			} else {
+				this.classList.add('clickStyleIncorrect');
+			}
 		}
-
-		if (isColored) {
-			return false;
-		}
-
-		// TODO: if this is a clue
-		var isClue = false;
-
-		if ($(this).hasClass('wertiviewCLU-BOTHMEANDIFF') || $(this).hasClass('wertiviewCLU-BOTHMEANSAME') || 
-				$(this).hasClass('wertiviewCLU-FIXEDEXP') || $(this).hasClass('wertiviewCLU-GERONLY') || 
-				$(this).hasClass('wertiviewCLU-INFONLY') || 
-				$(this).find('.wertiviewCLU-BOTHMEANDIFF, .wertiviewCLU-BOTHMEANSAME, .wertiviewCLU-FIXEDEXP, .wertiviewCLU-GERONLY, .wertiviewCLU-INFONLY').length > 0) {
-			isClue = true;
-		}
-		
-		if (isClue) {
-			$(this).addClass('clickStyleCorrect');
-		} else {
-			$(this).addClass('clickStyleIncorrect');
-		}*/
 		return false;
 	},
-	
+
 	mc: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
-		// get potential spans
-		var $hits = $('span.wertiviewAdverbial');
-		
-		//var hitList = [];
+
 		var tokens = [];
 		wertiview.adverbial.types = [];
 		wertiview.adverbial.hitList = [];
-		//alert($hits.length+" hits");
-		$hits.each( function() {
-			wertiview.adverbial.hitList.push($(this));
-			//alert($(this).text());
-			tokens[$(this).text().toLowerCase()] = 1;
-		});
-		//alert("number of tokens: "+tokens.length);
-		//alert("size of hitList: "+wertiview.adverbial.hitList.length);
-		/*for (word in tokens) {
-			wertiview.adverbial.types.push(word);
-			//alert("word: "+word);
-		}*/
-		//alert(wertiview.adverbial.types.length+" different adverbial on page");
+
+		var spanTags = $('span.wertiviewAdverbial');
+		//check if parent element is a link, a menu item or a widget
+		spanTags.each(function(){
+			var parent_elements = [];
+			var current_element = $(this)[0];
+			while (current_element) {
+				parent_elements.unshift(current_element);
+				current_element = current_element.parentNode;
+			}
+			var widget_found = false;
+			var menu_found = false;
+			var a_found = false;
+
+			for (i = 0; i < parent_elements.length; i++) {
+				var patt_widget = /widget/g;
+				var res_widget = patt_widget.test(parent_elements[i].classList);
+				var patt_menu = /menu/g;
+				var res_menu = patt_menu.test(parent_elements[i].classList);
+				if (res_widget) {
+					widget_found = true;
+				}
+				if (res_menu) {
+					menu_found = true;
+				}
+				if (parent_elements[i].tagName == 'A') {
+					a_found = true;
+				}
+			}
+			if (!widget_found && !menu_found && !a_found) {
+					wertiview.adverbial.hitList.push($(this));
+					tokens[$(this).text().toLowerCase()] = 1;
+			}});
 
 		wertiview.adverbial.maxLength = wertiview.adverbial.MAX_MC;
-		/*if (wertiview.adverbial.maxLength > wertiview.adverbial.types.length) {
-			wertiview.adverbial.maxLength = wertiview.adverbial.types.length;
-		}*/
 
-		/* 
-		$hits.each( function() {
-			// if this is a split infinitive, skip
-			if ($(this).find('.wertiviewINFSPLIT').length == 0) {
-				var options = $(this).attr('title').split(";");
-				// if the infinitive or gerund isn't given in the markup, skip
-				for (var j = 0; j < options.length; j++) {
-					if (options[j] == 'null') {
-						return;
-					}
-				}
-				hitList.push($(this));				
-			} 
-		}); */
-
-		wertiview.activity.mc(contextDoc, wertiview.adverbial.hitList, 
-				wertiview.adverbial.clozeInputHandler, 
-				wertiview.adverbial.clozeHintHandler, 
-				wertiview.adverbial.mcGetOptions, 
+		wertiview.activity.mc(contextDoc, wertiview.adverbial.hitList,
+				wertiview.adverbial.clozeInputHandler,
+				wertiview.adverbial.clozeHintHandler,
+				wertiview.adverbial.mcGetOptions,
 				wertiview.adverbial.mcGetCorrectAnswer);
 
 	},
-	
+
 	mcGetOptions: function($hit, capType){
 		var options = [];
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
 		wertiview.adverbial.types = $hit.attr('distractors').split(" ");
-	    wertiview.lib.shuffleList(wertiview.adverbial.types);
-        
-        // Add the distractor forms to the options list:
-        while (j < wertiview.adverbial.types.length && options.length < wertiview.adverbial.MAX_MC - 1) {
-            // The forms that are homonymous to the correct form are excluded from the list of options:
-            if (wertiview.adverbial.types[j] != $hit.text().toLowerCase() && wertiview.adverbial.types[j] != "") 
-            {
-                var homonym = false;
-                var k = 0;
-                while (k < j) //check for homonymes among the distractors
-                { 
-                    if (wertiview.adverbial.types[k] == wertiview.adverbial.types[j])
-                        homonym = true;
-                    k++;
-                } 
-                if (!homonym)                 options.push(wertiview.lib.matchCapitalization(wertiview.adverbial.types[j], capType)); 
-            }
-			j++;
+    wertiview.lib.shuffleList(wertiview.adverbial.types);
+
+    // Add the distractor forms to the options list:
+    while (j < wertiview.adverbial.types.length && options.length < wertiview.adverbial.MAX_MC - 1) {
+      // The forms that are homonymous to the correct form are excluded from the list of options:
+      if (wertiview.adverbial.types[j] != $hit.text().toLowerCase() && wertiview.adverbial.types[j] != "") {
+        var homonym = false;
+        var k = 0;
+        while (k < j) { //check for homonymes among the distractors
+	        if (wertiview.adverbial.types[k] == wertiview.adverbial.types[j])
+	            homonym = true;
+	        k++;
+        }
+        if (!homonym) options.push(wertiview.lib.matchCapitalization(wertiview.adverbial.types[j], capType));
+    	}
+		j++;
 		}
-		
+
 		options.push(wertiview.lib.matchCapitalization($hit.text(), capType));
 		wertiview.lib.shuffleList(options);
 		return options;
-
-		//var options = $hit.attr('title').split(";");
-		//return options;
 	},
-	
+
 	mcGetCorrectAnswer: function($hit, capType){
 		return $hit.text();
 	},
-	
+
 	cloze: function(contextDoc) {
 		var jQuery = wertiview.jQuery;
-		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		$.fn = $.prototype = jQuery.fn;
-		
-		// get potential spans
-		//var $hits = $('span.wertiviewRELEVANT').find('span.wertiviewconjunction');
-		var $hits = $('span.wertiviewAdverbial');
 
 		var hitList = [];
-		$hits.each( function() {
-			hitList.push($(this));				
-		}); 
-		/*$hits.each( function() {
-			// if this is a split infinitive, skip
-			if ($(this).find('.wertiviewINFSPLIT').length == 0) {
-				hitList.push($(this));				
+		var spanTags = $('span.wertiviewAdverbial');
+		//check if parent element is a link, a menu item or a widget
+		spanTags.each(function(){
+			var parent_elements = [];
+			var current_element = $(this)[0];
+			while (current_element) {
+					parent_elements.unshift(current_element);
+					current_element = current_element.parentNode;
 			}
-		});*/
+			var widget_found = false;
+			var menu_found = false;
+			var a_found = false;
 
-		wertiview.activity.cloze(contextDoc, hitList, 
-				wertiview.adverbial.clozeInputHandler, 
-				wertiview.adverbial.clozeHintHandler, 
+			for (i = 0; i < parent_elements.length; i++) {
+				var patt_widget = /widget/g;
+				var res_widget = patt_widget.test(parent_elements[i].classList);
+				var patt_menu = /menu/g;
+				var res_menu = patt_menu.test(parent_elements[i].classList);
+				if (res_widget) {
+					widget_found = true;
+				}
+				if (res_menu) {
+					menu_found = true;
+				}
+				if (parent_elements[i].tagName == 'A') {
+					a_found = true;
+				}
+			}
+			if (!widget_found && !menu_found && !a_found) {
+					hitList.push($(this));
+			}
+		});
+
+		wertiview.activity.cloze(contextDoc, hitList,
+				wertiview.adverbial.clozeInputHandler,
+				wertiview.adverbial.clozeHintHandler,
 				wertiview.adverbial.mcGetCorrectAnswer,
 				wertiview.adverbial.clozeAddBaseform);
 	},
-	
+
 	clozeAddBaseform: function($hit, capType, $){
 		// create baseform info
 		var $baseform = $('<span>');
@@ -240,55 +275,53 @@ span.find('span.wertiviewAdverbial').addClass('colorizeStyleAdverbial');
 	clozeInputHandler: function(event) {
 		var jQuery = wertiview.jQuery;
 		var contextDoc = event.data.context;
-		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		  $.fn = $.prototype = jQuery.fn;
 
-		var nextInput;
+			var nextInput;
 
-		// if the answer is correct, turn into text, else color text within input
-		if($(this).val().toLowerCase() == $(this).data('wertiviewanswer').toLowerCase()) {
-			$text = $("<span>");
-			$text.addClass('wertiview');
-			$text.addClass('clozeStyleCorrect');
-			$text.text($(this).data('wertiviewanswer'));
-			if($(this).data('wertiviewnexthit')) {   
-				nextInput = $(this).data('wertiviewnexthit');
+			//check if the user input match one of the possible answers
+			var answer_split = $(this).data('wertiviewanswer').toLowerCase().split(" ");
+			var correct_answer = false;
+			for (i = 0; i < answer_split.length; i++) {
+				if ($(this).val().toLowerCase() == answer_split[i]) {
+					correct_answer = true;
+				}
 			}
-			wertiview.lib.replaceInput($(this).parent(), $text);
-
-			/*// focus next input
-			if(nextInput) {
-				$("#" + nextInput).get(0).focus();
-			}*/
-		} else {
-			$(this).addClass('clozeStyleIncorrect');
-		}
+			// if the answer is correct, turn into text, else color text within input
+			if(correct_answer) {
+				$text = $("<span>");
+				$text.addClass('wertiview');
+				$text.addClass('clozeStyleCorrect');
+				$text.text($(this).val().toLowerCase());
+				if($(this).data('wertiviewnexthit')) {
+					nextInput = $(this).data('wertiviewnexthit');
+				}
+				wertiview.lib.replaceInput($(this).parent(), $text);
+			} else {
+					$(this).addClass('clozeStyleIncorrect');
+				}
 	},
 
 	clozeHintHandler: function(event) {
 		var jQuery = wertiview.jQuery;
 		var contextDoc = event.data.context;
-		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.content.document); };
+		  var $ = function(selector,context){ return new jQuery.fn.init(selector,contextDoc||window.document); };
 		  $.fn = $.prototype = jQuery.fn;
 
-		var nextInput;
+			var nextInput;
 
-		// fill in the answer by replacing input with text
-		$text = $("<span>");
-		$text.addClass('wertiview');
-		$text.addClass('clozeStyleProvided');
-		$text.text($(this).prev().data('wertiviewanswer'));
-		if($(this).prev().data('wertiviewnexthit')) {  
-			nextInput = $(this).prev().data('wertiviewnexthit');
+			//fill in the answer by replacing input with text where each answer is separated by /
+			var answer_sep = $(this).prev().data('wertiviewanswer').replace(/\s/g, "/");
+			$text = $("<span>");
+			$text.addClass('wertiview');
+			$text.addClass('clozeStyleProvided');
+			$text.text(answer_sep);
+			if($(this).prev().data('wertiviewnexthit')) {
+				nextInput = $(this).prev().data('wertiviewnexthit');
+			}
+			wertiview.lib.replaceInput($(this).parent(), $text);
+
+			return false;
 		}
-		wertiview.lib.replaceInput($(this).parent(), $text);
-
-		/*// focus next input
-		if(nextInput) {
-			$("#" + nextInput).get(0).focus();
-		}*/
-		
-		return false;
-	}
 	};
-
