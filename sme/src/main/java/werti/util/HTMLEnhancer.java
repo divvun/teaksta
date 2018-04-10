@@ -14,7 +14,7 @@ import org.apache.log4j.Logger;
 /**
  * Produces an HTML document with enhancements from a CAS containing
  * Enhancements.
- * 
+ *
  * @author Adriane Boyd
  *
  */
@@ -23,20 +23,20 @@ public class HTMLEnhancer {
 	    Logger.getLogger(HTMLEnhancer.class);
 
 	private JCas cas;
-	
+
 	/**
 	 * @param cCas CAS with annotations for the topic
 	 */
 	public HTMLEnhancer(final JCas cCas) {
 		cas = cCas;
 	}
-	
+
 	/**
 	 * Converts an HTML CAS document with Enhancements to an HTML string.
-	 * 
+	 *
 	 * @return an HTML string containing enhancements
 	 */
-    public String enhance(final String activity, final String baseurl, 
+    public String enhance(final String activity, final String baseurl,
     		HttpServletRequest req, ActivityConfiguration config, String servletContextName) throws UnsupportedEncodingException {
 	HashMap<String, String> dict = new HashMap<String, String>(); // translations of topics and activities to North Sámi
 	dict.put("SubstantiveSingular", "Substantiivvat ovttaidlogus");
@@ -52,14 +52,14 @@ public class HTMLEnhancer {
 	dict.put("click", "Coahkkal rivttes sániid!");
 	dict.put("mc", "Vállje rivttes sániid!");
 	dict.put("cloze", "Čále rivttes sániid!");
-	
+
 	String enhancement = req.getParameter("client.enhancement");
 	String activityCat = activity.toLowerCase();
-	
+
 	// get the translations of the topic and the exercise type to sme from the small dictionary
-	String activity_sme = dict.get(activity); 
+	String activity_sme = dict.get(activity);
 	String enhancement_sme = dict.get(enhancement);
-	
+
 	String htmlString = EnhancerUtils.casToEnhanced(cas, enhancement);
 
 	// replace <e> tags with wertiview spans
@@ -67,19 +67,23 @@ public class HTMLEnhancer {
 	// a search and replace is probably sufficient and quicker)
 	htmlString = htmlString.replace("<e>", "<span class=\"wertiview\">");
 	htmlString = htmlString.replace("</e>", "</span>");
-	
+
 	Document htmlDoc = Jsoup.parse(htmlString);
-	
+
 	// add base url
 	Element base = htmlDoc.createElement("base");
 	base.attr("href", baseurl);
 	htmlDoc.head().appendChild(base);
-	
-	// Write the chosen topic and activity in North Sámi into the page title. So the user has a short reminder about the exercise. 
-	String topic_activity = activity_sme + ": " + enhancement_sme; 
+
+	// Write the chosen topic and activity in North Sámi into the page title. So the user has a short reminder about the exercise.
+	String topic_activity = activity_sme + ": " + enhancement_sme;
 	String customised_title = new String(topic_activity.getBytes(), "UTF-8"); // encode the title string as utf8
 	Element title = htmlDoc.select("title").first();
-	title.text(customised_title);
+  if (title == null) {
+    log.info("title null");
+  } else {
+    title.text(customised_title);
+  }
 
     	// add js libraries
     	String thisUrl = req.getRequestURL().toString();
@@ -89,23 +93,23 @@ public class HTMLEnhancer {
     	if (activity.matches("Arts") || activity.matches("Dets")) {
     		activityCat = "pos";
     	}
-    	
+
     	final String jqueryJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/jquery-1.4.2.min.js"
     		+ "\"></script>";
-    	
+
     	final String wertiviewJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/wertiview.js"
     		+ "\"></script>";
-    	
+
     	final String blurJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/blur.js"
     		+ "\"></script>";
-    	
+
     	final String notificationJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/notification.js"
     		+ "\"></script>";
-    	
+
     	final String wertiviewCSS = "<link type=\"text/css\" rel=\"stylesheet\" href=\""
     		+ thisUrl + "/js-lib/wertiview.css"  // was: view.css
     		+ "\"></link>";
@@ -117,11 +121,11 @@ public class HTMLEnhancer {
     	final String activityJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/activity.js"
     		+ "\"></script>";
-    	
+
     	final String topicJS = "<script type=\"text/javascript\" language=\"javascript\" src=\""
     		+ thisUrl + "/js-lib/" + activityCat + ".js"
     		+ "\"></script>";
-    	
+
     	final String loadJS = "<script type=\"text/javascript\" language=\"javascript\">\n" +
     	"wertiview.jQuery(document).ready(function() { wertiview.jQuery('body').data('wertiview-topic', '" + activity + "');\n" +
     	"var topic = \"" + activityCat + "\";\n" +
@@ -133,9 +137,9 @@ public class HTMLEnhancer {
     	"}\n" +
     	"});\n" +
     	"</script>\n";
-		
 
-    	
+
+
     	htmlDoc.head().append(jqueryJS);
     	htmlDoc.head().append(wertiviewJS);
     	htmlDoc.head().append(blurJS);
@@ -145,9 +149,9 @@ public class HTMLEnhancer {
     	htmlDoc.head().append(activityJS);
     	htmlDoc.head().append(topicJS);
     	htmlDoc.head().append(loadJS);
-    	
+
     	htmlDoc.select("span.wertiview").select("span").attr("style", EnhancerUtils.addedSpanStyle);
-    	
+
        	return htmlDoc.html();
     }
 }
