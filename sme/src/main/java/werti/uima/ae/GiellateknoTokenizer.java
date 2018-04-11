@@ -13,6 +13,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import opennlp.tools.tokenize.TokenizerME;
 
 import org.apache.log4j.Logger;
@@ -45,7 +56,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	   private static final String abbrDir = "/Users/mslm/main/gt/sme/bin/"; */
         // gtlab:
   private static final String toolsDir = Constants.tools_Dir; // was "/home/heli/main/gt/script/";
-  private static final String abbrDir = Constants.abbr_Dir; 
+  private static final String abbrDir = Constants.abbr_Dir;
 	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
 
 	public class ExtCommandConsume2String implements Runnable {
@@ -119,6 +130,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 		log.debug("Starting token annotation");
+		log.info("Starting token annotation");
 
 		String text = jcas.getDocumentText();
 		//log.info("extracted text: " + text);
@@ -142,11 +154,27 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		}
 
 		final String textString = rtext.toString();
+
+		Writer writer = null;
+		String filePath = "/tmp/konteakstaInput.txt";
+
+		try {
+		    writer = new BufferedWriter(new OutputStreamWriter(
+		          new FileOutputStream(filePath), "utf-8"));
+		    writer.write(textString);
+		} catch (IOException ex) {
+		    // Report
+		} finally {
+		   try {writer.close();} catch (Exception ex) {/*ignore*/}
+		}
+
 		//log.info("Relevant text sent to the tokenizer: " + textString);
 		final String lang = jcas.getDocumentLanguage();
 		String tokenised_text = "";
 
-		String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + textString + "\" | " + preprocessCmd};
+		//String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + textString + "\" | " + preprocessCmd};
+		String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/cat \"" + filePath + "\" | " + preprocessCmd};
+		//Commenting next ln to reduce output in catalina.out
 		log.info("Preprocessing command: " + tokenisationPipeline[2]);
 
 		try {
@@ -184,21 +212,23 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		for (String token : tokens) {
 			// include all tokens that don't consist of whitespace, i.e., prevent
 			// unicode non-breaking space from becoming a token
-		        log.info("next token: "+token);
+			//Commenting ln 188 and 190 to reduce output in catalina.out
+      log.info("next token: "+token);
 			int tokenStart = textString.indexOf(token, skew);
 			log.info("Token "+token+" starts at "+tokenStart);
 
 			if (tokenStart == -1) {
-			    if (textString.indexOf('-',skew) != -1) { // Handle the hyphenated words that are "repaired" by preprocess and thus not found in the original text.
-				String syllable=textString.substring(skew,textString.indexOf('-',skew)-1); // was: token.substring(0,textString.indexOf('-',skew)-1)
-				log.info("part of the word preceding the hyphen: "+syllable);
-				tokenStart = textString.indexOf(syllable, skew); // search the part of the word preceding the hyphen instead of the whole word
-				skew = tokenStart + token.length() + 1; // 1 = length of the hyphen
-			    }
-			    else {
-				skew = 0;
-				continue;
-			    }
+		    if (textString.indexOf('-',skew) != -1) { // Handle the hyphenated words that are "repaired" by preprocess and thus not found in the original text.
+					String syllable=textString.substring(skew,textString.indexOf('-',skew)-1); // was: token.substring(0,textString.indexOf('-',skew)-1)
+					//Commenting next ln to reduce output in catalina.out
+					//log.info("part of the word preceding the hyphen: "+syllable);
+					tokenStart = textString.indexOf(syllable, skew); // search the part of the word preceding the hyphen instead of the whole word
+					skew = tokenStart + token.length() + 1; // 1 = length of the hyphen
+		    }
+			  else {
+					skew = 0;
+					continue;
+			  }
 			}
 			else {
 			    /*  if (Character.isLowerCase(textString.charAt(tokenStart+token.length()))) { // The token is not found or the token was only a part of the word that actually occurred in the text.
@@ -208,12 +238,14 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 				skew = tokenStart + token.length(); // This is the normal case!
 				//}
 			}
-			log.info("and ends at "+skew);
+			//Commenting next ln to reduce output in catalina.out
+			//log.info("and ends at "+skew);
 
 			if (token.matches(".*?[^\\p{Z}].*")) { // was: ("[^\\p{Z}]+"))
 				final Token t = new Token(jcas);
 				final int start = tokenStart;
-				log.info("Token "+token+" will be added to jcas.");
+				//Commenting next ln to reduce output in catalina.out
+				//log.info("Token "+token+" will be added to jcas.");
 				t.setBegin(start);
 				t.setEnd(start + token.length());
 
