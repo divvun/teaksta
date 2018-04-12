@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_Adv.xml"/>
-				<entry key="AdvTags" value="ADVL,mod_advl,compl_advl" overridable="yes"/>
+				<entry key="AdvTags" value="ADVL,mod_advl,compl_advl,coor_advl" overridable="yes"/>
 			</post>
 		</lang>
 	</server-cfg>
