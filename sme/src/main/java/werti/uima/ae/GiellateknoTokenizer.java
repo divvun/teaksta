@@ -176,9 +176,9 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/cat \"" + filePath + "\" | " + preprocessCmd};
 		//Commenting next ln to reduce output in catalina.out
 		log.info("Preprocessing command: " + tokenisationPipeline[2]);
-
 		try {
 			Process process = Runtime.getRuntime().exec(tokenisationPipeline);
+
 			BufferedReader fromTokeniser = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
 			ExtCommandConsume2String stdoutConsumer = new ExtCommandConsume2String(fromTokeniser);
 			Thread stdoutConsumerThread = new Thread(stdoutConsumer, "Tokeniser STDOUT consumer");
@@ -197,6 +197,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		}
 
 		String[] tokens = null;
+		log.info("tokenised_text="+tokenised_text);
 
 		tokens = tokenised_text.split("\n");
 
