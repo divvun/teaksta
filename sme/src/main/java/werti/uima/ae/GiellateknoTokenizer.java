@@ -57,7 +57,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
         // gtlab:
   private static final String toolsDir = Constants.tools_Dir; // was "/home/heli/main/gt/script/";
   private static final String abbrDir = Constants.abbr_Dir;
-	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
+	//private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
+	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt";
 
 	public class ExtCommandConsume2String implements Runnable {
 
