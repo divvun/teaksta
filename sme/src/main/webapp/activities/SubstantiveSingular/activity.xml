@@ -34,7 +34,7 @@
 			<post>
 				<!-- the pipeline descriptor is looked up in the class path, must begin with / -->
 				<pipeline desc="/operators/vislcg3PostProc_NounSg.xml"/>
-				<entry key="NSgTags" value="Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess" overridable="yes"/>  <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Sg + case. -->
+				<entry key="NSgTags" value="Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess, Prop Attr" overridable="yes"/>  <!-- The tag 'N' will be checked in the enhancer because it is not always immediately preceding Sg + case. -->
 			</post>
 		</lang>
 	</server-cfg>
