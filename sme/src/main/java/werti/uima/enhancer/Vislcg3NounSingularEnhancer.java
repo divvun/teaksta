@@ -100,8 +100,9 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		String ill_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ill(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
 		String loc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Loc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
 		String com_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Com(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ess(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
-		String pattern_to_compile = nom_regex+acc_regex+gen_regex+ill_regex+loc_regex+com_regex+ess_regex;
+		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ess(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String attr_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?\\+Attr(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
+		String pattern_to_compile = nom_regex+acc_regex+gen_regex+ill_regex+loc_regex+com_regex+ess_regex+attr_regex;
 		Pattern numberPattern = Pattern.compile(pattern_to_compile);
 
 		// Note that the whole token will be excluded, even when one reading is valid
