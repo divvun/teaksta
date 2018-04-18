@@ -27,6 +27,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.uima.jcas.JCas;
+import org.jsoup.Connection;
+import org.jsoup.parser.Parser;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.Document;
@@ -55,8 +57,17 @@ import weka.core.Instances;
 import weka.filters.Filter;
 
 import werti.util.Constants;
-import java.io.File;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletOutputStream;
+//import javax.servlet.annotation.WebServlet;
+
+import javax.servlet.http.HttpSession;
 
 /**
  * The server side implementation of the WERTi service.
@@ -79,7 +90,7 @@ import java.io.File;
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
 		Logger.getLogger(WERTiServlet.class);
-	//public static final String outputfileLoc = "/Users/car010/main/apps/teaksta/sme/output/InputLog.txt";
+
 	public static final String outputfileLoc = "InputLog.txt";
 
 	public static WERTiContext context;
@@ -120,107 +131,133 @@ public class WERTiServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 	throws ServletException, IOException {
 
-		long startTime = System.currentTimeMillis();
-		log.debug("received GET request");
 		req.setCharacterEncoding("UTF-8");
 		resp.setCharacterEncoding("UTF-8");
 
-		// OpenID verification request
-		if ("true".equals(req.getParameter("openid_return"))) {
-			if (openidConsumer == null) {
-				String openidReturnToUrl = getOpenIDReturnToUrl(req);
-				openidConsumer = new OpenIDConsumer(openidReturnToUrl, this);
+		resp.setContentType( "text/html" );
+    HttpSession session = req.getSession( true );
+
+    if ( session.getValue( "waitPage" ) == null ) {
+        session.putValue( "waitPage", Boolean.TRUE );
+				try {
+					PrintWriter out = resp.getWriter();
+
+					out.println( "<html><head>" );
+	        out.println( "<title>Please Wait...</title>" );
+	        out.println( "<meta http-equiv=\"Refresh\" content=\"0\">" );
+	        out.println( "</head><body>" );
+	        out.println( "<br><br><br>" );
+					out.println( "<center><h1 style='color:#144ea6;'>Your request is being processed.<br>" );
+	        out.println( "Please wait.</h1></center>" );
+					out.println( "<center><img src='images/ajax-loader.gif' />" );
+	        out.close();
+				} catch (IOException ioe) {
+					log.error("Failed to write to temporary wait file");
+					throw new ServletException("", ioe);
+				}
+    } else {
+        session.removeValue( "waitPage" );
+				long startTime = System.currentTimeMillis();
+				log.debug("received GET request");
+				//req.setCharacterEncoding("UTF-8");
+				//resp.setCharacterEncoding("UTF-8");
+
+				// OpenID verification request
+				if ("true".equals(req.getParameter("openid_return"))) {
+					if (openidConsumer == null) {
+						String openidReturnToUrl = getOpenIDReturnToUrl(req);
+						openidConsumer = new OpenIDConsumer(openidReturnToUrl, this);
+					}
+
+					Identifier verified = openidConsumer.verifyResponse(req);
+					if (verified != null) {
+						resp.sendRedirect(getServletBaseUrl(req) + "/openid/return.jsp?openid.identity=" + verified.getIdentifier());
+					}
+					else {
+						resp.sendRedirect(getServletBaseUrl(req) + "/openid/verification-failed.jsp");
+					}
+
+					return;
+				}
+				String url = req.getParameter("url");
+				// accept url-s without http://
+				log.info("url:"+url);
+				if (!url.startsWith("file:/")) {
+					if (!url.contains("http")) {
+						url = "http://" + url;
+					}
+				}
+
+				String activity = req.getParameter("activity");
+				String enhancement = req.getParameter("client.enhancement");
+				//log.info("enhancement type"+enhancement);
+				enhancement_type = enhancement;
+				String lang = req.getParameter("language");
+				if (lang == null) {
+					lang = "en";
+				}
+				ActivityConfiguration config = loadActivitiesAndProcessors(req, activity); //track this
+				log.info("config:"+config);
+				// merge config with request parameters
+				mergeConfigParams(config, req);
+
+				URL u = new URL(url);
+				log.info("URL again:"+u);
+				Document htmlDoc;
+				try {
+					if (!url.startsWith("file:/")) {
+		/*
+						String myurl = "https://avvir.no/oddasat/2017/03/oddasit-lihcco-boine";
+		      	Document mydocument = Jsoup.connect(myurl).data("query", "Java").userAgent("Mozilla").cookie("auth", "token").timeout(3000).get();
+						log.info("mydocument="+mydocument);*/
+						htmlDoc = Jsoup.parse(u, MAX_WAIT);
+					} else {
+						File myinput = new File(url.substring(7,url.length()));
+						htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
+					}
+					//Commenting next ln to reduce output in catalina.out
+					//log.info("page source:"+htmlDoc);
+				} catch (IOException ioe) {
+					throw new ServletException("Webpage retrieval failed.");
+				}
+
+				HTMLUtils.markTextNodes(htmlDoc, htmlDoc.body());
+
+				// TODO: potentially modify jsoup to return unescaped text so that this hack
+				//       can be removed
+				String htmlString = spansToETags(htmlDoc, HTMLUtils.className, false);
+
+				PageHandler ph = new PageHandler(processors, activity, htmlString, lang);
+				JCas cas;
+				cas = ph.process();
+
+				if (cas != null) {
+					HTMLEnhancer ge = new HTMLEnhancer(cas);
+					String result = ge.enhance(activity, u.toString(), req, config, getServletContext().getServletContextName());
+
+					log.info("Web (" + (System.currentTimeMillis() - startTime) + "): " + req.getParameter("language") + ",  " + activity + ", " + req.getParameter("client.enhancement") + ", " + url + ", " + cas.getDocumentLanguage());
+
+					// Write the url, topic and enhancement type into the file as well:
+					FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data
+					try {
+						outputfile.write("Topic: " + activity + ", exercise type: " + enhancement + ", URL: " + url + "\n");
+					}
+					finally {
+						outputfile.close();
+					}
+					try {
+						PrintWriter out = resp.getWriter();
+
+						out.write(result);
+						out.close();
+					} catch (IOException ioe) {
+						log.error("Failed to write to temporary result file");
+						throw new ServletException("", ioe);
+					}
+				} else {
+					throw new ServletException("The selected language/topic/activity combination is not currently available.");
+				}
 			}
-
-			Identifier verified = openidConsumer.verifyResponse(req);
-			if (verified != null) {
-				resp.sendRedirect(getServletBaseUrl(req) + "/openid/return.jsp?openid.identity=" + verified.getIdentifier());
-			}
-			else {
-				resp.sendRedirect(getServletBaseUrl(req) + "/openid/verification-failed.jsp");
-			}
-
-			return;
-		}
-
-		String url = req.getParameter("url");
-		// accept url-s without http://
-		log.info("url:"+url);
-		if (!url.startsWith("file:/")) {
-			if (!url.contains("http")) {
-				url = "http://" + url;
-			}
-		}
-
-		String activity = req.getParameter("activity");
-		String enhancement = req.getParameter("client.enhancement");
-		//log.info("enhancement type"+enhancement);
-		enhancement_type = enhancement;
-		String lang = req.getParameter("language");
-		if (lang == null) {
-			lang = "en";
-		}
-
-		ActivityConfiguration config = loadActivitiesAndProcessors(req, activity); //track this
-		log.info("config:"+config);
-
-		// merge config with request parameters
-		mergeConfigParams(config, req);
-
-		URL u = new URL(url);
-		log.info("URL again:"+u);
-		Document htmlDoc;
-		try {
-			if (!url.startsWith("file:/")) {
-				htmlDoc = Jsoup.parse(u, MAX_WAIT);
-			} else {
-				File myinput = new File(url.substring(7,url.length()));
-				htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
-			}
-			//File myinput = new File("/home/teaksta/test.html");
-			//Commenting next ln to reduce output in catalina.out
-			log.info("page source:"+htmlDoc);
-		} catch (IOException ioe) {
-			throw new ServletException("Webpage retrieval failed.");
-		}
-
-		HTMLUtils.markTextNodes(htmlDoc, htmlDoc.body());
-
-		// TODO: potentially modify jsoup to return unescaped text so that this hack
-		//       can be removed
-		String htmlString = spansToETags(htmlDoc, HTMLUtils.className, false);
-
-		PageHandler ph = new PageHandler(processors, activity, htmlString, lang);
-		JCas cas;
-		cas = ph.process();
-
-		if (cas != null) {
-			HTMLEnhancer ge = new HTMLEnhancer(cas);
-			String result = ge.enhance(activity, u.toString(), req, config, getServletContext().getServletContextName());
-
-			log.info("Web (" + (System.currentTimeMillis() - startTime) + "): " + req.getParameter("language") + ",  " + activity + ", " + req.getParameter("client.enhancement") + ", " + url + ", " + cas.getDocumentLanguage());
-			// Write the url, topic and enhancement type into the file as well:
-
-			FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data
-			try {
-				outputfile.write("Topic: " + activity + ", exercise type: " + enhancement + ", URL: " + url + "\n");
-			}
-			finally {
-				outputfile.close();
-			}
-
-			try { // to write to the response stream
-				resp.setContentType("text/html");
-				final PrintWriter out = resp.getWriter();
-				out.write(result);
-				out.close();
-			} catch (IOException ioe) {
-				log.error("Failed to write to temporary file");
-				throw new ServletException("", ioe);
-			}
-		} else {
-			throw new ServletException("The selected language/topic/activity combination is not currently available.");
-		}
 	}
 
 	/**
@@ -380,7 +417,6 @@ public class WERTiServlet extends HttpServlet {
 				throw new ServletException("", ioe);
 			}
 		} // else
-
 		}
 
 	/**
