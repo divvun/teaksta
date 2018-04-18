@@ -143,12 +143,12 @@ public class WERTiServlet extends HttpServlet {
 					PrintWriter out = resp.getWriter();
 
 					out.println( "<html><head>" );
-	        out.println( "<title>Please Wait...</title>" );
+	        out.println( "<title>Vuorddes...</title>" );
 	        out.println( "<meta http-equiv=\"Refresh\" content=\"0\">" );
 	        out.println( "</head><body>" );
 	        out.println( "<br><br><br>" );
-					out.println( "<center><h1 style='color:#144ea6;'>Your request is being processed.<br>" );
-	        out.println( "Please wait.</h1></center>" );
+					out.println( "<center><h1 style='color:#144ea6;'>Prográmma lea bargame.<br>" );
+	        out.println( "Vuorddes...</h1></center>" );
 					out.println( "<center><img src='images/ajax-loader.gif' />" );
 	        out.close();
 				} catch (IOException ioe) {
