@@ -168,7 +168,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 					}
 		    }
 		    if(isValidReading){
-					log.info("This reading will be used=" +reading_str);
+					//log.info("This reading will be used=" +reading_str);
 					String distractors = "";
 					String lemma_and_analyses = "";
 
@@ -319,7 +319,7 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			String lemma_str = reading_str.substring(0, reading_str.indexOf("+"));
 			String an_tmp = reading_str.substring(reading_str.indexOf("+")+1, reading_str.length());
 			String analyses_str = an_tmp.replace("+<sme>", "");
-			//analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+			analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
 			String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
 			return lem_and_an;
