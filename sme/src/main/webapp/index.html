@@ -3,6 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="sme">
 
 <head>
+	<!--<meta http-equiv="content-type" content="text/html;charset=utf-8" />-->
 	<title>Konteaksta - working with authentic North Sámi texts</title>
 
 	<meta charset="utf-8">
@@ -13,6 +14,8 @@
 	<link rel="stylesheet" type="text/css" href="main.css" />
 	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css?family=Rammetto+One" rel="stylesheet">
+
+	<script src="//www.google.com/recaptcha/api.js" async defer></script> <!-- add ?hl=no for norwegian-->
 
 	<script type="text/javascript">
 		function setActivity(act) {
@@ -33,6 +36,8 @@
 			x.classList.add("orange_class");
 			var y = document.getElementsByName("activity");
 			y[0].value = act;
+			var a_up = document.getElementsByName("activity_up");
+			a_up[0].value = act;
 			mylist = document.getElementById("ul_extype");
 			var listItems = $("#ul_extype").children();
 			var count = listItems.length;
@@ -57,46 +62,92 @@
 			x.classList.add("orange_class");
 			var y = document.getElementsByName("client.enhancement");
 			y[0].value = en;
+			var y_up = document.getElementsByName("enhancement_upload");
+			y_up[0].value = en;
 		}
 
 		function setMode_1() {
+			document.getElementById('user_url').style.display = "none";
+			document.getElementById('user_upload').style.display = "none";
 			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
 			obj_doc.body.style.display = "inline";
 			document.getElementById('mode_1').classList.remove("blue_class");
 			document.getElementById('mode_1').classList.add("orange_class");
 			document.getElementById("mode_2").classList.add("blue_class");
+			document.getElementById("mode_3").classList.add("blue_class");
 			if (document.getElementById("mode_2").classList.contains("orange_class")) {
 				document.getElementById("mode_2").classList.remove("orange_class");
 			}
-			document.getElementById('user_url').style.display = "none";
+			if (document.getElementById("mode_3").classList.contains("orange_class")) {
+				document.getElementById("mode_3").classList.remove("orange_class");
+			}
 		}
 		function setMode_2() {
 			document.getElementById('user_url').style.display = "inline";
 			document.getElementById('mode_2').classList.remove("blue_class");
 			document.getElementById('mode_2').classList.add("orange_class");
+			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
+			obj_doc.body.style.display = "none";
 			document.getElementById("mode_1").classList.add("blue_class");
+			document.getElementById("mode_3").classList.add("blue_class");
 			if (document.getElementById("mode_1").classList.contains("orange_class")) {
 				document.getElementById("mode_1").classList.remove("orange_class");
 			}
+			if (document.getElementById("mode_3").classList.contains("orange_class")) {
+				document.getElementById("mode_3").classList.remove("orange_class");
+			}
+			document.getElementById('user_upload').style.display = "none";
+		}
+		function setMode_3() {
+			document.getElementById('user_upload').style.display = "inline";
+			document.getElementById('mode_3').classList.remove("blue_class");
+			document.getElementById('mode_3').classList.add("orange_class");
+			document.getElementById("mode_1").classList.add("blue_class");
+			document.getElementById("mode_2").classList.add("blue_class");
+			if (document.getElementById("mode_1").classList.contains("orange_class")) {
+				document.getElementById("mode_1").classList.remove("orange_class");
+			}
+			if (document.getElementById("mode_2").classList.contains("orange_class")) {
+				document.getElementById("mode_2").classList.remove("orange_class");
+			}
 			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
 			obj_doc.body.style.display = "none";
+			document.getElementById('user_url').style.display = "none";
 		}
+
+
+
+		function change_upload_label() {
+			var inputs = document.querySelectorAll( '.input_file' );
+			Array.prototype.forEach.call( inputs, function( input )
+			{
+				var label	 = input.nextElementSibling, labelVal = label.innerHTML;
+
+				input.addEventListener( 'change', function( e )
+				{
+					var fileName = '';
+					fileName = e.target.value.split( '\\' ).pop();
+					label.innerHTML = fileName;
+				});
+			});
+		}
+
 	</script>
 
 </head>
 
-<body onload="setActivity('SubstantiveSingular'); setEnhancement('colorize'); setMode_1();">
+<body onload="setActivity('SubstantiveSingular'); setEnhancement('colorize'); setMode_1(); change_upload_label()">
 
 	<div class="container-fluid container_all">
 		<nav class="navbar navbar-expand-lg navbar-dark bg-primary custom_bcg">
 		<a class="navbar-brand" href="#">KONTEAKSTA</br><span style="font-size:12px; color:white; padding:3px 0px 3px 0px;">Mii leat bargamin dáinna!</span></a>
-		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+		<button class="navbar-toggler link" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
 	    <span class="navbar-toggler-icon"></span>
 	  </button>
 		<div class="collapse navbar-collapse" id="navbarNavDropdown">
 			<ul class="navbar-nav">
 				<li class="nav-item active">
-					<a class="nav-link" data-toggle="modal" data-target="#myModal" href="#">Mo bargat</a>
+					<a class="nav-link link" data-toggle="modal" data-target="#myModal" href="#">Mo bargat</a>
 					<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 					  <div class="modal-dialog" role="document">
 					    <div class="modal-content">
@@ -114,7 +165,7 @@
 					</div>
 				</li>
 				<li class="nav-item">
-        	<a class="nav-link" data-toggle="modal" data-target="#myModal2" href="#">Birra</a>
+        	<a class="nav-link link" data-toggle="modal" data-target="#myModal2" href="#">Birra</a>
 					<div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 					  <div class="modal-dialog" role="document">
 					    <div class="modal-content">
@@ -132,7 +183,7 @@
 					</div>
       	</li>
 				<li class="nav-item">
-        	<a class="nav-link" target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a>
+        	<a class="nav-link link" target="_blank" href="http://oahpa.no/sme/gramm/grammatihkka.html">Grammatihkka</a>
       	</li>
 			</ul>
 			<!--<span class="navbar-text"><a href="http://oahpa.no/davvi"><img class="img_oahpa" src="images/Oahpa_logo0001.png" align="right" alt="OAHPA!"/></a></span>-->
@@ -181,11 +232,11 @@
 							<form class="activityForm" target="_blank" method="get" action="WERTiServlet" name="activityForm">
 								<input type="hidden" name="activity" id="activity" value="" />
 								<input type="hidden" name="client.enhancement" id="extype" value="" />
-								<h6 class="blue_class" id="mode_1" onclick="setMode_1()">Vállje neahttasiiddu:</h5>&nbsp;
+								<h5 class="blue_class" id="mode_1" onclick="setMode_1()">Vállje neahttasiiddu:</h5>&nbsp;
 								<OBJECT data="" width="">
-								</OBJECT></br>
+								</OBJECT></br></br>
 
-								<h6 class="blue_class" id="mode_2" onclick="setMode_2()">Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet:</h5>
+								<h5 class="blue_class" id="mode_2" onclick="setMode_2()">Sáhtát hárjehallat grammatihka neahttasiiddus maid ieš válljet:</h5></br>
 								<div id="user_url">
 									<span>URL:</span>&nbsp;
 									<input type="text" name="url" value=""/>&nbsp;
@@ -211,6 +262,59 @@
 								</div>
 								<p>(Go leat gávdnan vuogas siiddu, de galggat kopieret siiddu čujuhusa URL-gieddái, ja de coahkkalit 'Mana!'.)</p></br>
 						</div>
+
+						<form action="UploadDownloadFileServlet" method="post" enctype="multipart/form-data">
+							<h5 class="blue_class" style="display:inline;" id="mode_3" onclick="setMode_3()">Select File to Upload:</h5>&nbsp;
+							<a class="link" data-toggle="modal" data-target="#myModal3" href="#"><i class="fas fa-info-circle fa-lg" style="color:#4D90FE;"></i></a></br></br>
+							<div class="modal fade" id="myModal3" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+							  <div class="modal-dialog" role="document">
+							    <div class="modal-content">
+							      <div class="modal-header">
+											<h5 class="modal-title" id="myModalLabel">Info</h5>
+							      </div>
+							      <div class="modal-body">
+											<p>
+												You can upload your own text! It must be saved in <span class="span_info">.html</span> format.</br>
+												If you use Microsoft Word you can save your document in html by following the steps:</br>
+												<ol>
+													<li>Open the document in Word</li>
+													<li>Select <span class="span_info">Save as</span> in the <span class="span_info">File</span> menu</li>
+													<li>Chose <span class="span_info">Web Page</span> as file format.</br>
+														Be aware that the result is usually a 'heavy' html which may contain formatting html tags that do not work in all browsers.</br>
+														If possible choose the <span class="span_info">Web Page, Filtered</span> option which will result in a 'slimmer' html file.</br>
+													</li>
+												</ol>
+											</p>
+							      </div>
+										<div class="modal-footer">
+							        <button type="button" class="btn btn-default" data-dismiss="modal"style="font-weight:bold;">X</button>
+							      </div>
+							    </div>
+							  </div>
+							</div>
+
+							<div id="user_upload">
+								<input type="file" accept=".html, text/html" name="fileName" id="choose_file" class="input_file" />
+								<label for="choose_file">Choose file <i class="fas fa-folder-open icon_class"></i></label>
+
+								<!--
+								This is the site-key for testing
+								<div class="g-recaptcha " data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div></br>
+								-->
+								<!-- This is the site-key for gtoahpa -->
+							<div class="g-recaptcha " data-sitekey="6LcmpVUUAAAAAJ5QIbF56kYqzOhcWhsuCHJ3b7eG"></div></br>
+
+								<p class="blue_class_np">Please check one of the following options:</p>
+								<input type="radio" name="save_options" value="save" checked><span class="blue_class_np"> We will store your file, so that you can use the link again in the future.</span></br>
+  							<input type="radio" name="save_options" value="delete"><span class="blue_class_np"> We will delete the file at the end of the day.</span></br></br>
+
+								<input type="submit" value="Upload" class="input_sub submit_file" id="submit_file">
+								<label for="submit_file">Upload <i class="fas fa-upload icon_class"></i></label></br>
+
+								<input type="hidden" name="activity_up" value="" />
+								<input type="hidden" name="enhancement_upload" value="" /></br></br></br>
+							</div>
+						</form>
 					</div>
 					</li>
 				</ul>
@@ -227,6 +331,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="" crossorigin="anonymous"></script>
 <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
+
+<!--<script type="text/javascript" src="js-lib/set_scripts.js"></script>-->
 
 </body>
 
