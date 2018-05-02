@@ -208,9 +208,9 @@
 				</ul>
 				<p class="blue_color">Cealkkalahtut:</p>
 				<ul class="ul_style ul_hline">
-					<li class="fáttát_list"><span class="blue_class li_hline" id="Subject" onclick="setActivity('Subject')">Subjeakta</span></li></br>
-					<li class="fáttát_list"><span class="blue_class li_hline" id="Object" onclick="setActivity('Object')">Objeakta</span></li></br>
-					<li class="fáttát_list"><span class="blue_class li_hline" id="Adverbial" onclick="setActivity('Adverbial')">Adverbiála</span></li></br>
+					<li class="fáttát_list"><span class="blue_class li_hline" id="Subject" onclick="setActivity('Subject')">Testen: S</span></li></br>
+					<li class="fáttát_list"><span class="blue_class li_hline" id="Object" onclick="setActivity('Object')">Testen: O</span></li></br>
+					<li class="fáttát_list"><span class="blue_class li_hline" id="Adverbial" onclick="setActivity('Adverbial')">Testen: A</span></li></br>
 				</ul>
 			</div>
 			<div class="col-md-3 col-sm-12">
@@ -274,14 +274,14 @@
 							      </div>
 							      <div class="modal-body">
 											<p>
-												You can upload your own text! It must be saved in <span class="span_info">.html</span> format.</br>
-												If you use Microsoft Word you can save your document in html by following the steps:</br>
+												Sáhtát geavahit iežat teavstta! Teaksta ferte leat <span class="span_info">.html</span> formáhtas.</br>
+												Jus geavahat Microsoft Word, de sáhtat vurket dokumeantta html:n dáinna lágiin:</br>
 												<ol>
-													<li>Open the document in Word</li>
-													<li>Select <span class="span_info">Save as</span> in the <span class="span_info">File</span> menu</li>
-													<li>Chose <span class="span_info">Web Page</span> as file format.</br>
-														Be aware that the result is usually a 'heavy' html which may contain formatting html tags that do not work in all browsers.</br>
-														If possible choose the <span class="span_info">Web Page, Filtered</span> option which will result in a 'slimmer' html file.</br>
+													<li>Raba dokumeantta Word:s</li>
+													<li>Vállje <span class="span_info">Save as (Lagre som)</span> <span class="span_info">File (Fil)</span> fálus</li>
+													<li>Vállje <span class="span_info">Web Page (webside)</span> fiilla formáhtan.</br>
+														Fuobmá ahte boađus dábálaččat leat 'losses' html mii sáhttá sisttisdoallat html-gilkoriid mat eai doaimma juohke neahttalohkkiprográmmas.</br>
+														Jus vejolaš, vállje <span class="span_info">Web Page, Filtered (Nettside filtrert)</span> mii ráhkada oktageardánit html-fiilla.</br>
 													</li>
 												</ol>
 											</p>
@@ -295,7 +295,7 @@
 
 							<div id="user_upload">
 								<input type="file" accept=".html, text/html" name="fileName" id="choose_file" class="input_file" />
-								<label for="choose_file">Choose file <i class="fas fa-folder-open icon_class"></i></label>
+								<label for="choose_file">Vállje fiilla <i class="fas fa-folder-open icon_class"></i></label>
 
 								<!--
 								This is the site-key for testing
@@ -305,8 +305,8 @@
 							<div class="g-recaptcha " data-sitekey="6LcmpVUUAAAAAJ5QIbF56kYqzOhcWhsuCHJ3b7eG"></div></br>
 
 								<p class="blue_class_np">Please check one of the following options:</p>
-								<input type="radio" name="save_options" value="save" checked><span class="blue_class_np"> We will store your file, so that you can use the link again in the future.</span></br>
-  							<input type="radio" name="save_options" value="delete"><span class="blue_class_np"> We will delete the file at the end of the day.</span></br></br>
+								<input type="radio" name="save_options" value="save" checked><span class="blue_class_np">Fiila vurkejuvvo nu ahte sáhtát geavahit liŋkka ođđasit eará háve.</span></br>
+  							<input type="radio" name="save_options" value="delete"><span class="blue_class_np">Fiila sihkkojuvvo gaskaija áigge.</span></br></br>
 
 								<input type="submit" value="Upload" class="input_sub submit_file" id="submit_file">
 								<label for="submit_file">Upload <i class="fas fa-upload icon_class"></i></label></br>
