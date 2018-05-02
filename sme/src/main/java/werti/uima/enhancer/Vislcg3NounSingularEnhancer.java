@@ -94,14 +94,14 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		//Pattern numberPattern = Pattern.compile("Sg\\+Nom|Sg\\+Acc|Sg\\+Gen|Sg\\+Ill|Sg\\+Loc|Sg\\+Com|Ess");
 		//Since the analyses can be the following: N+(Subclass)+(Semclass)+Number+Case(+Possessivesuffix)(+Clitic), all types of optional tags are added so that
 		//for example the reading čáhci+N+<sme>+Sem/Plc_Substnc_Wthr+Sg+Nom that was skipped is now considered valid
-		String nom_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Nom(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String acc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Acc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String gen_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Gen(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String ill_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ill(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String loc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Loc(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String com_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Com(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ess(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
-		String attr_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?\\+Attr(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
+		String nom_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Nom(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String acc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Acc(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String gen_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Gen(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ill_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ill(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String loc_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Loc(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String com_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Com(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String ess_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?Sg\\+Ess(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?|";
+		String attr_regex = "([a-zA-Z]*+[0-9]*+\\+)?(Sem/([a-zA-Z]*+_*+)*+\\+)?\\+Attr(\\+<([a-zA-Z]*+_*+)*+>)?(\\+[a-zA-Z]*+[0-9])?(\\+[a-zA-Z]*+)?(\\+Foc/[a-zA-Z]*+)?(\\+[a-zA-Z]*+)?";
 		String pattern_to_compile = nom_regex+acc_regex+gen_regex+ill_regex+loc_regex+com_regex+ess_regex+attr_regex;
 		Pattern numberPattern = Pattern.compile(pattern_to_compile);
 
@@ -109,7 +109,8 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		// exclude tokens with readings that are one of the following
 		//Pattern excludePattern = Pattern.compile("V\\+|Pl|A\\+(?!.*Pred)|Det|Pr$|Pron|Pcle|Adv|Interj|CC|CS");
 		//Some readings were excluded although valid, for example +Ta+N+<sme>+Prop+Sem/Plc+Sg+Gen
-		Pattern excludePattern = Pattern.compile("V\\+|Pl\\+|A\\+(?!.*Pred)|Det|Pr$|Pron|Pcle|Adv|Interj|CC|CS");
+		//and also isit+N+Sem/Hum+Sg+Com+<compl_subj>+@Pron<
+		Pattern excludePattern = Pattern.compile("V\\+|Pl\\+|A\\+(?!.*Pred)|Det|Pr$|Pron\\+|Pcle|Adv|Interj|CC|CS");
 		// patterns for the hints
 		Pattern hintPattern = Pattern.compile("Pr$");
 		// the following tags are allowed between hint and noun
@@ -199,7 +200,6 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 							isValidHint = true;
 						}
 					}
-
 					//log.info("The current reading string is=" + currentReadingString);
 					// don't consider readings that match the exclude pattern, to filter out unlikely readings
 					// (e.g. "и" is a CC in almost all cases, the probability that it is a N is very low)
