@@ -285,44 +285,44 @@ public class UploadDownloadFileServlet extends HttpServlet {
 			} else {
 				if (!file_uploaded) {
 	        out.write("<br><br><br>" );
-					out.write("<center><h1 style='color:#144ea6;'>You forgot to upload the file!</h1></center>" );
+					out.write("<center><h1 style='color:#144ea6;'>Vajálduhttet sáddet fiilla!</h1></center>" );
 					//local:
-					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Back</a></center>");
+					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Ruovttoluotta</a></center>");
 					//gtoahpa:
-					out.write("<center><a href='http://oahpa.no/konteaksta/'>Back</a></center>");
+					out.write("<center><a href='http://oahpa.no/konteaksta/'>Ruovttoluotta</a></center>");
 				}
 				if (file_size_err) {
 					out.write("<br><br><br>" );
-					out.write("<center><h1 style='color:#144ea6;'>File is too big! Permitted max size: 10M.</h1></center>" );
+					out.write("<center><h1 style='color:#144ea6;'>Fiila lea menddo stuoris! Lobálaš sturrodat: 10M.</h1></center>" );
 					//local:
-					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Back</a></center>");
+					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Ruovttoluotta</a></center>");
 					//gtoahpa:
-					out.write("<center><a href='http://oahpa.no/konteaksta/'>Back</a></center>");
+					out.write("<center><a href='http://oahpa.no/konteaksta/'>Ruovttoluotta</a></center>");
 				}
 				if (file_type_err) {
 					out.write( "<br><br><br>" );
-					out.write( "<center><h1 style='color:#144ea6;'>File format/content is not html! Permitted format: html.</h1></center>" );
+					out.write( "<center><h1 style='color:#144ea6;'>Fiilla formáhta ii leat html! Lobálaš formáhta: html.</h1></center>" );
 					//local:
-					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Back</a></center>");
+					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Ruovttoluotta</a></center>");
 					//gtoahpa:
-					out.write("<center><a href='http://oahpa.no/konteaksta/'>Back</a></center>");
+					out.write("<center><a href='http://oahpa.no/konteaksta/'>Ruovttoluotta</a></center>");
 
 				}
 				if (captcha_err) {
 					out.write( "<br><br><br>" );
-					out.write( "<center><h1 style='color:#144ea6;'>You forgot the captcha!</h1></center>" );
+					out.write( "<center><h1 style='color:#144ea6;'>Vajálduhttet captcha!</h1></center>" );
 					//local:
-					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Back</a></center>");
+					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Ruovttoluotta</a></center>");
 					//gtoahpa:
-					out.write("<center><a href='http://oahpa.no/konteaksta/'>Back</a></center>");
+					out.write("<center><a href='http://oahpa.no/konteaksta/'>Ruovttoluotta</a></center>");
 				}
 				if (file_lang_err) {
 					out.write( "<br><br><br>" );
-					out.write( "<center><h1 style='color:#144ea6;'>The file is not sme!</h1></center>" );
+					out.write( "<center><h1 style='color:#144ea6;'>Fiila ii sisttisdoala davvisámegiela!</h1></center>" );
 					//local:
-					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Back</a></center>");
+					//out.write("<center><a href='http://127.0.0.1:8080/konteaksta/'>Ruovttoluotta</a></center>");
 					//gtoahpa:
-					out.write("<center><a href='http://oahpa.no/konteaksta/'>Back</a></center>");
+					out.write("<center><a href='http://oahpa.no/konteaksta/'>Ruovttoluotta</a></center>");
 				}
 			}
 		} catch (FileUploadException e) {
