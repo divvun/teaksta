@@ -286,7 +286,7 @@ public class UploadDownloadFileServlet extends HttpServlet {
 			}
 
 			if (!path.equals("")) {
-				response.sendRedirect("http://127.0.0.1:8080/konteaksta/WERTiServlet?activity="+act+"&client.enhancement="+en+"&url=file://"+path);
+				response.sendRedirect("http://oahpa.no/konteaksta/WERTiServlet?activity="+act+"&client.enhancement="+en+"&url=file://"+path);
 			} else {
 				if (!file_uploaded) {
 	        out.write("<br><br><br>" );
