@@ -93,7 +93,7 @@ import org.jsoup.nodes.Document;
 
 import java.io.InputStreamReader;
 import java.util.Scanner;
-import java.nio.file.*;
+//import java.nio.file.*;
 import javax.servlet.http.HttpSession;
 import java.io.Writer;
 import java.io.BufferedWriter;
@@ -258,13 +258,18 @@ public class UploadDownloadFileServlet extends HttpServlet {
 								if (stdout.toString().equals("sme")) {
 									System.out.println("file is sme");
 								} else {
-									Files.deleteIfExists(Paths.get(path));
+									//Files.deleteIfExists(Paths.get(path));
+									//Files.deleteIfExists(Paths.get(path));
+									if (file.exists()) {
+										file.delete();
+									}
 									System.out.println("file not sme, deleted");
 									path = "";
 									file_lang_err = true;
 								}
 						} else {
-							Files.deleteIfExists(Paths.get(path));
+							//Files.deleteIfExists(Paths.get(path));
+							file.delete();
 							path = "";
 							file_type_err = true;
 						}
