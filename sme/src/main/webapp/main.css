@@ -25,7 +25,7 @@
 }
 .div_container {
 	margin-top: 30px;
-	margin-bottom: 10px;
+	margin-bottom: 50px;
 }
 .yellow_stripe {
 	background: linear-gradient(to bottom right, #FFDB06, #ffeb73);
@@ -51,7 +51,7 @@
   left: 0;
   bottom: 0;
   width: 100%;
-	margin-top: 60px;
+	margin-top: 100px;
 }
 .bold_lighter_blue{
 	color: #1959bd;
@@ -64,7 +64,7 @@
 .ul_hline {
 	line-height: 10px;
 }
-#user_url {
+#user_url, #user_upload {
 	display: none;
 }
 #mode_1:hover, #mode_2:hover, #mode_3:hover, .fáttát_list:hover, .fáttát_list:hover span, .hárjehusa_list:hover, .hárjehusa_list:hover span {
@@ -75,4 +75,39 @@
 	border: 1px solid #CCCCCC;
 	border-radius: 10px;
 	padding: 10px;
+}
+
+.link, .link:focus, .link i, .link:focus i, input, input:focus {
+  outline: transparent !important;
+	box-shadow: none !important;
+	-webkit-box-shadow: none !important;
+}
+.span_info {
+	font-style: italic;
+	color:#4D90FE;
+}
+.input_file, .submit_file {
+	width: 0.1px;
+	height: 0.1px;
+	opacity: 0;
+	overflow: hidden;
+	position: absolute;
+	z-index: -1;
+}
+.input_file + label, .submit_file + label, .input_sub {
+	cursor: pointer;
+	border: 1px solid #ccc;
+	padding: 1px 7px 2px;
+	border-radius: 2px;
+	color: #144ea6;
+	border-color: #2F5BB7;
+	color: white;
+	background-color: #396fc7;
+	background-color: #4D90FE;
+}
+.icon_class {
+	color: white;
+}
+.blue_class_np {
+	color: #144ea6;
 }
