@@ -105,7 +105,7 @@ import java.io.FileReader;
 import werti.util.VerifyRecaptcha;
 
 public class UploadDownloadFileServlet extends HttpServlet {
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 15;
   private ServletFileUpload uploader = null;
 
 	@Override
