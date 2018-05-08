@@ -71,9 +71,6 @@
 	cursor: pointer;
 	color: #ecc637;
 }
-#mode_3, .fa-info-circle {
-	visibility: hidden !important;
-}
 .search_results {
 	border: 1px solid #CCCCCC;
 	border-radius: 10px;
