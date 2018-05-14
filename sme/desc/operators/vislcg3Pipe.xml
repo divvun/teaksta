@@ -18,6 +18,9 @@
     <delegateAnalysisEngine key="OpenNlpSentenceDetector">
       <import location="../annotators/OpenNlpSentenceDetector.xml"/>
     </delegateAnalysisEngine>
+    <!--<delegateAnalysisEngine key="HTMLContentTypeAnnotator">
+      <import location="../annotators/HTMLContentTypeAnnotator.xml"/>
+    </delegateAnalysisEngine>-->
     <delegateAnalysisEngine key="HTMLSentenceAnnotator">
       <import location="../annotators/HTMLSentenceAnnotator.xml"/>
     </delegateAnalysisEngine>
@@ -69,13 +72,17 @@
       <nameValuePair>
         <name>vislcg3DisGrammarLoc</name>
         <value>
-          <string>/Users/mslm/main/gt/sme/src/sme-dis.rle</string>
+          <!-- LOCAL: <string>/Users/car010/main/langs/sme/src/syntax/disambiguator.cg3</string> -->
+          <!-- GTOAHPA: -->
+          <string>/opt/smi/sme/bin/disambiguator.cg3</string>
         </value>
       </nameValuePair>
       <nameValuePair>
         <name>vislcg3SyntGrammarLoc</name>
         <value>
-          <string>/Users/mslm/main/gt/sme/src/smi-syn.rle</string>
+          <!-- LOCAL: <string>/Users/car010/main/langs/sme/src/konteaksta.cg3</string> -->
+          <!-- GTOAHPA: -->
+          <string>/opt/smi/sme/bin/konteaksta.cg3</string>
         </value>
       </nameValuePair>
     </configurationParameterSettings>
@@ -85,6 +92,7 @@
         <node>GenericRelevanceAnnotator</node>
         <node>GiellateknoTokenizer</node>
         <node>OpenNlpSentenceDetector</node>
+        <!--<node>HTMLContentTypeAnnotator</node>-->
         <node>HTMLSentenceAnnotator</node>
         <node>vislcg3Annotator</node>
       </fixedFlow>
