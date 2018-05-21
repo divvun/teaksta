@@ -285,10 +285,10 @@ public class UploadDownloadFileServlet extends HttpServlet {
 				path = "";
 			}
 
-			String host_name = "http://gtoahpa-01.uit.no"; //http://gtoahpa-01.uit.no , http://oahpa.no , http://127.0.0.1:8080
+			String host_name = "http://gtoahpa-01.uit.no/konteaksta"; //http://gtoahpa-01.uit.no , http://oahpa.no , http://127.0.0.1:8080
 
 			if (!path.equals("")) {
-				response.sendRedirect(host_name+"/konteaksta/WERTiServlet?activity="+act+"&client.enhancement="+en+"&url=file://"+path);
+				response.sendRedirect(host_name+"/WERTiServlet?activity="+act+"&client.enhancement="+en+"&url=file://"+path);
 			} else {
 				if (!file_uploaded) {
 	        out.write("<br><br><br>" );
