@@ -158,3 +158,15 @@ span.wertiview {
 	border: 1px solid black !important;
 	text-align: center !important;
 }
+.p_reminder {
+	text-align:center;
+	margin-top:20px;
+}
+.span_reminder {
+	color:#144ea6; padding:10px;
+	background-color:white;
+	border-radius:5px;
+	border:2px solid #144ea6;
+	font-size:24px;
+	margin-bottom:20px;
+}
