@@ -150,6 +150,9 @@ public class HTMLEnhancer {
     	htmlDoc.head().append(topicJS);
     	htmlDoc.head().append(loadJS);
 
+      htmlDoc.body().prependElement("p").attr("class", "p_reminder");
+      htmlDoc.body().select("p.p_reminder").append("<span class='span_reminder'>"+activity_sme+": "+enhancement_sme+"</span>");
+
     	htmlDoc.select("span.wertiview").select("span").attr("style", EnhancerUtils.addedSpanStyle);
 
        	return htmlDoc.html();
