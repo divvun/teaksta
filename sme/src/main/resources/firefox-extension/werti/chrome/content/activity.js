@@ -491,12 +491,15 @@
   		$hit.append($input);
 
   		// create hint ? button
+			//remove hint for the moment, but TODO implement possibility to choose
+			/*
   		var $hint = $('<span>');
   		$hint.attr('id', $hit.attr('id') + '-hint');
   		$hint.addClass('clozeStyleHint');
   		$hint.text("?");
   		$hint.addClass('wertiviewhint');
   		$hit.append($hint);
+			*/
 
     		// count down numExercises until we're finished
 			numExercises--;
@@ -594,12 +597,15 @@
 			$hit.append($input);
 
 			// create hint ? button
+			//remove hint for the moment, but TODO implement possibility to choose
+			/*
 			var $hint = $('<span>');
 			$hint.attr('id', $hit.attr('id') + '-hint');
 			$hint.addClass('clozeStyleHint');
 			$hint.text("?");
 			$hint.addClass('wertiviewhint');
 			$hit.append($hint);
+			*/
 
     	// e.g., phrasalverbs needs to add colorization to the verb
 			// and gerunds needs to display the base form
