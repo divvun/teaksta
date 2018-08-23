@@ -208,7 +208,7 @@ public class UploadDownloadFileServlet extends HttpServlet {
 			}
 			if (file_uploaded) {
 				if (verify) {
-					if (file_item.getSize()<100000) {
+					if (file_item.getSize() < 5*(1024*1024)) {
 						InputStream file_input_stream = file_item.getInputStream();
 						String rnd_name = RandomStringUtils.randomAlphanumeric(10);
 						File file;
@@ -225,11 +225,12 @@ public class UploadDownloadFileServlet extends HttpServlet {
 						file.setWritable(false);
 
 						boolean textHtml = checkMetaData(file, "text/html");
-						if (textHtml) {
+						boolean textXhtml = checkMetaData(file, "application/xhtml+xml");
+
+						if  ((textHtml) || (textXhtml)) {
 							System.out.println("file is html");
 							Document doc = Jsoup.parse(file,  "UTF-8");
 							String textContent=doc.text();
-							System.out.println("textContent="+textContent);
 
 							Writer writer = null;
 							String filePath = "/tmp/inputLang.txt";
@@ -297,7 +298,7 @@ public class UploadDownloadFileServlet extends HttpServlet {
 				}
 				if (file_size_err) {
 					out.write("<br><br><br>" );
-					out.write("<center><h1 style='color:#144ea6;'>Fiila lea menddo stuoris! Lobálaš sturrodat: 10M.</h1></center>" );
+					out.write("<center><h1 style='color:#144ea6;'>Fiila lea menddo stuoris! Lobálaš sturrodat: 5MB.</h1></center>" );
 					out.write("<center><a href="+host_name+">Ruovttoluotta</a></center>");
 				}
 				if (file_type_err) {
