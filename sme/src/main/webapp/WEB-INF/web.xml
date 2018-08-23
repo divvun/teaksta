@@ -36,6 +36,7 @@
     <!-- local:
     <param-value>/Users/car010/main/apps/teaksta/sme/fileUpload/</param-value>
     -->
+    <!-- gtoahpa -->
     <param-value>/home/teaksta/fileUpload/</param-value>
   </context-param>
   <context-param>
@@ -43,6 +44,7 @@
     <!-- local:
     <param-value>/Users/car010/main/apps/teaksta/sme/fileUpload/prm/</param-value>
     -->
+    <!-- gtoahpa -->
     <param-value>/home/teaksta/fileUpload/prm/</param-value>
   </context-param>
   <context-param>
@@ -50,13 +52,23 @@
     <!-- local:
     <param-value>/Users/car010/main/apps/teaksta/sme/fileUpload/tmp/</param-value>
     -->
+    <!-- gtoahpa -->
     <param-value>/home/teaksta/fileUpload/tmp/</param-value>
+  </context-param>
+  <context-param>
+    <param-name>files_anl_dir</param-name>
+    <!-- local:
+    <param-value>/Users/car010/main/apps/teaksta/sme/analyzedTexts/</param-value>
+    -->
+    <!-- gtoahpa -->
+    <param-value>/home/teaksta/analyzedTexts/</param-value>
   </context-param>
   <context-param>
     <param-name>secret_key</param-name>
     <!-- local:
     <param-value>/Users/car010/main/apps/teaksta/sme/secret_key.do.not.check.in</param-value>
     -->
+    <!-- gtoahpa -->
     <param-value>/home/teaksta/secret_key.do.not.check.in</param-value>
   </context-param>
   <listener>
