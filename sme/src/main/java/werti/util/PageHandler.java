@@ -10,27 +10,35 @@ import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
 import werti.server.Processors;
 
+import org.apache.uima.fit.util.CasIOUtil;
+import java.io.File;
+import java.io.IOException;
+
 /**
  * Methods needed for processing a document regardless of whether it came
  * from the web form or from the add-on.
- * 
+ *
  * @author Adriane Boyd
  *
  */
 public class PageHandler {
 	private static final Logger log =
 		Logger.getLogger(PageHandler.class);
-	
+
 	Processors processors;
 	String topic;
 	String text;
 	String lang;
-	
-	public PageHandler(Processors aProcessors, String aTopic, String aText, String aLang) {
+	String url;
+	String path;
+
+	public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang) {
 		processors = aProcessors;
 		topic = aTopic;
 		text = aText;
 		lang = aLang;
+		url = aUrl;
+		path = aPath;
 		/*if (topic.compareTo("Conjunctions") == 0){
 			lang = "sme";
 		}
@@ -40,7 +48,7 @@ public class PageHandler {
 	/**
 	 * Creates a CAS from the text and runs the pre- and postprocessors for the
 	 * topic.
-	 * 
+	 *
 	 * @return CAS containing annotation
 	 * @throws ServletException
 	 */
@@ -55,8 +63,25 @@ public class PageHandler {
 				// add the normalised text to cas
 				cas.setDocumentText(normalised_text);
 				cas.setDocumentLanguage(lang);
-				preprocessor.process(cas);
-				postprocessor.process(cas);
+				File casfile_path = new File(path);
+				if (!casfile_path.exists()) casfile_path.mkdirs();
+				File casfile = new File(casfile_path+File.separator+"cas_"+topic+"_"+url+".xmi");
+				if (casfile.isFile()) {
+					try {
+						CasIOUtil.readXmi(cas, casfile);
+						postprocessor.process(cas);
+					} catch (IOException cas_read) {
+						log.info("Failed to load cas from file!", cas_read);
+					}
+				} else {
+					preprocessor.process(cas);
+					try {
+						CasIOUtil.writeXmi(cas, casfile);
+						postprocessor.process(cas);
+					} catch (IOException cas_write) {
+							log.info("Failed to write cas to file!", cas_write);
+					}
+				}
 				return cas;
 			} catch (AnalysisEngineProcessException aepe) {
 				log.fatal("Analysis Engine encountered errors!", aepe);
@@ -66,7 +91,7 @@ public class PageHandler {
 				throw new ServletException("Text analysis failed.", rie);
 			}
 		}
-		
+
 		return null;
 	}
 }
