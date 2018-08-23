@@ -227,7 +227,8 @@ public class WERTiServlet extends HttpServlet {
 				//       can be removed
 				String htmlString = spansToETags(htmlDoc, HTMLUtils.className, false);
 
-				PageHandler ph = new PageHandler(processors, activity, htmlString, lang);
+				String anl_dir_path = getServletContext().getInitParameter("files_anl_dir");
+				PageHandler ph = new PageHandler(processors, activity, url.replace("/","-"), anl_dir_path, htmlString, lang);
 				JCas cas;
 				cas = ph.process();
 
@@ -395,7 +396,8 @@ public class WERTiServlet extends HttpServlet {
 				result = ph.process();
 			} else { // should be a "page" request
 
-				PageHandler ph = new PageHandler(processors, requestInfo.topic, htmlString, lang);
+				String anl_dir_path = getServletContext().getInitParameter("files_anl_dir");
+				PageHandler ph = new PageHandler(processors, requestInfo.topic, requestInfo.url.replace("/","-"), anl_dir_path, htmlString, lang);
 				JCas cas;
 				cas = ph.process();
 
