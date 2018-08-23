@@ -27,6 +27,11 @@
 			<version>2.2.2-incubating</version>
 		</dependency>
 		<dependency>
+		  <groupId>org.apache.uima</groupId>
+		  <artifactId>uimafit-core</artifactId>
+		  <version>2.4.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.1</version>
@@ -277,7 +282,7 @@
 					<!-- GTOAHPA: -->
 					<url>http://localhost:8200/manager/html</url>
 					<warFile>/home/teaksta/target/WERTisme.war</warFile>
-					
+
 					<server>localhost</server>
 					<path>/teaksta</path>
 				</configuration>
@@ -306,6 +311,11 @@
 			<releases>
 				<enabled>true</enabled>
 			</releases>
+		</repository>
+		<repository>
+			<!-- Uima Stuff -->
+			<id>uimafitRepository</id>
+			<url>https://mvnrepository.com/artifact/org.apache.uima/uimafit-core</url>
 		</repository>
 	</repositories>
 </project>
