@@ -65,7 +65,7 @@ public class PageHandler {
 				cas.setDocumentLanguage(lang);
 				File casfile_path = new File(path);
 				if (!casfile_path.exists()) casfile_path.mkdirs();
-				File casfile = new File(casfile_path+File.separator+"cas_"+topic+"_"+url+".xmi");
+				File casfile = new File(casfile_path+File.separator+"cas_"+url+".xmi");
 				if (casfile.isFile()) {
 					try {
 						CasIOUtil.readXmi(cas, casfile);
