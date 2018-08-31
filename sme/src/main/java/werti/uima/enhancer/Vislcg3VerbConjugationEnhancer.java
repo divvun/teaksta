@@ -37,6 +37,8 @@ import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
 
 import werti.util.Constants;
+import org.apache.commons.lang3.ArrayUtils;
+import java.util.Random;
 
 /**
  * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
@@ -261,8 +263,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 			}
 
 			// delete the temporary files
-			cg3GeneratorInputFile.delete();
-			cg3GeneratorOutputFile.delete();
+			//cg3GeneratorInputFile.delete();
+			//cg3GeneratorOutputFile.delete();
 
 		} catch (IOException e) {
 	    	e.printStackTrace();
@@ -282,7 +284,72 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
     */
  	private String writeMorphologicalForms(String reading_str) {
 
- 		String[] distract_forms = {"V+Ind+Prs+ConNeg", "V+Ind+Prt+ConNeg", "V+Inf", "V+Actio+Ess", ""};
+		String[] distract_forms_ind = {
+			"V+Ind+Prs+ConNeg",
+			"V+Ind+Prt+ConNeg",
+			"V+Actio+Ess",
+			"V+Ind+Prt+Sg1",
+			"V+Ind+Prt+Sg2",
+			"V+Ind+Prt+Sg3",
+			"V+Ind+Prs+Sg1",
+			"V+Ind+Prs+Sg2",
+			"V+Ind+Prs+Sg3",
+			"V+Ind+Prt+Du1",
+			"V+Ind+Prt+Du2",
+			"V+Ind+Prt+Du3",
+			"V+Ind+Prs+Du1",
+			"V+Ind+Prs+Du2",
+			"V+Ind+Prs+Du3"
+		};
+
+		String[] distract_forms_imprt = {
+			"V+Imprt+Sg1",
+			"V+Imprt+Sg2",
+			"V+Imprt+Sg3",
+			"V+Imprt+Du1",
+			"V+Imprt+Du2",
+			"V+Imprt+Du3",
+			"V+Imprt+Pl1",
+			"V+Imprt+Pl2",
+			"V+Imprt+Pl3"
+		};
+
+		String[] distract_forms_cond = {
+			"V+Cond+Prs+Sg1",
+			"V+Cond+Prs+Sg2",
+			"V+Cond+Prs+Sg3",
+			"V+Cond+Prs+Du1",
+			"V+Cond+Prs+Du2",
+			"V+Cond+Prs+Du3",
+			"V+Cond+Prs+Pl1",
+			"V+Cond+Prs+Pl2",
+			"V+Cond+Prs+Pl3"
+		};
+
+		String[] distract_forms_pot = {
+			"V+Pot+Prs+Sg1",
+			"V+Pot+Prs+Sg2",
+			"V+Pot+Prs+Sg3",
+			"V+Pot+Prs+Du1",
+			"V+Pot+Prs+Du2",
+			"V+Pot+Prs+Du3",
+			"V+Pot+Prs+Pl1",
+			"V+Pot+Prs+Pl2"
+		};
+
+		String[] distract_forms_neg = {
+			"V+Neg+Ind+Sg1",
+			"V+Neg+Ind+Sg2",
+			"V+Neg+Ind+Sg3",
+			"V+Neg+Ind+Du1",
+			"V+Neg+Ind+Du2",
+			"V+Neg+Ind+Du3",
+			"V+Neg+Ind+Pl1",
+			"V+Neg+Ind+Pl2",
+			"V+Neg+Ind+Pl3"
+		};
+
+		String[] distract_forms = {"", "", "", "", ""};
 
 		String[] tag = new String[20];
 		int i = 0;
@@ -294,23 +361,47 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		}
 
 		String lemma = tag[0];
-		String tense = tag[1];
-		String person = tag[2];
+		String pos = tag[1];
+		String trans = tag[2];
 		String mood = tag[3];
-
-		//If the verb is in Prs then generate a distractor of the same lemma, the same person, but Prt.
-
-		if (mood.compareTo("Ind") == 0) {
-   		distract_forms[4] = "V+"+mood+"+"+tense+"+"+person;
+		String tense = tag[4];
+		String person = tag[5];
+		/*
+		//check parts
+		log.info("reading_str="+reading_str);
+		if (!(tense.equals("Prs")||tense.equals("Prt"))) {
+			person = tense;
+			tense = "";
 		}
-
-		log.info("wrong tense distractor:"+distract_forms[4]);
+		//log.info("lemma="+lemma+", pos="+pos+", trans="+trans+", mood="+mood+", tense="+tense+", person="+person);
+		*/
 
 		String generationInput = "";
 
-		for (int j=0; j < distract_forms.length; j++) {
-			generationInput += lemma + "+" + distract_forms[j] + "\n";
-			//generationInput += lemma + "+v1+" + distract_forms[j] + "\n";
+		if (mood.equals("Ind")) {
+			for (int j=0; j < distract_forms_ind.length; j++) {
+		    generationInput += lemma + "+" + distract_forms_ind[j] + "\n";
+		 	}
+		}
+		if (mood.equals("Imprt")) {
+			for (int j=0; j < distract_forms_imprt.length; j++) {
+		    generationInput += lemma + "+" + distract_forms_imprt[j] + "\n";
+		 	}
+		}
+		if (mood.equals("Cond")) {
+			for (int j=0; j < distract_forms_cond.length; j++) {
+		    generationInput += lemma + "+" + distract_forms_cond[j] + "\n";
+		 	}
+		}
+		if (mood.equals("Pot")) {
+			for (int j=0; j < distract_forms_pot.length; j++) {
+		    generationInput += lemma + "+" + distract_forms_pot[j] + "\n";
+		 	}
+		}
+		if (mood.equals("Neg")) {
+			for (int j=0; j < distract_forms_neg.length; j++) {
+		    generationInput += lemma + "+" + distract_forms_neg[j] + "\n";
+		 	}
 		}
 
 		//log.info("generation input:"+generationInput);
