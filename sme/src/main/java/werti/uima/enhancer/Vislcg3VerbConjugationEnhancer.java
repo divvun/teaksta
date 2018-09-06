@@ -66,7 +66,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 	private final String FST = Constants.an_FST;
 
 	//list of tags to be removed from analyses because these are not present in generator-norm
-	String[] err_tags = {
+	String[] tags_tbr = {
 		"+Err/Orth",
 		"+Err/Orth-a-á",
 		"+Err/Orth-nom-gen",
@@ -294,14 +294,14 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
     log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
  	}
 
-	private String removeErrTags(String input_str) {
-		for (int h=0; h<err_tags.length; h++) {
-			if (h<err_tags.length-1) {
-				if (input_str.contains(err_tags[h])) {
-					input_str = input_str.replace(err_tags[h],"");
+	private String removeTags(String input_str) {
+		for (int h=0; h<tags_tbr.length; h++) {
+			if (h<tags_tbr.length-1) {
+				if (input_str.contains(tags_tbr[h])) {
+					input_str = input_str.replace(tags_tbr[h],"");
 				}
 			} else {
-				Pattern myPattern = Pattern.compile(err_tags[h]);
+				Pattern myPattern = Pattern.compile(tags_tbr[h]);
 				Matcher myMatcher = myPattern.matcher(input_str);
 				if (myMatcher.find()) {
 					String mytag = myMatcher.group(0);
@@ -443,8 +443,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		//add reading_str as last element in generationInput which will be used as correct_answer
 		generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
 
-		//if generationInput contains err_tags, remove it
-		generationInput = removeErrTags(generationInput);
+		//if generationInput contains tags_tbr, remove it
+		generationInput = removeTags(generationInput);
 
 		return generationInput;
 	}
@@ -457,8 +457,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
 		String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
-		//if analyses contains err_tags, remove it
-		lem_and_an = removeErrTags(lem_and_an);
+		//if analyses contains tags_tbr, remove it
+		lem_and_an = removeTags(lem_and_an);
 
 		return lem_and_an;
   }
