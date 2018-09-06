@@ -63,11 +63,23 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 	private final String FST = Constants.an_FST;
-//  private final String hfstOptLookupLoc = "/usr/local/bin/hfst-optimized-lookup";
-//  private final String lookupFlags = "-q"; // was -flags mbTT -utf8 / flags are not possible for the jar
-	//private final String loadJar = "java -jar";
-	//private final String jarOptLookupLoc = "./rus_resources/hfst-ol.jar";
-	//private final String invertedOptHfstLoc = "./rus_resources/generator-gt-desc.ohfst";
+
+	//list of tags to be removed from analyses because these are not present in generator-norm
+	String[] tags_tbr = {
+		"+Err/Orth",
+		"+Err/Orth-a-á",
+		"+Err/Orth-nom-gen",
+		"+Err/Orth-nom-acc",
+		"+Err/CmpSub",
+		"+Err/MissingSpace",
+		"+Err/MissingHyph",
+		"+Err/Hyph",
+		"+Err/SpaceCmp",
+		"+Err/Spellrelax",
+		"+Allegro",
+		//this is a regex to find all possible tags of the type: <xxx_xxx>
+		"\\+<([a-zA-Z]*+_*+)*+>"
+	};
 
 	@Override
 	public void initialize(UimaContext context)
@@ -406,36 +418,64 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 		log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
 	}
 
+	private String removeTags(String input_str) {
+		for (int h=0; h<tags_tbr.length; h++) {
+			if (h<tags_tbr.length-1) {
+				if (input_str.contains(tags_tbr[h])) {
+					input_str = input_str.replace(tags_tbr[h],"");
+				}
+			} else {
+				Pattern myPattern = Pattern.compile(tags_tbr[h]);
+				Matcher myMatcher = myPattern.matcher(input_str);
+				if (myMatcher.find()) {
+					String mytag = myMatcher.group(0);
+					input_str = input_str.replace(mytag,"");
+				}
+			}
+		}
+		return input_str;
+	}
+
     /*
      * Create all relevant morphological forms of the current token
 	 * It is the input for the distractor generation
 	 */
     private String writeMorphologicalForms(String reading_str) {
 
-        String[] distractFormsCase = {"+Nom", "+Acc", "+Gen", "+Ill", "+Loc", "+Com", "+Ess"};
+        String[] distractFormsCase = {
+					"+Nom",
+					"+Acc",
+					"+Gen",
+					"+Ill",
+					"+Loc",
+					"+Com",
+					"+Ess"
+				};
 
         String generationInput = "";
-		//log.info("reading string:"+reading_str);
+				//log.info("reading string:"+reading_str);
+				String reading_str_input = reading_str.substring(0, reading_str.indexOf("@")-1);
 
         for(String aCase: distractFormsCase){
-
         	if(reading_str.contains(aCase)){
-
         		// remove the case marker and the syntactic tag from the reading
-                reading_str = reading_str.substring(0,reading_str.indexOf(aCase));
-				//log.info("reading string without case and syntax tag:"+reading_str);
-
+          	reading_str = reading_str.substring(0,reading_str.indexOf(aCase));
+						//log.info("reading string without case and syntax tag:"+reading_str);
         		// Assign distractorforms from the array
-                for(String elem: distractFormsCase) {
-            		generationInput += reading_str + elem + "\n";
-                }
-
+            for(String elem: distractFormsCase) {
+        			generationInput += reading_str + elem + "\n";
+            }
         		break;
         	}
         }
 
-        //log.info("generation input:"+generationInput);
+				//add reading_str as last element in generationInput which will be used as correct_answer
+				generationInput += reading_str_input+"\n";
 
+				//if generationInput contains tags_tbr, remove it
+				generationInput = removeTags(generationInput);
+
+        //log.info("generation input:"+generationInput);
         return generationInput;
     }
 
@@ -446,6 +486,9 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 			String analyses_str = an_tmp.replace("+<sme>", "");
 			analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
 			String lem_and_an = lemma_str + "+" + analyses_str + "\n";
+
+			//if analyses contains tags_tbr, remove it
+			lem_and_an = removeTags(lem_and_an);
 
 			return lem_and_an;
 	  }
@@ -462,6 +505,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 
 			Word currentWord = new Word();
 			String distractforms = "";
+			String[] splitted_go = {""};
 
 			while (cg3GeneratorOutputReader.ready()) {
 				String line = cg3GeneratorOutputReader.readLine().trim();
@@ -480,6 +524,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 						SpanTag spanTag = wordToSpanMap.get(currentWord);
 						log.info("spantag before adding distractors:"+spanTag);
 						spanTag.addAttribute("distractors", distractforms);
+						spanTag.addAttribute("answer", splitted_go[splitted_go.length-1]);
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
@@ -495,6 +540,7 @@ public class Vislcg3NounSingularEnhancer extends JCasAnnotator_ImplBase {
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
 				else if(line.contains("ñôŃßĘńŠē")){
 					StringTokenizer tok = new StringTokenizer(generatorOutput);
+					splitted_go = generatorOutput.split("\\s");
 					generatorOutput = "";
 					String word = "";
 					distractforms = "";
