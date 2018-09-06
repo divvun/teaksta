@@ -37,8 +37,7 @@ import werti.util.EnhancerUtils;
 import werti.util.StringListIterable;
 
 import werti.util.Constants;
-import org.apache.commons.lang3.ArrayUtils;
-import java.util.Random;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
@@ -65,6 +64,21 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 	private final String FST = Constants.an_FST;
+
+	//list of tags to be removed from analyses because these are not present in generator-norm
+	String[] err_tags = {
+		"+Err/Orth",
+		"+Err/Orth-a-á",
+		"+Err/Orth-nom-gen",
+		"+Err/Orth-nom-acc",
+		"+Err/CmpSub",
+		"+Err/MissingSpace",
+		"+Err/MissingHyph",
+		"+Err/Hyph",
+		"+Err/SpaceCmp",
+		"+Err/Spellrelax",
+		"+Allegro"
+	};
 
 	@Override
 	public void initialize(UimaContext context)
@@ -406,6 +420,15 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 
 		//log.info("generation input:"+generationInput);
 
+		//add reading_str as last element in generationInput which will be used as correct_answer
+		generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
+
+		//if generationInput contains err_tags, remove it
+		for (int h=0; h<err_tags.length; h++) {
+			if (generationInput.contains(err_tags[h])) {
+				generationInput = generationInput.replace(err_tags[h],"");
+			}
+		}
 		return generationInput;
 	}
 
@@ -416,6 +439,13 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		String analyses_str = an_tmp.replace("+<sme>", "");
 		analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
 		String lem_and_an = lemma_str + "+" + analyses_str + "\n";
+
+		//if analyses contains err_tags, remove it
+		for (int h=0; h<err_tags.length; h++) {
+			if (lem_and_an.contains(err_tags[h])) {
+				lem_and_an = lem_and_an.replace(err_tags[h],"");
+			}
+		}
 
 		return lem_and_an;
   }
@@ -428,6 +458,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 
 			Word currentWord = new Word();
 			String distractforms = "";
+			String[] splitted_go = {""};
 
 			while (cg3GeneratorOutputReader.ready()) {
 				String line = cg3GeneratorOutputReader.readLine().trim();
@@ -447,6 +478,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 						//Commenting next ln to reduce output in catalina.out
 						//log.info("spantag before adding distractors:"+spanTag);
 						spanTag.addAttribute("distractors", distractforms);
+						spanTag.addAttribute("answer", splitted_go[splitted_go.length-1]);
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
@@ -463,6 +495,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
 				else if(line.contains("ñôŃßĘńŠē")){
 					StringTokenizer tok = new StringTokenizer(generatorOutput);
+					splitted_go = generatorOutput.split("\\s");
 					generatorOutput = "";
 					String word = "";
 					distractforms = "";
