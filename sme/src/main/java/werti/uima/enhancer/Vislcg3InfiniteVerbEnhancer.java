@@ -38,6 +38,7 @@ import werti.util.StringListIterable;
 
 import werti.util.Constants;
 import static java.lang.System.out;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * The output from the CG3 analysis from {@link werti.ae.Vislcg3Annotator}
@@ -64,6 +65,23 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 	private final String FST = Constants.an_FST;
+
+	//list of tags to be removed from analyses because these are not present in generator-norm
+	String[] err_tags = {
+		"+Err/Orth",
+		"+Err/Orth-a-á",
+		"+Err/Orth-nom-gen",
+		"+Err/Orth-nom-acc",
+		"+Err/CmpSub",
+		"+Err/MissingSpace",
+		"+Err/MissingHyph",
+		"+Err/Hyph",
+		"+Err/SpaceCmp",
+		"+Err/Spellrelax",
+		"+Allegro",
+		//this is a regex to find all possible tags of the type: <xxx_xxx>
+		"\\+<([a-zA-Z]*+_*+)*+>"
+	};
 
 	@Override
 	public void initialize(UimaContext context)
@@ -284,13 +302,44 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
     log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
 	}
 
+	private String removeErrTags(String input_str) {
+		for (int h=0; h<err_tags.length; h++) {
+			if (h<err_tags.length-1) {
+				if (input_str.contains(err_tags[h])) {
+					input_str = input_str.replace(err_tags[h],"");
+				}
+			} else {
+				Pattern myPattern = Pattern.compile(err_tags[h]);
+				Matcher myMatcher = myPattern.matcher(input_str);
+				if (myMatcher.find()) {
+					String mytag = myMatcher.group(0);
+					input_str = input_str.replace(mytag,"");
+				}
+			}
+		}
+		return input_str;
+	}
+
 	/*
 	* Create all relevant morphological forms of the current token
 	* It is the input for the distractor generation
 	*/
   private String writeMorphologicalForms(String reading_str) {
 
-		String[] distract_forms = {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prs+Du1", "V+Ind+Prs+Du2", "V+Ind+Prs+Du3", "V+Ind+Prt+Sg1", "V+Ind+Prt+Sg2", "V+Ind+Prt+Sg3", "V+Ind+Prt+Du1", "V+Ind+Prt+Du2", "V+Ind+Prt+Du3"};
+		String[] distract_forms = {
+			"V+Ind+Prs+Sg1",
+			"V+Ind+Prs+Sg2",
+			"V+Ind+Prs+Sg3",
+			"V+Ind+Prs+Du1",
+			"V+Ind+Prs+Du2",
+			"V+Ind+Prs+Du3",
+			"V+Ind+Prt+Sg1",
+			"V+Ind+Prt+Sg2",
+			"V+Ind+Prt+Sg3",
+			"V+Ind+Prt+Du1",
+			"V+Ind+Prt+Du2",
+			"V+Ind+Prt+Du3"
+		};
 
 		String str, word, result = "", generationInput = "";
 
@@ -298,9 +347,13 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
 	 	for (int j=0; j < distract_forms.length; j++) {
 	    generationInput += lemma + "+" + distract_forms[j] + "\n";
-
-	    //generationInput += lemma + "+v1+" + distract_forms[j] + "\n";
 	 	}
+
+		//add reading_str as last element in generationInput which will be used as correct_answer
+		generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
+
+		//if generationInput contains err_tags, remove it
+		generationInput = removeErrTags(generationInput);
 
 		return generationInput;
   }
@@ -313,6 +366,9 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 		analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
 		String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
+		//if analyses contains err_tags, remove it
+		lem_and_an = removeErrTags(lem_and_an);
+
 		return lem_and_an;
   }
 
@@ -324,6 +380,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
      	Word currentWord = new Word();
      	String distractforms = "";
+			String[] splitted_go = {""};
 
    		while (cg3GeneratorOutputReader.ready()) {
 		 		String line = cg3GeneratorOutputReader.readLine().trim();
@@ -343,6 +400,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						//Commenting next ln to reduce output in catalina.out
 						//log.info("spantag before adding distractors:"+spanTag);
 						spanTag.addAttribute("distractors", distractforms);
+						spanTag.addAttribute("answer", splitted_go[splitted_go.length-1]);
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
@@ -359,6 +417,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
 				else if(line.contains("ñôŃßĘńŠē")){
 					StringTokenizer tok = new StringTokenizer(generatorOutput);
+					splitted_go = generatorOutput.split("\\s");
 					generatorOutput = "";
 					String word = "";
 					distractforms = "";
