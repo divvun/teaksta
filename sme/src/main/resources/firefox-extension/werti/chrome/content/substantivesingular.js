@@ -209,6 +209,7 @@
 		var j = 0;
 		// Get the list of distractors for the given hit (they are saved as a space-separated list in the attribute "distractors" of the wertiview span tag):
 		wertiview.substantivesingular.types = $hit.attr('distractors').split(" ");
+		var correct_answer = $hit.attr('answer');
     wertiview.lib.shuffleList(wertiview.substantivesingular.types);
 
     // Add the distractor forms to the options list:
@@ -227,13 +228,14 @@
 			j++;
 		}
 
-		options.push(wertiview.lib.matchCapitalization($hit.text(), capType));
+		options.push(wertiview.lib.matchCapitalization(correct_answer, capType));
 		wertiview.lib.shuffleList(options);
 		return options;
 	},
 
 	mcGetCorrectAnswer: function($hit, capType){
-		return $hit.text();
+		var correct_answer = $hit.attr('answer');
+		return correct_answer;
 	},
 
 	clozeGetCorrectAnswer: function($hit, capType){
