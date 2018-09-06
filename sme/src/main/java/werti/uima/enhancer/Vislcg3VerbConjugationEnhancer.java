@@ -77,7 +77,9 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		"+Err/Hyph",
 		"+Err/SpaceCmp",
 		"+Err/Spellrelax",
-		"+Allegro"
+		"+Allegro",
+		//this is a regex to find all possible tags of the type: <xxx_xxx>
+		"\\+<([a-zA-Z]*+_*+)*+>"
 	};
 
 	@Override
@@ -277,8 +279,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 			}
 
 			// delete the temporary files
-			//cg3GeneratorInputFile.delete();
-			//cg3GeneratorOutputFile.delete();
+			cg3GeneratorInputFile.delete();
+			cg3GeneratorOutputFile.delete();
 
 		} catch (IOException e) {
 	    	e.printStackTrace();
@@ -291,6 +293,24 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
     log.info("Total execution time: " + (endTime - startTime)*0.001 + " seconds." );
     log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
  	}
+
+	private String removeErrTags(String input_str) {
+		for (int h=0; h<err_tags.length; h++) {
+			if (h<err_tags.length-1) {
+				if (input_str.contains(err_tags[h])) {
+					input_str = input_str.replace(err_tags[h],"");
+				}
+			} else {
+				Pattern myPattern = Pattern.compile(err_tags[h]);
+				Matcher myMatcher = myPattern.matcher(input_str);
+				if (myMatcher.find()) {
+					String mytag = myMatcher.group(0);
+					input_str = input_str.replace(mytag,"");
+				}
+			}
+		}
+		return input_str;
+	}
 
     /*
     * Create all relevant morphological forms of the current token
@@ -424,11 +444,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
 
 		//if generationInput contains err_tags, remove it
-		for (int h=0; h<err_tags.length; h++) {
-			if (generationInput.contains(err_tags[h])) {
-				generationInput = generationInput.replace(err_tags[h],"");
-			}
-		}
+		generationInput = removeErrTags(generationInput);
+
 		return generationInput;
 	}
 
@@ -441,11 +458,7 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
 		//if analyses contains err_tags, remove it
-		for (int h=0; h<err_tags.length; h++) {
-			if (lem_and_an.contains(err_tags[h])) {
-				lem_and_an = lem_and_an.replace(err_tags[h],"");
-			}
-		}
+		lem_and_an = removeErrTags(lem_and_an);
 
 		return lem_and_an;
   }
