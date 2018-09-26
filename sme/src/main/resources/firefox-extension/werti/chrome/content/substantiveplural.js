@@ -288,7 +288,13 @@
 		var nextInput;
 
 		//check if the user input match one of the possible answers
-		var answer_split = $(this).data('wertiviewanswer').toLowerCase().split(" ");
+		//by checking if it matches the attribute 'answer' for mc, 'possibleforms' for cloze
+		if ($(this).parent().attr('answer')) {
+			var answer_split = $(this).parent().attr('answer').toLowerCase().split(" ");
+		}
+		if ($(this).parent().attr('possibleforms')) {
+			var answer_split = $(this).parent().attr('possibleforms').toLowerCase().split(" ");
+		}
 		var correct_answer = false;
 		for (i = 0; i < answer_split.length; i++) {
 			if ($(this).val().toLowerCase() == answer_split[i]) {
