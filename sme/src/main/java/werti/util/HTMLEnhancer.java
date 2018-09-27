@@ -45,6 +45,7 @@ public class HTMLEnhancer {
 	dict.put("NegVerbs", "Biehttalanvearbbat");
 	dict.put("InfiniteVerbs", "Infinihtta vearbbat");
 	dict.put("Conjunctions", "Konjunkšuvnnat");
+  dict.put("Substantive", "Substantiivvat");
 	dict.put("Subject", "Subjeakta");
 	dict.put("Object", "Objeakta");
 	dict.put("Adverbial", "Adverbiála");
