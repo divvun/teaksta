@@ -4,3 +4,15 @@
 .expl_span {
   color:#144ea6;
 }
+html {
+	overflow: auto;
+}
+html::-webkit-scrollbar {
+  -webkit-appearance: none;
+  width: 7px;
+}
+html::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, .4);
+  -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+}
