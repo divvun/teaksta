@@ -253,7 +253,7 @@
 							<basedir>${basedir}/src/main/resources/firefox-extension/werti/chrome/content</basedir>
 							<outputDir>js-lib</outputDir>
 							<outputBasedir>${basedir}/src/main/webapp</outputBasedir>
-							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,verbconjugation.js,infiniteverbs.js,substantivesingular.js,substantiveplural.js,subject.js,object.js,adverbial.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
+							<filesToInclude>activity.js,blur.js,conjunctions.js,negverbs.js,verbconjugation.js,infiniteverbs.js,substantivesingular.js,substantiveplural.js,substantive.js,subject.js,object.js,adverbial.js,pos.js,jquery-1.4.2.min.js,lib.js,notification.js,wertiview.css</filesToInclude>
 
 							<replacements>
 								<replacement>
@@ -278,11 +278,11 @@
 					<!-- LOCAL:
 					<url>http://localhost:8080/manager/html</url>
 					<warFile>/Users/car010/main/apps/teaksta/sme/target/WERTisme.war</warFile>
-					-->
-					<!-- GTOAHPA: -->
+				-->
+					<!-- GTOAHPA:
+				-->
 					<url>http://localhost:8200/manager/html</url>
 					<warFile>/home/teaksta/target/WERTisme.war</warFile>
-
 					<server>localhost</server>
 					<path>/teaksta</path>
 				</configuration>
