@@ -19,7 +19,7 @@
 
 	<script type="text/javascript">
 		function setActivity(act) {
-			var linkpage = document.getElementsByTagName("object");
+			var linkpage = document.getElementsByTagName("OBJECT");
 			if (act === "Subject" || act === "Object" || act === "Adverbial" || act === "Conjunctions") {
 				linkpage[0].data = "";
 			} else {
@@ -69,7 +69,7 @@
 		function setMode_1() {
 			document.getElementById('user_url').style.display = "none";
 			document.getElementById('user_upload').style.display = "none";
-			var obj_doc = document.getElementsByTagName("object")[0].contentDocument;
+			var obj_doc = document.getElementsByTagName("OBJECT")[0].contentDocument;
 			obj_doc.body.style.display = "inline";
 			document.getElementById('mode_1').classList.remove("blue_class");
 			document.getElementById('mode_1').classList.add("orange_class");
@@ -136,7 +136,7 @@
 
 </head>
 
-<body onload="setActivity('SubstantiveSingular'); setEnhancement('colorize'); setMode_1(); change_upload_label()">
+<body onload="setActivity('Substantive'); setEnhancement('colorize'); setMode_1(); change_upload_label()">
 
 	<div class="container-fluid container_all">
 		<nav class="navbar navbar-expand-lg navbar-dark bg-primary custom_bcg">
@@ -199,19 +199,20 @@
 				<h3 class="red_color">Fáttát</h3>
 				<p class="blue_color">Sátneluohkát:</p>
 				<ul class="ul_style ul_hline">
-					<li class="fáttát_list"><span class="blue_class li_hline" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</span></li></br>
-					<li class="fáttát_list"><span class="blue_class li_hline" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</span></li></br>
+					<!--li class="fáttát_list"><span class="blue_class li_hline" id="SubstantiveSingular" onclick="setActivity('SubstantiveSingular')">Substantiivvat ovttaidlogus</span></li></br>
+					<li class="fáttát_list"><span class="blue_class li_hline" id="SubstantivePlural" onclick="setActivity('SubstantivePlural')">Substantiivvat máŋggaidlogus</span></li></br-->
+					<li class="fáttát_list"><span class="blue_class li_hline" id="Substantive" onclick="setActivity('Substantive')">Substantiivvat</span></li></br>
 					<li class="fáttát_list"><span class="blue_class li_hline" id="VerbConjugation" onclick="setActivity('VerbConjugation')">Finihtta vearbbat</span></li></br>
 					<li class="fáttát_list"><span class="blue_class li_hline" id="NegVerbs" onclick="setActivity('NegVerbs')">Vearbba biehttalanhápmi</span></li></br>
 					<li class="fáttát_list"><span class="blue_class li_hline" id="InfiniteVerbs" onclick="setActivity('InfiniteVerbs')">Infinihtta vearbbat</span></li></br>
 					<!--<li class="fáttát_list"><span class="blue_class" id="Conjunctions" onclick="setActivity('Conjunctions')">Konjunkšuvnnat</span></li></br>-->
 				</ul>
-				<p class="blue_color">Cealkkalahtut:</p>
+				<!--p class="blue_color">Cealkkalahtut:</p>
 				<ul class="ul_style ul_hline">
 					<li class="fáttát_list"><span class="blue_class li_hline" id="Subject" onclick="setActivity('Subject')">Testen: S</span></li></br>
 					<li class="fáttát_list"><span class="blue_class li_hline" id="Object" onclick="setActivity('Object')">Testen: O</span></li></br>
 					<li class="fáttát_list"><span class="blue_class li_hline" id="Adverbial" onclick="setActivity('Adverbial')">Testen: A</span></li></br>
-				</ul>
+				</ul-->
 			</div>
 			<div class="col-md-3 col-sm-12">
 				<h3 class="red_color">Hárjehusat</h3>
@@ -300,9 +301,11 @@
 								<!--
 								This is the site-key for testing
 								<div class="g-recaptcha " data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div></br>
-								-->
-								<!-- This is the site-key for gtoahpa -->
-							<div class="g-recaptcha " data-sitekey="6LcmpVUUAAAAAJ5QIbF56kYqzOhcWhsuCHJ3b7eG"></div></br>
+							-->
+
+								<!-- This is the site-key for gtoahpa
+							-->
+								<div class="g-recaptcha " data-sitekey="6LcmpVUUAAAAAJ5QIbF56kYqzOhcWhsuCHJ3b7eG"></div></br>
 
 								<p class="blue_class_np">Sáhtát addit hárjehusa liŋkka ohppiide. Vállje nuppi molssaeavttu:</p>
 								<input type="radio" name="save_options" value="save" checked><span class="blue_class_np">Fiila vurkejuvvo nu ahte sáhtát geavahit liŋkka ođđasit eará háve.</span></br>
