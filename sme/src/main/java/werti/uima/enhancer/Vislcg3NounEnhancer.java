@@ -487,7 +487,10 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				log.info("reading_str2:"+reading_str2);
 
 				if(reading_str2.contains("+Sg")){
-					if(reading_str2.contains("+Nom")){
+					//check if the strings contains Sg+Nom instead of only Nom
+					//because in case of NomAg: oahpaheaddji+N+NomAg+Sem/Hum+Sg+Gen+@ADVL>
+					//indexOf returns -1, and substring(0,-1) returns an error
+					if(reading_str2.contains("+Sg+Nom")){
 						reading_str2 = reading_str2.substring(0,reading_str2.indexOf("+Sg+Nom"));
 						for(String elem: distractors_Sg_Nom) {
 							generationInput2 += reading_str2 + elem + "\n";
@@ -533,7 +536,8 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				}
 
 				if(reading_str2.contains("+Pl")){
-					if(reading_str2.contains("+Nom")){
+					//same comment as for Sg
+					if(reading_str2.contains("+Pl+Nom")){
 						reading_str2 = reading_str2.substring(0,reading_str2.indexOf("+Pl+Nom"));
 						for(String elem: distractors_Pl_Nom) {
 							generationInput2 += reading_str2 + elem + "\n";
