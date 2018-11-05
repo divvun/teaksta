@@ -368,7 +368,8 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 			"V+Pot+Prs+Du2",
 			"V+Pot+Prs+Du3",
 			"V+Pot+Prs+Pl1",
-			"V+Pot+Prs+Pl2"
+			"V+Pot+Prs+Pl2",
+			"V+Pot+Prs+Pl3"
 		};
 
 		String[] distract_forms_neg = {
@@ -441,7 +442,12 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		//log.info("generation input:"+generationInput);
 
 		//add reading_str as last element in generationInput which will be used as correct_answer
-		generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
+		//remove @ only if it is in reading_str (otherwise get "String index out of range" error)
+		if (reading_str.indexOf("@")>0) {
+			generationInput += reading_str.substring(0, reading_str.indexOf("@")-1)+"\n";
+		} else {
+			generationInput += reading_str+"\n";
+		}
 
 		//if generationInput contains tags_tbr, remove it
 		generationInput = removeTags(generationInput);
@@ -454,7 +460,10 @@ public class Vislcg3VerbConjugationEnhancer extends JCasAnnotator_ImplBase {
 		String lemma_str = reading_str.substring(0, reading_str.indexOf("+"));
 		String an_tmp = reading_str.substring(reading_str.indexOf("+")+1, reading_str.length()-1);
 		String analyses_str = an_tmp.replace("+<sme>", "");
-		analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+		//remove @ only if it is in analyses_str (otherwise get "String index out of range" error)
+		if (analyses_str.indexOf("@")>0) {
+			analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+		}
 		String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
 		//if analyses contains tags_tbr, remove it

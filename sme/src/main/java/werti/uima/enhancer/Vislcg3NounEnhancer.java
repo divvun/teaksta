@@ -479,12 +479,18 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				*/
 
         String generationInput = "";
+				String reading_str_input = "";
 				//log.info("reading string:"+reading_str);
-				String reading_str_input = reading_str.substring(0, reading_str.indexOf("@")-1);
+				//remove @ only if it is in reading_str (otherwise get "String index out of range" error)
+				if (reading_str.indexOf("@")>0) {
+					reading_str_input = reading_str.substring(0, reading_str.indexOf("@")-1);
+				} else {
+					reading_str_input = reading_str;
+				}
 
 				String reading_str2 = reading_str;
 				String generationInput2 = "";
-				log.info("reading_str2:"+reading_str2);
+				//log.info("reading_str2:"+reading_str2);
 
 				if(reading_str2.contains("+Sg")){
 					//check if the strings contains Sg+Nom instead of only Nom
@@ -607,7 +613,10 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 			String lemma_str = reading_str.substring(0, reading_str.indexOf("+"));
 			String an_tmp = reading_str.substring(reading_str.indexOf("+")+1, reading_str.length());
 			String analyses_str = an_tmp.replace("+<sme>", "");
-			analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+			//remove @ only if it is in analyses_str (otherwise get "String index out of range" error)
+			if (analyses_str.indexOf("@")>0) {
+				analyses_str = analyses_str.substring(0, analyses_str.indexOf("@")-1);
+			}
 			String lem_and_an = lemma_str + "+" + analyses_str + "\n";
 
 			//if analyses contains tags_tbr, remove it
