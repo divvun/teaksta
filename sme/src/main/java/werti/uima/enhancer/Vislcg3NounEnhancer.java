@@ -125,7 +125,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 		//and also isit+N+Sem/Hum+Sg+Com+<compl_subj>+@Pron<
 		//Pattern excludePattern = Pattern.compile("V\\+|Pl\\+|A\\+(?!.*Pred)|Det|Pr$|Pron\\+|Pcle|Adv|Interj|CC|CS");
 		//Sg+Pl
-		Pattern excludePattern = Pattern.compile("V\\+|A\\+(?!.*Pred)|Det|Pr$|Pron\\+|Pcle|Adv|Interj|CC|CS");
+		Pattern excludePattern = Pattern.compile("V\\+|A\\+(?!.*Pred)|Det|Pr$|Pron\\+|Pcle|Adv|Interj|CC|CS|ACR\\+Dyn");
 		// patterns for the hints
 		Pattern hintPattern = Pattern.compile("Pr$");
 		// the following tags are allowed between hint and noun
