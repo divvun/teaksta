@@ -37,7 +37,7 @@
 			var spanTags = document.getElementsByClassName('wertiview');
 			for (i = 0; i < spanTags.length; i++) {
 				if (spanTags[i].parentElement.classList) {
-					var patt_widget = /widget-area/g;
+					var patt_widget = /widget-area|widget-title/g;
 	    		var res_widget = patt_widget.test(spanTags[i].parentElement.classList);
 					if (spanTags[i].parentElement.tagName != 'A' && !res_widget)  {
 						if (spanTags[i].hasChildNodes()) {
@@ -68,7 +68,7 @@
 			var spanTags = document.getElementsByClassName('wertiview');
 			for (i = 0; i < spanTags.length; i++) {
 				if (spanTags[i].parentElement.classList) {
-					var patt_widget = /widget-area/g;
+					var patt_widget = /widget-area|widget-title/g;
 					var res_widget = patt_widget.test(spanTags[i].parentElement.classList);
 					if (spanTags[i].parentElement.tagName != 'A' && !res_widget)  {
 						if (spanTags[i].hasChildNodes()) {
@@ -106,7 +106,7 @@
 			var a_found = false;
 
 			for (i = 0; i < parent_elements.length; i++) {
-				var patt_widget = /widget-area/g;
+				var patt_widget = /widget-area|widget-title/g;
 				var res_widget = patt_widget.test(parent_elements[i].classList);
 				var patt_menu = /menu/g;
 				var res_menu = patt_menu.test(parent_elements[i].classList);
@@ -155,7 +155,7 @@
 				var a_found = false;
 
 				for (i = 0; i < parent_elements.length; i++) {
-					var patt_widget = /widget-area/g;
+					var patt_widget = /widget-area|widget-title/g;
 					var res_widget = patt_widget.test(parent_elements[i].classList);
 					var patt_menu = /menu/g;
 					var res_menu = patt_menu.test(parent_elements[i].classList);
@@ -242,7 +242,7 @@
 			  var a_found = false;
 
 			  for (i = 0; i < parent_elements.length; i++) {
-			    var patt_widget = /widget-area/g;
+			    var patt_widget = /widget-area|widget-title/g;
 			    var res_widget = patt_widget.test(parent_elements[i].classList);
 			    var patt_menu = /menu/g;
 			    var res_menu = patt_menu.test(parent_elements[i].classList);
