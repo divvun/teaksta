@@ -88,6 +88,7 @@ public class HTMLEnhancer {
 
     	// add js libraries
     	String thisUrl = req.getRequestURL().toString();
+        thisUrl = thisUrl.replace("http", "https");
 	thisUrl = thisUrl.replaceFirst("/WERTiServlet","");
 	log.info("URL to js-lib:"+thisUrl);
     	//thisUrl = thisUrl.replaceFirst("(?<=" + servletContextName + ").*", ""); // something went wrong with the url on gtlab, so that js libraries and .css files had wrong paths
