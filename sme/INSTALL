@@ -48,14 +48,14 @@ top-level directory with
 Maven will automatically download a number of dependencies including:
 
 * UIMA (http://uima.apache.org/)
-  - uimaj-core-2.2.2-incubating.jar
+  - uimaj-core-2.2.2-incubating.jar (2.2.2 is outdated and no longer available. Using 2.3.1 for now.)
 * OpenNLP (http://opennlp.sourceforge.net/)
   - opennlp-tools-1.4.3.jar
   - maxent-2.5.2.jart
   - trove-1.0.2.jar
   - jwnl-1.3.3.jar
 * log4j (http://logging.apache.org/log4j/)
-  - log4j-1.2.13.jar
+  - log4j-2.12.4.jar
 * GSON (http://code.google.com/p/google-gson/)
   - gson-1.4.jar
 * jsoup (http://jsoup.org)
@@ -117,7 +117,7 @@ Deploying: Using Symlinks
 -------------------------
 
 If WERTi is installed on your local system, then placing a symlink from 
-'$CATALINA_HOME/webapps' to 'target/WERTi' is an easy way to deploy WERTi 
+'$CATALINA_BASE/webapps' to 'target/WERTi' is an easy way to deploy WERTi 
 locally. You can use the 'mvn war:exploded' task to redeploy the 
 application. Note that tomcat will require you to 'touch' WERTi's 
 'web.xml' for it to notice a change and reload.
