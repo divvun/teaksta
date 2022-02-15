@@ -15,7 +15,8 @@ import java.util.zip.GZIPInputStream;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 //import org.jsoup.nodes.Node;
 
@@ -65,14 +66,14 @@ public class WERTiContext {
 	public static ServletContext context;
 
 	private static Map<String, Map<Class<?>, Model<?>>> models;
-	private static final Logger log   = Logger.getLogger(WERTiContext.class);
+	private static final Logger log   = LogManager.getLogger(WERTiContext.class);
 	private static final String PROPS = "/WERTi.properties";
 
 	private static abstract class Model<T> {
 		T item; protected abstract T manufacture() throws WERTiContextException ;
 		final T request() throws WERTiContextException {
 			if (item == null) { item = manufacture(); }
-			log.debug("Requested model for "+item.getClass());
+			log.debug("Requested model for {}", item.getClass());
 		     return item;
 		}
 	}
@@ -100,7 +101,7 @@ public class WERTiContext {
 		byteDispenser = new InputStreamFactory() {
 			final String root = System.getenv("PWD");
 			public InputStream requestInputStream(String location) {
-				log.debug("Attempting to load "+root+location);
+				log.debug("Attempting to load {}{}", root, location);
 				final ClassLoader cl = WERTiContext.class.getClassLoader();
 				return cl.getResourceAsStream(location);
 			}
@@ -112,7 +113,7 @@ public class WERTiContext {
 		context = newsc.getServletContext();
 		byteDispenser = new InputStreamFactory() {
 			public InputStream requestInputStream(String location) {
-				log.debug("Attempting to load "+context.getRealPath(location)+".");
+				log.debug("Attempting to load {}.", context.getRealPath(location));
 				final InputStream is = context.getResourceAsStream(location);
 				if (is == null) {
 					log.fatal("Could not access "
@@ -464,7 +465,7 @@ public class WERTiContext {
 					final Object o = ois.readObject();
 					ois.close();
 					is.close();
-					log.info("Loading took "+(System.currentTimeMillis()-t)+"ms.");
+					log.info("Loading took {} ms.", System.currentTimeMillis()-t);
 					return o;
 				} catch (ClassNotFoundException cnfe) {
 					throw new WERTiContextException
@@ -513,7 +514,7 @@ public class WERTiContext {
 	}
 	private static String makePathForModel(String t) {
 		final String s = p.getProperty("models.base")+p.getProperty(t);
-		log.debug("Loading model from "+s+".");
+		log.debug("Loading model from {}.", s);
 		return s;
 	}
 }

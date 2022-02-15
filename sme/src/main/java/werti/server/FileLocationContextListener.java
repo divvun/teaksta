@@ -29,7 +29,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
 import org.apache.uima.jcas.JCas;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Node;

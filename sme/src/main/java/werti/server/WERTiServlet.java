@@ -25,7 +25,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.jcas.JCas;
 import org.jsoup.Connection;
 import org.jsoup.parser.Parser;
@@ -89,7 +90,7 @@ import javax.servlet.http.HttpSession;
  */
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
-		Logger.getLogger(WERTiServlet.class);
+		LogManager.getLogger(WERTiServlet.class);
 
 	public static final String outputfileLoc = "InputLog.txt";
 
@@ -181,7 +182,7 @@ public class WERTiServlet extends HttpServlet {
 				}
 				String url = req.getParameter("url");
 				// accept url-s without http://
-				log.info("url:"+url);
+				log.info("url:{}", url);
 				if (!url.startsWith("file:/")) {
 					if (!url.contains("http")) {
 						url = "http://" + url;
@@ -190,33 +191,33 @@ public class WERTiServlet extends HttpServlet {
 
 				String activity = req.getParameter("activity");
 				String enhancement = req.getParameter("client.enhancement");
-				//log.info("enhancement type"+enhancement);
+				//log.info("enhancement type {}", enhancement);
 				enhancement_type = enhancement;
 				String lang = req.getParameter("language");
 				if (lang == null) {
 					lang = "en";
 				}
 				ActivityConfiguration config = loadActivitiesAndProcessors(req, activity); //track this
-				log.info("config:"+config);
+				log.info("config:{}", config);
 				// merge config with request parameters
 				mergeConfigParams(config, req);
 
 				URL u = new URL(url);
-				log.info("URL again:"+u);
+				log.info("URL again:{}", u);
 				Document htmlDoc;
 				try {
 					if (!url.startsWith("file:/")) {
 		/*
 						String myurl = "https://avvir.no/oddasat/2017/03/oddasit-lihcco-boine";
 		      	Document mydocument = Jsoup.connect(myurl).data("query", "Java").userAgent("Mozilla").cookie("auth", "token").timeout(3000).get();
-						log.info("mydocument="+mydocument);*/
+						log.info("mydocument={}", mydocument);*/
 						htmlDoc = Jsoup.parse(u, MAX_WAIT);
 					} else {
 						File myinput = new File(url.substring(7,url.length()));
 						htmlDoc = Jsoup.parse(myinput, "UTF-8"); //Document
 					}
 					//Commenting next ln to reduce output in catalina.out
-					//log.info("page source:"+htmlDoc);
+					//log.info("page source:{}", htmlDoc);
 				} catch (IOException ioe) {
 					throw new ServletException("Webpage retrieval failed.");
 				}
@@ -236,7 +237,7 @@ public class WERTiServlet extends HttpServlet {
 					HTMLEnhancer ge = new HTMLEnhancer(cas);
 					String result = ge.enhance(activity, u.toString(), req, config, getServletContext().getServletContextName());
 
-					log.info("Web (" + (System.currentTimeMillis() - startTime) + "): " + req.getParameter("language") + ",  " + activity + ", " + req.getParameter("client.enhancement") + ", " + url + ", " + cas.getDocumentLanguage());
+					log.info("Web ({}): {},  {}, {}, {}, {}", (System.currentTimeMillis() - startTime), req.getParameter("language"), activity, req.getParameter("client.enhancement"), url, cas.getDocumentLanguage());
 
 					// Write the url, topic and enhancement type into the file as well:
 					FileWriter outputfile = new FileWriter(outputfileLoc,true); //the true will append the new data
@@ -337,7 +338,7 @@ public class WERTiServlet extends HttpServlet {
 			// check if this version is supported
 			if (!supportedVersions.contains(requestInfo.version)) {
 				resp.sendError(490);
-				log.info("Add-on, version conflict (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				log.info("Add-on, version conflict ({}): {}, {}, {}", (System.currentTimeMillis() - startTime), requestInfo.topic, requestInfo.activity, requestInfo.url);
 				return;
 			}
 
@@ -345,7 +346,7 @@ public class WERTiServlet extends HttpServlet {
 			if (requestInfo.type.matches("openid-authentication")) {
 				String userSuppliedIdentifier = requestInfo.url;
 				// TODO do something with this info
-				log.debug("requestInfo.document: " + requestInfo.document);
+				log.debug("requestInfo.document: {}" requestInfo.document);
 				if (openidConsumer == null) {
 					String openidReturnToUrl = getOpenIDReturnToUrl(req);
 					openidConsumer = new OpenIDConsumer(openidReturnToUrl, this);
@@ -364,14 +365,14 @@ public class WERTiServlet extends HttpServlet {
 			// check if the requested topic exists
 			if (config == null) {
 				resp.sendError(491);
-				log.info("Add-on, topic doesn't exist (" + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				log.info("Add-on, topic doesn't exist ({}): {}, {}, {}, {}", (System.currentTimeMillis() - startTime), lang, requestInfo.topic, requestInfo.activity, requestInfo.url);
 				return;
 			}
 
 			// check if the language-topic combination exists
 			if (config.getPreDesc(lang) == null || config.getPostDesc(lang) == null) {
 				resp.sendError(492);
-				log.info("Add-on, topic doesn't exist for language ("  + (System.currentTimeMillis() - startTime) + "): " + lang + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url);
+				log.info("Add-on, topic doesn't exist for language ({}): {}, {}, {}, {}", (System.currentTimeMillis() - startTime), lang, requestInfo.topic, requestInfo.activity, requestInfo.url);
 				return;
 			}
 
@@ -404,7 +405,7 @@ public class WERTiServlet extends HttpServlet {
 				JSONEnhancer pe = new JSONEnhancer(cas, requestInfo.activity);
 				result = pe.enhance();
 
-				log.info("Add-on (" + (System.currentTimeMillis() - startTime) + "): " + requestInfo.language + ", " + requestInfo.topic + ", " + requestInfo.activity + ", " + requestInfo.url + ", " + cas.getDocumentLanguage());
+				log.info("Add-on ({}): {}, {}, {}, {}, {}", (System.currentTimeMillis() - startTime), requestInfo.language, requestInfo.topic, requestInfo.activity, requestInfo.url, cas.getDocumentLanguage());
 			}
 
 			try { // to write to the response stream
@@ -494,9 +495,9 @@ public class WERTiServlet extends HttpServlet {
 
 			if (isConfigParam) {
 				if (worked) {
-					log.debug("Successfully set config param: " + key + " to:" + value);
+					log.debug("Successfully set config param: {} to: {}", key, value);
 				} else {
-					log.debug("Access denied for config param: " + key);
+					log.debug("Access denied for config param: {}", key);
 				}
 			}
 		}
@@ -513,7 +514,7 @@ public class WERTiServlet extends HttpServlet {
 		if (processors == null) {
 			long startTime = System.currentTimeMillis();
 			processors = new Processors(acts);
-			log.info("Loaded all UIMA processors (" + (System.currentTimeMillis() - startTime) + ")");
+			log.info("Loaded all UIMA processors ({})", (System.currentTimeMillis() - startTime));
 		}
 	}
 

@@ -13,7 +13,8 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.omg.CORBA_2_3.portable.OutputStream;
 import org.openid4java.consumer.*;
 import org.openid4java.discovery.*;
@@ -24,7 +25,7 @@ public class OpenIDConsumer extends HttpServlet {
 
 	private static final long serialVersionUID = 3784831295129116629L;
 
-	private static final Logger log = Logger.getLogger(OpenIDConsumer.class);
+	private static final Logger log = LogManager.getLogger(OpenIDConsumer.class);
 
 	public ConsumerManager manager;
 	public String returnToUrl;

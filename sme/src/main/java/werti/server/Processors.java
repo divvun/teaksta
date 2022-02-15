@@ -8,7 +8,8 @@ import java.util.TreeMap;
 
 import javax.servlet.ServletException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.analysis_engine.AnalysisEngine;
 import org.apache.uima.analysis_engine.AnalysisEngineDescription;
@@ -27,7 +28,7 @@ import org.apache.uima.util.XMLInputSource;
  */
 public class Processors {
 	private static final Logger log =
-		Logger.getLogger(Processors.class);
+		LogManager.getLogger(Processors.class);
 
 	private TreeMap<String, TreeMap<String, AnalysisEngine>> preMap;
 	private TreeMap<String, TreeMap<String, AnalysisEngine>> postMap;
@@ -38,8 +39,8 @@ public class Processors {
 		
 		for (String activity : activities) {
 			ActivityConfiguration config = activities.getActivity(activity);
-			log.info("Config:"+config);
-			log.info("Activity:"+activity);
+			log.info("Config:{}", config);
+			log.info("Activity:{}", activity);
 			
 			Set<String> langs = config.getLanguages();
 			
@@ -54,14 +55,14 @@ public class Processors {
 				final URL preDesc, postDesc;
 				preDesc = config.getPreDesc(l);
 				postDesc = config.getPostDesc(l);
-				log.info("Preprocess descriptor "+preDesc);
-				log.info("Postprocess descriptor"+postDesc);
+				log.info("Preprocess descriptor {}", preDesc);
+				log.info("Postprocess descriptor {}", postDesc);
 
 				try { // to initialize UIMA components
 					preMap.get(l).put(activity, initAE(loadDescriptor(preDesc), config.getServerPreConfigAsProp(l)));
-					log.info("preMap"+preMap);
+					log.info("preMap {}", preMap);
 					postMap.get(l).put(activity, initAE(loadDescriptor(postDesc), config.getServerPostConfigAsProp(l)));
-					log.info("postMap"+postMap);
+					log.info("postMap {}", postMap);
 				} catch (InvalidXMLException ixmle) {
 					log.fatal("Error initializing XML code. Invalid?", ixmle);
 					throw new ServletException("", ixmle);
@@ -130,7 +131,7 @@ public class Processors {
 	 */
 	private AnalysisEngineDescription loadDescriptor(URL descriptor) throws IOException, InvalidXMLException {
 
-		log.debug("Loading AE descriptor from url:  " + descriptor.getPath());
+		log.debug("Loading AE descriptor from url:  {}", descriptor.getPath());
 		XMLInputSource xmlInput = new XMLInputSource(descriptor);
 		AnalysisEngineDescription description = UIMAFramework.getXMLParser().parseAnalysisEngineDescription(xmlInput);
 		return description;
@@ -154,7 +155,7 @@ public class Processors {
 			Object genericTypeValue = autoConvertParameter(settings.getParameterValue(key), value);
 			settings.setParameterValue(key, genericTypeValue);
 			
-			log.debug("Setting AE parameter: " + key + "=" + value);
+			log.debug("Setting AE parameter: {}={}", key, value);
 		}
 		
 		// produce the annotator from the description
