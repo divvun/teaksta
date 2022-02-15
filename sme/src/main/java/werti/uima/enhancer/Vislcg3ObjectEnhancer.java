@@ -7,7 +7,8 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.io.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -36,7 +37,7 @@ import werti.util.Constants;
 public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3ObjectEnhancer.class);
+		LogManager.GetLogger(Vislcg3ObjectEnhancer.class);
 
 	private List<String> ObjectTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
@@ -47,7 +48,7 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Object tags "+ObjectTags);
+        log.info("Object tags {}", ObjectTags);
 		super.initialize(context);
 		ObjectTags = Arrays.asList(((String)context.getConfigParameterValue("ObjTags")).split(","));
 	}
@@ -63,7 +64,7 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
 		for (String conT : ObjectTags) {
 			classCounts.put(conT, 0);
-			log.info("Tag: "+conT);
+			log.info("Tag: {}", conT);
 		}
 
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
@@ -145,11 +146,11 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 		}
 
 		if (reading_str.contains(tag)) {  // Tag string contains the given tag sequence as a substring, plus it is in the accusative case if it is the phrase nucleus.
-            log.info(cgr + " contains " + tag);
+            log.info("{} contains {}", cgr,  tag);
             return true;
         }
 
-		//log.info(cgr + " does not contain " + tag);
+		//log.info("{} does not contain {}", cgr, tag);
 		return false;
 	}
 
@@ -160,7 +161,7 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 		for (String rtag : reading) {
 			if (rtag.charAt(0) == '\"') {
 			    lemma = rtag.substring(1,rtag.length()-1);
-			    log.info(cgr + " lemma: " + lemma);
+			    log.info("{} lemma: {}", cgr, lemma);
             }
 		}
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
@@ -172,8 +173,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
         catch (UnsupportedEncodingException e) {
             System.out.println(e);
         }*/
-		//log.info(cgr + " does not contain " + tag);
-		//log.info("lemma encoded in UTF8: " + lemma_utf8);
+		//log.info("{} does not contain {}", cgr, tag);
+		//log.info("lemma encoded in UTF8: {}", lemma_utf8);
 		return lemma;
 	}
 }

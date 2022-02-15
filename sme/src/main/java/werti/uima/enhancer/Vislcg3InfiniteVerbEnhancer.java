@@ -20,7 +20,8 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -56,7 +57,7 @@ import org.apache.commons.lang.StringUtils;
 
 public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 
-	private static final Logger log = Logger.getLogger(Vislcg3InfiniteVerbEnhancer.class);
+	private static final Logger log = LogManager.GetLogger(Vislcg3InfiniteVerbEnhancer.class);
 
 	private List<String> infverbTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
@@ -87,7 +88,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 	public void initialize(UimaContext context)
 		throws ResourceInitializationException {
 			//Commenting next ln to reduce output in catalina.out
-    	//log.info("InfiniteVerb tags "+infverbTags);
+    	//log.info("InfiniteVerb tags {}", infverbTags);
 			super.initialize(context);
 			infverbTags = Arrays.asList(((String)context.getConfigParameterValue("infiniteverbTags")).split(","));
 		}
@@ -100,7 +101,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 		}
 
 		String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
-		log.info("Starting InfiniteVerb enhancement "+enhancement_type+".");
+		log.info("Starting InfiniteVerb enhancement {}.", enhancement_type);
 
 		long generatingDistractorsTotalTime = 0;
 		final long startTime = System.currentTimeMillis();
@@ -158,7 +159,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 				// select from all readings the first occurrence that is matching pos and number
 				for(int i = 0; i < cgt.getReadings().size(); i++){
 			    CGReading currentReading = cgt.getReadings(i);
-			    //log.info("This is the lemma =" +reading.getHead());
+			    //log.info("This is the lemma ={}", reading.getHead());
 			    StringListIterable readingIterator = new StringListIterable(currentReading);
 			    String currentReadingString = "";
 			    for (String rtag : readingIterator) {
@@ -171,7 +172,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 					    isValidReading = true;
 					    // remove the first "+" and quotes
 					    reading_str = currentReadingString.substring(1).replace("\"", "");
-					    //log.info("This reading can be considered=" +currentReadingString);
+					    //log.info("This reading can be considered={}", currentReadingString);
 							// the lemma is the first element of the reading string
 							lemma = reading_str.split("\\+")[0];
 			    	}
@@ -179,7 +180,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 		    }
 		    if(isValidReading){
 					//Commenting next ln to reduce output in catalina.out
-					//log.info("This reading will be used=" +reading_str);
+					//log.info("This reading will be used={}", reading_str);
 					String distractors = "";
 					String lemma_and_analyses = "";
 
@@ -238,7 +239,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						    e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						    // update CAS
 						    cas.addFsToIndexes(e);
-						    //log.info("Enhancement="+e); // testing
+						    //log.info("Enhancement={}", e); // testing
 						}
 		    }
 			}
@@ -255,7 +256,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
           " | " + lookupLoc + " " + lookupFlags + " " + invertedFST +
 					" > " + cg3GeneratorOutputFileLoc};
 
-		    log.info("Distractor generation pipeline: "+generationPipeline[2]);
+		    log.info("Distractor generation pipeline: {}", generationPipeline[2]);
 
 		    final long startTimeGenerator = System.currentTimeMillis();
 
@@ -298,8 +299,8 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
     log.info("Finished InfiniteVerb enhancement.");
     final long endTime = System.currentTimeMillis();
 
-    log.info("Total execution time: " + (endTime - startTime)*0.001 + " seconds." );
-    log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
+    log.info("Total execution time: {} seconds.", (endTime - startTime)*0.001);
+    log.info("Generating the distractforms takes in total: {} seconds.", generatingDistractorsTotalTime * 0.001);
 	}
 
 	private String removeTags(String input_str) {
@@ -406,7 +407,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						currentWord = new Word(begin, end);
 						SpanTag spanTag = wordToSpanMap.get(currentWord);
 						//Commenting next ln to reduce output in catalina.out
-						//log.info("spantag before adding distractors:"+spanTag);
+						//log.info("spantag before adding distractors:{}", spanTag);
 						spanTag.addAttribute("distractors", distractforms);
 						spanTag.addAttribute("answer", splitted_go[splitted_go.length-1]);
 						// make new enhancement, pass it to the cas
@@ -419,7 +420,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
-						//log.info("Enhancement="+e); // testing
+						//log.info("Enhancement={}", e); // testing
 	     		}
 		 		}
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
@@ -433,13 +434,13 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 					HashSet<String> distractorsSet = new HashSet<String>();
 					while (tok.hasMoreTokens()) {
 				 		word = tok.nextToken();
-				 		//log.info("ifst output:"+word);
+				 		//log.info("ifst output:{}", word);
 				 		// forms that could not be generated are excluded, as well as input strings of the iFST
 				 		if (!word.contains("+") && !word.contains("-") && distractorsSet.add(word)) {
 				     	distractforms += word + " ";
 				 		}
 				 		else{
-			     		//log.info("Word that was excluded = " + word);
+			     		//log.info("Word that was excluded = {}",  word);
 				 		}
 				  }
 					// remove the whitespace at the end
@@ -449,7 +450,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 				 		distractforms = "";
 			   	}
 					else {
-				 		//log.info("This are the chosen distractforms="+distractforms);
+				 		//log.info("This are the chosen distractforms={}", distractforms);
 			   	}
 				}
 				// the generator output for the current token is not fully extracted from the file yet
@@ -493,7 +494,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						currentWord = new Word(begin, end);
 						SpanTag spanTag = wordToSpanMap.get(currentWord);
 						//Commenting next ln to reduce output in catalina.out
-						//log.info("spantag before adding forms:"+spanTag);
+						//log.info("spantag before adding forms:{}", spanTag);
 						spanTag.addAttribute("possibleforms", possible_forms);
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
@@ -504,7 +505,7 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
-						//log.info("Enhancement="+e); // testing
+						//log.info("Enhancement={}", e); // testing
 	     		}
 		 		}
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
@@ -517,13 +518,13 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 					HashSet<String> possible_formsSet = new HashSet<String>();
 					while (tok.hasMoreTokens()) {
 				 		word = tok.nextToken();
-				 		//log.info("ifst output:"+word);
+				 		//log.info("ifst output{}:", word);
 				 		// forms that could not be generated are excluded, as well as input strings of the iFST
 				 		if (!word.contains("+") && !word.contains("-") && possible_formsSet.add(word)) {
 				     	possible_forms += word + " ";
 				 		}
 				 		else{
-			     		//log.info("Word that was excluded = " + word);
+			     		//log.info("Word that was excluded = {}",  word);
 				 		}
 				  }
 					// remove the whitespace at the end

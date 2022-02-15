@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -32,7 +33,7 @@ import werti.server.WERTiServlet;
 public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3ConjunctionEnhancer.class);
+		LogManager.GetLogger(Vislcg3ConjunctionEnhancer.class);
 	
 	private List<String> conjunctionTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
@@ -41,7 +42,7 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.debug("Conjunction tags "+conjunctionTags);
+        log.debug("Conjunction tags {}", conjunctionTags);
 		super.initialize(context);
 		conjunctionTags = Arrays.asList(((String)context.getConfigParameterValue("conjunctionTags")).split(","));
 	}
@@ -56,7 +57,7 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
 		for (String conT : conjunctionTags) {
 			classCounts.put(conT, 0);
-			log.info("Tag: "+conT);
+			log.info("Tag: {}", conT);
 		}
 
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
@@ -81,7 +82,7 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
 				    CGReading reading = cgt.getReadings(i); 
 				
-				    //log.info("next reading: "+reading);
+				    //log.info("next reading: {}", reading);
 				
 				    if (containsTag(reading, conT)) {
 					// make new enhancement
@@ -130,11 +131,11 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 		StringListIterable reading = new StringListIterable(cgr);
 		for (String rtag : reading) {
 			if (tag.equals(rtag)) {
-			    //log.info(cgr + " contains " + tag);
+			    //log.info("{} contains {}", cgr, tag);
 				return true;
 			}
 		}
-		//log.info(cgr + " does not contain " + tag);
+		//log.info("{} does not contain {}", cgr, tag);
 		return false;
 	}
 

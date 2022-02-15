@@ -7,7 +7,8 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.io.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -34,7 +35,7 @@ import werti.server.WERTiServlet;
 public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3NounSgEnhancer.class);
+		LogManager.GetLogger(Vislcg3NounSgEnhancer.class);
 	
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NSgTags;
@@ -106,7 +107,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Noun Sg tags "+NSgTags);
+        log.info("Noun Sg tags {}", NSgTags);
 		super.initialize(context);
 		NSgTags = Arrays.asList(((String)context.getConfigParameterValue("NSgTags")).split(","));
 	}
@@ -121,7 +122,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
 		for (String conT : NSgTags) {
 			classCounts.put(conT, 0);
-			log.info("Tag: "+conT);
+			log.info("Tag: {}", conT);
 		}
 
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
@@ -213,7 +214,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			reading_str = reading_str + rtag + " ";
 		}
 	
-		//log.info("enhancement type is:"+enhancement_type);
+		//log.info("enhancement type is:{}", enhancement_type);
 		// If the exercise type is "practice" (cloze) then the derived forms, forms with clitics and proper nouns are excluded from the selection.
 		if ((reading_str.contains("Der/") || reading_str.contains("Qst")) && (enhancement_type.equals("cloze") || enhancement_type.equals("mc"))) {
 			log.info("derived form or form with clitics");
@@ -221,11 +222,11 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		}
 		
 		if (reading_str.contains(tag) && reading_str.contains(" N ")) {  // Tag string contains the given tag sequence as a substring, plus the POS tag 'N'.
-            log.info(cgr + " contains " + tag);
+            log.info("{} contains {}", cgr,  tag);
             return true;
         }
 
-		//log.info(cgr + " does not contain " + tag);
+		//log.info("{} does not contain {}", cgr, tag);
 		return false;
 	}
 	
@@ -261,7 +262,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		for (String rtag : reading) {
 			if (rtag.charAt(0) == '\"') {
 			    lemma = rtag.substring(1,rtag.length()-1);
-			    log.info(cgr + " lemma: " + lemma);
+			    log.info("{} lemma: {}", cgr, lemma);
             }
 		}
 		
@@ -274,8 +275,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
         catch (UnsupportedEncodingException e) {
             System.out.println(e);
         }*/
-		//log.info(cgr + " does not contain " + tag);
-		//log.info("lemma encoded in UTF8: " + lemma_utf8);
+		//log.info("{} does not contain {}", cgr, tag);
+		//log.info("lemma encoded in UTF8: {}", lemma_utf8);
 		return lemma;
 	}
 	
@@ -296,7 +297,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 				// correct lemma for compound words = morf analysis - N+Sg+Nom
 				lemma = lemma.replace("#","");
 				String[] analysisPipeline = {"/bin/sh", "-c", "/bin/echo \"" + lemma + "\" | " + lookupLoc + " " + lookupFlags + " " + FST};
-				log.info("Morph analysis pipeline: "+analysisPipeline[2]);
+				log.info("Morph analysis pipeline: {}", analysisPipeline[2]);
 				Process process = Runtime.getRuntime().exec(analysisPipeline);
 				
 				BufferedReader fromFST = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF8"));
@@ -315,7 +316,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 				String[] token = analysis[0].split("\t"); // take the first analysis
 				lemma = token[1]; // the first token is word to be analysed and the second token is the morph analysis
 				lemma = lemma.replace("Sg+Nom","");
-				log.info("lemma of the compound word: "+lemma);
+				log.info("lemma of the compound word: {}", lemma);
 				
 				for (int j=0; j < distract_forms.length; j++) {
 					generationInput += lemma + distract_forms[j] + "\n";
@@ -336,7 +337,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 				
 			String[] generationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + generationInput + "\" | " + lookupLoc + " " + lookupFlags + " " + invertedFST};
 				
-			log.info("Form generation pipeline: "+generationPipeline[2]);
+			log.info("Form generation pipeline: {}", generationPipeline[2]);
 	
 			Process process2 = Runtime.getRuntime().exec(generationPipeline);
 
@@ -356,7 +357,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 			StringTokenizer tok = new StringTokenizer(iFSToutput);
 			while (tok.hasMoreTokens()) {
 				word = tok.nextToken();
-				log.info("ifst output:"+word);
+				log.info("ifst output:{}", word);
 				if (!word.contains("+") && !word.contains("-")) {  // forms that could not be generated are excluded, as well as input strings of the iFST
 					result = result + word + " ";
 				}
@@ -367,7 +368,7 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
             System.out.println(e.getMessage());
         }
         
-        log.info("Generated forms read from the outputfile: "+result);	  
+        log.info("Generated forms read from the outputfile: {}", result);	  
         return result;
     }
 }

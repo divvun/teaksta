@@ -2,7 +2,8 @@ package werti.uima.enhancer;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.FSIndex;
@@ -22,7 +23,7 @@ import werti.util.EnhancerUtils;
 
 public class HTMLContentTypeEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(HTMLContentTypeEnhancer.class);
+		LogManager.GetLogger(HTMLContentTypeEnhancer.class);
 
 	/**
 	 * Iterate over all <tt>RelevantText</tt>s in the CAS and examine their 
@@ -38,7 +39,7 @@ public class HTMLContentTypeEnhancer extends JCasAnnotator_ImplBase {
 		final FSIndex textIndex = cas.getAnnotationIndex(RelevantText.type);
 		final Iterator<RelevantText> tit = textIndex.iterator();
 
-		log.debug("Feature Structure index size: " + textIndex.size());
+		log.debug("Feature Structure index size: {}", textIndex.size());
 
 		RelevantText t;
 		
@@ -60,11 +61,7 @@ public class HTMLContentTypeEnhancer extends JCasAnnotator_ImplBase {
 			e.setEnhanceEnd("</span>");
 
 			if (log.isTraceEnabled()) {
-				log.trace("Enhanced " + t.getCoveredText()
-						+ " with tag "
-						+ t.getHtmlContentType()
-						+ " with id "
-						+ id);
+				log.trace("Enhanced {} with tag {} with id {}", t.getCoveredText(), t.getHtmlContentType(), id);
 			}
 			e.addToIndexes();
 		}

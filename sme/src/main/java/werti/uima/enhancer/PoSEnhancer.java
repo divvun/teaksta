@@ -4,7 +4,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
@@ -32,7 +33,7 @@ import werti.util.EnhancerUtils;
 
 public class PoSEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(PoSEnhancer.class);
+		LogManager.GetLogger(PoSEnhancer.class);
 	
 	private List<String> tags;
 	
@@ -59,7 +60,7 @@ public class PoSEnhancer extends JCasAnnotator_ImplBase {
 		final FSIndex textIndex = cas.getAnnotationIndex(Token.type);
 		final Iterator<Token> tit = textIndex.iterator();
 
-		log.debug("Feature Structure index size: " + textIndex.size());
+		log.debug("Feature Structure index size: {}", textIndex.size());
 
 		Token t; // token pointer
 
@@ -79,11 +80,7 @@ public class PoSEnhancer extends JCasAnnotator_ImplBase {
 				e.setEnhanceEnd("</span>");
 
 				if (log.isTraceEnabled()) {
-					log.trace("Enhanced " + t.getCoveredText()
-							+ " with tag "
-							+ t.getTag()
-							+ " with id "
-							+ id);
+					log.trace("Enhanced {} with tag {} with id {}", t.getCoveredText(), t.getTag(), id);
 				}
 				e.addToIndexes();
 			}

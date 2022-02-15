@@ -21,7 +21,8 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -55,7 +56,7 @@ import werti.util.Constants;
 public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3NounEnhancer.class);
+		LogManager.GetLogger(Vislcg3NounEnhancer.class);
 
 	private String enhancement_type = WERTiServlet.enhancement_type; // colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 	private List<String> NTags;
@@ -96,7 +97,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 		}
 		// colorize, click, mc or cloze - chosen by the user and sent to the servlet as a request parameter
 		String enhancement_type = WERTiServlet.enhancement_type;
-		log.info("Starting Noun Sg enhancement "+enhancement_type+".");
+		log.info("Starting Noun Sg enhancement {}.", enhancement_type);
 
 		long generatingDistractorsTotalTime = 0;
 
@@ -183,7 +184,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				// select from all readings the first occurrence that is matching pos and number
 				for(int i = 0; i < cgt.getReadings().size(); i++){
 					CGReading currentReading = cgt.getReadings(i);
-					//log.info("This is the lemma =" +reading.getHead());
+					//log.info("This is the lemma ={}", reading.getHead());
 					StringListIterable readingIterator = new StringListIterable(currentReading);
 					String currentReadingString = "";
 					for (String rtag : readingIterator) {
@@ -201,7 +202,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 								!(posMatcher.find() &&
 								numberMatcher.find())){
 							isValidHint = false;
-							//log.info("This tag breaks the connection between hint and noun ="+currentReadingString);
+							//log.info("This tag breaks the connection between hint and noun ={}", currentReadingString);
 						}
 					}
 
@@ -215,12 +216,12 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 							isValidHint = true;
 						}
 					}
-					//log.info("The current reading string is=" + currentReadingString);
+					//log.info("The current reading string is={}",  currentReadingString);
 					// don't consider readings that match the exclude pattern, to filter out unlikely readings
 					// (e.g. "и" is a CC in almost all cases, the probability that it is a N is very low)
 					Matcher excludeMatcher = excludePattern.matcher(currentReadingString);
 					if(excludeMatcher.find()){
-						//log.info("This reading won't be considered=" + currentReadingString);
+						//log.info("This reading won't be considered={}",  currentReadingString);
 						isValidReading = false;
 						break;
 					}
@@ -231,7 +232,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 							isValidReading = true;
 							// remove the first "+" and quotes
 							reading_str = currentReadingString.substring(1).replace("\"", "");
-							//log.info("This reading can be considered=" +currentReadingString);
+							//log.info("This reading can be considered={}", currentReadingString);
 							// the lemma is the first element of the reading string
 							lemma = reading_str.split("\\+")[0];
 						}
@@ -239,7 +240,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				}
 
 				if(isValidReading){
-					//log.info("This reading will be used=" +reading_str);
+					//log.info("This reading will be used={}", reading_str);
 					String distractors = "";
 					String lemma_and_analyses = "";
 
@@ -298,7 +299,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 							// write the word to the file in order to assign the correct distractors to the correct span
 							cg3GeneratorInputWriterCloze.write(word.toString());
 						} else {
-						//log.info("This is the cgt=" + cgt.getCoveredText() + " B="+ word.getBegin() + " E=" + word.getEnd());
+						//log.info("This is the cgt={} B={} E={}", cgt.getCoveredText(), word.getBegin(), word.getEnd());
 						// make new enhancement, pass it to the cas
 						Enhancement e = new Enhancement(cas);
 						e.setRelevant(true);
@@ -308,7 +309,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
-						//log.info("Enhancement="+e); // testing
+						//log.info("Enhancement={}", e); // testing
 					}
 				}
 				else {
@@ -341,7 +342,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
-						//log.info("Enhancement="+e); // testing
+						//log.info("Enhancement={}",e); // testing
 					}
 				}
 				hintDistance++;
@@ -372,7 +373,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				" | " + lookupLoc + " " + lookupFlags + " " + invertedFST +
 				" > " + cg3GeneratorOutputFileLoc};
 
-				log.info("Distractor generation pipeline: "+generationPipeline[2]);
+				log.info("Distractor generation pipeline: {}", generationPipeline[2]);
 
 				final long startTimeGenerator = System.currentTimeMillis();
 
@@ -417,8 +418,8 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 		log.info("Finished Noun Sg enhancement.");
 		final long endTime = System.currentTimeMillis();
 
-		log.info("Total execution time: " + (endTime - startTime)*0.001 + " seconds." );
-		log.info("Generating the distractforms takes in total: " + generatingDistractorsTotalTime * 0.001 + " seconds." );
+		log.info("Total execution time: {} seconds.", (endTime - startTime)*0.001);
+		log.info("Generating the distractforms takes in total: {} seconds.", generatingDistractorsTotalTime * 0.001);
 	}
 
 	private String removeTags(String input_str) {
@@ -480,7 +481,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 
         String generationInput = "";
 				String reading_str_input = "";
-				//log.info("reading string:"+reading_str);
+				//log.info("reading string:{}", reading_str);
 				//remove @ only if it is in reading_str (otherwise get "String index out of range" error)
 				if (reading_str.indexOf("@")>0) {
 					reading_str_input = reading_str.substring(0, reading_str.indexOf("@")-1);
@@ -490,7 +491,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 
 				String reading_str2 = reading_str;
 				String generationInput2 = "";
-				//log.info("reading_str2:"+reading_str2);
+				//log.info("reading_str2:{}", reading_str2);
 
 				if(reading_str2.contains("+Sg")){
 					//check if the strings contains Sg+Nom instead of only Nom
@@ -581,13 +582,13 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 					}
 				}
 
-				log.info("generationInput2="+generationInput2);
+				log.info("generationInput2={}", generationInput2);
 
         for(String aCase: distractFormsCase){
         	if(reading_str.contains(aCase)){
         		// remove the case marker and the syntactic tag from the reading
           	reading_str = reading_str.substring(0,reading_str.indexOf(aCase));
-						//log.info("reading string without case and syntax tag:"+reading_str);
+						//log.info("reading string without case and syntax tag:{}", reading_str);
         		// Assign distractorforms from the array
             for(String elem: distractFormsCase) {
         			generationInput += reading_str + elem + "\n";
@@ -604,7 +605,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 				generationInput = removeTags(generationInput);
 				generationInput2 = removeTags(generationInput2);
 
-        //log.info("generation input:"+generationInput);
+        //log.info("generation input:{}", generationInput);
 				return generationInput2;
     }
 
@@ -695,7 +696,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						int end = Integer.parseInt(lineParts[2]);
 						currentWord = new Word(begin, end);
 						SpanTag spanTag = wordToSpanMap.get(currentWord);
-						log.info("spantag before adding distractors:"+spanTag);
+						log.info("spantag before adding distractors:{}", spanTag);
 						spanTag.addAttribute("distractors", distractforms);
 						spanTag.addAttribute("answer", splitted_go[splitted_go.length-1]);
 						// make new enhancement, pass it to the cas
@@ -707,7 +708,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						e.setEnhanceEnd(spanTag.getSpanTagEnd());
 						// update CAS
 						cas.addFsToIndexes(e);
-						log.info("Enhancement="+e); // testing
+						log.info("Enhancement={}",e); // testing
 					}
 				}
 				// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
@@ -721,13 +722,13 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 					HashSet<String> distractorsSet = new HashSet<String>();
 					while (tok.hasMoreTokens()) {
 						word = tok.nextToken();
-						//log.info("ifst output:"+word);
+						//log.info("ifst output:{}", word);
 						// forms that could not be generated are excluded, as well as input strings of the iFST
 						if (!word.contains("+") && !word.contains("-") && distractorsSet.add(word)) {
 							distractforms += word + " ";
 						}
 						else{
-							//log.info("Word that was excluded = " + word);
+							//log.info("Word that was excluded = {}", word);
 						}
 					}
 					// remove the whitespace at the end
@@ -737,7 +738,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						distractforms = "";
 					}
 					else {
-						//log.info("This are the chosen distractforms="+distractforms);
+						//log.info("This are the chosen distractforms={}", distractforms);
 					}
 				}
 				// the generator output for the current token is not fully extracted from the file yet
@@ -781,8 +782,8 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 							currentWord = new Word(begin, end);
 							SpanTag spanTag = wordToSpanMap.get(currentWord);
 							//Commenting next ln to reduce output in catalina.out
-							//log.info("spantag before adding forms:"+spanTag);
-							log.info("possibleforms= "+possible_forms);
+							//log.info("spantag before adding forms:{}", spanTag);
+							log.info("possibleforms= {}", possible_forms);
 							spanTag.addAttribute("possibleforms", possible_forms);
 							// make new enhancement, pass it to the cas
 							Enhancement e = new Enhancement(cas);
@@ -793,7 +794,7 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 							e.setEnhanceEnd(spanTag.getSpanTagEnd());
 							// update CAS
 							cas.addFsToIndexes(e);
-							//log.info("Enhancement="+e); // testing
+							//log.info("Enhancement={}",e); // testing
 		     		}
 			 		}
 					// the marker (ñôŃßĘńŠē) was found, begin to process the generator output, create distractors
@@ -806,13 +807,13 @@ public class Vislcg3NounEnhancer extends JCasAnnotator_ImplBase {
 						HashSet<String> possible_formsSet = new HashSet<String>();
 						while (tok.hasMoreTokens()) {
 					 		word = tok.nextToken();
-					 		//log.info("ifst output:"+word);
+					 		//log.info("ifst output:{}", word);
 					 		// forms that could not be generated are excluded, as well as input strings of the iFST
 					 		if (!word.contains("+") && !word.contains("-") && possible_formsSet.add(word)) {
 					     	possible_forms += word + " ";
 					 		}
 					 		else{
-				     		//log.info("Word that was excluded = " + word);
+				     		//log.info("Word that was excluded = {}",  word);
 					 		}
 					  }
 						// remove the whitespace at the end

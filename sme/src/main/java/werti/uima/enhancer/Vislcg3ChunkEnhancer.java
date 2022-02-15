@@ -5,7 +5,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Stack;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -30,7 +31,7 @@ import werti.util.StringListIterable;
 public class Vislcg3ChunkEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3ChunkEnhancer.class);
+		LogManager.GetLogger(Vislcg3ChunkEnhancer.class);
 	
 	private List<String> chunkTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
@@ -104,7 +105,7 @@ public class Vislcg3ChunkEnhancer extends JCasAnnotator_ImplBase {
 					e.setRelevant(true);
 					// update CAS
 					cas.addFsToIndexes(e);
-					log.debug("Completed chunk " + chunkT + "-" + classCounts.get(chunkT) + " at pos " + e.getEnd());
+					log.debug("Completed chunk {}-{} at pos {}", chunkT, classCounts.get(chunkT), e.getEnd());
 				}
 				
 				// case 2: chunk start tag
@@ -120,7 +121,7 @@ public class Vislcg3ChunkEnhancer extends JCasAnnotator_ImplBase {
 					classCounts.put(chunkT, newId);
 					// push onto stack
 					enhancements.push(e);
-					log.debug("Started chunk " + chunkT + "-" + newId + " at pos " + e.getBegin());
+					log.debug("Started chunk {}-{} at pos {}", chunkT, newId, e.getBegin());
 				}
 
 				prev = cgt;

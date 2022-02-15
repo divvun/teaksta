@@ -5,7 +5,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
@@ -33,7 +34,7 @@ import werti.util.EnhancerUtils;
 
 public class WordEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(WordEnhancer.class);
+		LogManager.GetLogger(WordEnhancer.class);
 	
 	private List<String> words;
 	
@@ -95,11 +96,7 @@ public class WordEnhancer extends JCasAnnotator_ImplBase {
 				e.setEnhanceEnd("</span>");
 
 				if (log.isTraceEnabled()) {
-					log.trace("Enhanced " + t.getCoveredText()
-							+ " with tag "
-							+ t.getTag()
-							+ " with id "
-							+ id);
+					log.trace("Enhanced {} with tag {} with id {}", t.getCoveredText(), t.getTag(), id);
 				}
 				e.addToIndexes();
 			

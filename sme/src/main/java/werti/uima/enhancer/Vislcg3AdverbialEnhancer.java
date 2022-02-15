@@ -7,7 +7,8 @@ import java.util.Stack;
 import java.util.StringTokenizer;
 import java.io.*;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -36,7 +37,7 @@ import werti.util.Constants;
 public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(Vislcg3AdverbialEnhancer.class);
+		LogManager.GetLogger(Vislcg3AdverbialEnhancer.class);
 
 	private List<String> advTags;
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
@@ -48,7 +49,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
-        log.info("Adverbial tags "+advTags);
+        log.info("Adverbial tags {}", advTags);
 		super.initialize(context);
 		advTags = Arrays.asList(((String)context.getConfigParameterValue("AdvTags")).split(","));
 	}
@@ -64,7 +65,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		HashMap<String, Integer> classCounts = new HashMap<String, Integer>();
 		for (String conT : advTags) {
 			classCounts.put(conT, 0);
-			log.info("Tag: "+conT);
+			log.info("Tag: {}", conT);
 		}
 
 		// iterating over chunkTags instead of classCounts.keySet() because it is important to control the order in which
@@ -89,7 +90,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 				for (int i=0; i < cgt.getReadings().size(); i++) { // Loop over all the readings. If there is one analysis that matches the tag pattern then the token will be selected for the exercise.
 				    CGReading reading = cgt.getReadings(i);
 
-				    //log.info("next reading: "+reading);
+				    //log.info("next reading: {}", reading);
 
 				    if (containsTag(reading, conT)) {
 					// get lemma from the CG reading
@@ -151,7 +152,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
             return true;
         }
 
-		//log.info(cgr + " does not contain " + tag);
+		//log.info("{} does not contain {}", cgr, tag);
 		return false;
 	}
 
@@ -162,7 +163,7 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		for (String rtag : reading) {
 			if (rtag.charAt(0) == '\"') {
 			    lemma = rtag.substring(1,rtag.length()-1);
-			    log.info(cgr + " lemma: " + lemma);
+			    log.info("{} lemma: {}", cgr, lemma);
             }
 		}
 		// Convert the lemma to utf8. - Not needed any more because the whole cg input and output is converted to utf8.
@@ -174,8 +175,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
         catch (UnsupportedEncodingException e) {
             System.out.println(e);
         }*/
-		//log.info(cgr + " does not contain " + tag);
-		//log.info("lemma encoded in UTF8: " + lemma_utf8);
+		//log.info("{} does not contain {}", cgr, tag);
+		//log.info("lemma encoded in UTF8: {}", lemma_utf8);
 		return lemma;
 	}
 }
