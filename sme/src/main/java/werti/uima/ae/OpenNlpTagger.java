@@ -8,7 +8,8 @@ import java.util.Map;
 
 import opennlp.tools.postag.POSTaggerME;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -31,7 +32,7 @@ import werti.uima.types.annot.Token;
  */
 public class OpenNlpTagger extends JCasAnnotator_ImplBase {
 	private static Map<String, POSTaggerME> taggers;	
-	private static final Logger log = Logger.getLogger(OpenNlpTagger.class);
+	private static final Logger log = LogManager.GetLogger(OpenNlpTagger.class);
 	
 	@Override
 	public void initialize(UimaContext aContext)
@@ -63,7 +64,7 @@ public class OpenNlpTagger extends JCasAnnotator_ImplBase {
 		if (taggers.containsKey(lang)) {
 			tagger = taggers.get(lang);
 		} else {
-			log.error("No tagger for language: " + lang);
+			log.error("No tagger for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}
 		

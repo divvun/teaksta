@@ -10,7 +10,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -224,7 +225,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 
 
 
-	private static final Logger log = Logger.getLogger(HTMLContentTypeAnnotator.class);
+	private static final Logger log = LogManager.GetLogger(HTMLContentTypeAnnotator.class);
 	// the first classifier
 	private static Classifier cls;
 	// the second classifier (for smoothing)
@@ -245,7 +246,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			cls = (Classifier) SerializationHelper.read(modelFileName);
 		}
 		catch (Exception e) {
-			log.info("could not load model " + modelFileName);
+			log.info("could not load model {}", modelFileName);
 			return;
 		}
 
@@ -254,7 +255,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			smoother = (Classifier) SerializationHelper.read(smoothingModelFileName);
 		}
 		catch (Exception e) {
-			log.info("could not load smoother model " + smoothingModelFileName);
+			log.info("could not load smoother model {}", smoothingModelFileName);
 			StackTraceElement[] stackTrace = e.getStackTrace();
 			for (StackTraceElement element : stackTrace){
 				log.info(element.toString());
@@ -432,11 +433,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 			try{
 				int classificationIdx = (int) cls.classifyInstance(inst);
 				classification = classFeatureValues[classificationIdx];
-				log.info("classified as: " + classification);
+				log.info("classified as: {}", classification);
 			}
 			catch (Exception exception){
 				// instances that cause trouble are regarded as boilerplate
-				log.info("could not be classified; exception: " + exception);
+				log.info("could not be classified; exception: {}", exception);
 			}
 			// cache the classification
 			classificationCache.add(classification);
@@ -459,11 +460,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 				try {
 					int classificationIdx = (int) smoother.classifyInstance(inst);
 					classification = cssClasses[classificationIdx];
-					log.info("classified as: " + classification);
+					log.info("classified as: {}", classification);
 				}
 				catch (Exception exception) {
 					// instances that cause trouble are ignored
-					log.info("could not be classified; exception: " + exception);
+					log.info("could not be classified; exception: {}", exception);
 				}
 			}
 
@@ -491,11 +492,11 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		List<Token> tokenList = tokenize(rt);
 		List<PlainTextSentenceAnnotation> sentList = sentDetect(rt);
 
-		//log.debug("Text starting at index: " + rt.getBegin());
-		//log.debug("Text ending at index: " + rt.getEnd());
-		//log.debug("TEXT::" + rt.getCoveredText() + "::TEXT");
-		//log.debug("Number of tokens: " + tokenList.size());
-		//log.debug("Number of sentences: " + sentList.size());
+		//log.debug("Text starting at index: {}", rt.getBegin());
+		//log.debug("Text ending at index: {}", rt.getEnd());
+		//log.debug("TEXT::{}::TEXT", rt.getCoveredText());
+		//log.debug("Number of tokens: {}", tokenList.size());
+		//log.debug("Number of sentences: {}", sentList.size());
 
 		int myId = id.get(e);
 		wertiIds[wertiIdsIdx] = myId;
@@ -727,7 +728,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 				dataset.add(inst);
 			}
 			else{
-				log.debug("the following instance is not compatible with the dataset: " + inst);
+				log.debug("the following instance is not compatible with the dataset: {}", inst);
 			}
 		}
 		return dataset;
@@ -1020,7 +1021,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 				// if this is an IGNORE node, ignore it
 				if (isIgnored(curNode.tagName())){
 					doIgnore = true;
-					log.info(curNode.tagName() + " is ignored.");
+					log.info("{} is ignored.", curNode.tagName());
 				}
 				else{
 					// if it is a werti or annotation span, don't add it
@@ -1513,7 +1514,7 @@ public class HTMLContentTypeAnnotator extends JCasAnnotator_ImplBase {
 		while (sentIt.hasNext()){
 			PlainTextSentenceAnnotation s = sentIt.next();
 			sentList.add(s);
-			//log.debug("sentBegin: " + s.getBegin());
+			//log.debug("sentBegin: {}", s.getBegin());
 		}
 		return sentList;
 	}

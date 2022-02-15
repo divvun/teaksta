@@ -26,7 +26,8 @@ import java.util.Set;
 
 import opennlp.tools.tokenize.TokenizerME;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -50,7 +51,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 	private static Map<String, TokenizerME> tokenizers;
 	private static final Logger log =
-	Logger.getLogger(GiellateknoTokenizer.class);
+	LogManager.GetLogger(GiellateknoTokenizer.class);
         // Heli's MacBook:
         /* private static final String toolsDir = "/Users/mslm/main/gt/script/";
 	   private static final String abbrDir = "/Users/mslm/main/gt/sme/bin/"; */
@@ -134,8 +135,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		log.info("Starting token annotation");
 
 		String text = jcas.getDocumentText();
-		//log.info("extracted text: " + text);
-		//log.info("jcas.getDocumentText() returns: "+text);
+		//log.info("extracted text: {}", text);
+		//log.info("jcas.getDocumentText() returns: {}", text);
 
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
@@ -169,14 +170,14 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		   try {writer.close();} catch (Exception ex) {/*ignore*/}
 		}
 
-		//log.info("Relevant text sent to the tokenizer: " + textString);
+		//log.info("Relevant text sent to the tokenizer: {}", textString);
 		final String lang = jcas.getDocumentLanguage();
 		String tokenised_text = "";
 
 		//String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/echo \"" + textString + "\" | " + preprocessCmd};
 		String[] tokenisationPipeline = {"/bin/sh", "-c", "/bin/cat \"" + filePath + "\" | " + preprocessCmd};
 		//Commenting next ln to reduce output in catalina.out
-		log.info("Preprocessing command: " + tokenisationPipeline[2]);
+		log.info("Preprocessing command: {}", tokenisationPipeline[2]);
 		try {
 			Process process = Runtime.getRuntime().exec(tokenisationPipeline);
 
@@ -198,14 +199,14 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		}
 
 		String[] tokens = null;
-		log.info("tokenised_text="+tokenised_text);
+		log.info("tokenised_text={}", tokenised_text);
 
 		tokens = tokenised_text.split("\n");
 
 		/*if (tokenizers.containsKey(lang)) {
 			tokens = tokenizers.get(lang).tokenize(textString);
 		} else {
-			log.error("No tokenizer for language: " + lang);
+			log.error("No tokenizer for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}*/
 
@@ -215,15 +216,15 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 			// include all tokens that don't consist of whitespace, i.e., prevent
 			// unicode non-breaking space from becoming a token
 			//Commenting ln 188 and 190 to reduce output in catalina.out
-      log.info("next token: "+token);
+      log.info("next token: {}", token);
 			int tokenStart = textString.indexOf(token, skew);
-			log.info("Token "+token+" starts at "+tokenStart);
+			log.info("Token {}} starts at {}", token, tokenStart);
 
 			if (tokenStart == -1) {
 		    if (textString.indexOf('-',skew) != -1) { // Handle the hyphenated words that are "repaired" by preprocess and thus not found in the original text.
 					String syllable=textString.substring(skew,textString.indexOf('-',skew)-1); // was: token.substring(0,textString.indexOf('-',skew)-1)
 					//Commenting next ln to reduce output in catalina.out
-					//log.info("part of the word preceding the hyphen: "+syllable);
+					//log.info("part of the word preceding the hyphen: {}", syllable);
 					tokenStart = textString.indexOf(syllable, skew); // search the part of the word preceding the hyphen instead of the whole word
 					skew = tokenStart + token.length() + 1; // 1 = length of the hyphen
 		    }
@@ -241,13 +242,13 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 				//}
 			}
 			//Commenting next ln to reduce output in catalina.out
-			//log.info("and ends at "+skew);
+			//log.info("and ends at {}", skew);
 
 			if (token.matches(".*?[^\\p{Z}].*")) { // was: ("[^\\p{Z}]+"))
 				final Token t = new Token(jcas);
 				final int start = tokenStart;
 				//Commenting next ln to reduce output in catalina.out
-				//log.info("Token "+token+" will be added to jcas.");
+				//log.info("Token {} will be added to jcas.", token);
 				t.setBegin(start);
 				t.setEnd(start + token.length());
 
@@ -285,7 +286,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 				t.addToIndexes();
 				if (log.isTraceEnabled()) {
-					log.trace("Token: " + t.getBegin() + " " + t.getCoveredText() + " " + t.getEnd());
+					log.trace("Token: {} {} {}", t.getBegin(), t.getCoveredText(), t.getEnd());
 				}
 			}
 		}

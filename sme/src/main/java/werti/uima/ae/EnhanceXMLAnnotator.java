@@ -3,7 +3,8 @@ package werti.uima.ae;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
@@ -17,7 +18,7 @@ import werti.uima.types.annot.EnhanceXML;
 
 public class EnhanceXMLAnnotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(EnhanceXMLAnnotator.class);
+		LogManager.GetLogger(EnhanceXMLAnnotator.class);
 
 	/**
 	 * Mark up all werti spans.

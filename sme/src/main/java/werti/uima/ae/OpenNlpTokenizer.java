@@ -5,7 +5,8 @@ import java.util.Map;
 
 import opennlp.tools.tokenize.TokenizerME;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -27,7 +28,7 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 
 	private static Map<String, TokenizerME> tokenizers;
 	private static final Logger log =
-		Logger.getLogger(OpenNlpTokenizer.class);
+		LogManager.GetLogger(OpenNlpTokenizer.class);
 
 	@Override
 	public void initialize(UimaContext aContext)
@@ -49,8 +50,8 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 		log.debug("Starting token annotation");
 		
 		String text = jcas.getDocumentText();
-		//log.info("extracted text: " + text);
-		//log.info("jcas.getDocumentText() returns: "+text);
+		//log.info("extracted text: {}", text);
+		//log.info("jcas.getDocumentText() returns: {}", text);
 				
 		StringBuilder rtext = new StringBuilder();
 		rtext.setLength(text.length());
@@ -77,7 +78,7 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 		if (tokenizers.containsKey(lang)) {
 			tokens = tokenizers.get(lang).tokenize(textString);
 		} else {
-			log.error("No tokenizer for language: " + lang);
+			log.error("No tokenizer for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}
 		
@@ -128,7 +129,7 @@ public class OpenNlpTokenizer extends JCasAnnotator_ImplBase {
 				
 				t.addToIndexes();
 				if (log.isTraceEnabled()) {
-					log.trace("Token: " + t.getBegin() + " " + t.getCoveredText() + " " + t.getEnd());
+					log.trace("Token: {} {} {}", t.getBegin(), t.getCoveredText(), t.getEnd());
 				}
 			}
 		}

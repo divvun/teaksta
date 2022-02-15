@@ -8,7 +8,8 @@ import java.util.List;
 import org.annolab.tt4j.DefaultExecutableResolver;
 import org.annolab.tt4j.TokenHandler;
 import org.annolab.tt4j.TreeTaggerWrapper;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.text.AnnotationIndex;
@@ -30,7 +31,7 @@ import werti.uima.types.annot.Token;
 public class TreeTaggerAnnotator extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(TreeTaggerAnnotator.class);
+		LogManager.GetLogger(TreeTaggerAnnotator.class);
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -63,7 +64,7 @@ public class TreeTaggerAnnotator extends JCasAnnotator_ImplBase {
 		paths.add(ttPath);
 		res.setAdditionalPaths(paths);
 		tt.setExecutableProvider(res);
-		log.info("Loaded TreeTagger model for: " + lang);
+		log.info("Loaded TreeTagger model for: {}", lang);
 		
 		try {
 			List<Token> tokens = new ArrayList<Token>();

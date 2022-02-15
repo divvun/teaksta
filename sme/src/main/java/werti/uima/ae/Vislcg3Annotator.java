@@ -19,7 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -48,7 +49,7 @@ import werti.util.Constants;
  */
 public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
-	private static final Logger log = Logger.getLogger(Vislcg3Annotator.class);
+	private static final Logger log = LogManager.GetLogger(Vislcg3Annotator.class);
 
 	private final String CGSentenceBoundaryToken = ".";
 	//Add vislcg3Loc, vislcg3DisGrammarLoc and vislcg3SyntGrammarLoc paths to Constants.java
@@ -92,7 +93,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			String line = null;
 			try {
 				while ( (line = reader.readLine()) != null ) {
-					log.debug(msgPrefix + line);
+					log.debug("{}{}", msgPrefix, line);
 				}
 			} catch (IOException e) {
 				log.error("Error in reading from external command.", e);
@@ -191,7 +192,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 		// convert token list to cg input
 		String cg3input = toCG3Input(originalTokens, originalSentences);
-		log.info("cg3input:"+cg3input);
+		log.info("cg3input: {}", cg3input);
 
 		try {
 			// run vislcg3
@@ -206,7 +207,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
             //String cg3output = runCG(FSToutput.toString());
             // parse cg output
 			//Commenting next lns to reduce output in catalina.out
-			log.info("cg3output"+cg3output);
+			log.info("cg3output {}", cg3output);
 			log.info("parsing CG output");
 			List<CGToken> newTokens = parseCGOutput(cg3output, jcas);
 			// assert that we got as many tokens back as we provided
@@ -218,8 +219,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 				throw new IllegalArgumentException("CG3 output is empty!");
 			}
 			//Commenting next lns to reduce output in catalina.out
-			log.info("original tokens:"+originalTokens.size());
-      log.info("new tokens:"+newTokens.size());
+			log.info("original tokens: {}", originalTokens.size());
+      log.info("new tokens: {}", newTokens.size());
 
 			int j = 0; // counter for new tokens
 			CGToken newT = null;
@@ -231,7 +232,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 					newT = newTokens.get(j);
 					reading = newT.getReadings().get(0).toString();
 				}
-				log.info("Token:"+origT.getCoveredText()+" CGToken:"+reading);
+				log.info("Token:{} CGToken:{}", origT.getCoveredText(), reading);
 
 				// Skip the fullstop tokens that were added in order to treat headings as separate sentences.
 				while (reading.contains("CLB") && !origT.getCoveredText().matches("[\\p{Punct}]+|…") && i < originalTokens.size()-1 && j < newTokens.size()-1) {
@@ -239,12 +240,12 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 					if (j < newTokens.size()) {
 						newT = newTokens.get(j);
 						reading = newT.getReadings().get(0).toString();
-						log.info("Token: "+origT.getCoveredText()+" new CGToken:"+reading);
+						log.info("Token: {} new CGToken:{}", origT.getCoveredText(), reading);
 					}
 				}
                 copy(origT, newT);
 				j++;
-                log.info("new token begins at: " + newT.getBegin());
+                log.info("new token begins at: {}", newT.getBegin());
                 // update CAS
 				jcas.removeFsFromIndexes(origT);
                 jcas.addFsToIndexes(newT);
@@ -299,7 +300,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 			result.append("\n"); // each token on a separate line
 		}
 		//Commenting next ln to reduce output in catalina.out
-		log.info("text to be parsed: "+result.toString());
+		log.info("text to be parsed: {}", result.toString());
 		return result.toString();
 	}
 
@@ -349,7 +350,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	// There is a problem with the syntactic rules, therefore using only disambiguation rules right now. Otherwise, the following should be added to the pipeline: " | " + vislcg3Loc + " -g " + vislcg3SyntGrammarLoc +
 	// String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | " + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc};
 		//Commenting next ln to reduce output in catalina.out
-		log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
+		log.info("Text analysis pipeline: {}", textAnalysisPipeline[2]);
 		Process process = Runtime.getRuntime().exec(textAnalysisPipeline);
         process.waitFor();
 
@@ -362,7 +363,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
             //str = cg3outputfile.readLine();
 		    result = result + str + "\n";
 		}
-        log.info("Read from cg3outputfile: "+result);
+        log.info("Read from cg3outputfile: {}", result);
 
         cg3outputfile.close();
 
@@ -388,7 +389,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		// compose text analysis pipeline and run a process
 		//String textAnalysisPipeline = "cat " + inputfileLoc + " | " + preprocessPipeline + vislcg3Loc + " -g " + vislcg3GrammarLoc + " > " + outputfileLoc;
 		String[] textAnalysisPipeline = {"/bin/sh", "-c", "/bin/echo \""+ input + "\" | /opt/local/bin/perl " + preprocessLoc + abbr + lookupLoc + " "+ lookupFlags + fstLoc + lookup2cgLoc + vislcg3Loc + " -g " + vislcg3GrammarLoc}; // + " > " + outputfileLoc};
-		//log.info("Text analysis pipeline: "+textAnalysisPipeline[2]);
+		//log.info("Text analysis pipeline: {}", textAnalysisPipeline[2]);
 		Process process = Runtime.getRuntime().exec(textAnalysisPipeline);
 		//process.waitFor();
 
@@ -427,7 +428,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		}
 		errorCG.close();
 		fromCG.close();
-		//log.info("VislCG3 output consumed "+result);
+		//log.info("VislCG3 output consumed {}", result);
 		return stdoutConsumer.getBuffer();
 	}
 	*/

@@ -8,7 +8,8 @@ import java.util.Map;
 
 import opennlp.tools.chunker.ChunkerME;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -33,7 +34,7 @@ public class OpenNlpChunker extends JCasAnnotator_ImplBase {
 
 	private Map<String, ChunkerME> chunkers;
 	private static final Logger log =
-		Logger.getLogger(OpenNlpChunker.class);
+		LogManager.GetLogger(OpenNlpChunker.class);
 	
 	/* (non-Javadoc)
 	 * @see org.apache.uima.analysis_component.AnalysisComponent_ImplBase#initialize(org.apache.uima.UimaContext)
@@ -69,7 +70,7 @@ public class OpenNlpChunker extends JCasAnnotator_ImplBase {
 		if (chunkers.containsKey(lang)) {
 			chunker = chunkers.get(lang);
 		} else {
-			log.error("No tagger for language: " + lang);
+			log.error("No tagger for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}
 

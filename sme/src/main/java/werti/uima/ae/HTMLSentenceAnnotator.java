@@ -3,7 +3,8 @@ package werti.uima.ae;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.text.AnnotationIndex;
@@ -25,7 +26,7 @@ import werti.uima.types.annot.Token;
 public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
-		Logger.getLogger(HTMLSentenceAnnotator.class);
+		LogManager.GetLogger(HTMLSentenceAnnotator.class);
 	
 	// HTML tags that typically indicate sentence breaks, but not necessarily
 	// a shift in content type
@@ -52,7 +53,7 @@ public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 			PlainTextSentenceAnnotation lastS = null;
 			while (rtit.hasNext()) {
 				final RelevantText t = rtit.next();
-				//log.info("Relevant text "+t.getCoveredText());
+				//log.info("Relevant text {}", t.getCoveredText());
 				
 				// initialize in first loop
 				if (currentSentStart == -1) {

@@ -5,7 +5,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 
@@ -35,7 +36,7 @@ import werti.uima.types.annot.Token;
 
 public class SentenceBoundaryDetector extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(SentenceBoundaryDetector.class);
+		LogManager.GetLogger(SentenceBoundaryDetector.class);
 
 	private static final Set<String> sentenceBoundaries = 
 		new HashSet<String>(Arrays.asList(new String[]{".", "!", "?"}));
@@ -90,14 +91,13 @@ public class SentenceBoundaryDetector extends JCasAnnotator_ImplBase {
 			sa.addToIndexes();
 
 			if ( log.isTraceEnabled() ) {
-				log.trace("Sentence from " + sa.getBegin() + " to " + sa.getEnd()  
-						 + ": " + sa.getCoveredText());
+				log.trace("Sentence from {} to {}: {}", sa.getBegin(), sa.getEnd(), sa.getCoveredText());
 			}
 
 			sentenceCount++;
 			coh_gaps = 0;
 		} 
-		log.debug("Annotated " + sentenceCount + " sentences.");
+		log.debug("Annotated {} sentences.", sentenceCount);
 	}
 
 	// holds the formula for calculating the coherence based on the length

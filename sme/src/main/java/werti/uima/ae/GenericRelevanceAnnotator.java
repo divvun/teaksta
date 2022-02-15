@@ -2,7 +2,8 @@ package werti.uima.ae;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.FSIndex;
@@ -19,7 +20,7 @@ import werti.uima.types.annot.RelevantText;
  */
 public class GenericRelevanceAnnotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(GenericRelevanceAnnotator.class);
+		LogManager.GetLogger(GenericRelevanceAnnotator.class);
 
 	/**
 	 * Marks all parts of the document annotated as inside EnhanceXML tags by EnhanceXMLAnnotator as relevant.

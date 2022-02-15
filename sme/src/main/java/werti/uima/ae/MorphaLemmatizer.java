@@ -3,7 +3,8 @@ package werti.uima.ae;
 import java.io.StringReader;
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -22,7 +23,7 @@ import werti.uima.types.annot.Token;
  */
 public class MorphaLemmatizer extends JCasAnnotator_ImplBase {
 	
-	private static final Logger log = Logger.getLogger(MorphaLemmatizer.class);
+	private static final Logger log = LogManager.GetLogger(MorphaLemmatizer.class);
 	
 	private Morpha lexer;
 	
@@ -99,8 +100,7 @@ public class MorphaLemmatizer extends JCasAnnotator_ImplBase {
 			}
 			return wordRes;
 		} catch (Throwable e) {
-			System.err.println("Morphology.stem() had error on word " + word + "/" +
-					tag);
+			System.err.println("Morphology.stem() had error on word {}/{}", word, tag);
 			e.printStackTrace();
 			return word;
 		}

@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -33,7 +34,7 @@ import werti.uima.types.annot.Token;
  */
 public class MaltParser extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(MaltParser.class);
+		LogManager.GetLogger(MaltParser.class);
 
 	private static Map<String, MaltParserService> parsers;
 	
@@ -63,7 +64,7 @@ public class MaltParser extends JCasAnnotator_ImplBase {
 		if (parsers.containsKey(lang)) {
 			parser = parsers.get(lang);
 		} else {
-			log.error("No MaltParser for language: " + lang);
+			log.error("No MaltParser for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}
 

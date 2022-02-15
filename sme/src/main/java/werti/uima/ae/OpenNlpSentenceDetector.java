@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
 
 import opennlp.tools.sentdetect.SentenceDetectorME;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -33,7 +34,7 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 
 	private static Map<String, SentenceDetectorME> detectors;
 	private static final Logger log =
-		Logger.getLogger(OpenNlpSentenceDetector.class);
+		LogManager.GetLogger(OpenNlpSentenceDetector.class);
 	
 	private static final Pattern trailingSpacePattern = Pattern.compile("\\s+$");
 	private static final Pattern sentenceBeginPattern = Pattern.compile("[\\p{L}\\p{N}\\p{P}]");
@@ -83,7 +84,7 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 		if (detectors.containsKey(lang)) {
 			detector = detectors.get(lang);
 		} else {
-			log.error("No tagger for language: " + lang);
+			log.error("No tagger for language: {}", lang);
 			throw new AnalysisEngineProcessException();
 		}
 
@@ -102,7 +103,7 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 			int sentenceEnd = endMatcher.find() ? endMatcher.start() : sentenceStr.length();
 			int start = previousOffset + sentenceBegin;
 			int end = previousOffset + sentenceEnd;
-			//log.info(sentenceStr+" "+start+" "+end);
+			//log.info("{} {} {}", sentenceStr, start, end);
 			PlainTextSentenceAnnotation sentence = new PlainTextSentenceAnnotation(jcas, start, end);
 			sentence.addToIndexes();
 		} 

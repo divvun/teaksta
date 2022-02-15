@@ -1,6 +1,7 @@
 package werti.uima.ae.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * String normalization tools.  Currently only used in passive
@@ -10,7 +11,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class StringTools {
-	private static final Logger log = Logger.getLogger(StringTools.class);
+	private static final Logger log = LogManager.GetLogger(StringTools.class);
 	
 	public static String capitalizeFirstLetter(String s) {
 		for (int i = 0; i < s.length(); i++) {

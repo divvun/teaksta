@@ -3,7 +3,8 @@ package werti.uima.ae.util;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 
@@ -18,7 +19,7 @@ import werti.uima.types.annot.Token;
  */
 public class VerbVoiceConverter {
 	private static final Logger log =
-		Logger.getLogger(VerbVoiceConverter.class);
+		LogManager.GetLogger(VerbVoiceConverter.class);
 
 	private Morphg mg;
 
@@ -173,7 +174,7 @@ public class VerbVoiceConverter {
 			final StringBuffer vrbS = new StringBuffer();
 			subS.append(subj.getCoveredText()+" ");
 			for (final Token t:verb) { vrbS.append(t.getCoveredText()+" "); }
-			log.debug("Subj is "+subS+"; Verb is "+vrbS);
+			log.debug("Subj is {}; Verb is {}", subS, vrbS);
 		}
 		List<Token> tensed = new ArrayList<Token>();
 		List<Token> adverbs = new ArrayList<Token>();

@@ -11,7 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -31,7 +32,7 @@ import werti.uima.types.annot.Token;
  */
 public class PhrasalVerbAnnotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
-		Logger.getLogger(PhrasalVerbAnnotator.class);
+		LogManager.GetLogger(PhrasalVerbAnnotator.class);
 	
 	private HashMap<String, Set<String>> insepList;
 	private HashMap<String, Set<String>> intransList;
