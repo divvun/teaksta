@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration xmlns:log4j="http://logging.apache.org/log4j/">
     <Appenders>
-        <RollingFile name="R">
-            <File name="werti" fileName="${sys:catalina.home}/logs/werti.log">
-                <Log4j1XmlLayout/>
-            </File>
+        <RollingFile name="R"
+            fileName="${sys:catalina.home}/logs/werti.log"
+            filePattern="${sys:catalina.home}/logs/werti.log.%i">
+            
             <DefaultRolloverStrategy max="4"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="5MB"/>
