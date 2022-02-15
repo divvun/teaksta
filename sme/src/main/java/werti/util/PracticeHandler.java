@@ -1,6 +1,7 @@
 package werti.util;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Methods needed for processing practice response.
@@ -10,7 +11,7 @@ import org.apache.log4j.Logger;
  */
 public class PracticeHandler {
 	private static final Logger log =
-		Logger.getLogger(PracticeHandler.class);
+		LogManager.GetLogger(PracticeHandler.class);
 	
 	private PostRequest requestInfo;
 	

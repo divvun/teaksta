@@ -9,7 +9,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import werti.server.ActivityConfiguration;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Produces an HTML document with enhancements from a CAS containing
@@ -20,7 +21,7 @@ import org.apache.log4j.Logger;
  */
 public class HTMLEnhancer {
         private static final Logger log =
-	    Logger.getLogger(HTMLEnhancer.class);
+	    LogManager.GetLogger(HTMLEnhancer.class);
 
 	private JCas cas;
 
@@ -90,7 +91,7 @@ public class HTMLEnhancer {
     	String thisUrl = req.getRequestURL().toString();
         thisUrl = thisUrl.replace("http", "https");
 	thisUrl = thisUrl.replaceFirst("/WERTiServlet","");
-	log.info("URL to js-lib:"+thisUrl);
+	log.info("URL to js-lib:{}", thisUrl);
     	//thisUrl = thisUrl.replaceFirst("(?<=" + servletContextName + ").*", ""); // something went wrong with the url on gtlab, so that js libraries and .css files had wrong paths
     	if (activity.matches("Arts") || activity.matches("Dets")) {
     		activityCat = "pos";

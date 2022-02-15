@@ -9,7 +9,8 @@ import java.net.URL;
 
 import javax.servlet.ServletContext;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.uima.resource.ResourceInitializationException;
 
@@ -21,7 +22,7 @@ import org.apache.uima.resource.ResourceInitializationException;
  */
 public class Resources {
 	private static final Logger log =
-		Logger.getLogger(Resources.class);
+		LogManager.GetLogger(Resources.class);
 
 	// The extra 6 bytes per method call don't really matter all that much and we
 	// reduce boiler plating for exception throwing in getModel(String).
@@ -58,7 +59,7 @@ public class Resources {
 				 , murle);
 		}
 		if (log.isDebugEnabled()) {
-			log.debug("Retrieving from " + mPath.getPath());
+			log.debug("Retrieving from {}", mPath.getPath());
 		}
 		return getResource(mPath);
 	}
@@ -83,7 +84,7 @@ public class Resources {
 				 , murle);
 		}
 		if (log.isDebugEnabled()) {
-			log.debug("Retrieving from " + mPath.getPath());
+			log.debug("Retrieving from {}", mPath.getPath());
 		}
 		return getResource(mPath);
 	}
