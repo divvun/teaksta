@@ -1,12 +1,9 @@
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
-import org.apache.uima.cas.impl.CASImpl;
-import org.apache.uima.cas.impl.FSGenerator;
-import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -14,44 +11,34 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Annotation spanning an <enhance></enhance> tag.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
  * @generated */
 public class EnhanceXML_Type extends Annotation_Type {
   /** @generated */
-  protected FSGenerator getFSGenerator() {return fsGenerator;}
-  /** @generated */
-  private final FSGenerator fsGenerator = 
-    new FSGenerator() {
-      public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (EnhanceXML_Type.this.useExistingInstance) {
-  			   // Return eq fs instance if already created
-  		     FeatureStructure fs = EnhanceXML_Type.this.jcas.getJfsFromCaddr(addr);
-  		     if (null == fs) {
-  		       fs = new EnhanceXML(addr, EnhanceXML_Type.this);
-  			   EnhanceXML_Type.this.jcas.putJfsFromCaddr(addr, fs);
-  			   return fs;
-  		     }
-  		     return fs;
-        } else return new EnhanceXML(addr, EnhanceXML_Type.this);
-  	  }
-    };
-  /** @generated */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = EnhanceXML.typeIndexID;
   /** @generated 
      @modifiable */
+  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.EnhanceXML");
  
   /** @generated */
   final Feature casFeat_tag_name;
   /** @generated */
   final int     casFeatCode_tag_name;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getTag_name(int addr) {
         if (featOkTst && casFeat_tag_name == null)
       jcas.throwFeatMissing("tag_name", "werti.uima.types.annot.EnhanceXML");
     return ll_cas.ll_getStringValue(addr, casFeatCode_tag_name);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setTag_name(int addr, String v) {
         if (featOkTst && casFeat_tag_name == null)
       jcas.throwFeatMissing("tag_name", "werti.uima.types.annot.EnhanceXML");
@@ -63,13 +50,19 @@ public class EnhanceXML_Type extends Annotation_Type {
   final Feature casFeat_closing;
   /** @generated */
   final int     casFeatCode_closing;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public boolean getClosing(int addr) {
         if (featOkTst && casFeat_closing == null)
       jcas.throwFeatMissing("closing", "werti.uima.types.annot.EnhanceXML");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_closing);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setClosing(int addr, boolean v) {
         if (featOkTst && casFeat_closing == null)
       jcas.throwFeatMissing("closing", "werti.uima.types.annot.EnhanceXML");
@@ -81,13 +74,19 @@ public class EnhanceXML_Type extends Annotation_Type {
   final Feature casFeat_irrelevant;
   /** @generated */
   final int     casFeatCode_irrelevant;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public boolean getIrrelevant(int addr) {
         if (featOkTst && casFeat_irrelevant == null)
       jcas.throwFeatMissing("irrelevant", "werti.uima.types.annot.EnhanceXML");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_irrelevant);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setIrrelevant(int addr, boolean v) {
         if (featOkTst && casFeat_irrelevant == null)
       jcas.throwFeatMissing("irrelevant", "werti.uima.types.annot.EnhanceXML");
@@ -98,7 +97,10 @@ public class EnhanceXML_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	* @generated */
+	 * @generated
+	 * @param jcas JCas
+	 * @param casType Type 
+	 */
   public EnhanceXML_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

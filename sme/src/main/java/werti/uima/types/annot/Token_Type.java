@@ -1,12 +1,9 @@
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
-import org.apache.uima.cas.impl.CASImpl;
-import org.apache.uima.cas.impl.FSGenerator;
-import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -14,44 +11,34 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** A relevant Token with PoS information attached.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
  * @generated */
 public class Token_Type extends Annotation_Type {
   /** @generated */
-  protected FSGenerator getFSGenerator() {return fsGenerator;}
-  /** @generated */
-  private final FSGenerator fsGenerator = 
-    new FSGenerator() {
-      public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (Token_Type.this.useExistingInstance) {
-  			   // Return eq fs instance if already created
-  		     FeatureStructure fs = Token_Type.this.jcas.getJfsFromCaddr(addr);
-  		     if (null == fs) {
-  		       fs = new Token(addr, Token_Type.this);
-  			   Token_Type.this.jcas.putJfsFromCaddr(addr, fs);
-  			   return fs;
-  		     }
-  		     return fs;
-        } else return new Token(addr, Token_Type.this);
-  	  }
-    };
-  /** @generated */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = Token.typeIndexID;
   /** @generated 
      @modifiable */
+  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.Token");
  
   /** @generated */
   final Feature casFeat_tag;
   /** @generated */
   final int     casFeatCode_tag;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getTag(int addr) {
         if (featOkTst && casFeat_tag == null)
       jcas.throwFeatMissing("tag", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_tag);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setTag(int addr, String v) {
         if (featOkTst && casFeat_tag == null)
       jcas.throwFeatMissing("tag", "werti.uima.types.annot.Token");
@@ -63,13 +50,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_detailedtag;
   /** @generated */
   final int     casFeatCode_detailedtag;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getDetailedtag(int addr) {
         if (featOkTst && casFeat_detailedtag == null)
       jcas.throwFeatMissing("detailedtag", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_detailedtag);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setDetailedtag(int addr, String v) {
         if (featOkTst && casFeat_detailedtag == null)
       jcas.throwFeatMissing("detailedtag", "werti.uima.types.annot.Token");
@@ -81,13 +74,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_lemma;
   /** @generated */
   final int     casFeatCode_lemma;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getLemma(int addr) {
         if (featOkTst && casFeat_lemma == null)
       jcas.throwFeatMissing("lemma", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_lemma);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setLemma(int addr, String v) {
         if (featOkTst && casFeat_lemma == null)
       jcas.throwFeatMissing("lemma", "werti.uima.types.annot.Token");
@@ -99,13 +98,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_gerund;
   /** @generated */
   final int     casFeatCode_gerund;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getGerund(int addr) {
         if (featOkTst && casFeat_gerund == null)
       jcas.throwFeatMissing("gerund", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_gerund);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setGerund(int addr, String v) {
         if (featOkTst && casFeat_gerund == null)
       jcas.throwFeatMissing("gerund", "werti.uima.types.annot.Token");
@@ -117,13 +122,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_chunk;
   /** @generated */
   final int     casFeatCode_chunk;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getChunk(int addr) {
         if (featOkTst && casFeat_chunk == null)
       jcas.throwFeatMissing("chunk", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_chunk);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setChunk(int addr, String v) {
         if (featOkTst && casFeat_chunk == null)
       jcas.throwFeatMissing("chunk", "werti.uima.types.annot.Token");
@@ -135,13 +146,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_mltag;
   /** @generated */
   final int     casFeatCode_mltag;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getMltag(int addr) {
         if (featOkTst && casFeat_mltag == null)
       jcas.throwFeatMissing("mltag", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_mltag);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setMltag(int addr, String v) {
         if (featOkTst && casFeat_mltag == null)
       jcas.throwFeatMissing("mltag", "werti.uima.types.annot.Token");
@@ -153,13 +170,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_depid;
   /** @generated */
   final int     casFeatCode_depid;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getDepid(int addr) {
         if (featOkTst && casFeat_depid == null)
       jcas.throwFeatMissing("depid", "werti.uima.types.annot.Token");
     return ll_cas.ll_getIntValue(addr, casFeatCode_depid);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setDepid(int addr, int v) {
         if (featOkTst && casFeat_depid == null)
       jcas.throwFeatMissing("depid", "werti.uima.types.annot.Token");
@@ -171,13 +194,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_dephead;
   /** @generated */
   final int     casFeatCode_dephead;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getDephead(int addr) {
         if (featOkTst && casFeat_dephead == null)
       jcas.throwFeatMissing("dephead", "werti.uima.types.annot.Token");
     return ll_cas.ll_getIntValue(addr, casFeatCode_dephead);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setDephead(int addr, int v) {
         if (featOkTst && casFeat_dephead == null)
       jcas.throwFeatMissing("dephead", "werti.uima.types.annot.Token");
@@ -189,13 +218,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_deprel;
   /** @generated */
   final int     casFeatCode_deprel;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getDeprel(int addr) {
         if (featOkTst && casFeat_deprel == null)
       jcas.throwFeatMissing("deprel", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_deprel);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setDeprel(int addr, String v) {
         if (featOkTst && casFeat_deprel == null)
       jcas.throwFeatMissing("deprel", "werti.uima.types.annot.Token");
@@ -207,13 +242,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_maltdepid;
   /** @generated */
   final int     casFeatCode_maltdepid;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getMaltdepid(int addr) {
         if (featOkTst && casFeat_maltdepid == null)
       jcas.throwFeatMissing("maltdepid", "werti.uima.types.annot.Token");
     return ll_cas.ll_getIntValue(addr, casFeatCode_maltdepid);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setMaltdepid(int addr, int v) {
         if (featOkTst && casFeat_maltdepid == null)
       jcas.throwFeatMissing("maltdepid", "werti.uima.types.annot.Token");
@@ -225,13 +266,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_maltdephead;
   /** @generated */
   final int     casFeatCode_maltdephead;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getMaltdephead(int addr) {
         if (featOkTst && casFeat_maltdephead == null)
       jcas.throwFeatMissing("maltdephead", "werti.uima.types.annot.Token");
     return ll_cas.ll_getIntValue(addr, casFeatCode_maltdephead);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setMaltdephead(int addr, int v) {
         if (featOkTst && casFeat_maltdephead == null)
       jcas.throwFeatMissing("maltdephead", "werti.uima.types.annot.Token");
@@ -243,13 +290,19 @@ public class Token_Type extends Annotation_Type {
   final Feature casFeat_maltdeprel;
   /** @generated */
   final int     casFeatCode_maltdeprel;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getMaltdeprel(int addr) {
         if (featOkTst && casFeat_maltdeprel == null)
       jcas.throwFeatMissing("maltdeprel", "werti.uima.types.annot.Token");
     return ll_cas.ll_getStringValue(addr, casFeatCode_maltdeprel);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setMaltdeprel(int addr, String v) {
         if (featOkTst && casFeat_maltdeprel == null)
       jcas.throwFeatMissing("maltdeprel", "werti.uima.types.annot.Token");
@@ -260,7 +313,10 @@ public class Token_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	* @generated */
+	 * @generated
+	 * @param jcas JCas
+	 * @param casType Type 
+	 */
   public Token_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

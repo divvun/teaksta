@@ -1,62 +1,53 @@
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
-import org.apache.uima.cas.impl.CASImpl;
-import org.apache.uima.cas.impl.FSGenerator;
-import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
 import org.apache.uima.cas.Feature;
 
 /** A token with added Constraint Grammar analysis information.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
  * @generated */
 public class CGToken_Type extends Token_Type {
   /** @generated */
-  protected FSGenerator getFSGenerator() {return fsGenerator;}
-  /** @generated */
-  private final FSGenerator fsGenerator = 
-    new FSGenerator() {
-      public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (CGToken_Type.this.useExistingInstance) {
-  			   // Return eq fs instance if already created
-  		     FeatureStructure fs = CGToken_Type.this.jcas.getJfsFromCaddr(addr);
-  		     if (null == fs) {
-  		       fs = new CGToken(addr, CGToken_Type.this);
-  			   CGToken_Type.this.jcas.putJfsFromCaddr(addr, fs);
-  			   return fs;
-  		     }
-  		     return fs;
-        } else return new CGToken(addr, CGToken_Type.this);
-  	  }
-    };
-  /** @generated */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = CGToken.typeIndexID;
   /** @generated 
      @modifiable */
+  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.CGToken");
  
   /** @generated */
   final Feature casFeat_readings;
   /** @generated */
   final int     casFeatCode_readings;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getReadings(int addr) {
         if (featOkTst && casFeat_readings == null)
       jcas.throwFeatMissing("readings", "werti.uima.types.annot.CGToken");
     return ll_cas.ll_getRefValue(addr, casFeatCode_readings);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setReadings(int addr, int v) {
         if (featOkTst && casFeat_readings == null)
       jcas.throwFeatMissing("readings", "werti.uima.types.annot.CGToken");
     ll_cas.ll_setRefValue(addr, casFeatCode_readings, v);}
     
-   /** @generated */
+   /** @generated
+   * @param addr low level Feature Structure reference
+   * @param i index of item in the array
+   * @return value at index i in the array 
+   */
   public int getReadings(int addr, int i) {
         if (featOkTst && casFeat_readings == null)
       jcas.throwFeatMissing("readings", "werti.uima.types.annot.CGToken");
@@ -66,7 +57,11 @@ public class CGToken_Type extends Token_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_readings), i);
   }
    
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param i index of item in the array
+   * @param v value to set
+   */ 
   public void setReadings(int addr, int i, int v) {
         if (featOkTst && casFeat_readings == null)
       jcas.throwFeatMissing("readings", "werti.uima.types.annot.CGToken");
@@ -80,7 +75,10 @@ public class CGToken_Type extends Token_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	* @generated */
+	 * @generated
+	 * @param jcas JCas
+	 * @param casType Type 
+	 */
   public CGToken_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

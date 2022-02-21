@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,39 +11,53 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** 
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
- * XML source: /export/home/teaksta/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
+ * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class Subclause extends Annotation {
   /** @generated
    * @ordered 
    */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = JCasRegistry.register(Subclause.class);
   /** @generated
    * @ordered 
    */
+  @SuppressWarnings ("hiding")
   public final static int type = typeIndexID;
-  /** @generated  */
+  /** @generated
+   * @return index of the type  
+   */
+  @Override
   public              int getTypeIndexID() {return typeIndexID;}
  
   /** Never called.  Disable default constructor
    * @generated */
-  protected Subclause() {}
+  protected Subclause() {/* intentionally empty block */}
     
   /** Internal - constructor used by generator 
-   * @generated */
+   * @generated
+   * @param addr low level Feature Structure reference
+   * @param type the type of this Feature Structure 
+   */
   public Subclause(int addr, TOP_Type type) {
     super(addr, type);
     readObject();
   }
   
-  /** @generated */
+  /** @generated
+   * @param jcas JCas to which this Feature Structure belongs 
+   */
   public Subclause(JCas jcas) {
     super(jcas);
     readObject();   
   } 
 
-  /** @generated */  
+  /** @generated
+   * @param jcas JCas to which this Feature Structure belongs
+   * @param begin offset to the begin spot in the SofA
+   * @param end offset to the end spot in the SofA 
+  */  
   public Subclause(JCas jcas, int begin, int end) {
     super(jcas);
     setBegin(begin);
@@ -51,11 +65,14 @@ public class Subclause extends Annotation {
     readObject();
   }   
 
-  /** <!-- begin-user-doc -->
-    * Write your own initialization here
-    * <!-- end-user-doc -->
-  @generated modifiable */
-  private void readObject() {}
+  /** 
+   * <!-- begin-user-doc -->
+   * Write your own initialization here
+   * <!-- end-user-doc -->
+   *
+   * @generated modifiable 
+   */
+  private void readObject() {/*default - does nothing empty block */}
      
  
     
@@ -63,14 +80,18 @@ public class Subclause extends Annotation {
   //* Feature: modifiedSurface
 
   /** getter for modifiedSurface - gets 
-   * @generated */
+   * @generated
+   * @return value of the feature 
+   */
   public String getModifiedSurface() {
     if (Subclause_Type.featOkTst && ((Subclause_Type)jcasType).casFeat_modifiedSurface == null)
       jcasType.jcas.throwFeatMissing("modifiedSurface", "werti.uima.types.Subclause");
     return jcasType.ll_cas.ll_getStringValue(addr, ((Subclause_Type)jcasType).casFeatCode_modifiedSurface);}
     
   /** setter for modifiedSurface - sets  
-   * @generated */
+   * @generated
+   * @param v value to set into the feature 
+   */
   public void setModifiedSurface(String v) {
     if (Subclause_Type.featOkTst && ((Subclause_Type)jcasType).casFeat_modifiedSurface == null)
       jcasType.jcas.throwFeatMissing("modifiedSurface", "werti.uima.types.Subclause");

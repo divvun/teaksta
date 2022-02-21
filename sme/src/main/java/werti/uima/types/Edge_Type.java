@@ -1,12 +1,9 @@
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
-import org.apache.uima.cas.impl.CASImpl;
-import org.apache.uima.cas.impl.FSGenerator;
-import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -14,44 +11,34 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.cas.TOP_Type;
 
 /** Marks a unidirectional edge in a graph. Only the target node is represented, and the name. Edges are supposed to be fields of nodes.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
  * @generated */
 public class Edge_Type extends TOP_Type {
   /** @generated */
-  protected FSGenerator getFSGenerator() {return fsGenerator;}
-  /** @generated */
-  private final FSGenerator fsGenerator = 
-    new FSGenerator() {
-      public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (Edge_Type.this.useExistingInstance) {
-  			   // Return eq fs instance if already created
-  		     FeatureStructure fs = Edge_Type.this.jcas.getJfsFromCaddr(addr);
-  		     if (null == fs) {
-  		       fs = new Edge(addr, Edge_Type.this);
-  			   Edge_Type.this.jcas.putJfsFromCaddr(addr, fs);
-  			   return fs;
-  		     }
-  		     return fs;
-        } else return new Edge(addr, Edge_Type.this);
-  	  }
-    };
-  /** @generated */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = Edge.typeIndexID;
   /** @generated 
      @modifiable */
+  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.Edge");
  
   /** @generated */
   final Feature casFeat_label;
   /** @generated */
   final int     casFeatCode_label;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getLabel(int addr) {
         if (featOkTst && casFeat_label == null)
       jcas.throwFeatMissing("label", "werti.uima.types.Edge");
     return ll_cas.ll_getStringValue(addr, casFeatCode_label);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setLabel(int addr, String v) {
         if (featOkTst && casFeat_label == null)
       jcas.throwFeatMissing("label", "werti.uima.types.Edge");
@@ -63,13 +50,19 @@ public class Edge_Type extends TOP_Type {
   final Feature casFeat_target;
   /** @generated */
   final int     casFeatCode_target;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public int getTarget(int addr) {
         if (featOkTst && casFeat_target == null)
       jcas.throwFeatMissing("target", "werti.uima.types.Edge");
     return ll_cas.ll_getRefValue(addr, casFeatCode_target);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setTarget(int addr, int v) {
         if (featOkTst && casFeat_target == null)
       jcas.throwFeatMissing("target", "werti.uima.types.Edge");
@@ -80,7 +73,10 @@ public class Edge_Type extends TOP_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	* @generated */
+	 * @generated
+	 * @param jcas JCas
+	 * @param casType Type 
+	 */
   public Edge_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

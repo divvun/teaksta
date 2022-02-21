@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas; 
@@ -11,43 +11,56 @@ import org.apache.uima.jcas.cas.TOP;
 
 
 /** Marks a unidirectional edge in a graph. Only the target node is represented, and the name. Edges are supposed to be fields of nodes.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
- * XML source: /export/home/teaksta/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
+ * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class Edge extends TOP {
   /** @generated
    * @ordered 
    */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = JCasRegistry.register(Edge.class);
   /** @generated
    * @ordered 
    */
+  @SuppressWarnings ("hiding")
   public final static int type = typeIndexID;
-  /** @generated  */
+  /** @generated
+   * @return index of the type  
+   */
+  @Override
   public              int getTypeIndexID() {return typeIndexID;}
  
   /** Never called.  Disable default constructor
    * @generated */
-  protected Edge() {}
+  protected Edge() {/* intentionally empty block */}
     
   /** Internal - constructor used by generator 
-   * @generated */
+   * @generated
+   * @param addr low level Feature Structure reference
+   * @param type the type of this Feature Structure 
+   */
   public Edge(int addr, TOP_Type type) {
     super(addr, type);
     readObject();
   }
   
-  /** @generated */
+  /** @generated
+   * @param jcas JCas to which this Feature Structure belongs 
+   */
   public Edge(JCas jcas) {
     super(jcas);
     readObject();   
   } 
 
-  /** <!-- begin-user-doc -->
-    * Write your own initialization here
-    * <!-- end-user-doc -->
-  @generated modifiable */
-  private void readObject() {}
+  /** 
+   * <!-- begin-user-doc -->
+   * Write your own initialization here
+   * <!-- end-user-doc -->
+   *
+   * @generated modifiable 
+   */
+  private void readObject() {/*default - does nothing empty block */}
      
  
     
@@ -55,14 +68,18 @@ public class Edge extends TOP {
   //* Feature: label
 
   /** getter for label - gets The edge's name.
-   * @generated */
+   * @generated
+   * @return value of the feature 
+   */
   public String getLabel() {
     if (Edge_Type.featOkTst && ((Edge_Type)jcasType).casFeat_label == null)
       jcasType.jcas.throwFeatMissing("label", "werti.uima.types.Edge");
     return jcasType.ll_cas.ll_getStringValue(addr, ((Edge_Type)jcasType).casFeatCode_label);}
     
   /** setter for label - sets The edge's name. 
-   * @generated */
+   * @generated
+   * @param v value to set into the feature 
+   */
   public void setLabel(String v) {
     if (Edge_Type.featOkTst && ((Edge_Type)jcasType).casFeat_label == null)
       jcasType.jcas.throwFeatMissing("label", "werti.uima.types.Edge");
@@ -73,14 +90,18 @@ public class Edge extends TOP {
   //* Feature: target
 
   /** getter for target - gets The edge's target token annotation.
-   * @generated */
+   * @generated
+   * @return value of the feature 
+   */
   public Node getTarget() {
     if (Edge_Type.featOkTst && ((Edge_Type)jcasType).casFeat_target == null)
       jcasType.jcas.throwFeatMissing("target", "werti.uima.types.Edge");
     return (Node)(jcasType.ll_cas.ll_getFSForRef(jcasType.ll_cas.ll_getRefValue(addr, ((Edge_Type)jcasType).casFeatCode_target)));}
     
   /** setter for target - sets The edge's target token annotation. 
-   * @generated */
+   * @generated
+   * @param v value to set into the feature 
+   */
   public void setTarget(Node v) {
     if (Edge_Type.featOkTst && ((Edge_Type)jcasType).casFeat_target == null)
       jcasType.jcas.throwFeatMissing("target", "werti.uima.types.Edge");

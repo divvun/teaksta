@@ -1,12 +1,9 @@
 
-/* First created by JCasGen Thu Mar 22 11:38:37 CET 2018 */
+/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
-import org.apache.uima.cas.impl.CASImpl;
-import org.apache.uima.cas.impl.FSGenerator;
-import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -14,44 +11,34 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Optional annotation to specify which text to work on.
- * Updated by JCasGen Thu Mar 22 11:38:37 CET 2018
+ * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
  * @generated */
 public class RelevantText_Type extends Annotation_Type {
   /** @generated */
-  protected FSGenerator getFSGenerator() {return fsGenerator;}
-  /** @generated */
-  private final FSGenerator fsGenerator = 
-    new FSGenerator() {
-      public FeatureStructure createFS(int addr, CASImpl cas) {
-  			 if (RelevantText_Type.this.useExistingInstance) {
-  			   // Return eq fs instance if already created
-  		     FeatureStructure fs = RelevantText_Type.this.jcas.getJfsFromCaddr(addr);
-  		     if (null == fs) {
-  		       fs = new RelevantText(addr, RelevantText_Type.this);
-  			   RelevantText_Type.this.jcas.putJfsFromCaddr(addr, fs);
-  			   return fs;
-  		     }
-  		     return fs;
-        } else return new RelevantText(addr, RelevantText_Type.this);
-  	  }
-    };
-  /** @generated */
+  @SuppressWarnings ("hiding")
   public final static int typeIndexID = RelevantText.typeIndexID;
   /** @generated 
      @modifiable */
+  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.RelevantText");
  
   /** @generated */
   final Feature casFeat_htmlContentType;
   /** @generated */
   final int     casFeatCode_htmlContentType;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getHtmlContentType(int addr) {
         if (featOkTst && casFeat_htmlContentType == null)
       jcas.throwFeatMissing("htmlContentType", "werti.uima.types.annot.RelevantText");
     return ll_cas.ll_getStringValue(addr, casFeatCode_htmlContentType);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setHtmlContentType(int addr, String v) {
         if (featOkTst && casFeat_htmlContentType == null)
       jcas.throwFeatMissing("htmlContentType", "werti.uima.types.annot.RelevantText");
@@ -63,13 +50,19 @@ public class RelevantText_Type extends Annotation_Type {
   final Feature casFeat_enclosing_tag;
   /** @generated */
   final int     casFeatCode_enclosing_tag;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public String getEnclosing_tag(int addr) {
         if (featOkTst && casFeat_enclosing_tag == null)
       jcas.throwFeatMissing("enclosing_tag", "werti.uima.types.annot.RelevantText");
     return ll_cas.ll_getStringValue(addr, casFeatCode_enclosing_tag);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setEnclosing_tag(int addr, String v) {
         if (featOkTst && casFeat_enclosing_tag == null)
       jcas.throwFeatMissing("enclosing_tag", "werti.uima.types.annot.RelevantText");
@@ -81,13 +74,19 @@ public class RelevantText_Type extends Annotation_Type {
   final Feature casFeat_relevant;
   /** @generated */
   final int     casFeatCode_relevant;
-  /** @generated */ 
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @return the feature value 
+   */ 
   public boolean getRelevant(int addr) {
         if (featOkTst && casFeat_relevant == null)
       jcas.throwFeatMissing("relevant", "werti.uima.types.annot.RelevantText");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_relevant);
   }
-  /** @generated */    
+  /** @generated
+   * @param addr low level Feature Structure reference
+   * @param v value to set 
+   */    
   public void setRelevant(int addr, boolean v) {
         if (featOkTst && casFeat_relevant == null)
       jcas.throwFeatMissing("relevant", "werti.uima.types.annot.RelevantText");
@@ -98,7 +97,10 @@ public class RelevantText_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	* @generated */
+	 * @generated
+	 * @param jcas JCas
+	 * @param casType Type 
+	 */
   public RelevantText_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());
