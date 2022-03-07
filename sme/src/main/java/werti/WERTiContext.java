@@ -26,10 +26,6 @@ import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 
 //import com.aliasi.hmm.HmmDecoder;
 
-import org.maltparser.MaltParserService;
-import org.maltparser.core.exception.MaltChainedException;
-import org.maltparser.core.options.OptionManager;
-
 import opennlp.maxent.io.SuffixSensitiveGISModelReader;
 import opennlp.tools.chunker.ChunkerME;
 import opennlp.tools.postag.DefaultPOSContextGenerator;
@@ -147,24 +143,6 @@ public class WERTiContext {
 				    return LexicalizedParser.loadModel(grammar, options);
 				}
 			});
-			/*put(MaltParserService.class,new Model<MaltParserService>(){
-				protected MaltParserService manufacture() throws WERTiContextException {
-					final String model = p.getProperty("maltparser.en");
-					final File mpfile = new File(context.getRealPath("/") + p.getProperty("models.base") + p.getProperty("maltparserpath"));
-					log.info(String.format("-c %s -m parse -w %s", model, mpfile.getAbsolutePath()));
-					try {
-						OptionManager.instance().loadOptionDescriptionFile();
-						OptionManager.instance().getOptionDescriptions().generateMaps();
-						final MaltParserService maltParserService = new MaltParserService();						
-						maltParserService.initializeParserModel(String.format("-c %s -m parse -w %s", model, mpfile.getAbsolutePath()));
-						
-						return maltParserService;
-					} catch (MaltChainedException ioe) {
-						throw new WERTiContextException
-							("Failed to load MaltParser.",ioe);
-					}
-				}
-			});*/ 
 			put(TokenizerME.class,new Model<TokenizerME>() {
 				protected TokenizerME manufacture() throws WERTiContextException {
 					final String mp = makePathForModel("onlptokenizer.en");
@@ -393,24 +371,6 @@ public class WERTiContext {
 				    return LexicalizedParser.loadModel(grammar, options);
 				}
 			});
-			/*put(MaltParserService.class,new Model<MaltParserService>(){
-				protected MaltParserService manufacture() throws WERTiContextException {
-					final String model = p.getProperty("maltparser.de");
-					final File mpfile = new File(context.getRealPath("/") + p.getProperty("models.base") + p.getProperty("maltparserpath"));
-					log.info(String.format("-c %s -m parse -w %s", model, mpfile.getAbsolutePath()));
-					try {
-						OptionManager.instance().loadOptionDescriptionFile();
-						OptionManager.instance().getOptionDescriptions().generateMaps();
-						final MaltParserService maltParserService = new MaltParserService();						
-						maltParserService.initializeParserModel(String.format("-c %s -m parse -w %s", model, mpfile.getAbsolutePath()));
-						
-						return maltParserService;
-					} catch (MaltChainedException ioe) {
-						throw new WERTiContextException
-							("Failed to load MaltParser.",ioe);
-					}
-				}
-			});*/
 		}};
 		models.put("en", models_en);
 		models.put("es", models_es);
