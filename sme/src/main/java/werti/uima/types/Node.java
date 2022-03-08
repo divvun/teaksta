@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas; 
@@ -14,8 +14,8 @@ import werti.uima.types.annot.Token;
 
 /** A node annotation, representing both leaf nodes of a graph, as well as internal nodes.
         Note that this node type can represent n-ary circular graphs, including multiple parent nodes. Any restriction to this, if it is desired, should originate from the implementation.
- * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
- * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * XML source: /home/boerre/repos/langtech/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class Node extends TOP {
   /** @generated

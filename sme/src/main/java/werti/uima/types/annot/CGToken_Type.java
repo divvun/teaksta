@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
@@ -10,7 +10,7 @@ import org.apache.uima.cas.impl.FeatureImpl;
 import org.apache.uima.cas.Feature;
 
 /** A token with added Constraint Grammar analysis information.
- * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
  * @generated */
 public class CGToken_Type extends Token_Type {
   /** @generated */

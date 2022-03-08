@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -12,8 +12,8 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** Annotations for phrasal verbs.
- * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
- * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * XML source: /home/boerre/repos/langtech/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class PhrasalVerb extends Annotation {
   /** @generated

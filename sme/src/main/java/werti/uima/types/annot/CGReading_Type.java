@@ -1,5 +1,5 @@
 
-/* First created by JCasGen Mon Feb 21 10:32:01 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
@@ -9,7 +9,7 @@ import org.apache.uima.cas.Type;
 import org.apache.uima.jcas.cas.NonEmptyStringList_Type;
 
 /** A reading in a constraint grammar cohort.
- * Updated by JCasGen Mon Feb 21 10:32:01 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
  * @generated */
 public class CGReading_Type extends NonEmptyStringList_Type {
   /** @generated */
