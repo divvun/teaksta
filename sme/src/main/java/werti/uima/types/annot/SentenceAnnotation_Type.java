@@ -1,9 +1,12 @@
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
+import org.apache.uima.cas.impl.CASImpl;
+import org.apache.uima.cas.impl.FSGenerator;
+import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -11,34 +14,44 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** A sentence in natural language derived from plain text and HTML features.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
  * @generated */
 public class SentenceAnnotation_Type extends Annotation_Type {
   /** @generated */
-  @SuppressWarnings ("hiding")
+  protected FSGenerator getFSGenerator() {return fsGenerator;}
+  /** @generated */
+  private final FSGenerator fsGenerator = 
+    new FSGenerator() {
+      public FeatureStructure createFS(int addr, CASImpl cas) {
+  			 if (SentenceAnnotation_Type.this.useExistingInstance) {
+  			   // Return eq fs instance if already created
+  		     FeatureStructure fs = SentenceAnnotation_Type.this.jcas.getJfsFromCaddr(addr);
+  		     if (null == fs) {
+  		       fs = new SentenceAnnotation(addr, SentenceAnnotation_Type.this);
+  			   SentenceAnnotation_Type.this.jcas.putJfsFromCaddr(addr, fs);
+  			   return fs;
+  		     }
+  		     return fs;
+        } else return new SentenceAnnotation(addr, SentenceAnnotation_Type.this);
+  	  }
+    };
+  /** @generated */
   public final static int typeIndexID = SentenceAnnotation.typeIndexID;
   /** @generated 
      @modifiable */
-  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.SentenceAnnotation");
  
   /** @generated */
   final Feature casFeat_coherence;
   /** @generated */
   final int     casFeatCode_coherence;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public double getCoherence(int addr) {
         if (featOkTst && casFeat_coherence == null)
       jcas.throwFeatMissing("coherence", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getDoubleValue(addr, casFeatCode_coherence);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setCoherence(int addr, double v) {
         if (featOkTst && casFeat_coherence == null)
       jcas.throwFeatMissing("coherence", "werti.uima.types.annot.SentenceAnnotation");
@@ -50,19 +63,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_sexp;
   /** @generated */
   final int     casFeatCode_sexp;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getSexp(int addr) {
         if (featOkTst && casFeat_sexp == null)
       jcas.throwFeatMissing("sexp", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getStringValue(addr, casFeatCode_sexp);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setSexp(int addr, String v) {
         if (featOkTst && casFeat_sexp == null)
       jcas.throwFeatMissing("sexp", "werti.uima.types.annot.SentenceAnnotation");
@@ -74,19 +81,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_hasdepparse;
   /** @generated */
   final int     casFeatCode_hasdepparse;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public boolean getHasdepparse(int addr) {
         if (featOkTst && casFeat_hasdepparse == null)
       jcas.throwFeatMissing("hasdepparse", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_hasdepparse);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setHasdepparse(int addr, boolean v) {
         if (featOkTst && casFeat_hasdepparse == null)
       jcas.throwFeatMissing("hasdepparse", "werti.uima.types.annot.SentenceAnnotation");
@@ -98,19 +99,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_activeconversion;
   /** @generated */
   final int     casFeatCode_activeconversion;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getActiveconversion(int addr) {
         if (featOkTst && casFeat_activeconversion == null)
       jcas.throwFeatMissing("activeconversion", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getStringValue(addr, casFeatCode_activeconversion);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setActiveconversion(int addr, String v) {
         if (featOkTst && casFeat_activeconversion == null)
       jcas.throwFeatMissing("activeconversion", "werti.uima.types.annot.SentenceAnnotation");
@@ -122,19 +117,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_passiveconversion;
   /** @generated */
   final int     casFeatCode_passiveconversion;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getPassiveconversion(int addr) {
         if (featOkTst && casFeat_passiveconversion == null)
       jcas.throwFeatMissing("passiveconversion", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getStringValue(addr, casFeatCode_passiveconversion);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setPassiveconversion(int addr, String v) {
         if (featOkTst && casFeat_passiveconversion == null)
       jcas.throwFeatMissing("passiveconversion", "werti.uima.types.annot.SentenceAnnotation");
@@ -146,19 +135,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_graphs_debug;
   /** @generated */
   final int     casFeatCode_graphs_debug;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getGraphs_debug(int addr) {
         if (featOkTst && casFeat_graphs_debug == null)
       jcas.throwFeatMissing("graphs_debug", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getRefValue(addr, casFeatCode_graphs_debug);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setGraphs_debug(int addr, int v) {
         if (featOkTst && casFeat_graphs_debug == null)
       jcas.throwFeatMissing("graphs_debug", "werti.uima.types.annot.SentenceAnnotation");
@@ -170,19 +153,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_passiveConversionStrategy;
   /** @generated */
   final int     casFeatCode_passiveConversionStrategy;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getPassiveConversionStrategy(int addr) {
         if (featOkTst && casFeat_passiveConversionStrategy == null)
       jcas.throwFeatMissing("passiveConversionStrategy", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getStringValue(addr, casFeatCode_passiveConversionStrategy);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setPassiveConversionStrategy(int addr, String v) {
         if (featOkTst && casFeat_passiveConversionStrategy == null)
       jcas.throwFeatMissing("passiveConversionStrategy", "werti.uima.types.annot.SentenceAnnotation");
@@ -194,19 +171,13 @@ public class SentenceAnnotation_Type extends Annotation_Type {
   final Feature casFeat_parseCandidate;
   /** @generated */
   final int     casFeatCode_parseCandidate;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public boolean getParseCandidate(int addr) {
         if (featOkTst && casFeat_parseCandidate == null)
       jcas.throwFeatMissing("parseCandidate", "werti.uima.types.annot.SentenceAnnotation");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_parseCandidate);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setParseCandidate(int addr, boolean v) {
         if (featOkTst && casFeat_parseCandidate == null)
       jcas.throwFeatMissing("parseCandidate", "werti.uima.types.annot.SentenceAnnotation");
@@ -217,10 +188,7 @@ public class SentenceAnnotation_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	 * @generated
-	 * @param jcas JCas
-	 * @param casType Type 
-	 */
+	* @generated */
   public SentenceAnnotation_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

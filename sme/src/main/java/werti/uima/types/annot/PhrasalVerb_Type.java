@@ -1,9 +1,12 @@
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
+import org.apache.uima.cas.impl.CASImpl;
+import org.apache.uima.cas.impl.FSGenerator;
+import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -11,44 +14,50 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Annotations for phrasal verbs.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
  * @generated */
 public class PhrasalVerb_Type extends Annotation_Type {
   /** @generated */
-  @SuppressWarnings ("hiding")
+  protected FSGenerator getFSGenerator() {return fsGenerator;}
+  /** @generated */
+  private final FSGenerator fsGenerator = 
+    new FSGenerator() {
+      public FeatureStructure createFS(int addr, CASImpl cas) {
+  			 if (PhrasalVerb_Type.this.useExistingInstance) {
+  			   // Return eq fs instance if already created
+  		     FeatureStructure fs = PhrasalVerb_Type.this.jcas.getJfsFromCaddr(addr);
+  		     if (null == fs) {
+  		       fs = new PhrasalVerb(addr, PhrasalVerb_Type.this);
+  			   PhrasalVerb_Type.this.jcas.putJfsFromCaddr(addr, fs);
+  			   return fs;
+  		     }
+  		     return fs;
+        } else return new PhrasalVerb(addr, PhrasalVerb_Type.this);
+  	  }
+    };
+  /** @generated */
   public final static int typeIndexID = PhrasalVerb.typeIndexID;
   /** @generated 
      @modifiable */
-  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.PhrasalVerb");
  
   /** @generated */
   final Feature casFeat_verb;
   /** @generated */
   final int     casFeatCode_verb;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getVerb(int addr) {
         if (featOkTst && casFeat_verb == null)
       jcas.throwFeatMissing("verb", "werti.uima.types.annot.PhrasalVerb");
     return ll_cas.ll_getRefValue(addr, casFeatCode_verb);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setVerb(int addr, int v) {
         if (featOkTst && casFeat_verb == null)
       jcas.throwFeatMissing("verb", "werti.uima.types.annot.PhrasalVerb");
     ll_cas.ll_setRefValue(addr, casFeatCode_verb, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getVerb(int addr, int i) {
         if (featOkTst && casFeat_verb == null)
       jcas.throwFeatMissing("verb", "werti.uima.types.annot.PhrasalVerb");
@@ -58,11 +67,7 @@ public class PhrasalVerb_Type extends Annotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_verb), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setVerb(int addr, int i, int v) {
         if (featOkTst && casFeat_verb == null)
       jcas.throwFeatMissing("verb", "werti.uima.types.annot.PhrasalVerb");
@@ -77,29 +82,19 @@ public class PhrasalVerb_Type extends Annotation_Type {
   final Feature casFeat_particle;
   /** @generated */
   final int     casFeatCode_particle;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getParticle(int addr) {
         if (featOkTst && casFeat_particle == null)
       jcas.throwFeatMissing("particle", "werti.uima.types.annot.PhrasalVerb");
     return ll_cas.ll_getRefValue(addr, casFeatCode_particle);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setParticle(int addr, int v) {
         if (featOkTst && casFeat_particle == null)
       jcas.throwFeatMissing("particle", "werti.uima.types.annot.PhrasalVerb");
     ll_cas.ll_setRefValue(addr, casFeatCode_particle, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getParticle(int addr, int i) {
         if (featOkTst && casFeat_particle == null)
       jcas.throwFeatMissing("particle", "werti.uima.types.annot.PhrasalVerb");
@@ -109,11 +104,7 @@ public class PhrasalVerb_Type extends Annotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_particle), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setParticle(int addr, int i, int v) {
         if (featOkTst && casFeat_particle == null)
       jcas.throwFeatMissing("particle", "werti.uima.types.annot.PhrasalVerb");
@@ -128,29 +119,19 @@ public class PhrasalVerb_Type extends Annotation_Type {
   final Feature casFeat_np;
   /** @generated */
   final int     casFeatCode_np;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getNp(int addr) {
         if (featOkTst && casFeat_np == null)
       jcas.throwFeatMissing("np", "werti.uima.types.annot.PhrasalVerb");
     return ll_cas.ll_getRefValue(addr, casFeatCode_np);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setNp(int addr, int v) {
         if (featOkTst && casFeat_np == null)
       jcas.throwFeatMissing("np", "werti.uima.types.annot.PhrasalVerb");
     ll_cas.ll_setRefValue(addr, casFeatCode_np, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getNp(int addr, int i) {
         if (featOkTst && casFeat_np == null)
       jcas.throwFeatMissing("np", "werti.uima.types.annot.PhrasalVerb");
@@ -160,11 +141,7 @@ public class PhrasalVerb_Type extends Annotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_np), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setNp(int addr, int i, int v) {
         if (featOkTst && casFeat_np == null)
       jcas.throwFeatMissing("np", "werti.uima.types.annot.PhrasalVerb");
@@ -178,10 +155,7 @@ public class PhrasalVerb_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	 * @generated
-	 * @param jcas JCas
-	 * @param casType Type 
-	 */
+	* @generated */
   public PhrasalVerb_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

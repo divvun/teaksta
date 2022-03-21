@@ -1,53 +1,62 @@
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
+import org.apache.uima.cas.impl.CASImpl;
+import org.apache.uima.cas.impl.FSGenerator;
+import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
 import org.apache.uima.cas.Feature;
 
 /** A sentence containing a conditional.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
  * @generated */
 public class ConditionalSentence_Type extends SentenceAnnotation_Type {
   /** @generated */
-  @SuppressWarnings ("hiding")
+  protected FSGenerator getFSGenerator() {return fsGenerator;}
+  /** @generated */
+  private final FSGenerator fsGenerator = 
+    new FSGenerator() {
+      public FeatureStructure createFS(int addr, CASImpl cas) {
+  			 if (ConditionalSentence_Type.this.useExistingInstance) {
+  			   // Return eq fs instance if already created
+  		     FeatureStructure fs = ConditionalSentence_Type.this.jcas.getJfsFromCaddr(addr);
+  		     if (null == fs) {
+  		       fs = new ConditionalSentence(addr, ConditionalSentence_Type.this);
+  			   ConditionalSentence_Type.this.jcas.putJfsFromCaddr(addr, fs);
+  			   return fs;
+  		     }
+  		     return fs;
+        } else return new ConditionalSentence(addr, ConditionalSentence_Type.this);
+  	  }
+    };
+  /** @generated */
   public final static int typeIndexID = ConditionalSentence.typeIndexID;
   /** @generated 
      @modifiable */
-  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.annot.ConditionalSentence");
  
   /** @generated */
   final Feature casFeat_trigger;
   /** @generated */
   final int     casFeatCode_trigger;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getTrigger(int addr) {
         if (featOkTst && casFeat_trigger == null)
       jcas.throwFeatMissing("trigger", "werti.uima.types.annot.ConditionalSentence");
     return ll_cas.ll_getRefValue(addr, casFeatCode_trigger);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setTrigger(int addr, int v) {
         if (featOkTst && casFeat_trigger == null)
       jcas.throwFeatMissing("trigger", "werti.uima.types.annot.ConditionalSentence");
     ll_cas.ll_setRefValue(addr, casFeatCode_trigger, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getTrigger(int addr, int i) {
         if (featOkTst && casFeat_trigger == null)
       jcas.throwFeatMissing("trigger", "werti.uima.types.annot.ConditionalSentence");
@@ -57,11 +66,7 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_trigger), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setTrigger(int addr, int i, int v) {
         if (featOkTst && casFeat_trigger == null)
       jcas.throwFeatMissing("trigger", "werti.uima.types.annot.ConditionalSentence");
@@ -76,29 +81,19 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
   final Feature casFeat_condition;
   /** @generated */
   final int     casFeatCode_condition;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getCondition(int addr) {
         if (featOkTst && casFeat_condition == null)
       jcas.throwFeatMissing("condition", "werti.uima.types.annot.ConditionalSentence");
     return ll_cas.ll_getRefValue(addr, casFeatCode_condition);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setCondition(int addr, int v) {
         if (featOkTst && casFeat_condition == null)
       jcas.throwFeatMissing("condition", "werti.uima.types.annot.ConditionalSentence");
     ll_cas.ll_setRefValue(addr, casFeatCode_condition, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getCondition(int addr, int i) {
         if (featOkTst && casFeat_condition == null)
       jcas.throwFeatMissing("condition", "werti.uima.types.annot.ConditionalSentence");
@@ -108,11 +103,7 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_condition), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setCondition(int addr, int i, int v) {
         if (featOkTst && casFeat_condition == null)
       jcas.throwFeatMissing("condition", "werti.uima.types.annot.ConditionalSentence");
@@ -127,29 +118,19 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
   final Feature casFeat_result;
   /** @generated */
   final int     casFeatCode_result;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public int getResult(int addr) {
         if (featOkTst && casFeat_result == null)
       jcas.throwFeatMissing("result", "werti.uima.types.annot.ConditionalSentence");
     return ll_cas.ll_getRefValue(addr, casFeatCode_result);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setResult(int addr, int v) {
         if (featOkTst && casFeat_result == null)
       jcas.throwFeatMissing("result", "werti.uima.types.annot.ConditionalSentence");
     ll_cas.ll_setRefValue(addr, casFeatCode_result, v);}
     
-   /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @return value at index i in the array 
-   */
+   /** @generated */
   public int getResult(int addr, int i) {
         if (featOkTst && casFeat_result == null)
       jcas.throwFeatMissing("result", "werti.uima.types.annot.ConditionalSentence");
@@ -159,11 +140,7 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
 	return ll_cas.ll_getRefArrayValue(ll_cas.ll_getRefValue(addr, casFeatCode_result), i);
   }
    
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param i index of item in the array
-   * @param v value to set
-   */ 
+  /** @generated */ 
   public void setResult(int addr, int i, int v) {
         if (featOkTst && casFeat_result == null)
       jcas.throwFeatMissing("result", "werti.uima.types.annot.ConditionalSentence");
@@ -177,10 +154,7 @@ public class ConditionalSentence_Type extends SentenceAnnotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	 * @generated
-	 * @param jcas JCas
-	 * @param casType Type 
-	 */
+	* @generated */
   public ConditionalSentence_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());

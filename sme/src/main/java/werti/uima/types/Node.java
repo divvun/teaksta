@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas; 
@@ -14,56 +14,43 @@ import werti.uima.types.annot.Token;
 
 /** A node annotation, representing both leaf nodes of a graph, as well as internal nodes.
         Note that this node type can represent n-ary circular graphs, including multiple parent nodes. Any restriction to this, if it is desired, should originate from the implementation.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
- * XML source: /home/boerre/repos/langtech/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
+ * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class Node extends TOP {
   /** @generated
    * @ordered 
    */
-  @SuppressWarnings ("hiding")
   public final static int typeIndexID = JCasRegistry.register(Node.class);
   /** @generated
    * @ordered 
    */
-  @SuppressWarnings ("hiding")
   public final static int type = typeIndexID;
-  /** @generated
-   * @return index of the type  
-   */
-  @Override
+  /** @generated  */
   public              int getTypeIndexID() {return typeIndexID;}
  
   /** Never called.  Disable default constructor
    * @generated */
-  protected Node() {/* intentionally empty block */}
+  protected Node() {}
     
   /** Internal - constructor used by generator 
-   * @generated
-   * @param addr low level Feature Structure reference
-   * @param type the type of this Feature Structure 
-   */
+   * @generated */
   public Node(int addr, TOP_Type type) {
     super(addr, type);
     readObject();
   }
   
-  /** @generated
-   * @param jcas JCas to which this Feature Structure belongs 
-   */
+  /** @generated */
   public Node(JCas jcas) {
     super(jcas);
     readObject();   
   } 
 
-  /** 
-   * <!-- begin-user-doc -->
-   * Write your own initialization here
-   * <!-- end-user-doc -->
-   *
-   * @generated modifiable 
-   */
-  private void readObject() {/*default - does nothing empty block */}
+  /** <!-- begin-user-doc -->
+    * Write your own initialization here
+    * <!-- end-user-doc -->
+  @generated modifiable */
+  private void readObject() {}
      
  
     
@@ -71,18 +58,14 @@ public class Node extends TOP {
   //* Feature: token
 
   /** getter for token - gets The token this edge represents, or null. In case this node represents a token, this will be a Token, otherwise null.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public Token getToken() {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_token == null)
       jcasType.jcas.throwFeatMissing("token", "werti.uima.types.Node");
     return (Token)(jcasType.ll_cas.ll_getFSForRef(jcasType.ll_cas.ll_getRefValue(addr, ((Node_Type)jcasType).casFeatCode_token)));}
     
   /** setter for token - sets The token this edge represents, or null. In case this node represents a token, this will be a Token, otherwise null. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setToken(Token v) {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_token == null)
       jcasType.jcas.throwFeatMissing("token", "werti.uima.types.Node");
@@ -93,18 +76,14 @@ public class Node extends TOP {
   //* Feature: parents
 
   /** getter for parents - gets A list of edges representing links to the node's parents.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public FSList getParents() {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_parents == null)
       jcasType.jcas.throwFeatMissing("parents", "werti.uima.types.Node");
     return (FSList)(jcasType.ll_cas.ll_getFSForRef(jcasType.ll_cas.ll_getRefValue(addr, ((Node_Type)jcasType).casFeatCode_parents)));}
     
   /** setter for parents - sets A list of edges representing links to the node's parents. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setParents(FSList v) {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_parents == null)
       jcasType.jcas.throwFeatMissing("parents", "werti.uima.types.Node");
@@ -115,18 +94,14 @@ public class Node extends TOP {
   //* Feature: children
 
   /** getter for children - gets A list of edges, representing the node's children.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public FSList getChildren() {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_children == null)
       jcasType.jcas.throwFeatMissing("children", "werti.uima.types.Node");
     return (FSList)(jcasType.ll_cas.ll_getFSForRef(jcasType.ll_cas.ll_getRefValue(addr, ((Node_Type)jcasType).casFeatCode_children)));}
     
   /** setter for children - sets A list of edges, representing the node's children. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setChildren(FSList v) {
     if (Node_Type.featOkTst && ((Node_Type)jcasType).casFeat_children == null)
       jcasType.jcas.throwFeatMissing("children", "werti.uima.types.Node");

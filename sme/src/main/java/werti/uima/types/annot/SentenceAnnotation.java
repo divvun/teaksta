@@ -1,6 +1,6 @@
 
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types.annot;
 
 import org.apache.uima.jcas.JCas; 
@@ -12,53 +12,39 @@ import org.apache.uima.jcas.tcas.Annotation;
 
 
 /** A sentence in natural language derived from plain text and HTML features.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
- * XML source: /home/boerre/repos/langtech/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
+ * XML source: /home/trond/gt/main/apps/teaksta/sme/desc/vislcg3TypeSystem.xml
  * @generated */
 public class SentenceAnnotation extends Annotation {
   /** @generated
    * @ordered 
    */
-  @SuppressWarnings ("hiding")
   public final static int typeIndexID = JCasRegistry.register(SentenceAnnotation.class);
   /** @generated
    * @ordered 
    */
-  @SuppressWarnings ("hiding")
   public final static int type = typeIndexID;
-  /** @generated
-   * @return index of the type  
-   */
-  @Override
+  /** @generated  */
   public              int getTypeIndexID() {return typeIndexID;}
  
   /** Never called.  Disable default constructor
    * @generated */
-  protected SentenceAnnotation() {/* intentionally empty block */}
+  protected SentenceAnnotation() {}
     
   /** Internal - constructor used by generator 
-   * @generated
-   * @param addr low level Feature Structure reference
-   * @param type the type of this Feature Structure 
-   */
+   * @generated */
   public SentenceAnnotation(int addr, TOP_Type type) {
     super(addr, type);
     readObject();
   }
   
-  /** @generated
-   * @param jcas JCas to which this Feature Structure belongs 
-   */
+  /** @generated */
   public SentenceAnnotation(JCas jcas) {
     super(jcas);
     readObject();   
   } 
 
-  /** @generated
-   * @param jcas JCas to which this Feature Structure belongs
-   * @param begin offset to the begin spot in the SofA
-   * @param end offset to the end spot in the SofA 
-  */  
+  /** @generated */  
   public SentenceAnnotation(JCas jcas, int begin, int end) {
     super(jcas);
     setBegin(begin);
@@ -66,14 +52,11 @@ public class SentenceAnnotation extends Annotation {
     readObject();
   }   
 
-  /** 
-   * <!-- begin-user-doc -->
-   * Write your own initialization here
-   * <!-- end-user-doc -->
-   *
-   * @generated modifiable 
-   */
-  private void readObject() {/*default - does nothing empty block */}
+  /** <!-- begin-user-doc -->
+    * Write your own initialization here
+    * <!-- end-user-doc -->
+  @generated modifiable */
+  private void readObject() {}
      
  
     
@@ -81,18 +64,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: coherence
 
   /** getter for coherence - gets The coherence of this sentence. How many html tags interefere?
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public double getCoherence() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_coherence == null)
       jcasType.jcas.throwFeatMissing("coherence", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getDoubleValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_coherence);}
     
   /** setter for coherence - sets The coherence of this sentence. How many html tags interefere? 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setCoherence(double v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_coherence == null)
       jcasType.jcas.throwFeatMissing("coherence", "werti.uima.types.annot.SentenceAnnotation");
@@ -103,18 +82,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: sexp
 
   /** getter for sexp - gets The Sexp of the parse of this sentence.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public String getSexp() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_sexp == null)
       jcasType.jcas.throwFeatMissing("sexp", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getStringValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_sexp);}
     
   /** setter for sexp - sets The Sexp of the parse of this sentence. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setSexp(String v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_sexp == null)
       jcasType.jcas.throwFeatMissing("sexp", "werti.uima.types.annot.SentenceAnnotation");
@@ -125,18 +100,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: hasdepparse
 
   /** getter for hasdepparse - gets A flag that marks whether this sentence made it past the filter and has a parse.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public boolean getHasdepparse() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_hasdepparse == null)
       jcasType.jcas.throwFeatMissing("hasdepparse", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getBooleanValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_hasdepparse);}
     
   /** setter for hasdepparse - sets A flag that marks whether this sentence made it past the filter and has a parse. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setHasdepparse(boolean v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_hasdepparse == null)
       jcasType.jcas.throwFeatMissing("hasdepparse", "werti.uima.types.annot.SentenceAnnotation");
@@ -147,18 +118,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: activeconversion
 
   /** getter for activeconversion - gets The active version of a passive sentence.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public String getActiveconversion() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_activeconversion == null)
       jcasType.jcas.throwFeatMissing("activeconversion", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getStringValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_activeconversion);}
     
   /** setter for activeconversion - sets The active version of a passive sentence. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setActiveconversion(String v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_activeconversion == null)
       jcasType.jcas.throwFeatMissing("activeconversion", "werti.uima.types.annot.SentenceAnnotation");
@@ -169,18 +136,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: passiveconversion
 
   /** getter for passiveconversion - gets The passive version of an active sentence.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public String getPassiveconversion() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_passiveconversion == null)
       jcasType.jcas.throwFeatMissing("passiveconversion", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getStringValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_passiveconversion);}
     
   /** setter for passiveconversion - sets The passive version of an active sentence. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setPassiveconversion(String v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_passiveconversion == null)
       jcasType.jcas.throwFeatMissing("passiveconversion", "werti.uima.types.annot.SentenceAnnotation");
@@ -191,18 +154,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: graphs_debug
 
   /** getter for graphs_debug - gets An array of sentence of file location for sentence parses that belong to this sentence.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public StringList getGraphs_debug() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_graphs_debug == null)
       jcasType.jcas.throwFeatMissing("graphs_debug", "werti.uima.types.annot.SentenceAnnotation");
     return (StringList)(jcasType.ll_cas.ll_getFSForRef(jcasType.ll_cas.ll_getRefValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_graphs_debug)));}
     
   /** setter for graphs_debug - sets An array of sentence of file location for sentence parses that belong to this sentence. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setGraphs_debug(StringList v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_graphs_debug == null)
       jcasType.jcas.throwFeatMissing("graphs_debug", "werti.uima.types.annot.SentenceAnnotation");
@@ -213,18 +172,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: passiveConversionStrategy
 
   /** getter for passiveConversionStrategy - gets 
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public String getPassiveConversionStrategy() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_passiveConversionStrategy == null)
       jcasType.jcas.throwFeatMissing("passiveConversionStrategy", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getStringValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_passiveConversionStrategy);}
     
   /** setter for passiveConversionStrategy - sets  
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setPassiveConversionStrategy(String v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_passiveConversionStrategy == null)
       jcasType.jcas.throwFeatMissing("passiveConversionStrategy", "werti.uima.types.annot.SentenceAnnotation");
@@ -235,18 +190,14 @@ public class SentenceAnnotation extends Annotation {
   //* Feature: parseCandidate
 
   /** getter for parseCandidate - gets Indicates that a sentence should be parsed further down the pipeline.
-   * @generated
-   * @return value of the feature 
-   */
+   * @generated */
   public boolean getParseCandidate() {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_parseCandidate == null)
       jcasType.jcas.throwFeatMissing("parseCandidate", "werti.uima.types.annot.SentenceAnnotation");
     return jcasType.ll_cas.ll_getBooleanValue(addr, ((SentenceAnnotation_Type)jcasType).casFeatCode_parseCandidate);}
     
   /** setter for parseCandidate - sets Indicates that a sentence should be parsed further down the pipeline. 
-   * @generated
-   * @param v value to set into the feature 
-   */
+   * @generated */
   public void setParseCandidate(boolean v) {
     if (SentenceAnnotation_Type.featOkTst && ((SentenceAnnotation_Type)jcasType).casFeat_parseCandidate == null)
       jcasType.jcas.throwFeatMissing("parseCandidate", "werti.uima.types.annot.SentenceAnnotation");

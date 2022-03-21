@@ -1,9 +1,12 @@
 
-/* First created by JCasGen Tue Mar 08 10:25:10 CET 2022 */
+/* First created by JCasGen Tue Mar 08 10:31:47 CET 2022 */
 package werti.uima.types;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.JCasRegistry;
+import org.apache.uima.cas.impl.CASImpl;
+import org.apache.uima.cas.impl.FSGenerator;
+import org.apache.uima.cas.FeatureStructure;
 import org.apache.uima.cas.impl.TypeImpl;
 import org.apache.uima.cas.Type;
 import org.apache.uima.cas.impl.FeatureImpl;
@@ -11,34 +14,44 @@ import org.apache.uima.cas.Feature;
 import org.apache.uima.jcas.tcas.Annotation_Type;
 
 /** Describes an enhancment on the current spot.
- * Updated by JCasGen Tue Mar 08 10:25:10 CET 2022
+ * Updated by JCasGen Tue Mar 08 10:31:47 CET 2022
  * @generated */
 public class Enhancement_Type extends Annotation_Type {
   /** @generated */
-  @SuppressWarnings ("hiding")
+  protected FSGenerator getFSGenerator() {return fsGenerator;}
+  /** @generated */
+  private final FSGenerator fsGenerator = 
+    new FSGenerator() {
+      public FeatureStructure createFS(int addr, CASImpl cas) {
+  			 if (Enhancement_Type.this.useExistingInstance) {
+  			   // Return eq fs instance if already created
+  		     FeatureStructure fs = Enhancement_Type.this.jcas.getJfsFromCaddr(addr);
+  		     if (null == fs) {
+  		       fs = new Enhancement(addr, Enhancement_Type.this);
+  			   Enhancement_Type.this.jcas.putJfsFromCaddr(addr, fs);
+  			   return fs;
+  		     }
+  		     return fs;
+        } else return new Enhancement(addr, Enhancement_Type.this);
+  	  }
+    };
+  /** @generated */
   public final static int typeIndexID = Enhancement.typeIndexID;
   /** @generated 
      @modifiable */
-  @SuppressWarnings ("hiding")
   public final static boolean featOkTst = JCasRegistry.getFeatOkTst("werti.uima.types.Enhancement");
  
   /** @generated */
   final Feature casFeat_EnhanceStart;
   /** @generated */
   final int     casFeatCode_EnhanceStart;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getEnhanceStart(int addr) {
         if (featOkTst && casFeat_EnhanceStart == null)
       jcas.throwFeatMissing("EnhanceStart", "werti.uima.types.Enhancement");
     return ll_cas.ll_getStringValue(addr, casFeatCode_EnhanceStart);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setEnhanceStart(int addr, String v) {
         if (featOkTst && casFeat_EnhanceStart == null)
       jcas.throwFeatMissing("EnhanceStart", "werti.uima.types.Enhancement");
@@ -50,19 +63,13 @@ public class Enhancement_Type extends Annotation_Type {
   final Feature casFeat_EnhanceEnd;
   /** @generated */
   final int     casFeatCode_EnhanceEnd;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public String getEnhanceEnd(int addr) {
         if (featOkTst && casFeat_EnhanceEnd == null)
       jcas.throwFeatMissing("EnhanceEnd", "werti.uima.types.Enhancement");
     return ll_cas.ll_getStringValue(addr, casFeatCode_EnhanceEnd);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setEnhanceEnd(int addr, String v) {
         if (featOkTst && casFeat_EnhanceEnd == null)
       jcas.throwFeatMissing("EnhanceEnd", "werti.uima.types.Enhancement");
@@ -74,19 +81,13 @@ public class Enhancement_Type extends Annotation_Type {
   final Feature casFeat_Relevant;
   /** @generated */
   final int     casFeatCode_Relevant;
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @return the feature value 
-   */ 
+  /** @generated */ 
   public boolean getRelevant(int addr) {
         if (featOkTst && casFeat_Relevant == null)
       jcas.throwFeatMissing("Relevant", "werti.uima.types.Enhancement");
     return ll_cas.ll_getBooleanValue(addr, casFeatCode_Relevant);
   }
-  /** @generated
-   * @param addr low level Feature Structure reference
-   * @param v value to set 
-   */    
+  /** @generated */    
   public void setRelevant(int addr, boolean v) {
         if (featOkTst && casFeat_Relevant == null)
       jcas.throwFeatMissing("Relevant", "werti.uima.types.Enhancement");
@@ -97,10 +98,7 @@ public class Enhancement_Type extends Annotation_Type {
 
 
   /** initialize variables to correspond with Cas Type and Features
-	 * @generated
-	 * @param jcas JCas
-	 * @param casType Type 
-	 */
+	* @generated */
   public Enhancement_Type(JCas jcas, Type casType) {
     super(jcas, casType);
     casImpl.getFSClassRegistry().addGeneratorForType((TypeImpl)this.casType, getFSGenerator());
