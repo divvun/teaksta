@@ -1,0 +1,11 @@
+pub mod adverbial;
+pub mod con_neg;
+pub mod conjunction;
+pub mod infinite_verb;
+pub mod noun;
+pub mod noun_pl;
+pub mod noun_sg;
+pub mod object;
+pub mod subject;
+pub mod token;
+pub mod verb_conjugation;

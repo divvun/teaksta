@@ -1,22 +1,17 @@
 platforms (
     {
-        platform "typescript"
-        files (src/**/*.ts src/**/*.tsx src/**/*.js src/**/*.jsx)
-    }
-
-    {
-        platform "python"
-        files (src/**/*.py **/*.py)
+        platform "rust"
+        files (crates/**/*.rs Cargo.toml crates/**/Cargo.toml)
         checks {
             format {
-                cmd "ruff format --check ."
-                fix "ruff format ."
+                cmd "cargo fmt --check"
+                fix "cargo fmt"
             }
             lint {
-                cmd "ruff check ."
+                cmd "cargo check --workspace"
             }
             test {
-                cmd "pytest"
+                cmd "cargo test --workspace"
             }
         }
     }
