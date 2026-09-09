@@ -34,6 +34,7 @@ import werti.util.Constants;
  * @author Heli Uibo
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer]
 public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -45,6 +46,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 	private final String lookupLoc = Constants.lookup_Loc;
   private final String lookupFlags = Constants.lookup_Flags;
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -53,6 +56,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 		ObjectTags = Arrays.asList(((String)context.getConfigParameterValue("ObjTags")).split(","));
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Object enhancement");
@@ -131,6 +136,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given token is safe, i.e. unambiguous
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.is-safe-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.is-safe-fn]
 	private boolean isSafe(CGToken t) {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
@@ -138,6 +145,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given reading contains the given tag
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn]
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
@@ -154,6 +163,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 		return false;
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.get-lemma-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.get-lemma-fn]
 	private String getLemma(CGReading cgr) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String lemma = "", lemma_utf8 = "";

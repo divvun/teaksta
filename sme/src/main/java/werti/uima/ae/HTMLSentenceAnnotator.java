@@ -23,6 +23,7 @@ import werti.uima.types.annot.Token;
  * 
  * @author Adriane Boyd
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator]
 public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -32,6 +33,8 @@ public class HTMLSentenceAnnotator extends JCasAnnotator_ImplBase {
 	// a shift in content type
 	private static Pattern htmlBreakPattern = Pattern.compile(".*(<li|</li>|<ul|</ul>|<ol|</ol>|<h[1..6]|</h[1-6]).*", Pattern.DOTALL); // heading1..6 added by Heli
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn]
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {

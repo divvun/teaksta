@@ -53,6 +53,7 @@ import werti.util.Constants;
  *
  */
 
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer]
 public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -83,6 +84,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		"\\+<([a-zA-Z]*+_*+)*+>"
 	};
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.initialize-fn]
 	@Override
 	public void initialize(UimaContext context)
 		throws ResourceInitializationException {
@@ -91,6 +94,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		connegTags = Arrays.asList(((String)context.getConfigParameterValue("connegTags")).split(","));
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
     // stop processing if the client has requested it
@@ -293,6 +298,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
         log.info("Generating the distractforms takes in total: {} seconds.", generatingDistractorsTotalTime * 0.001);
      }
 
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
 		private String removeTags(String input_str) {
 			for (int h=0; h<tags_tbr.length; h++) {
 				if (h<tags_tbr.length-1) {
@@ -315,6 +322,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
     * Create all relevant morphological forms of the current token
     * It is the input for the distractor generation
     */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn]
 		private String writeMorphologicalForms(String reading_str) {
 
 			String[] distract_forms = {
@@ -351,6 +360,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 			return generationInput;
      }
 
+		 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn]
+		 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn]
 		 private String writeLemmaAndAnalyses(String reading_str) {
 
  			String lemma_str = reading_str.substring(0, reading_str.indexOf("+"));
@@ -368,6 +379,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
  			return lem_and_an;
  	  }
 
+     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
+     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
      private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap){
 	 try {
 	     BufferedReader cg3GeneratorOutputReader = new BufferedReader(new InputStreamReader(new FileInputStream(cg3GeneratorOutputFileLoc), "UTF8"));
@@ -456,6 +469,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 	 }
      }
 
+		 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
+		 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
 		 private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap){
 	 	 	try {
 	    		BufferedReader cg3GeneratorOutputReader = new BufferedReader(new InputStreamReader(new FileInputStream(cg3GeneratorOutputFileLoc), "UTF8"));
@@ -540,11 +555,14 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
  * @author Eduard Schaf
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.mutable-int]
 public class MutableInt {
     int value = 1; // note that we start at 1 since we're counting
     /**
      * Increment the mutable int by one.
      */
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.mutable-int.increment-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.mutable-int.increment-fn]
     public void increment () {
 	++value;
     }
@@ -552,6 +570,8 @@ public class MutableInt {
      * Get the value of the mutable int.
      * @return the mutable int value.
      */
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.mutable-int.get-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.mutable-int.get-fn]
     public int  get () {
 	return value;
     }
@@ -564,9 +584,12 @@ public class MutableInt {
  * @author Eduard Schaf
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word]
 public class Word {
     private int begin;
     private int end;
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.word-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.word-fn]
     public Word(int begin, int end) {
 	this.begin = begin;
 	this.end = end;
@@ -575,22 +598,34 @@ public class Word {
 	this.begin = 0;
 	this.end = 0;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-begin-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-begin-fn]
     public int getBegin() {
 	return begin;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.set-begin-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.set-begin-fn]
     public void setBegin(int begin) {
 	this.begin = begin;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-end-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-end-fn]
     public int getEnd() {
 	return end;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.set-end-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.set-end-fn]
     public void setEnd(int end) {
 	this.end = end;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.to-string-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.to-string-fn]
     @Override
     public String toString() {
 	 return "Word " + begin + " " + end + "\n";
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.hash-code-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.hash-code-fn]
     @Override
     public int hashCode() {
 	final int prime = 31;
@@ -600,6 +635,8 @@ public class Word {
 	result = prime * result + end;
 	return result;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.equals-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.equals-fn]
     @Override
     public boolean equals(Object obj) {
 	  if (this == obj)
@@ -617,6 +654,8 @@ public class Word {
 	      return false;
 	  return true;
       }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-outer-type-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.word.get-outer-type-fn]
     private Vislcg3ConNegEnhancer getOuterType() {
 	return Vislcg3ConNegEnhancer.this;
     }
@@ -631,34 +670,51 @@ public class Word {
  * @author Eduard Schaf
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag]
 public class SpanTag{
     private String spanTagStart;
     private String spanTagEnd;
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.span-tag-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.span-tag-fn]
     public SpanTag(String spanTagStart) {
 	this.spanTagStart = spanTagStart;
 	this.spanTagEnd = "</span>";
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-span-tag-start-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-span-tag-start-fn]
     public String getSpanTagStart() {
 	return spanTagStart;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.set-span-tag-start-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.set-span-tag-start-fn]
     public void setSpanTagStart(String spanTagStart) {
 	this.spanTagStart = spanTagStart;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn]
     public void addAttribute(String attributeName, String attributeValue) {
 	this.spanTagStart = this.spanTagStart.replace(">", attributeName + "=\"" + attributeValue + "\">");
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-span-tag-end-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-span-tag-end-fn]
     public String getSpanTagEnd() {
 	return spanTagEnd;
     }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.set-span-tag-end-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.set-span-tag-end-fn]
     public void setSpanTagEnd(String spanTagEnd) {
 	this.spanTagEnd = spanTagEnd;
     }
 
 
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.to-string-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.to-string-fn]
     @Override
 	 public String toString() {
 	     return "SpanTag [spanTagStart=" + spanTagStart + ", spanTagEnd=" + spanTagEnd + "]";
          }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.hash-code-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.hash-code-fn]
     @Override
 	 public int hashCode() {
 	     final int prime = 31;
@@ -670,6 +726,8 @@ public class SpanTag{
 			    + ((spanTagStart == null) ? 0 : spanTagStart.hashCode());
              return result;
          }
+     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.equals-fn]
+     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.equals-fn]
      @Override
         public boolean equals(Object obj) {
 		    if (this == obj)
@@ -693,6 +751,8 @@ public class SpanTag{
 			return false;
 		    return true;
         }
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-outer-type-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.get-outer-type-fn]
     private Vislcg3ConNegEnhancer getOuterType() {
 	return Vislcg3ConNegEnhancer.this;
     }

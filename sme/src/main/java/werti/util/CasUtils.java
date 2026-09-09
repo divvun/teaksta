@@ -11,8 +11,11 @@ import werti.uima.types.global.EnhancementId;
  * Utility methods for CAS's.
  * @author Marion Zepf
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils]
 public class CasUtils {
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils.get-enh-id-iterator-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.get-enh-id-iterator-fn]
 	private static Iterator<EnhancementId> getEnhIdIterator(JCas cas) {
 		AnnotationIndex enhIdIndex = cas.getAnnotationIndex(EnhancementId.type);
 		Iterator<EnhancementId> enhIdIter = enhIdIndex.iterator();
@@ -26,6 +29,8 @@ public class CasUtils {
 	 * @param cas
 	 * @return true iff the CAS is empty
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils.is-valid-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.is-valid-fn]
 	public static boolean isValid(JCas cas) {
 		if (cas == null) {
 			return false;
@@ -45,6 +50,8 @@ public class CasUtils {
 	 * make the CAS invalid by setting its enhancement ID(s) to -1.
 	 * @param cas
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils.make-invalid-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.make-invalid-fn]
 	public static void makeInvalid(JCas cas) {
 		Iterator<EnhancementId> enhIdIter = getEnhIdIterator(cas);
 		while (enhIdIter.hasNext()) {
@@ -60,6 +67,8 @@ public class CasUtils {
 	 * @param cas
 	 * @param enhId
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils.add-enh-id-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.add-enh-id-fn]
 	public static void addEnhId(JCas cas, long enhId) {
 		EnhancementId enhIdFS = new EnhancementId(cas);
 		enhIdFS.setEnhId(enhId);
@@ -72,6 +81,8 @@ public class CasUtils {
 	 * @param cas
 	 * @return true iff the CAS has been reset
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.cas-utils.cas-utils.has-been-reset-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.has-been-reset-fn]
 	public static boolean hasBeenReset(JCas cas) {
 		return cas.getDocumentLanguage() == null;
 	}

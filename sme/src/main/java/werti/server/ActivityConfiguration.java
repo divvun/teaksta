@@ -41,6 +41,7 @@ import org.xml.sax.SAXException;
  * @author Niels Ott
  * @version $Id: ActivityConfiguration.java 1071 2011-06-01 15:39:42Z adriane@SFS.UNI-TUEBINGEN.DE $
  */
+// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration]
 public class ActivityConfiguration {
 	
 	/**
@@ -74,6 +75,8 @@ public class ActivityConfiguration {
 	private boolean isEnabled;
 	private String name;
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.read-xml-conf-entries-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.read-xml-conf-entries-fn]
 	private HashMap<String,ConfigValue> readXmlConfEntries(Node n) {
 		
 		HashMap<String,ConfigValue> res = new HashMap<String,ConfigValue>();
@@ -104,6 +107,8 @@ public class ActivityConfiguration {
 	}
 	
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.load-from-xml-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.load-from-xml-fn]
 	private void loadFromXml(InputStream is) throws ParserConfigurationException, SAXException, IOException, XPathExpressionException  {
 
 		DocumentBuilder b = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -162,6 +167,8 @@ public class ActivityConfiguration {
 	
 	
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
 	public ActivityConfiguration(File xmlActivityConfig) throws IOException  {
 		try {
 			actbaseDir = xmlActivityConfig.getParentFile().getAbsolutePath();
@@ -180,21 +187,30 @@ public class ActivityConfiguration {
 	/**
 	 * Internal data container for config entries.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value]
 	public class ConfigValue {
 		private String value;
 		private boolean readOnly;
+		// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.get-value-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.get-value-fn]
 		public String getValue() {
 			return value;
 		}
+		// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.is-read-only-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.is-read-only-fn]
 		public boolean isReadOnly() {
 			return readOnly;
 		}
+		// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.config-value-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.config-value-fn]
 		public ConfigValue(String value, boolean readOnly) {
 			super();
 			this.readOnly = readOnly;
 			this.value = value;
 		}
 		
+		// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.to-string-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config-value.to-string-fn]
 		public String toString() {
 			if (readOnly) {
 				return value + " (read-only)";
@@ -209,6 +225,8 @@ public class ActivityConfiguration {
 	 * @return the location of the pre pipeline descriptor or <strong>null</strong> if the 
 	 * the descriptor could not be found in the class path.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-pre-desc-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-pre-desc-fn]
 	public URL getPreDesc(String lang) {
 		if (preDesc.containsKey(lang)) {
 			return preDesc.get(lang);
@@ -221,6 +239,8 @@ public class ActivityConfiguration {
 	 * @return the location of the post pipeline descriptor or <strong>null</strong> if the 
 	 * the descriptor could not be found in the class path.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-post-desc-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-post-desc-fn]
 	public URL getPostDesc(String lang) {
 		if (postDesc.containsKey(lang)) {
 			return postDesc.get(lang);
@@ -235,6 +255,8 @@ public class ActivityConfiguration {
 	 * @param conf
 	 * @return
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-value-fn]
 	private String getValue(String lang, String key, HashMap<String,HashMap<String,ConfigValue>> conf) {
 		if (conf.containsKey(lang) && conf.get(lang).containsKey(key)) {
 			return conf.get(lang).get(key).getValue();
@@ -248,6 +270,8 @@ public class ActivityConfiguration {
 	 * @param key the key for which the value should be returned.
 	 * @return the configuration value for the given key or <strong>null</strong>, if no entry for the key is found.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-client-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-client-value-fn]
 	public String getClientValue(String lang, String key) {
 		return getValue(lang, key, clientConfig);
 	}
@@ -257,6 +281,8 @@ public class ActivityConfiguration {
 	 * @param key the key for which the value should be returned.
 	 * @return the configuration value for the given key or <strong>null</strong>, if no entry for the key is found.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-value-fn]
 	public String getServerPreValue(String lang, String key) {
 		return getValue(lang, key, serverPreConfig);
 	}
@@ -266,6 +292,8 @@ public class ActivityConfiguration {
 	 * @param key the key for which the value should be returned.
 	 * @return the configuration value for the given key or <strong>null</strong>, if no entry for the key is found.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-value-fn]
 	public String getServerPostValue(String lang, String key) {
 		return getValue(lang, key, serverPostConfig);
 	}	
@@ -274,6 +302,8 @@ public class ActivityConfiguration {
 	/**
 	 * Private helper for setting a config value.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-value-fn]
 	private boolean setValue(String lang, String key, String value, HashMap<String,HashMap<String,ConfigValue>> conf ) {
 		if (conf.containsKey(lang) && conf.get(lang).containsKey(key)) {
 			ConfigValue v = conf.get(lang).get(key);
@@ -296,6 +326,8 @@ public class ActivityConfiguration {
 	 * @param value the new value to set for that key.
 	 * @return true if this worked out, false if that key happens to be read-only.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-server-pre-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-server-pre-value-fn]
 	public boolean setServerPreValue(String lang, String key, String value) {
 		return setValue(lang, key, value, serverPreConfig);
 	}
@@ -308,6 +340,8 @@ public class ActivityConfiguration {
 	 * @param value the new value to set for that key.
 	 * @return true if this worked out, false if that key happens to be read-only.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-server-post-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-server-post-value-fn]
 	public boolean setServerPostValue(String lang, String key, String value) {
 		return setValue(lang, key, value, serverPostConfig);
 	}	
@@ -320,6 +354,8 @@ public class ActivityConfiguration {
 	 * @param value the new value to set for that key.
 	 * @return true if this worked out, false if that key happens to be read-only.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-client-value-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.set-client-value-fn]
 	public boolean setClientValue(String lang, String key, String value) {
 		return setValue(lang, key, value, clientConfig);
 	}
@@ -327,6 +363,8 @@ public class ActivityConfiguration {
 	/**
 	 * Private helper for converting internal config into {@link Properties}.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config2-props-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.config2-props-fn]
 	private Properties config2Props(String lang, HashMap<String,HashMap<String,ConfigValue>> conf) {
 		Properties res = new Properties();
 		if (conf.containsKey(lang)) {
@@ -344,6 +382,8 @@ public class ActivityConfiguration {
 	 * object that can be used by the UIMA pipeline.
 	 * @return the server pre pipeline configuration as one object.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-config-as-prop-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-config-as-prop-fn]
 	public Properties getServerPreConfigAsProp(String lang) {
 		return config2Props(lang, serverPreConfig);
 	}
@@ -353,6 +393,8 @@ public class ActivityConfiguration {
 	 * object that can be used by the UIMA pipeline.
 	 * @return the server post pipeline configuration as one object.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-config-as-prop-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-config-as-prop-fn]
 	public Properties getServerPostConfigAsProp(String lang) {
 		return config2Props(lang, serverPostConfig);
 	}
@@ -371,6 +413,8 @@ public class ActivityConfiguration {
 	/**
 	 * @return all keys in the server pre config stored in a set.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-keys-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-pre-keys-fn]
 	public Set<String> getServerPreKeys() {
 		return serverPreConfig.keySet();
 	}
@@ -378,6 +422,8 @@ public class ActivityConfiguration {
 	/**
 	 * @return all keys in the server post config stored in a set.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-keys-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-server-post-keys-fn]
 	public Set<String> getServerPostKeys() {
 		return serverPostConfig.keySet();
 	}
@@ -393,6 +439,8 @@ public class ActivityConfiguration {
 	 * @return all language codes that are in the server pre and
 	 * server post config
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-languages-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-languages-fn]
 	public Set<String> getLanguages() {
 		// create a set with the intersection of the languages in the pre
 		// and post configs
@@ -406,6 +454,8 @@ public class ActivityConfiguration {
 	 * Determines whether this activity is enabled or not.
 	 * @return true if this activity is enabled, false otherwise.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.is-enabled-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.is-enabled-fn]
 	public boolean isEnabled() {
 		return isEnabled;
 	}
@@ -415,10 +465,14 @@ public class ActivityConfiguration {
 	 * @return the nice human-readable name for this activity as stored
 	 * in the configuration.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-name-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-name-fn]
 	public String getName() {
 		return name;
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.to-string-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.to-string-fn]
 	public String toString() {
 		
 		String res ="";
@@ -433,6 +487,8 @@ public class ActivityConfiguration {
 		
 	}
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
 	public static void main(String[] args) throws IOException {
 		
 		ActivityConfiguration ac = new ActivityConfiguration(new File(args[0]));

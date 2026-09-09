@@ -1,0 +1,52 @@
+// Porting config — two impl blocks: source-impl (the original,
+// impl-only) and target-impl (the new language, impl + tests).
+// The markup wave annotates source-impl; the translate and test
+// waves give each rule a second impl site + a /test facet in
+// target-impl.
+specs ({
+    name teaksta,
+    include (docs/spec/**/*.md),
+    impls (
+        {
+            name source-impl,
+            languages (@java),
+            // Port source is the sme (Konteaksta) tree only; rus/ and
+            // rusVIEW/ are retained as reference, not port scope.
+            include (sme/src/main/java/**/*.java),
+            // Dead weight: unreachable from the ten live sme activity
+            // pipelines (vislcg3Pipe + vislcg3PostProc*). Verified via
+            // desc/operators flows and activity.xml references.
+            exclude (
+                sme/src/main/java/werti/uima/types/**
+                sme/src/main/java/werti/uima/ae/util/Morpha.java
+                sme/src/main/java/werti/uima/ae/util/Morphg.java
+                sme/src/main/java/werti/uima/ae/util/VerbVoiceConverter.java
+                sme/src/main/java/werti/uima/ae/util/PronounConverter.java
+                sme/src/main/java/werti/uima/ae/util/TransformationRule.java
+                sme/src/main/java/werti/uima/ae/MorphaLemmatizer.java
+                sme/src/main/java/werti/uima/ae/HTMLContentTypeAnnotator.java
+                sme/src/main/java/werti/uima/ae/MaltParser.java
+                sme/src/main/java/werti/uima/ae/TreeTaggerAnnotator.java
+                sme/src/main/java/werti/uima/ae/OpenNlpTagger.java
+                sme/src/main/java/werti/uima/ae/OpenNlpChunker.java
+                sme/src/main/java/werti/uima/ae/OpenNlpTokenizer.java
+                sme/src/main/java/werti/uima/ae/PhrasalVerbAnnotator.java
+                sme/src/main/java/werti/uima/ae/SentenceBoundaryDetector.java
+                sme/src/main/java/werti/server/OpenIDConsumer.java
+                sme/src/main/java/werti/uima/enhancer/BaseformPostEnhancer.java
+                sme/src/main/java/werti/uima/enhancer/HTMLContentTypeEnhancer.java
+                sme/src/main/java/werti/uima/enhancer/PoSEnhancer.java
+                sme/src/main/java/werti/uima/enhancer/WordEnhancer.java
+                sme/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java
+                sme/src/main/java/werti/uima/enhancer/Vislcg3NounSingularEnhancer.java
+                sme/src/main/java/werti/util/RunDriver.java
+                sme/src/main/java/werti/util/HTMLFeatureExtractor.java
+                sme/src/main/java/werti/util/Transformer.java
+                sme/src/main/java/werti/util/Transformation.java
+                sme/src/main/java/werti/util/trans/**
+            ),
+            mode @impl-only
+        }
+        {name target-impl, languages (@rust), include (src/**/*.rs crates/**/*.rs), exclude (target/**), mode @both}
+    )
+})

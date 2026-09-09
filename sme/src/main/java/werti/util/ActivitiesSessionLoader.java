@@ -15,8 +15,11 @@ import werti.server.Activities;
  * @author Niels Ott
  * @version $Id: ActivitiesSessionLoader.java 731 2010-11-05 12:55:06Z adriane@SFS.UNI-TUEBINGEN.DE $
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader]
 public class ActivitiesSessionLoader {
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn]
 	public static Activities createActivitiesInSession(HttpServletRequest req) throws IOException {
 		// try to obtain the activities from the session
 		HttpSession session = req.getSession();

@@ -1,0 +1,31 @@
+platforms (
+    {
+        platform "typescript"
+        files (src/**/*.ts src/**/*.tsx src/**/*.js src/**/*.jsx)
+    }
+
+    {
+        platform "python"
+        files (src/**/*.py **/*.py)
+        checks {
+            format {
+                cmd "ruff format --check ."
+                fix "ruff format ."
+            }
+            lint {
+                cmd "ruff check ."
+            }
+            test {
+                cmd "pytest"
+            }
+        }
+    }
+)
+
+commit {
+    type-prefix "required"
+}
+
+adoption {
+    scope "porting"
+}

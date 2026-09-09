@@ -20,12 +20,15 @@ import org.apache.uima.resource.ResourceInitializationException;
  * @author Aleksandar Dimitrov
  * @version 0.1
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.resources.resources]
 public class Resources {
 	private static final Logger log =
 		LogManager.GetLogger(Resources.class);
 
 	// The extra 6 bytes per method call don't really matter all that much and we
 	// reduce boiler plating for exception throwing in getModel(String).
+	// [spec:teaksta:def:sme.src.main.java.werti.util.resources.resources.no-access-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.resources.resources.no-access-fn]
 	private static final ResourceInitializationException
 		noAccess(final String reason, final Exception exception) {
 		final Object[] args = { reason };
@@ -93,6 +96,8 @@ public class Resources {
 	 * This is a super-safe method that shuoldn't leak any dangling references.
 	 * Thanks to dmlloyd at ##java.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.resources.resources.get-resource-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.resources.resources.get-resource-fn]
 	private static final Object getResource(URL path)
 		throws ResourceInitializationException {
 		try { // to open a connection to the resource

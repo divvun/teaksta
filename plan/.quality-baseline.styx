@@ -1,0 +1,1049 @@
+generated_at 2026-09-09T10:53:08.993166Z
+
+seal 238a792f338d7315
+
+files (
+    {path "Todos January 2018.txt", code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path plan/main.styx, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/WERTiTypePriorities.xml, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/WERTiTypeSystem.xml, code_loc 328, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/ConditionalAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/DOTTER.xml, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/DepTreeTransformer.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/EnhanceXMLAnnotator.xml, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/GenericRelevanceAnnotator.xml, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/GerundGenerator.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/HTMLContentTypeAnnotator.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/HTMLSentenceAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/LGPTokenizer.xml, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/MaltParser.xml, code_loc 61, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/MorphaLemmatizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/OpenNlpChunker.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/OpenNlpSentenceDetector.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/OpenNlpTagger.xml, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/OpenNlpTokenizer.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/PhrasalVerbAnnotator.xml, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/RFTaggerAnnotator.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/SentenceBoundaryDetector.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/SimpleTokenizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/relevance/GenericRelevanceAnnotator.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/relevance/WholeText.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/taggers/LGPTagger.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/taggers/TreeTaggerAEDescriptor.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/annotators/vislcg3Annotator.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/HTMLContentTypeEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/KonjunktivEnhancer.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/TokenEnhancer.xml, code_loc 86, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/WordEnhancer.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/baseformPostEnhancer.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3ChunkEnhancer.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3ConjunctionEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounPlEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounSgEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsAccEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsAllEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsDatEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsGenEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsInsEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsLocEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3NounsNomEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/enhancers/vislcg3PresFutIndEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/HTMLContentTypePipe.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/Lingpipe.xml, code_loc 61, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/OpenNlpTaggerPipe.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/OpenNlpTokenizerPipe.xml, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislCGPostProc.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3Pipe.xml, code_loc 107, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_Conjunction.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounPl.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounSg.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsAcc.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsAll.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsDat.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsGen.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsIns.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsLoc.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_NounsNom.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/operators/vislcg3PostProc_PresFutInd.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/ConditionalTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/HMMTest.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/LingPipeTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/MaltParserTest.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/PTBTest.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/ParserTest.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/TokTest.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/TransTest.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/testers/TreeTaggerTester.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/desc/vislcg3TypeSystem.xml, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/docs/DEBUG.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/docs/HACKING.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/docs/NewActivity.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/docs/maltparser-notes.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/docs/updating-firefox-addon.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/lib/addlibstomvn.sh, code_loc 1, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/make_teaksta.sh, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/pom.xml, code_loc 266, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/WERTiContext.java, code_loc 375, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/WERTiContextException.java, code_loc 22, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/server/Activities.java, code_loc 29, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/server/ActivityConfiguration.java, code_loc 219, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/server/OpenIDConsumer.java, code_loc 83, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/server/Processors.java, code_loc 101, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/server/WERTiServlet.java, code_loc 267, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/EnhanceXMLAnnotator.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/GenericRelevanceAnnotator.java, code_loc 37, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/HTMLContentTypeAnnotator.java, code_loc 866, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 1}
+    {path rus/src/main/java/werti/uima/ae/HTMLSentenceAnnotator.java, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/MaltParser.java, code_loc 96, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/MorphaLemmatizer.java, code_loc 75, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/OpenNlpChunker.java, code_loc 69, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/OpenNlpSentenceDetector.java, code_loc 77, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/OpenNlpTagger.java, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/OpenNlpTokenizer.java, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/PhrasalVerbAnnotator.java, code_loc 219, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/SentenceBoundaryDetector.java, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/TreeTaggerAnnotator.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/Vislcg3Annotator.java, code_loc 257, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/util/Morpha.java, code_loc 59469, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 5}
+    {path rus/src/main/java/werti/uima/ae/util/Morphg.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/util/PronounConverter.java, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/util/StringTools.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/util/TransformationRule.java, code_loc 4, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/ae/util/VerbVoiceConverter.java, code_loc 266, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/BaseformPostEnhancer.java, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/HTMLContentTypeEnhancer.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/PoSEnhancer.java, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/TokenEnhancer.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java, code_loc 86, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3ConjunctionEnhancer.java, code_loc 75, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounPlEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounSgEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsAccEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsAllEnhancer.java, code_loc 261, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsDatEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsGenEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsInsEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsLocEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3NounsNomEnhancer.java, code_loc 245, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/Vislcg3PresFutIndEnhancer.java, code_loc 242, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/enhancer/WordEnhancer.java, code_loc 75, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Edge.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Edge_Type.java, code_loc 60, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Enhancement.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Enhancement_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Node.java, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Node_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Subclause.java, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/Subclause_Type.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/CGReading.java, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/CGReading_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/CGToken.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/CGToken_Type.java, code_loc 62, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/ConditionalSentence.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/ConditionalSentence_Type.java, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/EnhanceXML.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/EnhanceXML_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/PhrasalVerb.java, code_loc 81, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/PhrasalVerb_Type.java, code_loc 121, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation.java, code_loc 26, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/RelevantText.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/RelevantText_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/SentenceAnnotation.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/SentenceAnnotation_Type.java, code_loc 138, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/Token.java, code_loc 122, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/uima/types/annot/Token_Type.java, code_loc 190, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/ActivitiesSessionLoader.java, code_loc 17, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/EnhancerUtils.java, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/FSListIterable.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/Functional.java, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/HTMLEnhancer.java, code_loc 104, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/HTMLFeatureExtractor.java, code_loc 128, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/HTMLUtils.java, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/JSONEnhancer.java, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/PageHandler.java, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/PostRequest.java, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/PracticeHandler.java, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/Resources.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/RunDriver.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/StringListIterable.java, code_loc 43, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/Transformation.java, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/Transformer.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/java/werti/util/trans/FindRootVerb.java, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/activity.js, code_loc 433, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/blur.js, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/conjunctions.js, code_loc 150, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/jquery.select_skin.js, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/konjunktiv.js, code_loc 143, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/lib.js, code_loc 128, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/notification.js, code_loc 120, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsacc.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsall.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsdat.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsgen.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsins.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsloc.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/nounsnom.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/openid.js, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/presfutind.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/substantiveplural.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/substantivesingular.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/toolbar.js, code_loc 126, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/view.css, code_loc 215, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/wertiview.css, code_loc 143, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content/wertiview.js, code_loc 237, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/skin/skin.css, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/resources/firefox-extension/werti/defaults/preferences/prefs.js, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/WEB-INF/web.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/Conjunctions/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsAcc/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsAll/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsDat/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsGen/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsIns/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsLoc/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/NounsNom/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/PresFutInd/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/SubstantivePlural/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities/SubstantiveSingular/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Arts/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Conjunctions/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Gerunds/activity.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/Brown_Conll_INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/EnglishPage-INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/INF-FINAL.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/activities_old/HTML/activity.xml, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/firefox-extension/README.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/index.html, code_loc 96, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/activity.js, code_loc 431, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/blur.js, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/conjunctions.js, code_loc 150, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/html.js, code_loc 19, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/lib.js, code_loc 126, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/notification.js, code_loc 118, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsacc.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsall.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsdat.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsgen.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsins.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsloc.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/nounsnom.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/presfutind.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/substantiveplural.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/substantivesingular.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/view.css, code_loc 215, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/werti.css, code_loc 159, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/werticore.css, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/wertiview.css, code_loc 143, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/js-lib/wertiview.js, code_loc 39, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/main.css, code_loc 726, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/teaksta_main.html, code_loc 96, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rus/src/main/webapp/werti.css, code_loc 85, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/INSTALL.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/NLP_Problems.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/README.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/TODO.tex, code_loc 108, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/WERTiTypePriorities.xml, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/WERTiTypeSystem.xml, code_loc 339, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/ConditionalAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/DBParser.xml, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/DOTTER.xml, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/DepTreeTransformer.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/DummyHTMLSentenceAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/EnhanceXMLAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/GerundGenerator.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/HTMLContentTypeAnnotator.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/HTMLSentenceAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/LGPTokenizer.xml, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/LanguageDetector.xml, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/MalletCRFTaggerAnnotator.xml, code_loc 111, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/MaltParser.xml, code_loc 61, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/MaxentTaggerAnnotator.xml, code_loc 111, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/MorphaLemmatizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/OpenNlpChunker.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/OpenNlpSentenceDetector.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/OpenNlpTagger.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/OpenNlpToTreeTaggerConverter.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/OpenNlpTokenizer.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/PassiveSentenceConverter.xml, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/PassivesConversionStrategyAnnotator.xml, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/PhrasalVerbAnnotator.xml, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/RFTaggerAnnotator.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/SentenceBoundaryDetector.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/SimpleTokenizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/StanfordDependencyParser.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/TimblAnnotator.xml, code_loc 111, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/relevance/GenericRelevanceAnnotator.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/relevance/WholeText.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/taggers/LGPTagger.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/taggers/TreeTaggerAEDescriptor.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/vislcg3Annotator.xml, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/annotators/vislcg3RusAnnotator.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/ConditionalEnhancer.xml, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/HTMLContentTypeEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/KonjunktivEnhancer.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/NounCountEnhancer.xml, code_loc 112, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/PassiveSentenceEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/PhrasalVerbEnhancer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/PoSEnhancer.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/SerEstarEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/TokenEnhancer.xml, code_loc 86, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/WordEnhancer.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/baseformPostEnhancer.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3ChunkEnhancer.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusAdjectiveFeminineEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusAdjectiveMasculineEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusAdjectiveNeutralEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusNounPluralEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusNounSingularEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusParticiplesEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusVerbImperfectiveEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusVerbPastTenseEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusVerbPerfectiveEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusVerbPresentTenseEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/enhancers/vislcg3RusWordStressEnhancer.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/ConditionalPipe.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/HTMLContentTypePipe.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/Konjunktiv.xml, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/KonjunktivPost.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/Lingpipe.xml, code_loc 102, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/MLTrainerPipe.xml, code_loc 63, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/MalletCRFPipe.xml, code_loc 147, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/MaxentPipe.xml, code_loc 147, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/OpenNlpChunkerPipe.xml, code_loc 132, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/OpenNlpTaggerPipe.xml, code_loc 63, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/OpenNlpTokenizerPipe.xml, code_loc 77, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/Passives.xml, code_loc 99, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/PassivesPost.xml, code_loc 43, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/PhrasalVerbs.xml, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/PhrasalVerbsPost.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/TimblPipe.xml, code_loc 147, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/TreeTagger-SerEstar.xml, code_loc 48, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/TreeTagger-helper.xml, code_loc 60, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/TreeTagger-pos.xml, code_loc 87, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/TreeTagger.xml, code_loc 134, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/ptb-hmm-hil.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/ptb-ptb-hil.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/smp-hmm-hil.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/smp-ptb-hil.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislCGPostProc-2.xml, code_loc 85, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislCGPostProc.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3Pipe.xml, code_loc 113, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusAdjectiveFeminine.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusAdjectiveMasculine.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusAdjectiveNeutral.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusNounPlural.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusNounSingular.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusParticiples.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusVerbImperfective.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusVerbPastTense.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusVerbPerfective.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusVerbPresentTense.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3PostProc_RusWordStress.xml, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusAdjectiveFemininePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusAdjectiveMasculinePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusAdjectiveNeutralPipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusNounPluralPipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusNounSingularPipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusParticiplesPipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusVerbImperfectivePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusVerbPastTensePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusVerbPerfectivePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusVerbPresentTensePipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/operators/vislcg3RusWordStressPipe.xml, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/ConditionalTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/HMMTest.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/LingPipeTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/MaltParserTest.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/PTBTest.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/ParserTest.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/TokTest.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/TransTest.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/testers/TreeTaggerTester.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/desc/vislcg3TypeSystem.xml, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/debugging-with-uima.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/eclipse-setup-for-view.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/internal-structure.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/maltparser-notes.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/paper/abstract.tex, code_loc 37, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/paper/paper.tex, code_loc 393, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/paper/pres.tex, code_loc 137, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/updating-firefox-addon.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/docs/usr-local-werti.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/lib/addlibstomvn.sh, code_loc 1, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/make_view.sh, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/metadata/install.xml, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/pom.xml, code_loc 322, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/rus_resources/lookup2cg, code_loc 232, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/rus_resources/preprocess, code_loc 1022, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/calc.R, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/cghack, code_loc 9, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/constructed-examples-with-stars.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/constructed-examples.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/infinitive-list.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/motor-girls.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/sentences-from-bnc.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/ske-infXger.py, code_loc 67, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/hacks/turkey.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/WERTiContext.java, code_loc 369, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/WERTiContextException.java, code_loc 22, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/LineGroupIteratorFromString.java, code_loc 77, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/MalletCRFTagger.java, code_loc 67, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/MalletCRFTrainer.java, code_loc 446, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/MaxentTagger.java, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/MaxentTrainer.java, code_loc 151, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/fe/FeatureExtractor.java, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/fe/NounCountabilityFeatureExtractor.java, code_loc 235, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/ml/fe/PassiveByPhraseFeatureExtractor.java, code_loc 144, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/server/Activities.java, code_loc 28, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/server/ActivityConfiguration.java, code_loc 191, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/server/Processors.java, code_loc 102, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/server/WERTiServlet.java, code_loc 355, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/ConditionalAnnotator.java, code_loc 96, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/DBParser.java, code_loc 65, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/DOTTER.java, code_loc 89, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/DepTreeTransformer.java, code_loc 122, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/DummyHTMLSentenceAnnotator.java, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/EnhanceXMLAnnotator.java, code_loc 37, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/GenericRelevanceAnnotator.java, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/GerundGenerator.java, code_loc 62, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/HTMLContentTypeAnnotator.java, code_loc 936, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 1}
+    {path rusVIEW/src/main/java/werti/uima/ae/HTMLSentenceAnnotator.java, code_loc 71, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/LanguageDetector.java, code_loc 33, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/LingPipeTagger.java, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/LingPipeTokenizer.java, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/MalletCRFTaggerAnnotator.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/MaltParser.java, code_loc 117, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/MaxentTaggerAnnotator.java, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/MorphaLemmatizer.java, code_loc 79, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/OpenNlpChunker.java, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/OpenNlpSentenceDetector.java, code_loc 88, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/OpenNlpTagger.java, code_loc 79, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/OpenNlpToTreeTaggerConverter.java, code_loc 63, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/OpenNlpTokenizer.java, code_loc 108, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/PassiveSentenceConverter.java, code_loc 7, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/PassivesConversionStrategyAnnotator.java, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/PhrasalVerbAnnotator.java, code_loc 225, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/RFTaggerAnnotator.java, code_loc 86, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/SentenceBoundaryDetector.java, code_loc 64, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/SimpleTokenizer.java, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/StanfordDependencyParser.java, code_loc 117, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/TimblAnnotator.java, code_loc 105, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/TreeTaggerAnnotator.java, code_loc 89, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/Vislcg3Annotator.java, code_loc 251, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/Vislcg3RusAnnotator.java, code_loc 186, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/WholeTextRelevanceAnnotator.java, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/filter/AlwaysFilter.java, code_loc 10, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/filter/Filter.java, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/filter/PassiveSentenceFilter.java, code_loc 166, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/filter/PhrasalVerbFilter.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/AuxpassTransformation.java, code_loc 294, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/Edge.java, code_loc 5, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/Node.java, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/Segment.java, code_loc 12, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/Sentence.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/Span.java, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/TreeIT.java, code_loc 39, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans/WERTiGraph.java, code_loc 11, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/FileComparator.java, code_loc 10, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/Morpha.java, code_loc 59469, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 5}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/Morphg.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/PronounConverter.java, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/StringTools.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/TransformationRule.java, code_loc 4, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util/VerbVoiceConverter.java, code_loc 266, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/BaseformPostEnhancer.java, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/ConditionalEnhancer.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/HTMLContentTypeEnhancer.java, code_loc 52, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/KonjunktivEnhancer.java, code_loc 119, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/NounCountEnhancer.java, code_loc 139, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/PassiveSentenceEnhancer.java, code_loc 63, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/PhrasalVerbEnhancer.java, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/PoSEnhancer.java, code_loc 63, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/SerEstarEnhancer.java, code_loc 105, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/TokenEnhancer.java, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java, code_loc 90, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusAdjectiveFeminineEnhancer.java, code_loc 390, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusAdjectiveMasculineEnhancer.java, code_loc 390, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusAdjectiveNeutralEnhancer.java, code_loc 390, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusNounPluralEnhancer.java, code_loc 433, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusNounSingularEnhancer.java, code_loc 433, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusParticiplesEnhancer.java, code_loc 383, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusVerbImperfectiveEnhancer.java, code_loc 400, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusVerbPastTenseEnhancer.java, code_loc 385, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusVerbPerfectiveEnhancer.java, code_loc 399, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusVerbPresentTenseEnhancer.java, code_loc 381, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/Vislcg3RusWordStressEnhancer.java, code_loc 484, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer/WordEnhancer.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Edge.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Edge_Type.java, code_loc 60, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Enhancement.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Enhancement_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Node.java, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Node_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Subclause.java, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/Subclause_Type.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/CGReading.java, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/CGReading_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/CGToken.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/CGToken_Type.java, code_loc 62, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/ConditionalSentence.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/ConditionalSentence_Type.java, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/EnhanceXML.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/EnhanceXML_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/PhrasalVerb.java, code_loc 81, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/PhrasalVerb_Type.java, code_loc 121, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation.java, code_loc 26, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/RelevantText.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/RelevantText_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/SentenceAnnotation.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/SentenceAnnotation_Type.java, code_loc 138, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/Token.java, code_loc 122, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot/Token_Type.java, code_loc 190, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/global/EnhancementId.java, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/uima/types/global/EnhancementId_Type.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/ActivitiesSessionLoader.java, code_loc 17, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/CasUtils.java, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/DummyException.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/EnhancerUtils.java, code_loc 102, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/FSListIterable.java, code_loc 48, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/Functional.java, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/HTMLEnhancer.java, code_loc 81, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/HTMLFeatureExtractor.java, code_loc 128, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/HTMLUtils.java, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/JSONEnhancer.java, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/PageHandler.java, code_loc 37, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/Pair.java, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/ParserClient.java, code_loc 54, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/PostRequest.java, code_loc 52, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/PracticeHandler.java, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/Resources.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/RunDriver.java, code_loc 43, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/StringListIterable.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/Transformation.java, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/Transformer.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/WERTiServer.java, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/java/werti/util/trans/FindRootVerb.java, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/activity.js, code_loc 536, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/blur.js, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/conditionals.js, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/gerunds.js, code_loc 166, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/jquery.select_skin.js, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/konjunktiv.js, code_loc 122, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/lib.js, code_loc 97, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/notification.js, code_loc 120, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/nouncountability.js, code_loc 146, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/passives.js, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/phrasalverbs.js, code_loc 175, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/pos.js, code_loc 161, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusadjectivefeminine.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusadjectivemasculine.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusadjectiveneutral.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusnounplural.js, code_loc 168, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusnounsingular.js, code_loc 168, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusparticiples.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusverbimperfective.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusverbpasttense.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusverbperfective.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/rusverbpresenttense.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/ruswordstress.js, code_loc 252, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/serestar.js, code_loc 281, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/toolbar.js, code_loc 176, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/view.css, code_loc 263, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/view.js, code_loc 252, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content/whquestions.js, code_loc 419, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/skin/skin.css, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/defaults/preferences/prefs.js, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/WEB-INF/web.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Arts/activity.xml, code_loc 16, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Conditionals/activity.xml, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Dets/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds/activity.xml, code_loc 33, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds/resources/noun_triggers_inf/Brown_Conll_INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds/resources/noun_triggers_inf/EnglishPage-INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds/resources/noun_triggers_inf/INF-FINAL.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Konjunktiv/activity.xml, code_loc 16, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/activity.xml, code_loc 21, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/both.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/comlex-count.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/comlex-ncoll.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/count.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/cuvplus-both.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/cuvplus-count.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/cuvplus-noncount.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/ncoll.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources/noncount.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Passives/activity.xml, code_loc 19, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/PhrasalVerbs/activity.xml, code_loc 24, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/Preps/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveFeminine/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveMasculine/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveNeutral/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusNounPlural/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusNounSingular/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusParticiples/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbImperfective/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPastTense/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPerfective/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPresentTense/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/RusWordStress/activity.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/SerEstar/activity.xml, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/activities/WhQuestions/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/firefox-extension/README.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/activity.js, code_loc 534, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/blur.js, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/gerunds.js, code_loc 164, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/html.js, code_loc 19, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/konjunktiv.js, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/lib.js, code_loc 95, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/notification.js, code_loc 118, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/nouncountability.js, code_loc 144, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/passives.js, code_loc 33, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/phrasalverbs.js, code_loc 173, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/pos.js, code_loc 159, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusadjectivefeminine.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusadjectivemasculine.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusadjectiveneutral.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusnounplural.js, code_loc 166, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusnounsingular.js, code_loc 166, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusparticiples.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusverbimperfective.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusverbpasttense.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusverbperfective.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/rusverbpresenttense.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/ruswordstress.js, code_loc 250, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/serestar.js, code_loc 279, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/view.css, code_loc 263, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/view.js, code_loc 39, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/werti.css, code_loc 159, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/js-lib/whquestions.js, code_loc 418, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/sitemap.xml, code_loc 65, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path rusVIEW/src/main/webapp/view.css, code_loc 325, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/README-log4shell.md, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/WERTiTypePriorities.xml, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/WERTiTypeSystem.xml, code_loc 339, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/ConditionalAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/DOTTER.xml, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/DepTreeTransformer.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/EnhanceXMLAnnotator.xml, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/GenericRelevanceAnnotator.xml, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/GerundGenerator.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/GiellateknoTokenizer.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/HTMLContentTypeAnnotator.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/HTMLSentenceAnnotator.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/LGPTokenizer.xml, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/MaltParser.xml, code_loc 61, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/MorphaLemmatizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/OpenNlpChunker.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/OpenNlpSentenceDetector.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/OpenNlpTagger.xml, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/OpenNlpTokenizer.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/PhrasalVerbAnnotator.xml, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/RFTaggerAnnotator.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/SentenceBoundaryDetector.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/SimpleTokenizer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/relevance/GenericRelevanceAnnotator.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/relevance/WholeText.xml, code_loc 42, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/taggers/LGPTagger.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/taggers/TreeTaggerAEDescriptor.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/annotators/vislcg3Annotator.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/ConditionalEnhancer.xml, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/HTMLContentTypeEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/KonjunktivEnhancer.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/NounCountEnhancer.xml, code_loc 112, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/PassiveSentenceEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/PhrasalVerbEnhancer.xml, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/PoSEnhancer.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/SerEstarEnhancer.xml, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/TokenEnhancer.xml, code_loc 86, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/WordEnhancer.xml, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/baseformPostEnhancer.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3AdverbialEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3ChunkEnhancer.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3ConNegEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3ConjunctionEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3InfiniteVerbEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3NounEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3NounPlEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3NounSgEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3ObjectEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3SubjectEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/enhancers/vislcg3VerbConjugationEnhancer.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/ConditionalPipe.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/HTMLContentTypePipe.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/Lingpipe.xml, code_loc 61, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/OpenNlpTaggerPipe.xml, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/OpenNlpTokenizerPipe.xml, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/PhrasalVerbs.xml, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/PhrasalVerbsPost.xml, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/TreeTagger-SerEstar.xml, code_loc 56, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislCGPostProc.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3Pipe.xml, code_loc 107, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_Adv.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_ConNeg.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_InfiniteVerb.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_Noun.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_NounPl.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_NounSg.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_Object.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_Subject.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/operators/vislcg3PostProc_VerbConjugation.xml, code_loc 74, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/ConditionalTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/HMMTest.xml, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/LingPipeTester.xml, code_loc 57, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/MaltParserTest.xml, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/PTBTest.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/ParserTest.xml, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/TokTest.xml, code_loc 49, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/TransTest.xml, code_loc 76, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/testers/TreeTaggerTester.xml, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/desc/vislcg3TypeSystem.xml, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/docs/DEBUG.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/docs/HACKING.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/docs/NewActivity.markdown, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/docs/maltparser-notes.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/docs/updating-firefox-addon.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/lib/addlibstomvn.sh, code_loc 1, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/log4shell-debug-log.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/pom.xml, code_loc 308, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/WERTiContext.java, code_loc 373, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/WERTiContextException.java, code_loc 22, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/Activities.java, code_loc 29, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/ActivityConfiguration.java, code_loc 219, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/FileLocationContextListener.java, code_loc 92, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/OpenIDConsumer.java, code_loc 84, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/Processors.java, code_loc 105, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/UploadDownloadFileServlet.java, code_loc 289, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/server/WERTiServlet.java, code_loc 360, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/EnhanceXMLAnnotator.java, code_loc 33, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/GenericRelevanceAnnotator.java, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/GiellateknoTokenizer.java, code_loc 196, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/HTMLContentTypeAnnotator.java, code_loc 866, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 1}
+    {path sme/src/main/java/werti/uima/ae/HTMLSentenceAnnotator.java, code_loc 58, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/MaltParser.java, code_loc 97, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/MorphaLemmatizer.java, code_loc 75, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/OpenNlpChunker.java, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/OpenNlpSentenceDetector.java, code_loc 78, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/OpenNlpTagger.java, code_loc 65, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/OpenNlpTokenizer.java, code_loc 99, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/PhrasalVerbAnnotator.java, code_loc 220, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/SentenceBoundaryDetector.java, code_loc 59, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/TreeTaggerAnnotator.java, code_loc 81, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/Vislcg3Annotator.java, code_loc 261, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/util/Morpha.java, code_loc 59469, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 5}
+    {path sme/src/main/java/werti/uima/ae/util/Morphg.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/util/PronounConverter.java, code_loc 38, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/util/StringTools.java, code_loc 33, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/util/TransformationRule.java, code_loc 4, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/ae/util/VerbVoiceConverter.java, code_loc 267, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/BaseformPostEnhancer.java, code_loc 53, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/HTMLContentTypeEnhancer.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/PoSEnhancer.java, code_loc 55, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/TokenEnhancer.java, code_loc 77, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3AdverbialEnhancer.java, code_loc 103, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java, code_loc 87, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3ConNegEnhancer.java, code_loc 508, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3ConjunctionEnhancer.java, code_loc 83, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3InfiniteVerbEnhancer.java, code_loc 510, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3NounEnhancer.java, code_loc 722, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3NounPlEnhancer.java, code_loc 516, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3NounSgEnhancer.java, code_loc 246, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3NounSingularEnhancer.java, code_loc 576, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3ObjectEnhancer.java, code_loc 103, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3SubjectEnhancer.java, code_loc 92, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/Vislcg3VerbConjugationEnhancer.java, code_loc 591, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/enhancer/WordEnhancer.java, code_loc 72, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Edge.java, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Edge_Type.java, code_loc 60, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Enhancement.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Enhancement_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Node.java, code_loc 46, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Node_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Subclause.java, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/Subclause_Type.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/CGReading.java, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/CGReading_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/CGToken.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/CGToken_Type.java, code_loc 62, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/ConditionalSentence.java, code_loc 80, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/ConditionalSentence_Type.java, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/EnhanceXML.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/EnhanceXML_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/PhrasalVerb.java, code_loc 81, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/PhrasalVerb_Type.java, code_loc 121, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation.java, code_loc 26, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/PlainTextSentenceAnnotation_Type.java, code_loc 32, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/RelevantText.java, code_loc 50, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/RelevantText_Type.java, code_loc 73, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/SentenceAnnotation.java, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/SentenceAnnotation_Type.java, code_loc 138, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/Token.java, code_loc 122, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/annot/Token_Type.java, code_loc 190, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/global/EnhancementId.java, code_loc 34, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/uima/types/global/EnhancementId_Type.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/ActivitiesSessionLoader.java, code_loc 17, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/CasUtils.java, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Constants.java, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/DummyException.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/EnhancerUtils.java, code_loc 98, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/FSListIterable.java, code_loc 44, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Functional.java, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/HTMLEnhancer.java, code_loc 111, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/HTMLFeatureExtractor.java, code_loc 128, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/HTMLUtils.java, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/JSONEnhancer.java, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/PageHandler.java, code_loc 70, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Pair.java, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/PostRequest.java, code_loc 30, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/PracticeHandler.java, code_loc 14, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Resources.java, code_loc 92, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/RunDriver.java, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/StringListIterable.java, code_loc 43, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Transformation.java, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/Transformer.java, code_loc 15, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/VerifyRecaptcha.java, code_loc 54, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/java/werti/util/trans/FindRootVerb.java, code_loc 3, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/activity.js, code_loc 434, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/adverbial.js, code_loc 270, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/blur.js, code_loc 47, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/conditionals.js, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/conjunctions.js, code_loc 150, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/gerunds.js, code_loc 166, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/infiniteverbs.js, code_loc 280, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/jquery.select_skin.js, code_loc 41, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/konjunktiv.js, code_loc 143, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/lib.js, code_loc 128, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/negverbs.js, code_loc 276, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/notification.js, code_loc 120, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/nouncountability.js, code_loc 146, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/object.js, code_loc 270, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/openid.js, code_loc 120, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/passives.js, code_loc 35, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/phrasalverbs.js, code_loc 175, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/pos.js, code_loc 165, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/serestar.js, code_loc 281, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/subject.js, code_loc 270, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/substantive.js, code_loc 315, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/substantiveplural.js, code_loc 280, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/substantivesingular.js, code_loc 320, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/toolbar.js, code_loc 126, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/verbconjugation.js, code_loc 280, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/view.css, code_loc 215, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/wertiview.css, code_loc 159, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/wertiview.js, code_loc 237, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content/whquestions.js, code_loc 419, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/skin/skin.css, code_loc 40, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/resources/firefox-extension/werti/defaults/preferences/prefs.js, code_loc 6, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/WEB-INF/classes/log4j.xml, code_loc 23, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/WEB-INF/web.xml, code_loc 65, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Adverbial/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Conjunctions/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/InfiniteVerbs/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/InfiniteVerbs/recommended_pages.html, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/NegVerbs/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/NegVerbs/recommended_pages.html, code_loc 16, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Object/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Subject/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Substantive/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/Substantive/recommended_pages.html, code_loc 26, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/SubstantivePlural/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/SubstantivePlural/recommended_pages.html, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/SubstantiveSingular/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/SubstantiveSingular/recommended_pages.html, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/VerbConjugation/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/VerbConjugation/recommended_pages.html, code_loc 20, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities/additional.css, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Arts/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Conjunctions/activity.xml, code_loc 27, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Gerunds/activity.xml, code_loc 36, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/Brown_Conll_INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/EnglishPage-INF.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf/INF-FINAL.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/activities_old/HTML/activity.xml, code_loc 18, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/firefox-extension/README.txt, code_loc 0, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/index.html, code_loc 175, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/activity.js, code_loc 431, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/additional_functions.js, code_loc 7, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/adverbial.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/blur.js, code_loc 45, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/conjunctions.js, code_loc 150, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/gerunds.js, code_loc 164, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/html.js, code_loc 19, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/infiniteverbs.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/jquery-1.4.2.min.js, code_loc 139, function_count 26, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/lib.js, code_loc 126, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/negverbs.js, code_loc 145, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/notification.js, code_loc 118, function_count 1, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/object.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/pos.js, code_loc 163, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/serestar.js, code_loc 279, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/subject.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/substantiveplural.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/substantivesingular.js, code_loc 154, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/verbconjugation.js, code_loc 155, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/view.css, code_loc 215, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/werti.css, code_loc 159, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/werticore.css, code_loc 91, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/wertiview.css, code_loc 135, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/js-lib/wertiview.js, code_loc 39, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/main.css, code_loc 112, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/src/main/webapp/werti.css, code_loc 85, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+    {path sme/test.html, code_loc 13, function_count 0, max_cyclomatic 0, duplicate_memberships 0, trivial_function_count 0}
+)
+
+directories (
+    {path "", test_ratio_milli 0}
+    {path plan, test_ratio_milli 0}
+    {path rus, test_ratio_milli 0}
+    {path rus/desc, test_ratio_milli 0}
+    {path rus/desc/annotators, test_ratio_milli 0}
+    {path rus/desc/annotators/relevance, test_ratio_milli 0}
+    {path rus/desc/annotators/taggers, test_ratio_milli 0}
+    {path rus/desc/enhancers, test_ratio_milli 0}
+    {path rus/desc/operators, test_ratio_milli 0}
+    {path rus/desc/testers, test_ratio_milli 0}
+    {path rus/docs, test_ratio_milli 0}
+    {path rus/lib, test_ratio_milli 0}
+    {path rus/src/main/java/werti, test_ratio_milli 0}
+    {path rus/src/main/java/werti/server, test_ratio_milli 0}
+    {path rus/src/main/java/werti/uima/ae, test_ratio_milli 0}
+    {path rus/src/main/java/werti/uima/ae/util, test_ratio_milli 0}
+    {path rus/src/main/java/werti/uima/enhancer, test_ratio_milli 0}
+    {path rus/src/main/java/werti/uima/types, test_ratio_milli 0}
+    {path rus/src/main/java/werti/uima/types/annot, test_ratio_milli 0}
+    {path rus/src/main/java/werti/util, test_ratio_milli 0}
+    {path rus/src/main/java/werti/util/trans, test_ratio_milli 0}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/content, test_ratio_milli 12}
+    {path rus/src/main/resources/firefox-extension/werti/chrome/skin, test_ratio_milli 0}
+    {path rus/src/main/resources/firefox-extension/werti/defaults/preferences, test_ratio_milli 0}
+    {path rus/src/main/webapp, test_ratio_milli 0}
+    {path rus/src/main/webapp/WEB-INF, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/Conjunctions, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsAcc, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsAll, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsDat, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsGen, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsIns, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsLoc, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/NounsNom, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/PresFutInd, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/SubstantivePlural, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities/SubstantiveSingular, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities_old/Arts, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities_old/Conjunctions, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities_old/Gerunds, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf, test_ratio_milli 0}
+    {path rus/src/main/webapp/activities_old/HTML, test_ratio_milli 0}
+    {path rus/src/main/webapp/firefox-extension, test_ratio_milli 0}
+    {path rus/src/main/webapp/js-lib, test_ratio_milli 14}
+    {path rusVIEW, test_ratio_milli 0}
+    {path rusVIEW/desc, test_ratio_milli 0}
+    {path rusVIEW/desc/annotators, test_ratio_milli 0}
+    {path rusVIEW/desc/annotators/relevance, test_ratio_milli 0}
+    {path rusVIEW/desc/annotators/taggers, test_ratio_milli 0}
+    {path rusVIEW/desc/enhancers, test_ratio_milli 0}
+    {path rusVIEW/desc/operators, test_ratio_milli 0}
+    {path rusVIEW/desc/testers, test_ratio_milli 0}
+    {path rusVIEW/docs, test_ratio_milli 0}
+    {path rusVIEW/docs/paper, test_ratio_milli 0}
+    {path rusVIEW/lib, test_ratio_milli 0}
+    {path rusVIEW/metadata, test_ratio_milli 0}
+    {path rusVIEW/rus_resources, test_ratio_milli 0}
+    {path rusVIEW/src/hacks, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/ml, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/ml/fe, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/server, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/ae, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/filter, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/trans, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/ae/util, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/enhancer, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/types, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/types/annot, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/uima/types/global, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/util, test_ratio_milli 0}
+    {path rusVIEW/src/main/java/werti/util/trans, test_ratio_milli 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/content, test_ratio_milli 9}
+    {path rusVIEW/src/main/resources/firefox-extension/view/chrome/skin, test_ratio_milli 0}
+    {path rusVIEW/src/main/resources/firefox-extension/view/defaults/preferences, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/WEB-INF, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Arts, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Conditionals, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Dets, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Gerunds/resources/noun_triggers_inf, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Konjunktiv, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/NounCountability/resources, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Passives, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/PhrasalVerbs, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/Preps, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveFeminine, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveMasculine, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusAdjectiveNeutral, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusNounPlural, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusNounSingular, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusParticiples, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbImperfective, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPastTense, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPerfective, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusVerbPresentTense, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/RusWordStress, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/SerEstar, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/activities/WhQuestions, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/firefox-extension, test_ratio_milli 0}
+    {path rusVIEW/src/main/webapp/js-lib, test_ratio_milli 9}
+    {path sme, test_ratio_milli 0}
+    {path sme/desc, test_ratio_milli 0}
+    {path sme/desc/annotators, test_ratio_milli 0}
+    {path sme/desc/annotators/relevance, test_ratio_milli 0}
+    {path sme/desc/annotators/taggers, test_ratio_milli 0}
+    {path sme/desc/enhancers, test_ratio_milli 0}
+    {path sme/desc/operators, test_ratio_milli 0}
+    {path sme/desc/testers, test_ratio_milli 0}
+    {path sme/docs, test_ratio_milli 0}
+    {path sme/lib, test_ratio_milli 0}
+    {path sme/src/main/java/werti, test_ratio_milli 0}
+    {path sme/src/main/java/werti/server, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/ae, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/ae/util, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/enhancer, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/types, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/types/annot, test_ratio_milli 0}
+    {path sme/src/main/java/werti/uima/types/global, test_ratio_milli 0}
+    {path sme/src/main/java/werti/util, test_ratio_milli 0}
+    {path sme/src/main/java/werti/util/trans, test_ratio_milli 0}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/content, test_ratio_milli 20}
+    {path sme/src/main/resources/firefox-extension/werti/chrome/skin, test_ratio_milli 0}
+    {path sme/src/main/resources/firefox-extension/werti/defaults/preferences, test_ratio_milli 0}
+    {path sme/src/main/webapp, test_ratio_milli 0}
+    {path sme/src/main/webapp/WEB-INF, test_ratio_milli 0}
+    {path sme/src/main/webapp/WEB-INF/classes, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/Adverbial, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/Conjunctions, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/InfiniteVerbs, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/NegVerbs, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/Object, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/Subject, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/Substantive, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/SubstantivePlural, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/SubstantiveSingular, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities/VerbConjugation, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities_old/Arts, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities_old/Conjunctions, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities_old/Gerunds, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities_old/Gerunds/resources/noun_triggers_inf, test_ratio_milli 0}
+    {path sme/src/main/webapp/activities_old/HTML, test_ratio_milli 0}
+    {path sme/src/main/webapp/firefox-extension, test_ratio_milli 0}
+    {path sme/src/main/webapp/js-lib, test_ratio_milli 12}
+)

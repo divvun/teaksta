@@ -55,6 +55,7 @@ import org.apache.uima.jcas.cas.NonEmptyStringList;
  * @author Ramon Ziai, Niels Ott
  * @version $Id: FSListIterable.java 148 2007-03-09 09:13:08Z niels $
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable]
 public class StringListIterable implements Iterable<String> {
 
 	private NonEmptyStringList list;
@@ -63,16 +64,21 @@ public class StringListIterable implements Iterable<String> {
 	 * The iterator used by this StringListIterable
 	 * @author Ramon Ziai, Niels Ott
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator]
 	private class StringListIterator implements Iterator<String> {
 		
 		private NonEmptyStringList work_list;
 		
+		// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.string-list-iterator-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.string-list-iterator-fn]
 		public StringListIterator() {
 			// the list needs to be modified so save it
 			// TODO: this is by reference, shouldn't the list (not its items) be cloned?
 			work_list = list;
 		}
 
+		// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.has-next-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.has-next-fn]
 		public boolean hasNext() {
 			
 			// nothing left
@@ -92,6 +98,8 @@ public class StringListIterable implements Iterable<String> {
 			
 		}
 
+		// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.next-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.next-fn]
 		public String next() {
 			// illegal call
 			if ( ! hasNext() ) {
@@ -112,6 +120,8 @@ public class StringListIterable implements Iterable<String> {
 			return old_head;
 		}
 
+		// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.remove-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.remove-fn]
 		public void remove() {
 			// I'm afraid I'm incapable of serving your request, my dear.
 			throw new UnsupportedOperationException();
@@ -124,11 +134,15 @@ public class StringListIterable implements Iterable<String> {
 	 * that then can be used e.g. in for (... ) loops
 	 * @param list the list to use
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterable-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterable-fn]
 	public StringListIterable(NonEmptyStringList list) {
 		this.list = list;
 	}
 	
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.iterator-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.iterator-fn]
 	public Iterator<String> iterator() {
 		return new StringListIterator();
 	}

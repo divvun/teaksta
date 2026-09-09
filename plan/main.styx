@@ -1,0 +1,7 @@
+name teaksta
+source {
+    url "git@github.com:divvun/teaksta.git"
+    ref main
+}
+
+children ()

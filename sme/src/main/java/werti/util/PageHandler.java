@@ -22,6 +22,7 @@ import java.io.IOException;
  * @author Adriane Boyd
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler]
 public class PageHandler {
 	private static final Logger log =
 		LogManager.GetLogger(PageHandler.class);
@@ -33,6 +34,8 @@ public class PageHandler {
 	String url;
 	String path;
 
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
 	public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang) {
 		processors = aProcessors;
 		topic = aTopic;
@@ -53,6 +56,8 @@ public class PageHandler {
 	 * @return CAS containing annotation
 	 * @throws ServletException
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 	public JCas process() throws ServletException {
 		AnalysisEngine preprocessor = processors.getPreprocessor(lang, topic);
 		AnalysisEngine postprocessor = processors.getPostprocessor(lang, topic);

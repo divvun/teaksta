@@ -3,6 +3,7 @@ package werti.util;
 //Class containing all paths.
 //To work locally uncomment (and change user name) the 'LOCAL PATHS' section and comment the 'GTOAHPA PATHS' section.
 
+// [spec:teaksta:def:sme.src.main.java.werti.util.constants.constants]
 public final class Constants {
   //LOCAL PATHS:
   /*

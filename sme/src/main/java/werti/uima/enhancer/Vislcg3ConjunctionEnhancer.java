@@ -30,6 +30,7 @@ import werti.server.WERTiServlet;
  * @author Heli Uibo
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer]
 public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -39,6 +40,8 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -47,6 +50,8 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 		conjunctionTags = Arrays.asList(((String)context.getConfigParameterValue("conjunctionTags")).split(","));
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting conjunction enhancement");
@@ -120,6 +125,8 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given token is safe, i.e. unambiguous
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.is-safe-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.is-safe-fn]
 	private boolean isSafe(CGToken t) {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
@@ -127,6 +134,8 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given reading contains the given tag
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.contains-tag-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.contains-tag-fn]
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
 		for (String rtag : reading) {

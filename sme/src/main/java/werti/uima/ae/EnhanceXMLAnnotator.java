@@ -16,6 +16,7 @@ import werti.uima.types.annot.EnhanceXML;
  * @author Adriane Boyd
  */
 
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.enhance-xml-annotator.enhance-xml-annotator]
 public class EnhanceXMLAnnotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		LogManager.GetLogger(EnhanceXMLAnnotator.class);
@@ -23,6 +24,8 @@ public class EnhanceXMLAnnotator extends JCasAnnotator_ImplBase {
 	/**
 	 * Mark up all werti spans.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.enhance-xml-annotator.enhance-xml-annotator.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.enhance-xml-annotator.enhance-xml-annotator.process-fn]
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		
 		log.debug("Starting markup recognition");

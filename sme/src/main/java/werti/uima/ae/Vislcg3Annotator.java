@@ -47,6 +47,7 @@ import werti.util.Constants;
  * @author Heli Uibo
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator]
 public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 
 	private static final Logger log = LogManager.GetLogger(Vislcg3Annotator.class);
@@ -70,6 +71,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	 * the logger as debug messages.
 	 * @author nott
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger]
 	public class ExtCommandConsume2Logger implements Runnable {
 
 		private BufferedReader reader;
@@ -79,6 +81,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		 * @param reader the reader to read from.
 		 * @param msgPrefix a string to prefix the read lines with.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
 		public ExtCommandConsume2Logger(BufferedReader reader, String msgPrefix) {
 			super();
 			this.reader = reader;
@@ -89,6 +93,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		 * Reads from the reader linewise and puts the result to the logger.
 		 * Exceptions are never thrown but stuffed into the logger as well.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
 		public void run() {
 			String line = null;
 			try {
@@ -106,6 +112,7 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	 * be fed by {@link Process}) and puts stuff read into a variable.
 	 * @author nott
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string]
 	public class ExtCommandConsume2String implements Runnable {
 
 		private BufferedReader reader;
@@ -115,6 +122,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		/**
 		 * @param reader the reader to read from.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
 		public ExtCommandConsume2String(BufferedReader reader) {
 			super();
 			this.reader = reader;
@@ -126,6 +135,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		 * Reads from the reader linewise and puts the result to the buffer.
 		 * See also {@link #getBuffer()} and {@link #isDone()}.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
 		public void run() {
 			String line = null;
 			try {
@@ -141,6 +152,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		/**
 		 * @return true if the reader read by this class has reached its end.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
 		public boolean isDone() {
 			return finished;
 		}
@@ -149,6 +162,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 		 * @return the string collected by this class or null if the stream has not reached
 		 * its end yet.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
 		public String getBuffer() {
 			if ( ! finished ) {
 				return null;
@@ -172,6 +187,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	}
 */
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 		log.debug("Starting vislcg3 processing");
@@ -264,6 +281,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for copying over information from Token to CGToken
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.copy-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.copy-fn]
 	private void copy(Token source, CGToken target) {
 		target.setBegin(source.getBegin());
 		target.setEnd(source.getEnd());
@@ -275,6 +294,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for converting Token annotations to a String for vislcg3
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
 	private String toCG3Input(List<Token> tokenList, List<SentenceAnnotation> sentList) {
 		StringBuilder result = new StringBuilder();
 
@@ -307,6 +328,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
     /*
 	 * helper for running the pipeline consisting of external tools for morphological analysis (FST) + morph. disambiguation + shallow syntactic analysis (CG). The preprocessing (tokenisation) is done by OpenNlpTokenizer.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
 	private String runFST_CG(String input) throws IOException,InterruptedException {
 
 	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
@@ -436,6 +459,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for parsing output from vislcg3 back into our CGTokens
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
 	private List<CGToken> parseCGOutput(String cgOutput, JCas jcas) {
 		ArrayList<CGToken> result = new ArrayList<CGToken>();
 

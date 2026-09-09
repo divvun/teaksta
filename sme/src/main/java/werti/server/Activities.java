@@ -14,6 +14,7 @@ import java.util.TreeMap;
  * @author Adriane Boyd
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities]
 public class Activities implements Iterable<String> {
 
 	public static final String ATT_NAME = "werti.activities";
@@ -21,6 +22,8 @@ public class Activities implements Iterable<String> {
 	private TreeMap<String, ActivityConfiguration> configMap;
 	private Set<String> ignoredActivities;
     
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn]
 	public Activities(File actDir) throws IOException {
 		configMap = new TreeMap<String, ActivityConfiguration>();
 		
@@ -35,10 +38,14 @@ public class Activities implements Iterable<String> {
 		}
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.iterator-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.iterator-fn]
 	public Iterator<String> iterator() {
 		return configMap.keySet().iterator();
 	}
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.get-activity-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.get-activity-fn]
 	public ActivityConfiguration getActivity(String key) {
 		return configMap.get(key);
 	}

@@ -32,6 +32,7 @@ import werti.util.EnhancerUtils;
  * @version 0.1
  */
 
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer]
 public class TokenEnhancer extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		LogManager.GetLogger(TokenEnhancer.class);
@@ -39,6 +40,8 @@ public class TokenEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> tags;
 	private boolean useLemmaFilter;
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -52,6 +55,8 @@ public class TokenEnhancer extends JCasAnnotator_ImplBase {
 	 * POS tags, then mark it up as a hit.
 	 *
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
 	@SuppressWarnings("unchecked")
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		int id = 0;

@@ -47,6 +47,7 @@ import werti.util.Constants;
  *
  * @author Adriane Boyd, Heli Uibo
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer]
 public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 	private static Map<String, TokenizerME> tokenizers;
@@ -61,6 +62,7 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	//private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt --corr=" + abbrDir + "corr.txt";
 	private static final String preprocessCmd = toolsDir + "preprocess --abbr=" + abbrDir + "abbr.txt";
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string]
 	public class ExtCommandConsume2String implements Runnable {
 
 		private BufferedReader reader;
@@ -70,6 +72,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		/**
 		 * @param reader the reader to read from.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
 		public ExtCommandConsume2String(BufferedReader reader) {
 			super();
 			this.reader = reader;
@@ -81,6 +85,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		 * Reads from the reader linewise and puts the result to the buffer.
 		 * See also {@link #getBuffer()} and {@link #isDone()}.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.run-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.run-fn]
 		public void run() {
 			String line = null;
 			try {
@@ -96,6 +102,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		/**
 		 * @return true if the reader read by this class has reached its end.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn]
 		public boolean isDone() {
 			return finished;
 		}
@@ -104,6 +112,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 		 * @return the string collected by this class or null if the stream has not reached
 		 * its end yet.
 		 */
+		// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn]
+		// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn]
 		public String getBuffer() {
 			if ( ! finished ) {
 				return null;
@@ -114,6 +124,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
 	@Override
 	public void initialize(UimaContext aContext)
 			throws ResourceInitializationException {
@@ -128,6 +140,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	}
 
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {

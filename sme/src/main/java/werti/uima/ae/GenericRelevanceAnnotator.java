@@ -18,6 +18,7 @@ import werti.uima.types.annot.RelevantText;
  * 
  * @author Adriane Boyd
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator]
 public class GenericRelevanceAnnotator extends JCasAnnotator_ImplBase {
 	private static final Logger log =
 		LogManager.GetLogger(GenericRelevanceAnnotator.class);
@@ -27,6 +28,8 @@ public class GenericRelevanceAnnotator extends JCasAnnotator_ImplBase {
 	 * 
 	 * @param cas The document's cas.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn]
 	@SuppressWarnings("unchecked")
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.debug("Starting relevance annotation");

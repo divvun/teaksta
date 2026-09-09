@@ -34,6 +34,7 @@ import werti.util.Constants;
  * @author Heli Uibo
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer]
 public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 
 	private static final Logger log =
@@ -46,6 +47,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -54,6 +57,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		advTags = Arrays.asList(((String)context.getConfigParameterValue("AdvTags")).split(","));
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Adverbial enhancement");
@@ -134,6 +139,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given token is safe, i.e. unambiguous
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.is-safe-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.is-safe-fn]
 	private boolean isSafe(CGToken t) {
 		return t.getReadings() != null && t.getReadings().size() == 1;
 	}
@@ -141,6 +148,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 	/*
 	 * Determines whether the given reading contains the given tag
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn]
 	private boolean containsTag(CGReading cgr, String tag) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String reading_str = "";
@@ -156,6 +165,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		return false;
 	}
 
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.get-lemma-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.get-lemma-fn]
 	private String getLemma(CGReading cgr) {
 		StringListIterable reading = new StringListIterable(cgr);
 		String lemma = "", lemma_utf8 = "";

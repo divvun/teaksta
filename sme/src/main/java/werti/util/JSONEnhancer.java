@@ -15,6 +15,7 @@ import com.google.gson.Gson;
  * @author Adriane Boyd
  *
  */
+// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer]
 public class JSONEnhancer {
 	private JCas cas;
 	private String activity;
@@ -23,6 +24,8 @@ public class JSONEnhancer {
 	 * @param cCas CAS with annotations for the topic
 	 * @param aActivity Activity name
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
 	public JSONEnhancer(final JCas cCas, String aActivity) {
 		cas = cCas;
 		activity = aActivity;
@@ -34,6 +37,8 @@ public class JSONEnhancer {
 	 * 
 	 * @return JSON string of CAS including enhancements
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
 	public String enhance() {
 		String enhanced = EnhancerUtils.casToEnhanced(cas, activity);
 		enhanced = enhancedToJSON(enhanced);		
@@ -49,6 +54,8 @@ public class JSONEnhancer {
 	 * @param enhanced string to enhance
 	 * @return JSON string of CAS including enhancements
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn]
 	private String enhancedToJSON(String enhanced) {
 		// TODO: the regex at least should be moved somewhere where it can be shared between this function
 		// and the EnhanceXMLAnnotator (the EnhanceXML UIMA annotations are no longer useful because we've

@@ -80,8 +80,11 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 /*
 @WebListener*/
+// [spec:teaksta:def:sme.src.main.java.werti.server.file-location-context-listener.file-location-context-listener]
 public class FileLocationContextListener implements ServletContextListener {
 
+    // [spec:teaksta:def:sme.src.main.java.werti.server.file-location-context-listener.file-location-context-listener.context-initialized-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.file-location-context-listener.file-location-context-listener.context-initialized-fn]
     public void contextInitialized(ServletContextEvent servletContextEvent) {
     	ServletContext ctx = servletContextEvent.getServletContext();
 
@@ -114,6 +117,8 @@ public class FileLocationContextListener implements ServletContextListener {
 
     }
 
+	// [spec:teaksta:def:sme.src.main.java.werti.server.file-location-context-listener.file-location-context-listener.context-destroyed-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.file-location-context-listener.file-location-context-listener.context-destroyed-fn]
 	public void contextDestroyed(ServletContextEvent servletContextEvent) {
 		//do cleanup if needed
 	}

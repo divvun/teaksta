@@ -26,6 +26,7 @@ import org.apache.uima.util.XMLInputSource;
  * 
  * @author Adriane Boyd
  */
+// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors]
 public class Processors {
 	private static final Logger log =
 		LogManager.getLogger(Processors.class);
@@ -33,6 +34,8 @@ public class Processors {
 	private TreeMap<String, TreeMap<String, AnalysisEngine>> preMap;
 	private TreeMap<String, TreeMap<String, AnalysisEngine>> postMap;
     
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn]
 	public Processors(Activities activities) throws IOException, ServletException {
 		preMap = new TreeMap<String, TreeMap<String, AnalysisEngine>>();
 		postMap = new TreeMap<String, TreeMap<String, AnalysisEngine>>();
@@ -80,6 +83,8 @@ public class Processors {
 		}	
 	}
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.get-preprocessor-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-preprocessor-fn]
 	public AnalysisEngine getPreprocessor(String lang, String key) {
 		if (preMap.containsKey(lang)) {
 			return preMap.get(lang).get(key);
@@ -88,6 +93,8 @@ public class Processors {
 		return null;
 	}
 	
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.get-postprocessor-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-postprocessor-fn]
 	public AnalysisEngine getPostprocessor(String lang, String key) {
 		if (postMap.containsKey(lang)) {
 			return postMap.get(lang).get(key);
@@ -105,6 +112,8 @@ public class Processors {
 	 * @return an object of the same type as originalParameter holding the parsed value.
 	 * @throws NumberFormatException if the parsing went wrong.
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.auto-convert-parameter-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.auto-convert-parameter-fn]
 	private Object autoConvertParameter(Object originalParameter, String value) {
 		
 		if ( originalParameter instanceof Boolean) {
@@ -129,6 +138,8 @@ public class Processors {
 	 * @throws IOException
 	 * @throws InvalidXMLException
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn]
 	private AnalysisEngineDescription loadDescriptor(URL descriptor) throws IOException, InvalidXMLException {
 
 		log.debug("Loading AE descriptor from url:  {}", descriptor.getPath());
@@ -142,6 +153,8 @@ public class Processors {
 	 * Private helper initializing the UIMA pipeline.
 	 * @throws ResourceInitializationException
 	 */
+	// [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.init-ae-fn]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn]
 	private AnalysisEngine initAE(AnalysisEngineDescription description, Properties config) throws ResourceInitializationException {
 
 		// read descriptor from disk and initialize a new annotator
