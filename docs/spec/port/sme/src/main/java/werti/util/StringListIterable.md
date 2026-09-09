@@ -9,15 +9,27 @@
 > public Iterator<String> iterator()
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.iterator-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Constructs and returns a new `StringListIterator` bound to this
+> `StringListIterable` instance, satisfying the `Iterable<String>` contract.
+>
+> Each call produces a fresh iterator whose cursor starts at the `list` field as
+> it stands at call time. Because advancing an iterator only rebinds that
+> iterator's own `work_list` cursor and never mutates the underlying UIMA list
+> nodes, iteration is non-destructive and the same iterable can be traversed any
+> number of times, including by several iterators concurrently. Never returns
+> null; performs no side effects; throws nothing.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterable-fn]
 > public StringListIterable(NonEmptyStringList list)
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterable-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Stores the supplied `NonEmptyStringList` in the `list` field by reference and
+> returns. No copy or clone is made, no validation is performed, and null is
+> accepted without complaint — a null `list` simply yields iterators that report
+> no elements, since `hasNext` treats a null cursor as exhausted.
+>
+> The resulting object is the adapter that lets a UIMA `StringList` be used
+> directly in an enhanced-for loop.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator]
 > private class StringListIterator implements Iterator<String> {
@@ -28,27 +40,61 @@
 > public boolean hasNext()
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.has-next-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Reports whether the cursor still has an element to yield, in three steps:
+>
+> 1. If `work_list` is null, return false — the cursor has run off the end of
+>    the list, or the iterable was constructed over a null list.
+> 2. Otherwise read `work_list.getHead()`; if it is not null, return true.
+> 3. Otherwise return false, on the stated assumption that a `NonEmptyStringList`
+>    node carrying only a tail and no head is malformed.
+>
+> Pure: reads only the cursor, mutates nothing, and may be called any number of
+> times without changing the iteration.
+>
+> Quirk: step 3 makes a genuine null string element indistinguishable from
+> end-of-list, so a list whose head string is null terminates iteration early
+> and the remaining tail elements are silently dropped.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.next-fn]
 > public String next()
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.next-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Yields the current head string and advances the cursor:
+>
+> 1. Call `hasNext()`; if it is false, throw `NoSuchElementException` with no
+>    message and leave the cursor untouched.
+> 2. Save `work_list.getHead()` into a local.
+> 3. Read `work_list.getTail()`. If it is an instance of `NonEmptyStringList`,
+>    set `work_list` to that tail, cast to `NonEmptyStringList`; otherwise (an
+>    `EmptyStringList` terminator, or null) set `work_list` to null, which makes
+>    all further `hasNext()` calls return false.
+> 4. Return the saved head.
+>
+> Mutates only the iterator's own `work_list` cursor; the underlying UIMA list
+> nodes and the enclosing iterable's `list` field are not modified.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.remove-fn]
 > public void remove()
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.remove-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Unconditionally throws `UnsupportedOperationException` with no message.
+> Element removal is not supported at any point in the iteration, including
+> immediately after a successful `next()`. No state is inspected or changed.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.string-list-iterator-fn]
 > public StringListIterator()
 
 > [spec:teaksta:sem:sme.src.main.java.werti.util.string-list-iterable.string-list-iterable.string-list-iterator.string-list-iterator-fn]
-> TODO(sem): what this does, step by step — precisely enough to
-> re-implement from this rule alone, without reading the source.
+> Initialises the iterator cursor by copying the enclosing
+> `StringListIterable`'s `list` field reference into the iterator's own
+> `work_list` field. Nothing is cloned and nothing else is initialised.
+>
+> The copy is by reference, so the cursor and the enclosing iterable initially
+> point at the same UIMA list node; subsequent `next()` calls rebind only
+> `work_list`, leaving the enclosing `list` field and the underlying list nodes
+> untouched. Accepts a null `list` — the iterator then reports no elements.
+>
+> Quirk: the source flags the by-reference copy as questionable, but the
+> observable effect is benign because advancing never writes through the
+> reference.
 
