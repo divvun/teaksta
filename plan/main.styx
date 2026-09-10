@@ -367,12 +367,20 @@ children (
                 id hd-mode
                 title "Thread the Mode enum end to end; delete the SELECTED global and the single-flight mutex"
                 kind @refactor
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:42.130915Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Idiom H1 / coherence M5+M8 / panic 14 — the highest-leverage refactor. exercise.rs:18 pub static SELECTED: RwLock<Option<String>> is per-request state in a process global, and because of it AppState.analysis: Mutex<()> (api.rs:149) serializes the server's main endpoint to one request at a time. The Mode enum already exists (api.rs:50) and is downgraded to a string at the boundary. Thread Mode through PageHandler::new -> Flow::run -> each stage's process(), then delete SELECTED/publish/selected and AppState.analysis. Consumers become enum matches at cg_enhancer.rs:509, syntactic.rs:66, conjunction.rs:77, noun_sg.rs:149 (currently == \"cloze\" string compares). Also fixes M5's split-brain: selected() maps unset to \"\" while syntactic.rs:45/conjunction.rs:55 read the global raw and bail with error text still naming WERTiServlet.enhancement_type — the last runtime residual vocabulary. M8: html_utils render_page/render_spans take activity: Option<&str> that actually carries mode.name() and compare == Some(\"click\") — give the render layer the enum too. Mode ownership consolidates from six sites to one."
+                    }
+
+                    {
+                        at 2026-09-10T22:52:39.230061Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

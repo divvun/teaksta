@@ -34,6 +34,7 @@ use crate::pipeline::sentences::{
 };
 use crate::pipeline::tokenizer::GiellateknoTokenizer;
 use crate::pipeline::vislcg3::Vislcg3Annotator;
+use crate::server::api::Mode;
 use crate::types::Document;
 
 /// The parameter table a stage is initialised from: the aggregate
@@ -164,10 +165,14 @@ impl Flow {
         self.stages.is_empty()
     }
 
-    /// Runs every stage over `cas` in flow order. The plain-text sentence
-    /// list is the one value a stage hands to a later stage rather than to
-    /// the document, so it is carried here.
-    pub fn run(&self, cas: &mut Document) -> Result<()> {
+    /// Runs every stage over `cas` in flow order, for the exercise `mode`
+    /// names. The plain-text sentence list is the one value a stage hands to
+    /// a later stage rather than to the document, so it is carried here.
+    ///
+    /// Only the postprocessing enhancers vary with the exercise; the stages
+    /// that annotate the document take the text as it stands and are handed
+    /// no mode.
+    pub fn run(&self, cas: &mut Document, mode: Mode) -> Result<()> {
         let mut sentences: Vec<PlainTextSentenceAnnotation> = Vec::new();
         for stage in &self.stages {
             match stage {
@@ -177,16 +182,16 @@ impl Flow {
                 Stage::HtmlSentences(s) => s.process(cas, &sentences)?,
                 Stage::Vislcg3(s) => s.process(cas)?,
                 Stage::Token(s) => s.process(cas)?,
-                Stage::Noun(s) => s.process(cas)?,
-                Stage::NounSg(s) => s.process(cas)?,
-                Stage::NounPl(s) => s.process(cas)?,
-                Stage::VerbConjugation(s) => s.process(cas)?,
-                Stage::ConNeg(s) => s.process(cas)?,
-                Stage::InfiniteVerb(s) => s.process(cas)?,
-                Stage::Adverbial(s) => s.process(cas)?,
-                Stage::Conjunction(s) => s.process(cas)?,
-                Stage::Object(s) => s.process(cas)?,
-                Stage::Subject(s) => s.process(cas)?,
+                Stage::Noun(s) => s.process(cas, mode)?,
+                Stage::NounSg(s) => s.process(cas, mode)?,
+                Stage::NounPl(s) => s.process(cas, mode)?,
+                Stage::VerbConjugation(s) => s.process(cas, mode)?,
+                Stage::ConNeg(s) => s.process(cas, mode)?,
+                Stage::InfiniteVerb(s) => s.process(cas, mode)?,
+                Stage::Adverbial(s) => s.process(cas, mode)?,
+                Stage::Conjunction(s) => s.process(cas, mode)?,
+                Stage::Object(s) => s.process(cas, mode)?,
+                Stage::Subject(s) => s.process(cas, mode)?,
             }
         }
         Ok(())
@@ -280,7 +285,8 @@ mod tests {
         let flow = Flow::new(&[], &parameters(&[])).expect("an empty flow");
         let mut cas = Document::new("<p>Mun oidnen viesu.</p>", "sme");
 
-        flow.run(&mut cas).expect("an empty flow is a no-op");
+        flow.run(&mut cas, Mode::Colorize)
+            .expect("an empty flow is a no-op");
 
         assert!(flow.is_empty());
         assert!(cas.enhancements.is_empty());

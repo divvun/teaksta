@@ -15,6 +15,7 @@ use anyhow::{Result, bail};
 use tracing::info;
 
 use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
+use crate::server::api::Mode;
 use crate::types::Document;
 
 /// Since the analyses can be the following:
@@ -92,12 +93,12 @@ impl Vislcg3NounPlEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3]
-    pub fn process(&self, doc: &mut Document) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4]
+    pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
-        cg_enhancer::run(doc, &TOPIC, &forms, &analyses)
+        cg_enhancer::run(doc, &TOPIC, mode, &forms, &analyses)
     }
 
     /// Create all relevant morphological forms of the current token. It is the

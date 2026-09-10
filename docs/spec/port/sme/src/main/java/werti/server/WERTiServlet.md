@@ -5,34 +5,37 @@
 >   pub config: Config,
 >   pub processors: Processors,
 >   pub topics: Vec<Topic>,
->   analysis: Mutex<()>,
 > }
 >
 > pub struct Topic { pub name: String, pub label: Option<String>, pub enabled: bool }
 >
-> pub enum Mode { Colorize, Click, Mc, Cloze }
->
 > pub fn routes(config: &Config) -> Route
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type]
-> pub static SELECTED: RwLock<Option<String>>;
-> pub fn publish(exercise: Option<&str>) -> Result<()>;
-> pub fn selected() -> String
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
+> pub enum Mode { Colorize, Click, Mc, Cloze }
+>
+> impl Mode {
+>   pub const ALL: [Mode; 4];
+>   pub fn parse(value: &str) -> Option<Mode>;
+>   pub fn name(self) -> &'static str;
+> }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type]
-> The exercise an enhancement pass is producing — one of `colorize`, `click`,
-> `mc` and `cloze` — held where the postprocessing enhancers can read it.
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
+> The exercise an enhancement pass is producing: exactly one of `colorize`,
+> `click`, `mc` and `cloze`, and nothing else. `parse` reads the wire name a
+> request carries, matching the four exactly and case-sensitively and
+> answering nothing for anything else; `name` writes it back. `ALL` lists the
+> four in that order, which is the order the registry endpoint offers them in.
 >
-> The enhancers are reached through an analysis flow rather than called, so
-> the choice cannot be passed to them as an argument and travels beside the
-> request instead. Publishing sets the value; reading an unpublished one
-> yields the empty string, which matches none of the four, so an enhancer that
-> reaches a token before any request published an exercise attaches nothing.
+> A request carries its own exercise, from the endpoint that parsed it down to
+> the enhancer that reads it: the analysis flow hands it to each
+> postprocessing enhancer as an argument. Nothing about it is shared between
+> requests, so two requests asking for different exercises at once cannot see
+> each other's and the server need not serialise analysis to keep them apart.
 >
-> One value is shared by the whole process. Two requests asking for different
-> exercises at once would each see the other's, which is why the handler layer
-> holds a lock across publication and analysis together: exactly one analysis
-> is in flight at a time.
+> There is no unset exercise. Every path that reaches an enhancer has one in
+> hand, so an enhancer never has to decide what to do without one, and the
+> four cases a topic distinguishes are exhaustive.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
 > async fn index() -> Response
@@ -72,10 +75,10 @@
 > no filesystem work and a topic added on disk appears when the server is
 > restarted.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -97,10 +100,11 @@
 > second timeout, and a fetch that fails or answers an error status is a 502 —
 > the far end's failure, not the caller's.
 >
-> The fetched page is analysed by the topic's pipeline pair with the requested
-> exercise published first, under a lock so that one analysis runs at a time,
-> and the result is rendered as a whole page with the request's address as its
-> base URL so the page's own relative links still resolve. A topic with no
+> The fetched page is analysed by the topic's pipeline pair for the requested
+> exercise, which is handed to the pipeline along with the page, and the
+> result is rendered as a whole page with the request's address as its base
+> URL so the page's own relative links still resolve. Nothing is held across
+> the analysis, so requests are analysed concurrently. A topic with no
 > pipeline registered is a 500, because the registry offered it.
 >
 > The analysed document is cached under a key derived from the address, so the
@@ -108,10 +112,10 @@
 > answered request carrying the address, the exercise and the elapsed time;
 > nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
 > async fn enhance_spans(Json(request): Json<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -135,10 +139,10 @@
 > the page's own content for an inline one, so an inline request is never
 > answered from a fetched request's analysis or the other way round.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
 > pub fn new(config: Config) -> Result<AppState>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
 > Builds the state every request is served from, once, before the server
 > listens.
 >
@@ -154,6 +158,7 @@
 > so no request pays for a pipeline load and two concurrent first requests
 > cannot each build one.
 >
-> The state also carries the deployment configuration and the lock held across
-> an analysis. Nothing here is lazy and nothing is rebuilt per request or per
-> session; there are no sessions.
+> The state also carries the deployment configuration. It holds nothing a
+> request mutates, so every request reads the same state concurrently.
+> Nothing here is lazy and nothing is rebuilt per request or per session;
+> there are no sessions.

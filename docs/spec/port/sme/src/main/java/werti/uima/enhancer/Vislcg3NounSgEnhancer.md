@@ -252,7 +252,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
 > The annotator body. Consumes `CGToken` annotations (with their `readings` array of
 > `CGReading`) from the CAS and produces `Enhancement` annotations; it does not read or
 > modify any other annotation type, and it never removes anything.
@@ -314,4 +314,11 @@
 > `distractors` are interpolated into the attribute values without HTML escaping, so a
 > double quote in a lemma breaks the tag. Quirk: activity state is read from a static
 > servlet field, so concurrent requests with different activities interfere.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> It is one of exactly four values, so there is no unset exercise to guard
+> against, and two requests asking for different exercises never observe each
+> other's. The mc and cloze branches are selected from it exactly as the
+> equality tests above select them.
 

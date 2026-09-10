@@ -123,7 +123,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4]
 > The annotator entry point. Consumes `CGToken` annotations (each carrying an
 > `FSArray` of `CGReading`, where a `CGReading` is a `NonEmptyStringList` of
 > morphological tags) and produces `Enhancement` annotations wrapping the matched
@@ -255,6 +255,13 @@
 > Quirk: the class fields `enhancement_type`, `NTags` and `FST` are never read
 > here; the activity is re-read from the static servlet field on every call, which
 > makes the annotator sensitive to concurrent requests changing it mid-run.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> It is one of exactly four values, so there is no unset exercise to guard
+> against, and two requests asking for different exercises never observe each
+> other's. The mc and cloze branches are selected from it exactly as the
+> equality tests above select them.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

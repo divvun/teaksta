@@ -12,15 +12,13 @@ use tracing::{debug, error, info};
 
 use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
 use crate::morpho::MorphoPipeline;
+use crate::server::api::Mode;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
 use crate::util::enhancer_utils;
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer]
+#[derive(Default)]
 pub struct Vislcg3NounSgEnhancer {
-    /// colorize, click, mc or cloze - chosen by the user and sent to the
-    /// servlet as a request parameter. Captured at construction time and
-    /// shadowed by a request-time read inside `process`.
-    pub enhancement_type: String,
     n_sg_tags: Vec<String>,
 }
 
@@ -31,15 +29,6 @@ impl Vislcg3NounSgEnhancer {
     const LOOKUP_FLAGS: &'static str = "-flags mbTT -utf8";
     const INVERTED_FST: &'static str = " /opt/smi/sme/bin/isme-GG.restr.fst";
     const FST: &'static str = " /opt/smi/sme/bin/sme.fst";
-}
-
-impl Default for Vislcg3NounSgEnhancer {
-    fn default() -> Self {
-        Vislcg3NounSgEnhancer {
-            enhancement_type: crate::server::exercise::selected(),
-            n_sg_tags: Vec::new(),
-        }
-    }
 }
 
 /// A helper that reads from a reader linewise and puts stuff read into a
@@ -125,13 +114,10 @@ impl Vislcg3NounSgEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
-    pub fn process(&self, doc: &mut Document) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
+    pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         info!("Starting Noun Sg enhancement");
-        // colorize, click, mc or cloze - chosen by the user and sent to the
-        // servlet as a request parameter
-        let enhancement_type = crate::server::exercise::selected();
         // keep track of ids for each annotation class
         let mut class_counts: HashMap<String, i32> = HashMap::new();
         for con_t in &self.n_sg_tags {
@@ -146,7 +132,7 @@ impl Vislcg3NounSgEnhancer {
             let mut new_id: i32;
             // go through tokens
             for cgt in &doc.cg_tokens {
-                if enhancement_type == "cloze" || enhancement_type == "mc" {
+                if matches!(mode, Mode::Cloze | Mode::Mc) {
                     // more than one reading? don't mark up for exercise types
                     // mc and cloze
                     if !self.is_safe(cgt) {
@@ -161,8 +147,8 @@ impl Vislcg3NounSgEnhancer {
                 for i in 0..cgt.readings.len() {
                     let reading = &cgt.readings[i];
 
-                    if self.contains_tag(reading, con_t, &enhancement_type) {
-                        let fields = self.reading_fields(reading, &enhancement_type);
+                    if self.contains_tag(reading, con_t, mode) {
+                        let fields = self.reading_fields(reading, mode);
                         let (lemma, distractors) = match fields {
                             Ok(fields) => fields,
                             // a reading whose base form or generator input
@@ -203,19 +189,19 @@ impl Vislcg3NounSgEnhancer {
     /// The base form and the distractor forms an exercise type needs. The
     /// two activities that only mark the token up carry neither, so both
     /// come back empty for them.
-    fn reading_fields(&self, cgr: &CgReading, enhancement_type: &str) -> Result<(String, String)> {
+    fn reading_fields(&self, cgr: &CgReading, mode: Mode) -> Result<(String, String)> {
         let mut lemma = String::new();
         let mut distractors = String::new();
 
-        if enhancement_type == "cloze" || enhancement_type == "mc" {
+        if matches!(mode, Mode::Cloze | Mode::Mc) {
             // get lemma from the CG reading
             lemma = self.get_lemma(cgr)?;
         }
-        if enhancement_type == "mc" {
+        if mode == Mode::Mc {
             let mut prop = false;
             // Proper nouns have the tag "Prop" in the morphological
             // information. This is needed when generating distractors.
-            if self.contains_tag(cgr, "Prop", enhancement_type) {
+            if self.contains_tag(cgr, "Prop", mode) {
                 prop = true;
             }
             // get stemtype from the CG reading, if any of these: G3, G7,
@@ -240,7 +226,7 @@ impl Vislcg3NounSgEnhancer {
     /// Determines whether the given reading contains the given tag.
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn]
-    fn contains_tag(&self, cgr: &CgReading, tag: &str, enhancement_type: &str) -> bool {
+    fn contains_tag(&self, cgr: &CgReading, tag: &str, mode: Mode) -> bool {
         let mut reading_str = String::new();
         for rtag in cgr {
             reading_str = reading_str + rtag + " ";
@@ -249,7 +235,7 @@ impl Vislcg3NounSgEnhancer {
         // If the exercise type is "practice" (cloze) then the derived forms,
         // forms with clitics and proper nouns are excluded from the selection.
         if (reading_str.contains("Der/") || reading_str.contains("Qst"))
-            && (enhancement_type == "cloze" || enhancement_type == "mc")
+            && matches!(mode, Mode::Cloze | Mode::Mc)
         {
             info!("derived form or form with clitics");
             return false;
@@ -606,10 +592,10 @@ mod tests {
         let enhancer = enhancer();
         let noun = reading(&["\"gietta\"", "N", "Sg", "Nom"]);
 
-        assert!(enhancer.contains_tag(&noun, "Sg Nom", "colorize"));
-        assert!(enhancer.contains_tag(&noun, " Sg Nom", "colorize"));
-        assert!(enhancer.contains_tag(&noun, "\"gietta\"", "colorize"));
-        assert!(!enhancer.contains_tag(&noun, "Sg Acc", "colorize"));
+        assert!(enhancer.contains_tag(&noun, "Sg Nom", Mode::Colorize));
+        assert!(enhancer.contains_tag(&noun, " Sg Nom", Mode::Colorize));
+        assert!(enhancer.contains_tag(&noun, "\"gietta\"", Mode::Colorize));
+        assert!(!enhancer.contains_tag(&noun, "Sg Acc", Mode::Colorize));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn/test]
@@ -618,10 +604,10 @@ mod tests {
         let enhancer = enhancer();
 
         let verb = reading(&["\"boahtit\"", "V", "Sg", "Nom"]);
-        assert!(!enhancer.contains_tag(&verb, "Sg Nom", "colorize"));
+        assert!(!enhancer.contains_tag(&verb, "Sg Nom", Mode::Colorize));
 
         let unquoted_first_tag = reading(&["N", "Sg", "Nom"]);
-        assert!(!enhancer.contains_tag(&unquoted_first_tag, "Sg Nom", "colorize"));
+        assert!(!enhancer.contains_tag(&unquoted_first_tag, "Sg Nom", Mode::Colorize));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn/test]
@@ -630,14 +616,14 @@ mod tests {
         let enhancer = enhancer();
 
         let derived = reading(&["\"gietta\"", "N", "Der/vuohta", "Sg", "Nom"]);
-        assert!(!enhancer.contains_tag(&derived, "Sg Nom", "cloze"));
-        assert!(!enhancer.contains_tag(&derived, "Sg Nom", "mc"));
-        assert!(enhancer.contains_tag(&derived, "Sg Nom", "colorize"));
-        assert!(enhancer.contains_tag(&derived, "Sg Nom", "click"));
+        assert!(!enhancer.contains_tag(&derived, "Sg Nom", Mode::Cloze));
+        assert!(!enhancer.contains_tag(&derived, "Sg Nom", Mode::Mc));
+        assert!(enhancer.contains_tag(&derived, "Sg Nom", Mode::Colorize));
+        assert!(enhancer.contains_tag(&derived, "Sg Nom", Mode::Click));
 
         let clitic = reading(&["\"gietta\"", "N", "Sg", "Nom", "Qst"]);
-        assert!(!enhancer.contains_tag(&clitic, "Sg Nom", "mc"));
-        assert!(enhancer.contains_tag(&clitic, "Sg Nom", "click"));
+        assert!(!enhancer.contains_tag(&clitic, "Sg Nom", Mode::Mc));
+        assert!(enhancer.contains_tag(&clitic, "Sg Nom", Mode::Click));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn/test]
@@ -721,7 +707,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
@@ -731,7 +717,7 @@ mod tests {
             token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Acc"])]),
         ];
 
-        enhancer.process(&mut doc).unwrap();
+        enhancer.process(&mut doc, Mode::Colorize).unwrap();
 
         assert_eq!(doc.enhancements.len(), 2);
 
@@ -746,7 +732,7 @@ mod tests {
         assert_eq!(second.enhance_start, span_start("teaksta-span- Sg Acc-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
@@ -763,7 +749,7 @@ mod tests {
             token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Nom"])]),
         ];
 
-        enhancer.process(&mut doc).unwrap();
+        enhancer.process(&mut doc, Mode::Colorize).unwrap();
 
         let emitted: Vec<(usize, usize, &str)> = doc
             .enhancements
@@ -781,7 +767,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
     #[test]
     fn a_malformed_reading_reports_instead_of_unwinding() {
         let enhancer = enhancer();
@@ -790,11 +776,11 @@ mod tests {
         // The two activities that mark the token up and nothing more need
         // neither field, so nothing can fail for them.
         assert_eq!(
-            enhancer.reading_fields(&broken, "colorize").unwrap(),
+            enhancer.reading_fields(&broken, Mode::Colorize).unwrap(),
             (String::new(), String::new())
         );
 
-        let err = enhancer.reading_fields(&broken, "cloze").unwrap_err();
+        let err = enhancer.reading_fields(&broken, Mode::Cloze).unwrap_err();
 
         assert!(
             err.to_string().contains("string index out of range"),
@@ -805,7 +791,10 @@ mod tests {
         // compound boundary deleted.
         assert_eq!(
             enhancer
-                .reading_fields(&reading(&["\"girji#gahppir\"", "N", "Sg", "Nom"]), "cloze")
+                .reading_fields(
+                    &reading(&["\"girji#gahppir\"", "N", "Sg", "Nom"]),
+                    Mode::Cloze
+                )
                 .unwrap(),
             ("girjigahppir".to_string(), String::new())
         );

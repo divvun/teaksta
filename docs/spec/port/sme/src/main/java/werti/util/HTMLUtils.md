@@ -51,16 +51,17 @@
 > empty `page`, because the caller decides where the map lives. A page with
 > no analysable text yields an empty document text and no records at all.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]
-> pub fn render_page(map: &PageMap, doc: &Document, activity: Option<&str>, base_url: Option<&str>) -> Result<String>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
+> pub fn render_page(map: &PageMap, doc: &Document, mode: Option<Mode>, base_url: Option<&str>) -> Result<String>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
 > Parses the page the map holds, places every enhancement of `doc` into it,
 > and serialises it once.
 >
-> An enhancement reaches the page when it is marked relevant, or when
-> `activity` is exactly `click` — the exercise that asks the learner to pick
-> the right words out of every candidate. The chosen enhancements are taken
+> An enhancement reaches the page when it is marked relevant, or when `mode`
+> is the `click` exercise — the one that asks the learner to pick the right
+> words out of every candidate. A caller with no exercise in hand passes none,
+> and only the relevant enhancements reach the page. The chosen enhancements are taken
 > in annotation-index order: ascending begin, then descending end.
 >
 > Each enhancement is intersected with every segment of the map. A non-empty
@@ -92,13 +93,13 @@
 > exactly once. A page with no `head`, or a call with no base URL, gets no
 > base element.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn]
-> pub fn render_spans(map: &PageMap, doc: &Document, activity: Option<&str>) -> Result<BTreeMap<String, String>>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
+> pub fn render_spans(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<BTreeMap<String, String>>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
 > The enhanced fragments alone, for a client that already has the page and
 > only wants what changed. Enhancements are placed exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]`
 > places them, no base URL is added, and each enhancement that reached the
 > page contributes one entry.
 >

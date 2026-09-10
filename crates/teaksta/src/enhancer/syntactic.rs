@@ -10,10 +10,11 @@
 
 use std::collections::HashMap;
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use tracing::info;
 
 use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
+use crate::server::api::Mode;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
 use crate::util::enhancer_utils;
 
@@ -35,17 +36,11 @@ pub struct FunctionSpec<'a> {
     pub contains_tag: &'a dyn Fn(&CgReading, &str) -> bool,
 }
 
-/// Run one syntactic-function topic's enhancement pass over `doc`. The body of
-/// every `Vislcg3*Enhancer::process` among the three; see [`FunctionSpec`] for
-/// what each topic changes about it.
-pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>) -> Result<()> {
+/// Run one syntactic-function topic's enhancement pass over `doc`, for the
+/// exercise `mode` names. The body of every `Vislcg3*Enhancer::process` among
+/// the three; see [`FunctionSpec`] for what each topic changes about it.
+pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()> {
     info!("{}", spec.start_log);
-    // colorize, click, mc or cloze - chosen by the user and sent to the
-    // servlet as a request parameter
-    let enhancement_type = crate::server::exercise::SELECTED
-        .read()
-        .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))?
-        .clone();
 
     // keep track of ids for each annotation class
     let mut class_counts: HashMap<String, i32> = HashMap::new();
@@ -60,10 +55,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>) -> Result<()> {
     for con_t in spec.tags {
         // go through tokens
         for token_index in 0..doc.cg_tokens.len() {
-            let enhancement_type = enhancement_type
-                .as_deref()
-                .ok_or_else(|| anyhow!("WERTiServlet.enhancement_type is unset"))?;
-            if enhancement_type == "cloze" || enhancement_type == "mc" {
+            if matches!(mode, Mode::Cloze | Mode::Mc) {
                 // more than one reading? don't mark up if the exercise type is
                 // mc or cloze
                 if !(spec.is_safe)(&doc.cg_tokens[token_index]) {
@@ -109,4 +101,63 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>) -> Result<()> {
 
     info!("{}", spec.finish_log);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::cg_token;
+
+    /// A token carrying the configured tag on one of two readings, so the
+    /// only thing that can keep it out of the output is the exercise.
+    fn ambiguous() -> CgToken {
+        cg_token(
+            0,
+            3,
+            &[
+                &["\"mun\"", "Pron", "Sg1", "Nom", "@SUBJ→"],
+                &["\"mun\"", "N", "Sg", "Nom", "@OBJ→"],
+            ],
+        )
+    }
+
+    /// The three topics carry the same pass, so its exercise-dependent
+    /// behaviour is exercised once, over the tags and reading test they all
+    /// supply: any reading carrying the tag matches, and a token is
+    /// unambiguous when it has exactly one reading.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3/test]
+    #[test]
+    fn an_ambiguous_token_reaches_the_marking_exercises_only() {
+        let tags = vec!["@SUBJ→".to_string()];
+
+        for (mode, expected) in [
+            (Mode::Mc, 0),
+            (Mode::Cloze, 0),
+            (Mode::Colorize, 1),
+            (Mode::Click, 1),
+        ] {
+            let mut doc = Document::new("Mun oainnán mánáid.", "sme");
+            doc.cg_tokens.push(ambiguous());
+
+            run(
+                &mut doc,
+                &FunctionSpec {
+                    start_log: "Starting",
+                    finish_log: "Finished",
+                    span_class: "teaksta-Subject",
+                    tags: &tags,
+                    is_safe: &|t: &CgToken| t.readings.len() == 1,
+                    contains_tag: &|cgr: &CgReading, tag: &str| {
+                        cgr.iter().any(|rtag| rtag.as_str() == tag)
+                    },
+                },
+                mode,
+            )
+            .expect("a token the exercise never reaches is not a failure");
+
+            assert_eq!(doc.enhancements.len(), expected, "{mode:?}");
+        }
+    }
 }

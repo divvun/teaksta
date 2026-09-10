@@ -6,31 +6,32 @@
 
 use anyhow::Result;
 
+use crate::server::api::Mode;
 use crate::types::Document;
 use crate::util::html_utils;
 
-// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer]
+// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+1]
 pub struct JsonEnhancer<'a> {
     cas: &'a Document,
-    activity: &'a str,
+    mode: Mode,
 }
 
 impl<'a> JsonEnhancer<'a> {
-    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
-    pub fn new(c_cas: &'a Document, a_activity: &'a str) -> Self {
+    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1]
+    pub fn new(c_cas: &'a Document, a_mode: Mode) -> Self {
         JsonEnhancer {
             cas: c_cas,
-            activity: a_activity,
+            mode: a_mode,
         }
     }
 
     /// Converts a document with Enhancements to a JSON object of enhanced
     /// spans, keyed by the position in the document text each one covers.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
     pub fn enhance(&self) -> Result<String> {
-        let spans = html_utils::render_spans(&self.cas.page, self.cas, Some(self.activity))?;
+        let spans = html_utils::render_spans(&self.cas.page, self.cas, Some(self.mode))?;
 
         Ok(serde_json::to_string(&spans)?)
     }
@@ -71,18 +72,18 @@ mod tests {
         serde_json::from_str(json).expect("JSON object")
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1/test]
     #[test]
-    fn the_constructor_stores_the_cas_and_activity_unchanged() {
+    fn the_constructor_stores_the_cas_and_exercise_unchanged() {
         let cas = Document::new("beana", "sme");
 
-        let enhancer = JsonEnhancer::new(&cas, "click");
+        let enhancer = JsonEnhancer::new(&cas, Mode::Click);
 
         assert!(std::ptr::eq(enhancer.cas, &cas));
-        assert_eq!(enhancer.activity, "click");
+        assert_eq!(enhancer.mode, Mode::Click);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
     #[test]
     fn each_enhancement_is_keyed_by_its_position() {
         let cas = analysed(vec![
@@ -90,7 +91,7 @@ mod tests {
             enhancement(18, 24, "teaksta-span-2", true),
         ]);
 
-        let json = JsonEnhancer::new(&cas, "colorize").enhance().unwrap();
+        let json = JsonEnhancer::new(&cas, Mode::Colorize).enhance().unwrap();
 
         assert_eq!(
             spans(&json),
@@ -113,7 +114,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
     #[test]
     fn text_the_client_gets_back_is_escaped() {
         let (mut cas, map) =
@@ -122,7 +123,7 @@ mod tests {
         cas.enhancements
             .push(enhancement(0, 11, "teaksta-span-1", true));
 
-        let json = JsonEnhancer::new(&cas, "colorize").enhance().unwrap();
+        let json = JsonEnhancer::new(&cas, Mode::Colorize).enhance().unwrap();
 
         assert!(
             spans(&json)["0"].contains(">Tom &amp; Jerry</span>"),
@@ -130,23 +131,29 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
     #[test]
     fn irrelevant_spans_are_served_to_click_alone() {
         let cas = analysed(vec![enhancement(11, 16, "teaksta-span-1", false)]);
 
-        assert_eq!(JsonEnhancer::new(&cas, "colorize").enhance().unwrap(), "{}");
         assert_eq!(
-            spans(&JsonEnhancer::new(&cas, "click").enhance().unwrap()).len(),
+            JsonEnhancer::new(&cas, Mode::Colorize).enhance().unwrap(),
+            "{}"
+        );
+        assert_eq!(
+            spans(&JsonEnhancer::new(&cas, Mode::Click).enhance().unwrap()).len(),
             1
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
     #[test]
     fn a_document_without_enhancements_yields_no_spans() {
         let cas = analysed(Vec::new());
 
-        assert_eq!(JsonEnhancer::new(&cas, "click").enhance().unwrap(), "{}");
+        assert_eq!(
+            JsonEnhancer::new(&cas, Mode::Click).enhance().unwrap(),
+            "{}"
+        );
     }
 }

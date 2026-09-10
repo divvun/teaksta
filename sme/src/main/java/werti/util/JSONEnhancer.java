@@ -15,7 +15,7 @@ import com.google.gson.Gson;
  * @author Adriane Boyd
  *
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer]
+// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+1]
 public class JSONEnhancer {
 	private JCas cas;
 	private String activity;
@@ -24,8 +24,8 @@ public class JSONEnhancer {
 	 * @param cCas CAS with annotations for the topic
 	 * @param aActivity Activity name
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1]
 	public JSONEnhancer(final JCas cCas, String aActivity) {
 		cas = cCas;
 		activity = aActivity;
@@ -37,8 +37,8 @@ public class JSONEnhancer {
 	 * 
 	 * @return JSON string of CAS including enhancements
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
 	public String enhance() {
 		String enhanced = EnhancerUtils.casToEnhanced(cas, activity);
 		enhanced = enhancedToJSON(enhanced);		

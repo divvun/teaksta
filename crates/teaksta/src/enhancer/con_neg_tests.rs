@@ -59,7 +59,7 @@ fn initialize_without_the_parameter_fails() {
     assert_eq!(enhancer.conneg_tags, None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4/test]
 #[test]
 fn process_leaves_a_cancelled_document_untouched() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -70,19 +70,19 @@ fn process_leaves_a_cancelled_document_untouched() {
         ..EnhancementId::default()
     }];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4/test]
 #[test]
 fn process_wraps_each_conneg_token_in_numbered_span() {
     let enhancer = Vislcg3ConNegEnhancer::default();
     let mut doc = Document::new("in boahtán, in boahtán", "sme");
     doc.cg_tokens = vec![conneg_token(3, 10), conneg_token(15, 22)];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert_eq!(doc.enhancements.len(), 2);
 

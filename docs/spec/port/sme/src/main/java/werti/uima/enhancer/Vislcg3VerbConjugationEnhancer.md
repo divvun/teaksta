@@ -127,7 +127,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+4]
 > Consumes `CGToken` annotations produced by the vislcg3 analysis stage and
 > produces `Enhancement` annotations wrapping every finite North Sámi verb
 > form in an HTML `<span>`.
@@ -217,6 +217,13 @@
 > it can change under concurrent requests. Quirk: the fields `FinVerbTags`,
 > `CHUNK_BEGIN_SUFFIX` and `CHUNK_INSIDE_SUFFIX` are never read by this
 > method.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> It is one of exactly four values, so there is no unset exercise to guard
+> against, and two requests asking for different exercises never observe each
+> other's. The mc and cloze branches are selected from it exactly as the
+> equality tests above select them.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

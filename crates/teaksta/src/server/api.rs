@@ -3,13 +3,14 @@
 //! under them when the deployment carries one.
 //!
 //! Analysis is synchronous and blocking — the morpho seam owns a runtime of
-//! its own, and the exercise the enhancers read is process-wide — so every
-//! endpoint that analyses hands the work to a blocking thread and holds a
-//! lock for the duration. Requests are answered directly: analysing a page
-//! takes well under a second, so nothing is served while the caller waits.
+//! its own — so every endpoint that analyses hands the work to a blocking
+//! thread. The exercise travels with the request that asked for it, so two
+//! requests wanting different exercises do not contend. Requests are answered
+//! directly: analysing a page takes well under a second, so nothing is served
+//! while the caller waits.
 
 use std::hash::{Hash as _, Hasher as _};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
@@ -26,7 +27,6 @@ use tracing::{info, warn};
 
 use crate::context::Config;
 use crate::server::activities::Activities;
-use crate::server::exercise;
 use crate::server::processors::Processors;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::Document;
@@ -48,6 +48,8 @@ const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
 const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
 /// The exercise a request asks for.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Colorize,
@@ -88,16 +90,13 @@ pub struct AppState {
     pub config: Config,
     pub processors: Processors,
     pub topics: Vec<Topic>,
-    /// Held for the length of one analysis, because the exercise the
-    /// enhancers read is process-wide.
-    analysis: Mutex<()>,
 }
 
 impl AppState {
     /// Scans the activity tree and builds every topic's pipeline pair once,
     /// so no request pays for a model load.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
     pub fn new(config: Config) -> Result<Self> {
         let started = Instant::now();
         let mut activities = Activities::new(&config.activities_dir).with_context(|| {
@@ -129,7 +128,6 @@ impl AppState {
             config,
             processors,
             topics,
-            analysis: Mutex::new(()),
         })
     }
 
@@ -137,20 +135,9 @@ impl AppState {
         self.topics.iter().any(|topic| topic.name == name)
     }
 
-    fn analysis_lock(&self) -> MutexGuard<'_, ()> {
-        match self.analysis.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        }
-    }
-
-    /// Runs one topic pipeline over a page and hands back the annotated
-    /// document. The exercise is published first, because the postprocessing
-    /// enhancers read it rather than take it.
+    /// Runs one topic pipeline over a page for the requested exercise and
+    /// hands back the annotated document.
     fn analyse(&self, activity: &str, mode: Mode, page: &str, key: &str) -> Result<Document> {
-        let _analysis = self.analysis_lock();
-        exercise::publish(Some(mode.name()))?;
-
         let cache = self.config.analysis_dir.to_string_lossy().into_owned();
         let handler = PageHandler::new(
             &self.processors,
@@ -159,6 +146,7 @@ impl AppState {
             &cache,
             page,
             PIPELINE_LANGUAGE,
+            mode,
         );
         handler
             .process()?
@@ -232,8 +220,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -249,7 +237,7 @@ async fn enhance_page(
     let page = blocking(move || {
         let source = fetch_page(&url)?;
         let document = state.analyse(&activity, mode, &source, &cache_key(url.as_str()))?;
-        HtmlEnhancer::new(&document).enhance(Some(mode.name()), url.as_str())
+        HtmlEnhancer::new(&document).enhance(Some(mode), url.as_str())
     })
     .await?;
 
@@ -275,8 +263,8 @@ struct SpanRequest {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
 #[handler]
 async fn enhance_spans(
     Json(request): Json<SpanRequest>,
@@ -295,7 +283,7 @@ async fn enhance_spans(
     let spans = blocking(move || {
         let (page, key) = source.read()?;
         let document = state.analyse(&activity, mode, &page, &key)?;
-        JsonEnhancer::new(&document, mode.name()).enhance()
+        JsonEnhancer::new(&document, mode).enhance()
     })
     .await?;
 

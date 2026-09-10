@@ -27,6 +27,7 @@ use tracing::{debug, error, info};
 
 use crate::pipeline::flow::{Flow, Parameters};
 use crate::server::activities::Activities;
+use crate::server::api::Mode;
 use crate::types::Document;
 
 /// The failure kinds the original distinguishes by catch clause. Keeping them
@@ -158,9 +159,9 @@ impl fmt::Debug for AnalysisEngine {
 }
 
 impl AnalysisEngine {
-    /// Runs the engine's flow over `cas`.
-    pub fn process(&self, cas: &mut Document) -> Result<()> {
-        self.flow.run(cas)
+    /// Runs the engine's flow over `cas` for the requested exercise.
+    pub fn process(&self, cas: &mut Document, mode: Mode) -> Result<()> {
+        self.flow.run(cas, mode)
     }
 }
 

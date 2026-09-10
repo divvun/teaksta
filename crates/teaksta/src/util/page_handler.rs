@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 use tracing::{error, info};
 
+use crate::server::api::Mode;
 use crate::server::processors::{AnalysisEngine, Processors};
 use crate::types::Document;
 
@@ -35,13 +36,15 @@ fn new_jcas(_engine: &AnalysisEngine) -> std::result::Result<Document, EngineErr
     Ok(Document::default())
 }
 
-/// `AnalysisEngine#process(JCas)`: runs the engine's fixed flow over the CAS.
+/// `AnalysisEngine#process(JCas)`: runs the engine's fixed flow over the CAS
+/// for the requested exercise.
 fn analysis_engine_process(
     engine: &AnalysisEngine,
     cas: &mut Document,
+    mode: Mode,
 ) -> std::result::Result<(), EngineError> {
     engine
-        .process(cas)
+        .process(cas, mode)
         .map_err(|e| EngineError::AnalysisEngineProcess(format!("{e:#}")))
 }
 
@@ -71,11 +74,14 @@ pub struct PageHandler<'a> {
     lang: String,
     url: String,
     path: String,
+    /// The exercise the request asked for, carried to the postprocessing
+    /// enhancers that decide what to attach to a token from it.
+    mode: Mode,
 }
 
 impl<'a> PageHandler<'a> {
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
     pub fn new(
         a_processors: &'a Processors,
         a_topic: &str,
@@ -83,6 +89,7 @@ impl<'a> PageHandler<'a> {
         a_path: &str,
         a_text: &str,
         a_lang: &str,
+        a_mode: Mode,
     ) -> Self {
         // The assignment order differs from the parameter order: `url` and
         // `path` are the third and fourth arguments but the fifth and sixth
@@ -94,6 +101,7 @@ impl<'a> PageHandler<'a> {
             lang: a_lang.to_string(),
             url: a_url.to_string(),
             path: a_path.to_string(),
+            mode: a_mode,
         }
         // A disabled branch here would have forced `lang` to `sme` whenever
         // `topic` was `Conjunctions`.
@@ -101,8 +109,8 @@ impl<'a> PageHandler<'a> {
 
     /// Creates a CAS from the text and runs the pre- and postprocessors for the
     /// topic.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
     pub fn process(&self) -> Result<Option<Document>> {
         let preprocessor = self.processors.get_preprocessor(&self.lang, &self.topic);
         let postprocessor = self.processors.get_postprocessor(&self.lang, &self.topic);
@@ -126,18 +134,18 @@ impl<'a> PageHandler<'a> {
                         // The postprocessor runs from inside the same try
                         // block as the read; only the read raises the
                         // `IOException` that lands in the handler below.
-                        Ok(()) => analysis_engine_process(postprocessor, &mut cas)?,
+                        Ok(()) => analysis_engine_process(postprocessor, &mut cas, self.mode)?,
                         Err(cas_read) => {
                             info!("Failed to load cas from file! {}", cas_read);
                         }
                     }
                 } else {
-                    analysis_engine_process(preprocessor, &mut cas)?;
+                    analysis_engine_process(preprocessor, &mut cas, self.mode)?;
                     let written = write_xmi(&cas, &casfile);
                     match written {
                         // The postprocessor runs from inside the same try
                         // block as the write, so a failed write skips it.
-                        Ok(()) => analysis_engine_process(postprocessor, &mut cas)?,
+                        Ok(()) => analysis_engine_process(postprocessor, &mut cas, self.mode)?,
                         Err(cas_write) => {
                             info!("Failed to write cas to file! {}", cas_write);
                         }
@@ -177,7 +185,7 @@ mod tests {
         Processors::new(&mut activities).expect("processors")
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1/test]
     #[test]
     fn constructor_maps_third_fourth_args_to_url_path() {
         let processors = empty_processors();
@@ -189,6 +197,7 @@ mod tests {
             "/home/teaksta/analyzedTexts",
             "Sámegiella lea somá.",
             "sme",
+            Mode::Colorize,
         );
 
         assert!(std::ptr::eq(handler.processors, &processors));
@@ -197,23 +206,33 @@ mod tests {
         assert_eq!(handler.path, "/home/teaksta/analyzedTexts");
         assert_eq!(handler.text, "Sámegiella lea somá.");
         assert_eq!(handler.lang, "sme");
+        assert_eq!(handler.mode, Mode::Colorize);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1/test]
     #[test]
     fn constructor_stores_every_argument_untouched() {
         let processors = empty_processors();
 
-        let handler = PageHandler::new(&processors, "Conjunctions", "  ", "", " &amp; ", "eng");
+        let handler = PageHandler::new(
+            &processors,
+            "Conjunctions",
+            "  ",
+            "",
+            " &amp; ",
+            "eng",
+            Mode::Cloze,
+        );
 
         assert_eq!(handler.topic, "Conjunctions");
         assert_eq!(handler.url, "  ");
         assert_eq!(handler.path, "");
         assert_eq!(handler.text, " &amp; ");
         assert_eq!(handler.lang, "eng");
+        assert_eq!(handler.mode, Mode::Cloze);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3/test]
     #[test]
     fn process_returns_nothing_when_topic_lacks_engines() {
         let processors = empty_processors();
@@ -226,6 +245,7 @@ mod tests {
             cache_dir.to_str().expect("utf-8 path"),
             "Sámegiella",
             "sme",
+            Mode::Colorize,
         );
 
         let processed = handler.process().expect("lookup miss is not an error");
@@ -235,7 +255,7 @@ mod tests {
         assert!(!cache_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3/test]
     #[test]
     fn process_returns_nothing_when_the_language_is_unknown() {
         let processors = empty_processors();
@@ -247,6 +267,7 @@ mod tests {
             cache_root.path().to_str().expect("utf-8 path"),
             "text",
             "klingon",
+            Mode::Click,
         );
 
         assert!(

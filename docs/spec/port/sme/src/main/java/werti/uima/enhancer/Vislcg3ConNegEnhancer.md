@@ -127,7 +127,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
 > Per-CAS entry point. Consumes CGToken annotations (with their CGReading
 > FSArray) and produces Enhancement annotations wrapping connegative verb forms
 > in HTML span tags. Never throws AnalysisEngineProcessException in practice —
@@ -210,6 +210,13 @@
 > Quirk: `enhancement_type` is a static field on the servlet, so concurrent
 > requests for different activities race. Quirk: the fields connegTags,
 > CHUNK_BEGIN_SUFFIX and CHUNK_INSIDE_SUFFIX are never consulted here.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> It is one of exactly four values, so there is no unset exercise to guard
+> against, and two requests asking for different exercises never observe each
+> other's. The mc and cloze branches are selected from it exactly as the
+> equality tests above select them.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

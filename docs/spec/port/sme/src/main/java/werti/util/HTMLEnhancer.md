@@ -6,10 +6,10 @@
 >   private JCas cas;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
-> pub fn enhance(&self, mode: Option<&str>, base_url: &str) -> Result<String>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
+> pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> Result<String>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
 > Renders the stored document into a complete enhanced HTML page string.
 >
 > The exercise is taken as an argument rather than dug out of a request:
@@ -19,11 +19,10 @@
 > parameters at all.
 >
 > Renders the page the document's own map holds, per
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]`,
-> passing `mode` as the activity argument — which is what lets the click
-> exercise keep the candidates the other exercises drop — and `base_url` as
-> the base URL, so the relative links of the fetched page still resolve where
-> it is served from.
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]`,
+> passing `mode` on unchanged — which is what lets the click exercise keep the
+> candidates the other exercises drop — and `base_url` as the base URL, so the
+> relative links of the fetched page still resolve where it is served from.
 >
 > Nothing else is injected: no script or stylesheet links, no reminder
 > line, and the fetched page's own title is left as it stands. The North

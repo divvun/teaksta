@@ -66,7 +66,7 @@ fn initialize_splits_the_value_on_commas_without_trimming() {
     assert!(unset.infverb_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4/test]
 #[test]
 fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -76,7 +76,7 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
         cg_token(8, 15, vec![reading(INF)]),
     ];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     let first = concat!(
         "<span id=\"teaksta-span-boahtit-V-xsmey-Inf-1\" ",
@@ -98,7 +98,7 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     assert_eq!(doc.enhancements[1].enhance_start, second);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4/test]
 #[test]
 fn process_selects_the_first_reading_matching_both_patterns() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -109,7 +109,7 @@ fn process_selects_the_first_reading_matching_both_patterns() {
         vec![reading(FINITE), reading(INF), reading(PRF_PRC)],
     )];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert_eq!(doc.enhancements.len(), 1);
     assert_eq!(
@@ -121,7 +121,7 @@ fn process_selects_the_first_reading_matching_both_patterns() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4/test]
 #[test]
 fn process_ignores_tokens_without_infinite_verb_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -132,12 +132,12 @@ fn process_ignores_tokens_without_infinite_verb_readings() {
         cg_token(13, 13, vec![]),
     ];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4/test]
 #[test]
 fn process_returns_early_when_the_cas_was_cancelled() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -145,12 +145,12 @@ fn process_returns_early_when_the_cas_was_cancelled() {
     doc.cg_tokens = vec![cg_token(0, 7, vec![reading(INF)])];
     cas_utils::add_enh_id(&mut doc, -1);
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4/test]
 #[test]
 fn process_selection_ignores_the_configured_tags() {
     let configured =
@@ -158,7 +158,9 @@ fn process_selection_ignores_the_configured_tags() {
     let mut doc = Document::new("boahtit", "sme");
     doc.cg_tokens = vec![cg_token(0, 7, vec![reading(INF)])];
 
-    configured.process(&mut doc).expect("process");
+    configured
+        .process(&mut doc, Mode::Colorize)
+        .expect("process");
 
     // The infinite-verb reading is still selected and the plural-noun
     // reading is still rejected, whatever the parameter said.
@@ -167,7 +169,9 @@ fn process_selection_ignores_the_configured_tags() {
 
     let mut nouns = Document::new("beanat", "sme");
     nouns.cg_tokens = vec![cg_token(0, 6, vec![reading(NOUN)])];
-    configured.process(&mut nouns).expect("process");
+    configured
+        .process(&mut nouns, Mode::Colorize)
+        .expect("process");
     assert!(nouns.enhancements.is_empty());
 }
 

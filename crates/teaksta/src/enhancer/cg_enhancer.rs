@@ -28,6 +28,7 @@ use tracing::{debug, info};
 
 pub use crate::enhancer::cg_span::{HINT_CLASS, SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
+use crate::server::api::Mode;
 use crate::types::{CgToken, Document, Enhancement};
 use crate::util::{cas_utils, enhancer_utils};
 
@@ -488,6 +489,7 @@ impl Run<'_> {
 pub fn run(
     doc: &mut Document,
     spec: &TopicSpec,
+    mode: Mode,
     morphological_forms: &dyn Fn(&str) -> Result<String>,
     lemma_and_analyses: &dyn Fn(&str) -> Result<String>,
 ) -> Result<()> {
@@ -495,10 +497,7 @@ pub fn run(
     if !cas_utils::is_valid(doc) {
         return Ok(());
     }
-    // colorize, click, mc or cloze - chosen by the user and sent to the
-    // servlet as a request parameter
-    let enhancement_type = crate::server::exercise::selected();
-    info!("Starting {} enhancement {}.", spec.label, enhancement_type);
+    info!("Starting {} enhancement {}.", spec.label, mode.name());
 
     let mut elapsed_generating: f64 = 0.0;
     let start_time = Instant::now();
@@ -506,8 +505,8 @@ pub fn run(
     let pass = Run {
         spec,
         matcher: Matcher::new(spec)?,
-        mc: enhancement_type == "mc",
-        cloze: enhancement_type == "cloze",
+        mc: mode == Mode::Mc,
+        cloze: mode == Mode::Cloze,
         forms: morphological_forms,
         analyses: lemma_and_analyses,
     };

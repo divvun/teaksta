@@ -66,7 +66,7 @@ fn initialize_without_parameter_fails_and_leaves_field_unset() {
     assert!(enhancer.n_pl_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4/test]
 #[test]
 fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     let enhancer = Vislcg3NounPlEnhancer::default();
@@ -76,7 +76,7 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
         cg_token(7, 13, plural_reading()),
     ];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     let first = concat!(
         "<span id=\"teaksta-span-beana-N-xsmey-Pl-Nom-@SUBJ-1\" ",
@@ -98,19 +98,19 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     assert_eq!(doc.enhancements[1].enhance_start, second);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4/test]
 #[test]
 fn process_ignores_readings_without_a_plural_case_tag() {
     let enhancer = Vislcg3NounPlEnhancer::default();
     let mut doc = Document::new("čáhci", "sme");
     doc.cg_tokens = vec![cg_token(0, 6, singular_reading())];
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4/test]
 #[test]
 fn process_returns_early_when_the_cas_was_cancelled() {
     let enhancer = Vislcg3NounPlEnhancer::default();
@@ -118,7 +118,7 @@ fn process_returns_early_when_the_cas_was_cancelled() {
     doc.cg_tokens = vec![cg_token(0, 6, plural_reading())];
     cas_utils::add_enh_id(&mut doc, -1);
 
-    enhancer.process(&mut doc).expect("process");
+    enhancer.process(&mut doc, Mode::Colorize).expect("process");
 
     assert!(doc.enhancements.is_empty());
 }
