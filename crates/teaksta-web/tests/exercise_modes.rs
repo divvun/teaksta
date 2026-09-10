@@ -1,9 +1,10 @@
 //! The four exercises, rendered from pages the backend really answered with.
 //!
 //! The fixtures are `GET /api/enhance` replies for the `Substantive` topic over
-//! one North Sámi page, saved as they arrived. The colorize reply carries the
-//! markup the click exercise reads as well: the enhancer writes the same spans
-//! for both and only the instruction differs.
+//! one North Sámi page, saved as they arrived. Each mode has its own reply
+//! because each mode is enhanced differently: colorize, mc and cloze carry the
+//! topic's hits alone, while click carries a span for every word of the page —
+//! the hits among the decoys the learner may pick instead.
 
 use std::rc::Rc;
 
@@ -17,10 +18,16 @@ use teaksta_web::ui::exercise::mc::{self, McMode, McModeProps, McToken, Slot as 
 use teaksta_web::ui::exercise::{EnhancedPage, EnhancedPageProps};
 
 const COLORIZE: &str = include_str!("fixtures/substantive-colorize.html");
+const CLICK: &str = include_str!("fixtures/substantive-click.html");
 const MC: &str = include_str!("fixtures/substantive-mc.html");
 const CLOZE: &str = include_str!("fixtures/substantive-cloze.html");
 
 const TOPIC: &str = "Substantive";
+
+/// How many words of the click page belong to the topic, and how many are
+/// there for the learner to mistake for one.
+const HITS: usize = 8;
+const DECOYS: usize = 13;
 
 fn render<P: Clone + 'static>(component: fn(P) -> Element, props: P) -> String {
     let mut dom = VirtualDom::new_with_props(component, props);
@@ -60,7 +67,7 @@ fn click_page() -> String {
     render(
         ClickMode,
         ClickModeProps {
-            markup: Rc::new(parse(COLORIZE)),
+            markup: Rc::new(parse(CLICK)),
             topic: TOPIC.to_string(),
         },
     )
@@ -112,12 +119,53 @@ fn the_mode_parameter_picks_the_exercise() {
 fn the_enhancer_marks_the_nouns_it_found() {
     let markup = parse(COLORIZE);
 
-    assert_eq!(markup.hits(TOPIC), 8);
+    assert_eq!(markup.hits(TOPIC), HITS);
     assert_eq!(
         token_reading(&markup, "viesu").lemma.as_deref(),
         Some("viessu")
     );
+    // Colorize is asked for the topic's words and gets those and no others.
+    assert_eq!(markup.tokens().len(), HITS);
     assert!(markup.tokens().iter().all(|token| token.is_hit(TOPIC)));
+}
+
+#[test]
+fn the_click_page_offers_the_hits_among_decoys() {
+    let markup = parse(CLICK);
+
+    // Same page, same nouns — but every other word is offered alongside them.
+    assert_eq!(markup.hits(TOPIC), HITS);
+    assert_eq!(markup.tokens().len(), HITS + DECOYS);
+
+    let decoys: Vec<&TokenSpan> = markup
+        .tokens()
+        .iter()
+        .filter(|token| !token.is_hit(TOPIC))
+        .collect();
+    assert_eq!(decoys.len(), DECOYS);
+
+    // A decoy is a bare token: the topic put nothing on it, so it carries no
+    // class of the topic's and no base form to give it away.
+    for decoy in &decoys {
+        assert_eq!(decoy.classes, ["teaksta-token"], "{:?}", decoy.text);
+        assert_eq!(decoy.lemma, None, "{:?}", decoy.text);
+    }
+    let forms: Vec<&str> = decoys.iter().map(|decoy| decoy.text.as_str()).collect();
+    for word in ["Mun", "oidnen", "ikte", "leat", "stuorrát", "lea", "logai"] {
+        assert!(forms.contains(&word), "no decoy for {word}: {forms:?}");
+    }
+
+    // The hits kept the topic's own span, base form and all.
+    assert_eq!(
+        token_reading(&markup, "viesu").lemma.as_deref(),
+        Some("viessu")
+    );
+    for word in ["Teakstabihttá", "viesu", "Viesut", "skuvllas", "Beana"] {
+        assert!(
+            token_reading(&markup, word).is_hit(TOPIC),
+            "{word} is not a hit"
+        );
+    }
 }
 
 #[test]
@@ -154,44 +202,81 @@ fn colorize_asks_the_learner_nothing() {
 
 #[test]
 fn click_leaves_every_word_unmarked() {
-    let markup = parse(COLORIZE);
+    let markup = parse(CLICK);
     let html = click_page();
 
+    // Every word is offered, hits and decoys alike, and none gives away which
+    // it is before it is picked.
     assert_eq!(
         html.matches("class=\"token token-pick\"").count(),
         markup.tokens().len()
     );
+    assert_eq!(
+        html.matches("class=\"token token-pick\"").count(),
+        HITS + DECOYS
+    );
     assert!(!html.contains("pick-right"));
     assert!(!html.contains("pick-wrong"));
-    assert!(html.contains("Rivttes: 0 / 8"));
+    assert!(!html.contains("token-hit"));
+    // Only the hits are worth finding, however many words are on offer.
+    assert!(html.contains(&format!("Rivttes: 0 / {HITS}")));
 }
 
 #[test]
 fn click_marks_a_topic_word_right() {
-    let markup = parse(COLORIZE);
-    let token = token_reading(&markup, "Viesut");
+    let markup = parse(CLICK);
 
+    for word in ["Viesut", "viesu", "Beana", "skuvllas"] {
+        assert_eq!(
+            teaksta_web::ui::exercise::click::judge(&token_reading(&markup, word), TOPIC),
+            Verdict::Right,
+            "{word} was not judged right"
+        );
+    }
+}
+
+#[test]
+fn click_marks_a_decoy_wrong() {
+    let markup = parse(CLICK);
+
+    // The words the page really carries beside the nouns: picking one is the
+    // mistake the exercise exists to catch.
+    for word in ["Mun", "oidnen", "ikte", "leat", "stuorrát", "lea", "logai"] {
+        assert_eq!(
+            teaksta_web::ui::exercise::click::judge(&token_reading(&markup, word), TOPIC),
+            Verdict::Wrong,
+            "{word} was not judged wrong"
+        );
+    }
+
+    // A hit belongs to its own topic and to no other.
     assert_eq!(
-        teaksta_web::ui::exercise::click::judge(&token, TOPIC),
-        Verdict::Right
+        teaksta_web::ui::exercise::click::judge(
+            &token_reading(&markup, "Viesut"),
+            "VerbConjugation"
+        ),
+        Verdict::Wrong
     );
 }
 
 #[test]
-fn click_marks_any_other_word_wrong() {
-    let markup = parse(COLORIZE);
-    let noun = token_reading(&markup, "Viesut");
-    // The shape the generic token enhancer writes for a word outside the topic.
-    let plain = parse("<p><span class=\"teaksta-token\" id=\"x\">ikte</span></p>");
+fn click_scores_only_the_hits() {
+    let markup = parse(CLICK);
 
-    assert_eq!(
-        teaksta_web::ui::exercise::click::judge(&noun, "VerbConjugation"),
-        Verdict::Wrong
-    );
-    assert_eq!(
-        teaksta_web::ui::exercise::click::judge(&plain.tokens()[0], TOPIC),
-        Verdict::Wrong
-    );
+    // What the score line counts: the words the topic marked, not the words
+    // on offer.
+    assert_eq!(markup.hits(TOPIC), HITS);
+    assert!(markup.tokens().len() > HITS);
+
+    let right = markup
+        .tokens()
+        .iter()
+        .filter(|token| teaksta_web::ui::exercise::click::judge(token, TOPIC) == Verdict::Right)
+        .count();
+    let wrong = markup.tokens().len() - right;
+
+    assert_eq!(right, HITS);
+    assert_eq!(wrong, DECOYS);
 }
 
 #[component]

@@ -28,8 +28,8 @@ impl<'a> JsonEnhancer<'a> {
 
     /// Converts a document with Enhancements to a JSON object of enhanced
     /// spans, keyed by the position in the document text each one covers.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
     pub fn enhance(&self) -> Result<String> {
         let spans = html_utils::render_spans(&self.cas.page, self.cas, Some(self.mode))?;
 
@@ -83,7 +83,7 @@ mod tests {
         assert_eq!(enhancer.mode, Mode::Click);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4/test]
     #[test]
     fn each_enhancement_is_keyed_by_its_position() {
         let cas = analysed(vec![
@@ -114,7 +114,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4/test]
     #[test]
     fn text_the_client_gets_back_is_escaped() {
         let (mut cas, map) =
@@ -131,7 +131,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4/test]
     #[test]
     fn irrelevant_spans_are_served_to_click_alone() {
         let cas = analysed(vec![enhancement(11, 16, "teaksta-span-1", false)]);
@@ -146,7 +146,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4/test]
     #[test]
     fn a_document_without_enhancements_yields_no_spans() {
         let cas = analysed(Vec::new());

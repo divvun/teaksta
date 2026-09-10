@@ -1,6 +1,12 @@
 //! An enhancement class that puts a `<span>` around *all* tokens and gives
 //! them the hit class as well when they belong to a given POS.
 //!
+//! This is what makes the click exercise an exercise: the topic's own
+//! enhancer marks only its hits, so without a span around every other word
+//! there is nothing for the learner to pick wrongly. The spans written here
+//! are the decoys, and they are marked irrelevant so that only the click
+//! exercise carries them.
+//!
 //! Authors: Aleksandar Dimitrov, Adriane Boyd
 //! Version: 0.1
 
@@ -62,29 +68,57 @@ impl TokenEnhancer {
         Ok(())
     }
 
+    /// Every annotation the UIMA index over `Token.type` would hand out, in
+    /// the order it would hand them out: ascending begin, then descending
+    /// end.
+    ///
+    /// The index is polymorphic, so it holds the `CGToken`s as well as the
+    /// plain `Token`s — `CGToken extends Token` in the type system. That
+    /// matters because the CG annotator takes every token it consumed back
+    /// out of the index and puts the CG token carrying its analysis in its
+    /// place, so by the time a post-processor runs the plain tokens are
+    /// gone and the CG tokens are all there is. A CG token carries no `tag`
+    /// and no `lemma`: the CG analysis lives in its readings, and the two
+    /// features the Java inherited from `Token` were only ever copied from
+    /// the token it replaced.
+    fn annotation_index(cas: &Document) -> Vec<Candidate<'_>> {
+        let mut index: Vec<Candidate<'_>> = cas
+            .tokens
+            .iter()
+            .map(|t| Candidate {
+                begin: t.begin,
+                end: t.end,
+                tag: t.tag.as_deref(),
+                lemma: t.lemma.as_deref(),
+            })
+            .chain(cas.cg_tokens.iter().map(|t| Candidate {
+                begin: t.begin,
+                end: t.end,
+                tag: None,
+                lemma: None,
+            }))
+            .collect();
+        index.sort_by(|left, right| left.begin.cmp(&right.begin).then(right.end.cmp(&left.end)));
+        index
+    }
+
     /// Iterate over all tokens and put a span around them. If a token matches
     /// one of the given POS tags, then mark it up as a hit.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
     pub fn process(&self, cas: &mut Document) -> Result<()> {
         let mut id: i32 = 0;
         debug!("Starting enhancement");
 
-        // the UIMA annotation index hands annotations out in ascending begin,
-        // then descending end order
-        let mut text_index: Vec<usize> = (0..cas.tokens.len()).collect();
-        text_index.sort_by(|left, right| {
-            cas.tokens[*left]
-                .begin
-                .cmp(&cas.tokens[*right].begin)
-                .then(cas.tokens[*right].end.cmp(&cas.tokens[*left].end))
-        });
-
+        let text_index = Self::annotation_index(cas);
         let mut enhancements: Vec<Enhancement> = Vec::new();
 
-        for index in text_index {
-            let t = &cas.tokens[index];
-            let covered_text = cas.covered_text(t.begin, t.end);
+        for t in text_index {
+            // a span that is not on the text's char boundaries names no text,
+            // so there is nothing to enhance
+            let Some(covered_text) = cas.text.get(t.begin..t.end) else {
+                continue;
+            };
             // enhance all non-punctuation tokens
             if NON_PUNCTUATION.is_match(covered_text) {
                 let mut e = Enhancement {
@@ -96,14 +130,14 @@ impl TokenEnhancer {
                 id += 1;
                 let hit;
 
-                match t.tag.as_deref() {
+                match t.tag {
                     None => {
                         debug!("Encountered token with NULL tag");
                         hit = 0;
                     }
                     Some(tag) if self.tags.iter().any(|known| known.as_str() == tag) => {
                         if self.use_lemma_filter {
-                            match t.lemma.as_deref() {
+                            match t.lemma {
                                 None => hit = 0,
                                 Some("") => hit = 0,
                                 Some(_) => hit = 1,
@@ -131,7 +165,7 @@ impl TokenEnhancer {
                         "Enhanced {} with tag {} with id {}",
                         covered_text,
                         // Java concatenates a null tag as the literal text null
-                        t.tag.as_deref().unwrap_or("null"),
+                        t.tag.unwrap_or("null"),
                         id
                     );
                 }
@@ -149,10 +183,20 @@ impl TokenEnhancer {
     }
 }
 
+/// One annotation of the `Token.type` index, read for what this enhancer
+/// asks of it. Holding the two features by reference keeps the index a view
+/// over the document rather than a copy of it.
+struct Candidate<'a> {
+    begin: usize,
+    end: usize,
+    tag: Option<&'a str>,
+    lemma: Option<&'a str>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Token;
+    use crate::types::{CgToken, Token};
 
     fn context(pairs: &[(&str, &str)]) -> HashMap<String, String> {
         pairs
@@ -168,6 +212,17 @@ mod tests {
             tag: tag.map(str::to_string),
             lemma: lemma.map(str::to_string),
             ..Token::default()
+        }
+    }
+
+    /// A CG token as the CG annotator leaves it: the analysis is in the
+    /// readings, and it carries neither of the two features inherited from
+    /// `Token`.
+    fn cg_token(begin: usize, end: usize) -> CgToken {
+        CgToken {
+            begin,
+            end,
+            ..CgToken::default()
         }
     }
 
@@ -233,7 +288,7 @@ mod tests {
         assert!(err.to_string().contains("not a boolean"), "{}", err);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn punctuation_tokens_are_skipped_and_consume_no_id() {
         let mut cas = Document::new(". Mun boran", "sme");
@@ -266,7 +321,7 @@ mod tests {
         assert_eq!(cas.enhancements[1].enhance_end, "</span>");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_spanning_two_line_breaks_is_skipped() {
         let mut cas = Document::new("a\nb\nc", "sme");
@@ -281,7 +336,7 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_single_line_break_still_yields_an_enhancement() {
         let mut cas = Document::new("a\nb", "sme");
@@ -296,7 +351,7 @@ mod tests {
         assert_eq!(cas.enhancements.len(), 1);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_made_only_of_punctuation_is_skipped() {
         let mut cas = Document::new("...", "sme");
@@ -311,7 +366,7 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_null_tag_is_never_a_hit() {
         let mut cas = Document::new("beana", "sme");
@@ -331,7 +386,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn the_lemma_filter_demotes_matches_without_a_lemma() {
         let mut cas = Document::new("aaa bbb ccc", "sme");
@@ -349,7 +404,7 @@ mod tests {
         assert_eq!(relevant, vec![false, false, true]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn existing_enhancements_are_kept_and_new_ones_appended() {
         let mut cas = Document::new("beana", "sme");
@@ -375,5 +430,95 @@ mod tests {
             "<span id=\"teaksta-span-1\" class=\"teaksta-token teaksta-hit\">"
         );
         assert_eq!(cas.tokens.len(), 1);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
+    #[test]
+    fn the_cg_tokens_left_behind_are_enhanced() {
+        // what the CAS looks like once the CG annotator has swapped every
+        // token it consumed for the CG token carrying its analysis
+        let mut cas = Document::new("Mun oidnen viesu ikte.", "sme");
+        cas.cg_tokens.push(cg_token(0, 3));
+        cas.cg_tokens.push(cg_token(4, 10));
+        cas.cg_tokens.push(cg_token(11, 16));
+        cas.cg_tokens.push(cg_token(17, 21));
+        cas.cg_tokens.push(cg_token(21, 22));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        // the full stop is punctuation and takes no span with it
+        let spans: Vec<(usize, usize)> =
+            cas.enhancements.iter().map(|e| (e.begin, e.end)).collect();
+        assert_eq!(spans, vec![(0, 3), (4, 10), (11, 16), (17, 21)]);
+        assert!(cas.enhancements.iter().all(|e| !e.relevant));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
+    #[test]
+    fn a_cg_token_is_never_a_hit() {
+        // a CG token carries no tag of its own, so the configured tag list
+        // has nothing to match and every span it writes is a decoy
+        let mut cas = Document::new("beana", "sme");
+        cas.cg_tokens.push(cg_token(0, 5));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string(), "beana".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 1);
+        assert!(!cas.enhancements[0].relevant);
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token\">"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
+    #[test]
+    fn both_kinds_of_token_are_read_in_order() {
+        let mut cas = Document::new("aaa bbb ccc", "sme");
+        cas.cg_tokens.push(cg_token(8, 11));
+        cas.tokens.push(token(0, 3, Some("N"), Some("aaa")));
+        cas.cg_tokens.push(cg_token(4, 7));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        let spans: Vec<(usize, usize)> =
+            cas.enhancements.iter().map(|e| (e.begin, e.end)).collect();
+        assert_eq!(spans, vec![(0, 3), (4, 7), (8, 11)]);
+        // the plain token still carries the tag it was given
+        let relevant: Vec<bool> = cas.enhancements.iter().map(|e| e.relevant).collect();
+        assert_eq!(relevant, vec![true, false, false]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
+    #[test]
+    fn a_span_naming_no_text_is_skipped() {
+        // begin and end past the end of the text, and a cut through the
+        // middle of a two-byte character
+        let mut cas = Document::new("á beana", "sme");
+        cas.cg_tokens.push(cg_token(0, 1));
+        cas.cg_tokens.push(cg_token(3, 8));
+        cas.cg_tokens.push(cg_token(3, 40));
+        let enhancer = TokenEnhancer::default();
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 1);
+        assert_eq!((cas.enhancements[0].begin, cas.enhancements[0].end), (3, 8));
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token\">"
+        );
     }
 }

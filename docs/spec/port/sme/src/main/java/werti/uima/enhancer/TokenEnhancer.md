@@ -29,10 +29,10 @@
 > mandatory `Method` parameter (default `Markup`) that this annotator
 > never reads.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
 > @SuppressWarnings("unchecked") public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
 > Wraps every non-punctuation token in a `teaksta-token` span, marking
 > those whose POS tag is in the configured `tags` list as hits. Consumes
 > `werti.uima.types.annot.Token` annotations (features `begin`, `end`,
@@ -43,6 +43,34 @@
 > Initialises a counter `id` to 0 and logs at debug that enhancement is
 > starting. Iterates the annotation index over `Token` in index order
 > (ascending begin, then descending end).
+>
+> That index is polymorphic, as every UIMA annotation index is: it hands
+> out the `CGToken`s along with the plain `Token`s, because `CGToken`
+> extends `Token` in the type system. This is what the annotator sees in
+> practice. Every shipped post-processor
+> (`sme/desc/operators/vislcg3PostProc*.xml`) runs this annotator as the
+> first delegate of its fixed flow, after the preprocessing pipeline has
+> run `vislcg3Annotator`, and that annotator takes each token it consumed
+> back out of the index and puts the CG token carrying its analysis in
+> its place. The plain tokens are therefore gone by now and the CG tokens
+> are what gets enhanced.
+>
+> A CG token carries no `tag` and no `lemma` of its own: its analysis
+> lives in its readings, and the two inherited features were only ever
+> copied across from the token it replaced. Nothing in the `sme` flow
+> ever writes them — `vislcg3Pipe.xml` runs no tagger — so the hit flag
+> below is 0 for every token of a shipped activity, and every span this
+> annotator writes is irrelevant. The shipped post-processors say the
+> same thing a second way: each one sets `Tags` to the placeholder
+> `blah,blubb`, with the topic's real tag list commented out beside it,
+> because the topic's own enhancer took over marking hits and names them
+> with a class of its own.
+>
+> Those irrelevant spans are the point of this annotator, not a
+> degenerate case of it. They are the click exercise's decoys: the topic
+> enhancer marks only its hits, so these are the other words the learner
+> is offered and may wrongly pick. Every exercise but click drops them
+> when the page is rendered.
 >
 > For each token, skips it entirely unless its covered text fully matches
 > the regex `.*[^\p{P}].*` — that is, the token must contain at least one
@@ -79,4 +107,9 @@
 > A non-hit token carries no placeholder for the class it does not have:
 > the class attribute holds exactly the classes the span was built with,
 > so there is no trailing space.
+>
+> A token whose offsets name no text — out of range, or not on the text's
+> character boundaries — is skipped along with the punctuation, and
+> consumes no id. Java read the covered text through the CAS accessor,
+> which would raise there; there is nothing to enhance either way.
 

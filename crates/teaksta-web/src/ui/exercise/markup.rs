@@ -7,6 +7,11 @@
 //! not part of the contract, so membership of the class list decides, never
 //! the attribute's text.
 //!
+//! The click exercise is served a page in which the words the topic did not
+//! match are wrapped too, carrying `teaksta-token` alone. Those are its
+//! decoys, and they read as tokens here exactly as the hits do — what tells
+//! them apart is the topic's class, which only a hit carries.
+//!
 //! The page is taken apart into blocks of inline runs so an exercise can put
 //! its own controls where the tokens were. A run between two tokens is the
 //! page's own inline markup, kept verbatim; an inline element split by a
@@ -21,7 +26,11 @@ pub const TOKEN_CLASS: &str = "teaksta-token";
 pub const TOPIC_PREFIX: &str = "teaksta-";
 
 /// The class the generic token enhancer marks a hit with when the topic
-/// contributes no class of its own.
+/// contributes no class of its own. No shipped activity reaches it: each
+/// one leaves the generic enhancer's tag list at its placeholder and lets
+/// its own enhancer name the hits, which is why the legacy click handlers
+/// were moved off this class and onto the topic's. A word that does carry
+/// it is a hit all the same.
 pub const GENERIC_HIT_CLASS: &str = "teaksta-hit";
 
 /// Elements whose content never reaches the learner.

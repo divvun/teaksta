@@ -70,8 +70,8 @@ impl<'a> HtmlEnhancer<'a> {
     /// Converts an HTML document with Enhancements to an HTML string. The
     /// topic reaches the page through the client rather than through the
     /// markup, so only the requested exercise is read here.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5]
     pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> Result<String> {
         html_utils::render_page(&self.cas.page, self.cas, mode, Some(base_url))
     }
@@ -115,7 +115,7 @@ mod tests {
         assert!(std::ptr::eq(enhancer.cas, &cas));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5/test]
     #[test]
     fn head_gets_the_base_url_and_nothing_else() {
         let html = enhance(
@@ -134,7 +134,7 @@ mod tests {
         assert!(html.contains("<title>Old</title>"), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5/test]
     #[test]
     fn the_enhanced_span_is_wrapped_around_its_text() {
         let html = enhance(&analysed(true), "http://example.org/", Some(Mode::Colorize));
@@ -148,7 +148,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5/test]
     #[test]
     fn an_irrelevant_span_reaches_click_alone() {
         let cas = analysed(false);
@@ -160,7 +160,7 @@ mod tests {
         assert!(!enhance(&cas, "http://example.org/", None).contains("teaksta-span-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5/test]
     #[test]
     fn the_base_url_is_escaped_as_an_attribute() {
         let html = enhance(
