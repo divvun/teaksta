@@ -68,9 +68,10 @@ pub fn has_been_reset(cas: &Document) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
 
     fn cas_with_ids(ids: &[i64]) -> Document {
-        let mut cas = Document::new("Bures boahtin", "sme");
+        let mut cas = Document::new("Bures boahtin", PIPELINE_LANGUAGE);
         for id in ids {
             add_enh_id(&mut cas, *id);
         }
@@ -89,7 +90,7 @@ mod tests {
         assert_eq!(cas.enhancement_ids.len(), 3);
 
         // A CAS carrying no enhancement ID yields an empty walk.
-        let empty = Document::new("Bures", "sme");
+        let empty = Document::new("Bures", PIPELINE_LANGUAGE);
         assert_eq!(get_enh_id_iterator(&empty).count(), 0);
     }
 
@@ -97,7 +98,7 @@ mod tests {
     #[test]
     fn is_valid_rejects_only_negative_enhancement_ids() {
         // A CAS with no enhancement ID is vacuously valid.
-        assert!(is_valid(&Document::new("Bures", "sme")));
+        assert!(is_valid(&Document::new("Bures", PIPELINE_LANGUAGE)));
 
         assert!(is_valid(&cas_with_ids(&[0])));
         assert!(is_valid(&cas_with_ids(&[1, 2, 3])));
@@ -145,7 +146,7 @@ mod tests {
 
         // A CAS holding no enhancement ID is left untouched and stays valid —
         // it cannot be invalidated this way.
-        let mut bare = Document::new("Bures", "sme");
+        let mut bare = Document::new("Bures", PIPELINE_LANGUAGE);
         make_invalid(&mut bare);
         assert!(bare.enhancement_ids.is_empty());
         assert!(is_valid(&bare));
@@ -154,7 +155,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.add-enh-id-fn/test]
     #[test]
     fn add_enh_id_appends_a_document_wide_marker() {
-        let mut cas = Document::new("Bures boahtin", "sme");
+        let mut cas = Document::new("Bures boahtin", PIPELINE_LANGUAGE);
         add_enh_id(&mut cas, 42);
 
         assert_eq!(cas.enhancement_ids.len(), 1);
@@ -186,14 +187,14 @@ mod tests {
 
         // The rest of the CAS is untouched.
         assert_eq!(cas.text, "Bures boahtin");
-        assert_eq!(cas.language, "sme");
+        assert_eq!(cas.language, PIPELINE_LANGUAGE);
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.cas-utils.cas-utils.has-been-reset-fn/test]
     #[test]
     fn has_been_reset_uses_document_language_as_signal() {
-        assert!(!has_been_reset(&Document::new("Bures", "sme")));
-        assert!(!has_been_reset(&Document::new("", "sme")));
+        assert!(!has_been_reset(&Document::new("Bures", PIPELINE_LANGUAGE)));
+        assert!(!has_been_reset(&Document::new("", PIPELINE_LANGUAGE)));
 
         // An absent document language is the reset signal, whether the CAS was
         // reset or simply never populated with one.
@@ -203,7 +204,7 @@ mod tests {
         // Setting the language again makes a reset CAS report false.
         let mut cas = Document::default();
         assert!(has_been_reset(&cas));
-        cas.language = "sme".to_string();
+        cas.language = PIPELINE_LANGUAGE.to_string();
         assert!(!has_been_reset(&cas));
 
         // Read-only, and independent of the enhancement IDs.

@@ -1,36 +1,48 @@
 # sme/src/main/java/werti/server/ActivityConfiguration.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration]
-> public class ActivityConfiguration {
->   public static final String CLIENT_PREFIX = "client";
->   public static final String PRE_PREFIX = "pre";
->   public static final String POST_PREFIX = "post";
->   public static final String LANG_PREFIX = "lang";
->   public static final String ACT_PLACEHOLDER = "_ACT_";
->   private String actbaseDir;
->   private HashMap<String, URL> preDesc;
->   private HashMap<String, URL> postDesc;
->   private HashMap<String, HashMap<String, ConfigValue>> clientConfig;
->   private HashMap<String, HashMap<String, ConfigValue>> serverPreConfig;
->   private HashMap<String, HashMap<String, ConfigValue>> serverPostConfig;
->   private final String nl = System.getProperty("line.separator");
->   private boolean isEnabled;
->   private String name;
+> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration+1]
+> pub const CLIENT_PREFIX: &str = "client";
+> pub const PRE_PREFIX: &str = "pre";
+> pub const POST_PREFIX: &str = "post";
+> pub const LANG_PREFIX: &str = "lang";
+> pub const ACT_PLACEHOLDER: &str = "_ACT_";
+>
+> pub struct ActivityConfiguration {
+>   actbase_dir: String,
+>   classpath_root: PathBuf,
+>   pre_desc: HashMap<String, Option<String>>,
+>   post_desc: HashMap<String, Option<String>>,
+>   client_config: HashMap<String, HashMap<String, ConfigValue>>,
+>   server_pre_config: HashMap<String, HashMap<String, ConfigValue>>,
+>   server_post_config: HashMap<String, HashMap<String, ConfigValue>>,
+>   nl: String,
+>   is_enabled: bool,
+>   name: String,
 > }
+>
+> The classpath root is a field because there is no JVM classpath to resolve a
+> descriptor expression against and no process-wide stand-in for one: the
+> deployment names the directory, and a configuration holds the one its own
+> descriptors were resolved under. A resolved descriptor is a `file:` URL
+> string, or nothing when the expression named no file under that root.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
-> public ActivityConfiguration(File xmlActivityConfig) throws IOException
+> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+> pub fn new(xml_activity_config: &Path, classpath_root: &Path) -> Result<ActivityConfiguration>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
-> Builds an activity configuration by parsing a single `activity.xml` file.
-> The whole body is wrapped in a `try` block catching `Exception`.
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+> Builds an activity configuration by parsing a single `activity.xml` file,
+> resolving its descriptor expressions against the classpath root it is
+> handed. The whole body is wrapped in a `try` block catching `Exception`.
 >
 > Steps, in order: set `actbaseDir` to the absolute path of the config file's
 > parent directory (`xmlActivityConfig.getParentFile().getAbsolutePath()`);
-> allocate five empty hash maps — `clientConfig`, `serverPreConfig`,
-> `serverPostConfig` (each `lang -> (key -> ConfigValue)`), and `preDesc`,
-> `postDesc` (each `lang -> URL`); then open a file input stream on
-> `xmlActivityConfig` and hand it to `loadFromXml`.
+> store `classpathRoot` as given, without checking that it exists, because a
+> deployment whose descriptors are missing reports its topics unavailable
+> rather than failing to build; allocate five empty hash maps —
+> `clientConfig`, `serverPreConfig`, `serverPostConfig` (each
+> `lang -> (key -> ConfigValue)`), and `preDesc`, `postDesc` (each
+> `lang -> URL`); then open a file input stream on `xmlActivityConfig` and
+> hand it to `loadFromXml`.
 >
 > If any exception escapes those steps — file not found, XML parse failure,
 > XPath failure, or a `NullPointerException` from a missing element or
@@ -313,14 +325,20 @@
 > a `<lang>` element with no `code` attribute. The caller wraps all of these.
 > The stream is not closed.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
-> public static void main(String[] args) throws IOException
+> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+> pub fn main(args: &[String], classpath_root: &Path) -> Result<()>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
 > Command-line debug entry point. Treats `args[0]` as the path to an activity
-> XML file, constructs an `ActivityConfiguration` from it, and prints the
-> object's `toString` rendering to standard output via `System.out.println`.
-> Exits normally afterwards.
+> XML file, constructs an `ActivityConfiguration` from it against the
+> classpath root it is handed, and prints the object's `toString` rendering to
+> standard output via `System.out.println`. Exits normally afterwards.
+>
+> The root is a parameter rather than something read here: the original
+> resolved descriptors against whatever classpath the JVM was launched with,
+> and the caller is the only thing that knows the equivalent. Printing one
+> activity is not a deployment, so nothing is read from the environment and no
+> deployment directory is created on the way.
 >
 > No argument validation: invoking it with no arguments raises
 > `ArrayIndexOutOfBoundsException`. A parse or IO failure propagates as the

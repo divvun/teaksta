@@ -10,10 +10,10 @@
 > session attribute name, because it is never stashed in a session: there are
 > no sessions.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
-> public Activities(File actDir) throws IOException
+> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+> pub fn new(act_dir: &Path, classpath_root: &Path) -> Result<Activities>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
 > Scans a directory of activity folders and builds the registry. Initialises
 > `configMap` to an empty string-keyed sorted map, and `ignoredActivities` to a set
 > holding exactly one name, the literal `"Conditionals"`.
@@ -24,6 +24,13 @@
 > platform file separator, then `activity.xml` — and stores it in `configMap` under
 > the directory's simple name. Regular files and the `Conditionals` directory are
 > skipped silently; the scan is one level deep and does not recurse.
+>
+> The descriptor root the deployment configured is handed to every activity
+> configuration built here, because there is no JVM classpath for a descriptor
+> expression to fall back on. The registry neither reads it from the
+> environment nor defaults it: it is the caller's, passed through to whatever
+> resolves those expressions, so two registries in one process may be built
+> against different trees.
 >
 > No filtering on the activity's own enabled flag happens here, so activities whose
 > XML marks them disabled are still loaded and registered. The directory listing

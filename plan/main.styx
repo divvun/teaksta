@@ -385,12 +385,20 @@ children (
                 id hd-config
                 title "Config coherence: TEAKSTA_CLASSPATH into Config, complete startup warnings"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:32.872414Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence M4: TEAKSTA_CLASSPATH is a bare literal in activity_configuration.rs:60 — not a Config field (context.rs owns the other six *_ENV consts), absent from context.rs:113-120's env save/restore and from main.rs:24-28's startup warnings. It resolves into a OnceLock on first read, so set_classpath_root (:53, sole caller pipeline_models.rs:61) silently loses to whoever read first and returns a bool nobody checks. Move it into Config, make the classpath root flow from Config instead of a process global, and make the startup warnings cover the full env surface. Also coherence M9 while in here: Document.language is a pipeline registry key always \"en\" in production (api.rs:39) while every unit test says \"sme\" — either rename the field for what it is or make runtime and tests agree."
+                    }
+
+                    {
+                        at 2026-09-10T23:23:33.6277Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

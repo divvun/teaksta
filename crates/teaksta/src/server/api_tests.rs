@@ -35,6 +35,9 @@ fn config_for(root: &Path) -> Config {
         listen: "127.0.0.1:0".to_string(),
         webapp_root: root.to_path_buf(),
         webapp_dist: None,
+        // The descriptors these activities name are absent anyway, so no
+        // pipeline is built and nothing reaches the tree.
+        classpath_root: root.join("desc"),
         activities_dir: root.join("activities"),
         analysis_dir: root.join("analysed"),
         upload_keep_dir: root.join("keep"),

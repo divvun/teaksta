@@ -434,6 +434,7 @@ impl Vislcg3NounSgEnhancer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
     use std::io::Read;
 
     fn reading(tags: &[&str]) -> CgReading {
@@ -714,7 +715,7 @@ mod tests {
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
-        let mut doc = Document::new("gietta beana", "sme");
+        let mut doc = Document::new("gietta beana", PIPELINE_LANGUAGE);
         doc.cg_tokens = vec![
             token(0, 6, vec![reading(&["\"gietta\"", "N", "Sg", "Nom"])]),
             token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Acc"])]),
@@ -739,7 +740,7 @@ mod tests {
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
-        let mut doc = Document::new("gietta beana", "sme");
+        let mut doc = Document::new("gietta beana", PIPELINE_LANGUAGE);
         doc.cg_tokens = vec![
             token(
                 0,

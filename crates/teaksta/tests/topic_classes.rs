@@ -17,11 +17,7 @@ use std::path::{Path, PathBuf};
 
 use teaksta::pipeline::flow::{Parameters, stage_named};
 use teaksta::server::activities::Activities;
-
-/// The pipeline language every shipped activity registers its topic under:
-/// there was never an analysis engine under `sme`, so the North Sámi pipelines
-/// sit behind `en`.
-const PIPELINE_LANGUAGE: &str = "en";
+use teaksta::types::PIPELINE_LANGUAGE;
 
 /// Every delegate key a shipped post-processing descriptor names for a topic,
 /// paired with the parameter its activity configures it through. The generic
@@ -44,9 +40,14 @@ fn shipped_activities() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sme/src/main/webapp/activities")
 }
 
+/// The descriptor tree the activity expressions resolve against.
+fn shipped_descriptors() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sme/desc")
+}
+
 /// The names the registry serves, in the order it serves them.
 fn registered_topics() -> Vec<String> {
-    Activities::new(&shipped_activities())
+    Activities::new(&shipped_activities(), &shipped_descriptors())
         .expect("the shipped activity tree is a registry")
         .iterator()
         .cloned()
@@ -75,8 +76,8 @@ fn span_class_of(post: &Parameters) -> Option<&'static str> {
 
 #[test]
 fn every_topic_marks_hits_with_its_registry_name() {
-    let mut activities =
-        Activities::new(&shipped_activities()).expect("the shipped activity tree is a registry");
+    let mut activities = Activities::new(&shipped_activities(), &shipped_descriptors())
+        .expect("the shipped activity tree is a registry");
     let names = registered_topics();
     assert_eq!(names.len(), TOPIC_DELEGATES.len(), "{names:?}");
 

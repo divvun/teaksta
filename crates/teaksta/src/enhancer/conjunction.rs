@@ -145,6 +145,7 @@ mod tests {
         assert_process_ignores_token_without_tags, assert_process_keeps_existing_enhancements,
         assert_safe_only_single_reading, assert_splits_tags, cg_token as token, reading,
     };
+    use crate::types::PIPELINE_LANGUAGE;
 
     fn context(conjunction_tags: &str) -> HashMap<String, String> {
         HashMap::from([("conjunctionTags".to_string(), conjunction_tags.to_string())])
@@ -287,7 +288,7 @@ mod tests {
             (Mode::Colorize, 1),
             (Mode::Click, 1),
         ] {
-            let mut doc = Document::new("Mun ja don.", "sme");
+            let mut doc = Document::new("Mun ja don.", PIPELINE_LANGUAGE);
             doc.cg_tokens.push(token(
                 4,
                 6,

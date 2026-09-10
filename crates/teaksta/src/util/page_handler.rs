@@ -193,7 +193,7 @@ mod tests {
 
     use crate::pipeline::flow::{Flow, Parameters};
     use crate::server::activities::Activities;
-    use crate::types::{PageMap, TextSegment, Token};
+    use crate::types::{PIPELINE_LANGUAGE, PageMap, TextSegment, Token};
 
     /// The page the cache tests analyse. Its text is North Sámi, so a token
     /// offset one byte out lands inside a character rather than between two.
@@ -206,10 +206,12 @@ mod tests {
     const KEY: &str = "http:--example.org-page";
 
     /// A registry built over a directory holding no activities, so no engine
-    /// pair is registered for any (language, topic).
+    /// pair is registered for any (language, topic). Nothing resolves a
+    /// descriptor, so the root the registry is handed is never reached.
     fn empty_processors() -> Processors {
         let activity_dir = tempfile::tempdir().expect("temp dir");
-        let mut activities = Activities::new(activity_dir.path()).expect("activities");
+        let mut activities =
+            Activities::new(activity_dir.path(), activity_dir.path()).expect("activities");
         Processors::new(&mut activities).expect("processors")
     }
 
@@ -252,7 +254,7 @@ mod tests {
     /// A cache file holding the analysed text with one token over `span`,
     /// written straight to disk the way an earlier run's cache would be.
     fn cache_a_document(cache_dir: &Path, span: (usize, usize)) {
-        let mut cached = Document::new(ANALYSED, "sme");
+        let mut cached = Document::new(ANALYSED, PIPELINE_LANGUAGE);
         cached.page = PageMap {
             html: PAGE.to_string(),
             segments: vec![TextSegment {
@@ -336,7 +338,8 @@ mod tests {
             "http:--example.org-page",
             cache_dir.to_str().expect("utf-8 path"),
             "Sámegiella",
-            "sme",
+            // The key a request really carries, so the miss is the topic's.
+            PIPELINE_LANGUAGE,
             Mode::Colorize,
         );
 

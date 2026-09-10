@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::types::CgToken;
+use crate::types::PIPELINE_LANGUAGE;
 
 fn enhancer() -> Vislcg3NounEnhancer {
     Vislcg3NounEnhancer { n_tags: None }
@@ -54,7 +55,7 @@ fn a_missing_n_tags_parameter_fails_initialisation() {
 #[test]
 fn a_singular_noun_span_carries_its_lemma() {
     let enh = enhancer();
-    let mut doc = Document::new("čáhci čáhci", "sme");
+    let mut doc = Document::new("čáhci čáhci", PIPELINE_LANGUAGE);
     let reading: &[&str] = &["\"čáhci\"", "N", "<sme>", "Sem/Plc", "Sg", "Nom"];
     doc.cg_tokens.push(cg_token(0, 7, &[reading]));
     doc.cg_tokens.push(cg_token(8, 15, &[reading]));
@@ -81,7 +82,7 @@ fn a_singular_noun_span_carries_its_lemma() {
 #[test]
 fn preposition_hint_is_linked_from_next_noun() {
     let enh = enhancer();
-    let mut doc = Document::new("maŋŋel beana", "sme");
+    let mut doc = Document::new("maŋŋel beana", PIPELINE_LANGUAGE);
     doc.cg_tokens.push(cg_token(0, 8, &[&["\"maŋŋel\"", "Pr"]]));
     doc.cg_tokens
         .push(cg_token(9, 14, &[&["\"beana\"", "N", "Sg", "Nom"]]));
@@ -106,7 +107,7 @@ fn preposition_hint_is_linked_from_next_noun() {
 #[test]
 fn a_bare_number_tag_without_case_is_skipped() {
     let enh = enhancer();
-    let mut doc = Document::new("ruoktu ruovttut", "sme");
+    let mut doc = Document::new("ruoktu ruovttut", PIPELINE_LANGUAGE);
     doc.cg_tokens
         .push(cg_token(0, 6, &[&["\"ruoktu\"", "N", "Sg"]]));
     doc.cg_tokens
@@ -121,7 +122,7 @@ fn a_bare_number_tag_without_case_is_skipped() {
 #[test]
 fn every_named_number_and_case_pair_qualifies() {
     let enh = enhancer();
-    let mut doc = Document::new("beana", "sme");
+    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
     for number in ["Sg", "Pl"] {
         for case in ["Nom", "Acc", "Gen", "Ill", "Loc", "Com"] {
             doc.cg_tokens
@@ -140,7 +141,7 @@ fn every_named_number_and_case_pair_qualifies() {
 #[test]
 fn one_excluded_reading_disqualifies_a_token() {
     let enh = enhancer();
-    let mut doc = Document::new("mun", "sme");
+    let mut doc = Document::new("mun", PIPELINE_LANGUAGE);
     doc.cg_tokens.push(cg_token(
         0,
         3,
@@ -159,7 +160,7 @@ fn one_excluded_reading_disqualifies_a_token() {
 #[test]
 fn an_adjective_before_pred_stays_eligible() {
     let enh = enhancer();
-    let mut doc = Document::new("stuoris beana", "sme");
+    let mut doc = Document::new("stuoris beana", PIPELINE_LANGUAGE);
     doc.cg_tokens.push(cg_token(
         0,
         13,
@@ -174,7 +175,7 @@ fn an_adjective_before_pred_stays_eligible() {
     // `A+` is excluded only when no `Pred` follows it on the same line.
     assert_eq!(doc.enhancements.len(), 1);
 
-    let mut without_pred = Document::new("stuoris beana", "sme");
+    let mut without_pred = Document::new("stuoris beana", PIPELINE_LANGUAGE);
     without_pred.cg_tokens.push(cg_token(
         0,
         13,

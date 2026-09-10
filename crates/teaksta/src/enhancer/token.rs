@@ -200,7 +200,7 @@ struct Candidate<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{CgToken, Token};
+    use crate::types::{CgToken, PIPELINE_LANGUAGE, Token};
 
     fn context(pairs: &[(&str, &str)]) -> HashMap<String, String> {
         pairs
@@ -295,7 +295,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn punctuation_tokens_are_skipped_and_consume_no_id() {
-        let mut cas = Document::new(". Mun boran", "sme");
+        let mut cas = Document::new(". Mun boran", PIPELINE_LANGUAGE);
         cas.tokens.push(token(2, 5, Some("Pron"), Some("mun")));
         cas.tokens.push(token(0, 1, Some("CLB"), None));
         cas.tokens.push(token(6, 11, Some("V"), Some("borrat")));
@@ -328,7 +328,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_spanning_two_line_breaks_is_skipped() {
-        let mut cas = Document::new("a\nb\nc", "sme");
+        let mut cas = Document::new("a\nb\nc", PIPELINE_LANGUAGE);
         cas.tokens.push(token(0, 5, Some("N"), Some("a")));
         let enhancer = TokenEnhancer {
             tags: vec!["N".to_string()],
@@ -343,7 +343,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_single_line_break_still_yields_an_enhancement() {
-        let mut cas = Document::new("a\nb", "sme");
+        let mut cas = Document::new("a\nb", PIPELINE_LANGUAGE);
         cas.tokens.push(token(0, 3, Some("N"), Some("a")));
         let enhancer = TokenEnhancer {
             tags: vec!["N".to_string()],
@@ -358,7 +358,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_made_only_of_punctuation_is_skipped() {
-        let mut cas = Document::new("...", "sme");
+        let mut cas = Document::new("...", PIPELINE_LANGUAGE);
         cas.tokens.push(token(0, 3, Some("CLB"), None));
         let enhancer = TokenEnhancer {
             tags: vec!["CLB".to_string()],
@@ -373,7 +373,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn an_unreadable_token_span_is_skipped() {
-        let mut cas = Document::new("Sámegiella", "sme");
+        let mut cas = Document::new("Sámegiella", PIPELINE_LANGUAGE);
         // Inside the two-byte `á`, past the end, and readable.
         cas.tokens.push(token(0, 2, Some("N"), None));
         cas.tokens.push(token(0, 99, Some("N"), None));
@@ -400,7 +400,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_null_tag_is_never_a_hit() {
-        let mut cas = Document::new("beana", "sme");
+        let mut cas = Document::new("beana", PIPELINE_LANGUAGE);
         cas.tokens.push(token(0, 5, None, Some("beana")));
         let enhancer = TokenEnhancer {
             tags: vec!["N".to_string()],
@@ -420,7 +420,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn the_lemma_filter_demotes_matches_without_a_lemma() {
-        let mut cas = Document::new("aaa bbb ccc", "sme");
+        let mut cas = Document::new("aaa bbb ccc", PIPELINE_LANGUAGE);
         cas.tokens.push(token(0, 3, Some("N"), None));
         cas.tokens.push(token(4, 7, Some("N"), Some("")));
         cas.tokens.push(token(8, 11, Some("N"), Some("ccc")));
@@ -438,7 +438,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn existing_enhancements_are_kept_and_new_ones_appended() {
-        let mut cas = Document::new("beana", "sme");
+        let mut cas = Document::new("beana", PIPELINE_LANGUAGE);
         cas.enhancements.push(Enhancement {
             begin: 0,
             end: 5,
@@ -468,7 +468,7 @@ mod tests {
     fn the_cg_tokens_left_behind_are_enhanced() {
         // what the CAS looks like once the CG annotator has swapped every
         // token it consumed for the CG token carrying its analysis
-        let mut cas = Document::new("Mun oidnen viesu ikte.", "sme");
+        let mut cas = Document::new("Mun oidnen viesu ikte.", PIPELINE_LANGUAGE);
         cas.cg_tokens.push(cg_token(0, 3));
         cas.cg_tokens.push(cg_token(4, 10));
         cas.cg_tokens.push(cg_token(11, 16));
@@ -493,7 +493,7 @@ mod tests {
     fn a_cg_token_is_never_a_hit() {
         // a CG token carries no tag of its own, so the configured tag list
         // has nothing to match and every span it writes is a decoy
-        let mut cas = Document::new("beana", "sme");
+        let mut cas = Document::new("beana", PIPELINE_LANGUAGE);
         cas.cg_tokens.push(cg_token(0, 5));
         let enhancer = TokenEnhancer {
             tags: vec!["N".to_string(), "beana".to_string()],
@@ -513,7 +513,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn both_kinds_of_token_are_read_in_order() {
-        let mut cas = Document::new("aaa bbb ccc", "sme");
+        let mut cas = Document::new("aaa bbb ccc", PIPELINE_LANGUAGE);
         cas.cg_tokens.push(cg_token(8, 11));
         cas.tokens.push(token(0, 3, Some("N"), Some("aaa")));
         cas.cg_tokens.push(cg_token(4, 7));
@@ -537,7 +537,7 @@ mod tests {
     fn a_span_naming_no_text_is_skipped() {
         // begin and end past the end of the text, and a cut through the
         // middle of a two-byte character
-        let mut cas = Document::new("á beana", "sme");
+        let mut cas = Document::new("á beana", PIPELINE_LANGUAGE);
         cas.cg_tokens.push(cg_token(0, 1));
         cas.cg_tokens.push(cg_token(3, 8));
         cas.cg_tokens.push(cg_token(3, 40));

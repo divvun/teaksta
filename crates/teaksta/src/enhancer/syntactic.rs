@@ -107,6 +107,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
 mod tests {
     use super::*;
     use crate::test_support::cg_token;
+    use crate::types::PIPELINE_LANGUAGE;
 
     /// A token carrying the configured tag on one of two readings, so the
     /// only thing that can keep it out of the output is the exercise.
@@ -138,7 +139,7 @@ mod tests {
             (Mode::Colorize, 1),
             (Mode::Click, 1),
         ] {
-            let mut doc = Document::new("Mun oainnán mánáid.", "sme");
+            let mut doc = Document::new("Mun oainnán mánáid.", PIPELINE_LANGUAGE);
             doc.cg_tokens.push(ambiguous());
 
             run(

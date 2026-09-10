@@ -22,8 +22,8 @@ public class Activities implements Iterable<String> {
 	private TreeMap<String, ActivityConfiguration> configMap;
 	private Set<String> ignoredActivities;
     
-	// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
 	public Activities(File actDir) throws IOException {
 		configMap = new TreeMap<String, ActivityConfiguration>();
 		

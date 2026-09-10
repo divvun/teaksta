@@ -80,6 +80,7 @@ impl<'a> HtmlEnhancer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
 
     use crate::types::Enhancement;
     use crate::util::html_utils;
@@ -108,7 +109,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn/test]
     #[test]
     fn the_constructor_stores_the_cas_by_reference() {
-        let cas = Document::new(PAGE, "sme");
+        let cas = Document::new(PAGE, PIPELINE_LANGUAGE);
 
         let enhancer = HtmlEnhancer::new(&cas);
 

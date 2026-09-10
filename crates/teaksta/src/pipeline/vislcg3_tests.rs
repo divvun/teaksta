@@ -1,4 +1,5 @@
 use super::*;
+use crate::types::PIPELINE_LANGUAGE;
 
 use std::cell::Cell;
 use std::io::{self, BufReader, Cursor, Read};
@@ -316,7 +317,7 @@ fn parse_cg_output_reports_index_error_on_whitespace() {
 #[test]
 fn process_propagates_token_span_outside_text() {
     let annotator = Vislcg3Annotator::new();
-    let mut jcas = Document::new("guolli", "sme");
+    let mut jcas = Document::new("guolli", PIPELINE_LANGUAGE);
     jcas.tokens.push(token(0, 99));
 
     let err = annotator.process(&mut jcas).unwrap_err();
@@ -334,7 +335,7 @@ fn process_propagates_token_span_outside_text() {
 #[test]
 fn process_of_a_document_without_tokens_indexes_nothing() {
     let annotator = Vislcg3Annotator::new();
-    let mut jcas = Document::new("guolli", "sme");
+    let mut jcas = Document::new("guolli", PIPELINE_LANGUAGE);
 
     let _ = annotator.process(&mut jcas);
 

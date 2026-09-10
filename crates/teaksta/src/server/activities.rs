@@ -22,9 +22,9 @@ pub struct Activities {
 }
 
 impl Activities {
-    // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn]
-    pub fn new(act_dir: &Path) -> Result<Self> {
+    // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+    pub fn new(act_dir: &Path, classpath_root: &Path) -> Result<Self> {
         let mut this = Activities {
             config_map: BTreeMap::new(),
             ignored_activities: HashSet::new(),
@@ -47,8 +47,8 @@ impl Activities {
                     MAIN_SEPARATOR,
                     "activity.xml"
                 );
-                this.config_map
-                    .insert(name, ActivityConfiguration::new(Path::new(&activity_xml))?);
+                let config = ActivityConfiguration::new(Path::new(&activity_xml), classpath_root)?;
+                this.config_map.insert(name, config);
             }
         }
 
@@ -115,6 +115,13 @@ mod tests {
         )
     }
 
+    /// The registry over an activity tree, with the descriptor root pointed at
+    /// a directory holding none: what these tests exercise is the scan, and a
+    /// descriptor that resolved would only make the fixtures heavier.
+    fn registry(act_dir: &Path) -> Result<Activities> {
+        Activities::new(act_dir, Path::new("./teaksta-absent-descriptors"))
+    }
+
     fn write_activity(root: &Path, dir_name: &str) {
         write_activity_xml(root, dir_name, &activity_xml(dir_name, "yes"));
     }
@@ -125,14 +132,14 @@ mod tests {
         fs::write(dir.join("activity.xml"), xml).expect("write activity.xml");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_registers_one_config_per_directory() {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Zebra");
         write_activity(dir.path(), "Apple");
 
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = registry(dir.path()).expect("registry builds");
 
         assert_eq!(
             activities
@@ -150,7 +157,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_skips_conditionals_and_plain_files() {
         let dir = TempDir::new().expect("temp dir");
@@ -161,7 +168,7 @@ mod tests {
         fs::write(dir.path().join("README"), "not a directory").expect("write stray file");
         fs::write(dir.path().join("activity.xml"), "<not-an-activity>").expect("write stray xml");
 
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = registry(dir.path()).expect("registry builds");
 
         assert_eq!(activities.iterator().count(), 1);
         assert!(activities.get_activity("Conditionals").is_none());
@@ -169,14 +176,14 @@ mod tests {
         assert!(activities.get_activity("Nouns").is_some());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_scans_one_level_deep_only() {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Outer");
         write_activity(&dir.path().join("Outer"), "Inner");
 
-        let activities = Activities::new(dir.path()).expect("registry builds");
+        let activities = registry(dir.path()).expect("registry builds");
 
         assert_eq!(
             activities.iterator().collect::<Vec<_>>(),
@@ -184,37 +191,37 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_registers_activities_marked_disabled() {
         let dir = TempDir::new().expect("temp dir");
         write_activity_xml(dir.path(), "Nouns", &activity_xml("Nouns", "no"));
 
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = registry(dir.path()).expect("registry builds");
 
         let config = activities.get_activity("Nouns").expect("Nouns registered");
         assert!(!config.is_enabled());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_propagates_a_configuration_parse_failure() {
         let dir = TempDir::new().expect("temp dir");
         write_activity_xml(dir.path(), "Broken", "<activity><meta/></activity>");
 
-        let Err(err) = Activities::new(dir.path()) else {
+        let Err(err) = registry(dir.path()) else {
             panic!("a malformed activity.xml must abort construction");
         };
 
         assert_eq!(err.to_string(), "IOException");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
     #[test]
     fn activities_fails_when_the_directory_cannot_be_listed() {
         let dir = TempDir::new().expect("temp dir");
 
-        assert!(Activities::new(&dir.path().join("absent")).is_err());
+        assert!(registry(&dir.path().join("absent")).is_err());
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.iterator-fn/test]
@@ -225,7 +232,7 @@ mod tests {
             write_activity(dir.path(), name);
         }
 
-        let activities = Activities::new(dir.path()).expect("registry builds");
+        let activities = registry(dir.path()).expect("registry builds");
 
         assert_eq!(
             activities.iterator().cloned().collect::<Vec<_>>(),
@@ -248,7 +255,7 @@ mod tests {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Nouns");
 
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = registry(dir.path()).expect("registry builds");
 
         assert!(activities.get_activity("Nouns").is_some());
         assert!(activities.get_activity("nouns").is_none());
@@ -261,7 +268,7 @@ mod tests {
     fn get_activity_hands_out_the_stored_config() {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Nouns");
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = registry(dir.path()).expect("registry builds");
 
         assert!(
             activities

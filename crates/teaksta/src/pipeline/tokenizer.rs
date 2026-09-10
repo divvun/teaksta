@@ -311,6 +311,7 @@ fn ends_with_possessive(covered: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
 
     fn relevant(begin: usize, end: usize) -> RelevantText {
         RelevantText {
@@ -323,7 +324,7 @@ mod tests {
     /// The document text handed to the tokeniser, with the given spans marked
     /// relevant.
     fn document(text: &str, spans: &[(usize, usize)]) -> Document {
-        let mut doc = Document::new(text, "sme");
+        let mut doc = Document::new(text, PIPELINE_LANGUAGE);
         for (begin, end) in spans {
             doc.relevant_texts.push(relevant(*begin, *end));
         }

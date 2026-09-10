@@ -230,6 +230,7 @@ impl Flow {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
 
     fn parameters(pairs: &[(&str, &str)]) -> Parameters {
         pairs
@@ -312,7 +313,7 @@ mod tests {
     #[test]
     fn an_empty_flow_runs_and_changes_nothing() {
         let flow = Flow::new(&[], &parameters(&[])).expect("an empty flow");
-        let mut cas = Document::new("<p>Mun oidnen viesu.</p>", "sme");
+        let mut cas = Document::new("<p>Mun oidnen viesu.</p>", PIPELINE_LANGUAGE);
 
         flow.run(&mut cas, Mode::Colorize)
             .expect("an empty flow is a no-op");
