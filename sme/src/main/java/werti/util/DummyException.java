@@ -6,11 +6,8 @@ package werti.util;
  * 
  * @author Marion Zepf
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.dummy-exception.dummy-exception]
 public class DummyException extends Exception {
 
-	// [spec:teaksta:def:sme.src.main.java.werti.util.dummy-exception.dummy-exception.dummy-exception-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.dummy-exception.dummy-exception.dummy-exception-fn]
 	public DummyException() {
 		super();
 		// Auto-generated constructor stub

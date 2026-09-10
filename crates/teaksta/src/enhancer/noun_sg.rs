@@ -10,6 +10,7 @@ use std::io::{BufRead, BufReader, Cursor};
 use anyhow::{Result, bail};
 use tracing::{debug, error, info};
 
+use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
 use crate::morpho::MorphoPipeline;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
 use crate::util::enhancer_utils;
@@ -124,8 +125,8 @@ impl Vislcg3NounSgEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         info!("Starting Noun Sg enhancement");
         // colorize, click, mc or cloze - chosen by the user and sent to the
@@ -180,14 +181,13 @@ impl Vislcg3NounSgEnhancer {
 
                         // increment id
                         new_id = class_counts[con_t.as_str()] + 1;
-                        let span_start_tag = format!(
-                            "<span id=\"{}\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"{}\" distractors=\"{}\">",
-                            enhancer_utils::get_id(&format!("WERTi-span-{}", con_t), new_id),
-                            lemma,
-                            distractors
-                        );
-                        e.enhance_start = span_start_tag;
-                        e.enhance_end = "</span>".to_string();
+                        let id = enhancer_utils::get_id(&format!("WERTi-span-{}", con_t), new_id);
+                        let mut span_tag =
+                            SpanTag::new(id, &[TOKEN_CLASS, "teaksta-SubstantiveSingular"]);
+                        span_tag.add_attribute("lemma", &lemma);
+                        span_tag.add_attribute("distractors", &distractors);
+                        e.enhance_start = span_tag.start_tag();
+                        e.enhance_end = span_tag.end_tag().to_string();
                         class_counts.insert(con_t.clone(), new_id);
                         doc.enhancements.push(e);
                         break;
@@ -465,7 +465,7 @@ mod tests {
 
     fn span_start(id: &str) -> String {
         format!(
-            "<span id=\"{}\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">",
+            "<span id=\"{}\" class=\"teaksta-token teaksta-SubstantiveSingular\" lemma=\"\" distractors=\"\">",
             id
         )
     }
@@ -721,7 +721,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
@@ -738,21 +738,15 @@ mod tests {
         let first = &doc.enhancements[0];
         assert!(first.relevant);
         assert_eq!((first.begin, first.end), (0, 6));
-        assert_eq!(
-            first.enhance_start,
-            "<span id=\"WERTi-span-Sg Nom-1\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">"
-        );
+        assert_eq!(first.enhance_start, span_start("WERTi-span-Sg Nom-1"));
         assert_eq!(first.enhance_end, "</span>");
 
         let second = &doc.enhancements[1];
         assert_eq!((second.begin, second.end), (7, 12));
-        assert_eq!(
-            second.enhance_start,
-            "<span id=\"WERTi-span- Sg Acc-1\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">"
-        );
+        assert_eq!(second.enhance_start, span_start("WERTi-span- Sg Acc-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
@@ -787,7 +781,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
     #[test]
     fn a_malformed_reading_reports_instead_of_unwinding() {
         let enhancer = enhancer();

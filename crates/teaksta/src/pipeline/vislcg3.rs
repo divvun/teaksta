@@ -1,6 +1,5 @@
-//! Annotate a text using the external tools — the FST-based morphological
-//! analyser and the vislcg3 shallow syntactic parser. The locations of
-//! vislcg3 and of the grammars come from [`crate::util::constants`].
+//! Annotate a text using the morphological analyser and the vislcg3 shallow
+//! syntactic parser, both of which the divvun-runtime bundle supplies.
 //!
 //! Every [`Token`] annotation is replaced by a [`CgToken`] carrying the
 //! constraint-grammar readings for the same span, which is what the
@@ -11,7 +10,6 @@
 use std::collections::{HashMap, HashSet};
 use std::io::BufRead;
 use std::sync::LazyLock;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
@@ -19,7 +17,6 @@ use tracing::{debug, error, info};
 
 use crate::morpho::MorphoPipeline;
 use crate::types::{CgReading, CgToken, Document, SentenceAnnotation, Token};
-use crate::util::constants;
 
 trait Spanned {
     fn begin(&self) -> usize;
@@ -63,21 +60,6 @@ fn covered_text(text: &str, begin: usize, end: usize) -> Result<&str> {
         .ok_or_else(|| anyhow!("span {}..{} is not within the document text", begin, end))
 }
 
-/// Java's `String.split(regex)`: the whole input is returned as the single
-/// field when the separator never matches, a leading empty field is kept,
-/// and trailing empty fields are dropped.
-fn java_split<'a>(pattern: &Regex, input: &'a str) -> Vec<&'a str> {
-    if !pattern.is_match(input) {
-        return vec![input];
-    }
-
-    let mut parts: Vec<&str> = pattern.split(input).collect();
-    while parts.last().is_some_and(|part| part.is_empty()) {
-        parts.pop();
-    }
-    parts
-}
-
 /// The rendering of a cohort's first reading: the string the skip loop tests
 /// for the `CLB` boundary tag and that the log lines carry. The whole tag
 /// sequence is rendered, so there is no bound on how deep into the reading
@@ -89,16 +71,6 @@ fn first_reading(token: &CgToken) -> Result<String> {
         .ok_or_else(|| anyhow!("Index 0 out of bounds for length {}", token.readings.len()))?;
     Ok(format!("{:?}", reading))
 }
-
-/// Runs of blank lines collapse into a single separator, so the blank line
-/// between two cohorts disappears.
-static NEWLINES_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\n+").expect("newlines pattern"));
-
-/// Reading lines are split on ASCII whitespace, which yields a leading empty
-/// field for the indentation CG-3 puts in front of every reading.
-static WHITESPACE_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?-u:\s+)").expect("whitespace pattern"));
 
 /// Tokens made purely of punctuation, matched against the whole covered text.
 static PUNCTUATION_PATTERN: LazyLock<Regex> =
@@ -142,34 +114,12 @@ fn indent_depth(line: &str) -> usize {
 #[derive(Debug, Clone)]
 pub struct Vislcg3Annotator {
     pub cg_sentence_boundary_token: String,
-    pub vislcg3_loc: String,
-    pub vislcg3_dis_grammar_loc: String,
-    pub vislcg3_synt_grammar_loc: String,
-    /// Read into the annotator but taking no part in the pipeline: the
-    /// tokenisation happens upstream in the tokeniser rather than in the
-    /// `preprocess` script.
-    pub preprocess_loc: String,
-    /// Read into the annotator but taking no part in the pipeline.
-    pub abbr: String,
-    pub lookup_loc: String,
-    pub lookup_flags: String,
-    pub fst_loc: String,
-    pub lookup2cg_loc: String,
 }
 
 impl Default for Vislcg3Annotator {
     fn default() -> Self {
         Vislcg3Annotator {
             cg_sentence_boundary_token: ".".to_string(),
-            vislcg3_loc: constants::VISLCG3_LOC.to_string(),
-            vislcg3_dis_grammar_loc: constants::VISLCG3_DIS_GRAMMAR_LOC.to_string(),
-            vislcg3_synt_grammar_loc: constants::VISLCG3_SYNT_GRAMMAR_LOC.to_string(),
-            preprocess_loc: constants::PREPROCESS_LOC.to_string(),
-            abbr: constants::ABBR_FILE.to_string(),
-            lookup_loc: constants::LOOKUP_LOC.to_string(),
-            lookup_flags: constants::LOOKUP_FLAGS.to_string(),
-            fst_loc: constants::AN_FST.to_string(),
-            lookup2cg_loc: constants::LOOKUP_2CG_LOC.to_string(),
         }
     }
 }
@@ -335,51 +285,17 @@ impl Vislcg3Annotator {
      * + morph. disambiguation + shallow syntactic analysis (CG). The preprocessing (tokenisation)
      * is done by the tokeniser.
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
     fn run_fst_cg(&self, input: &str) -> Result<String> {
-        // get timestamp in milliseconds and use it in the names of the temporary
-        // files in order to avoid conflicts between simultaneous users
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map_err(|e| anyhow!("system clock is before the epoch: {}", e))?
-            .as_millis();
-        let inputfile_loc = format!("{}{}{}", constants::INPUTFILE_LOC, timestamp, ".tmp");
-        let outputfile_loc = format!("{}{}{}", constants::OUTPUTFILE_LOC, timestamp, ".tmp");
-
-        // compose the text analysis pipeline; `lookup2cg_loc` supplies its own
-        // surrounding pipes and `fst_loc` a leading space, so the fragments
-        // concatenate straight onto one another
-        let text_analysis_pipeline = format!(
-            "/bin/cat {} | {} {}{}{}{} -g {} | {} -g {} > {}",
-            inputfile_loc,
-            self.lookup_loc,
-            self.lookup_flags,
-            self.fst_loc,
-            self.lookup2cg_loc,
-            self.vislcg3_loc,
-            self.vislcg3_dis_grammar_loc,
-            self.vislcg3_loc,
-            self.vislcg3_synt_grammar_loc,
-            outputfile_loc
-        );
-        info!("Text analysis pipeline: {}", text_analysis_pipeline);
-
-        // the pipeline consumed one token per line of the input file
-        let mut tokens: Vec<String> = input.split('\n').map(str::to_string).collect();
-        while tokens.last().is_some_and(|token| token.is_empty()) {
-            tokens.pop();
-        }
+        // the analyser takes one token per line
+        let tokens: Vec<String> = input.lines().map(str::to_string).collect();
 
         let cg3_stream = MorphoPipeline::shared().analyze_disambiguate(&tokens)?;
 
         // rebuilt line by line, so every line ends in exactly one "\n"
-        let mut result = String::new();
-        for str_line in cg3_stream.lines() {
-            result.push_str(str_line);
-            result.push('\n');
-        }
-        info!("Read from cg3outputfile: {}", result);
+        let result: String = cg3_stream.lines().map(|line| format!("{line}\n")).collect();
+        info!("Read from the CG3 stream: {}", result);
 
         Ok(result)
     }
@@ -387,17 +303,16 @@ impl Vislcg3Annotator {
     /*
      * helper for parsing output from vislcg3 back into our CGTokens
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
     fn parse_cg_output(&self, cg_output: &str) -> Result<Vec<CgToken>> {
         let mut result: Vec<CgToken> = Vec::new();
 
         // current token and its readings
         let mut current: Option<CgToken> = None;
         let mut current_readings: Vec<CgReading> = Vec::new();
-        // read output line by line, eat multiple newlines
-        let cg_output_lines = java_split(&NEWLINES_PATTERN, cg_output);
-        for line in cg_output_lines {
+        // read output line by line, eat the blank lines between cohorts
+        for line in cg_output.lines().filter(|line| !line.is_empty()) {
             // case 1: new cohort
             if line.starts_with("\"<") {
                 if let Some(mut previous) = current.take() {
@@ -410,20 +325,10 @@ impl Vislcg3Annotator {
                 current_readings = Vec::new();
             // case 2: a reading in the current cohort, which CG-3 indents
             } else if line.starts_with([' ', '\t']) {
-                // split reading line into tags
-                let temp = java_split(&WHITESPACE_PATTERN, line);
-                if temp.is_empty() {
+                // split reading line into tags, dropping the indentation
+                let mut reading: CgReading = line.split_whitespace().map(str::to_string).collect();
+                if reading.is_empty() {
                     bail!("Index -1 out of bounds for length 0");
-                }
-                let mut reading: CgReading = vec![temp[temp.len() - 1].to_string()];
-                // iterate backwards due to UIMAs prolog list disease
-                for i in (0..temp.len() - 1).rev() {
-                    if temp[i].is_empty() {
-                        break;
-                    }
-                    // in order to extend the list, we have to set the old one as
-                    // tail and the new element as head
-                    reading.insert(0, temp[i].to_string());
                 }
                 reading.retain(|tag| !is_runtime_tag(tag));
                 // a subreading is indented one level deeper and qualifies the

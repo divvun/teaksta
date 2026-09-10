@@ -328,8 +328,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
     /*
 	 * helper for running the pipeline consisting of external tools for morphological analysis (FST) + morph. disambiguation + shallow syntactic analysis (CG). The preprocessing (tokenisation) is done by OpenNlpTokenizer.
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
 	private String runFST_CG(String input) throws IOException,InterruptedException {
 
 	   // get timestamp in milliseconds and use it in the names of the temporary files in order to avoid conflicts between simultaneous users
@@ -459,8 +459,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for parsing output from vislcg3 back into our CGTokens
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
 	private List<CGToken> parseCGOutput(String cgOutput, JCas jcas) {
 		ArrayList<CGToken> result = new ArrayList<CGToken>();
 

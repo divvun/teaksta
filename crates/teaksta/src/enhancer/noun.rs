@@ -77,7 +77,7 @@ const NUMBER_PATTERN: &str = concat!(
 /// What this topic changes about the shared enhancement pass.
 const TOPIC: TopicSpec = TopicSpec {
     label: "Noun Sg",
-    span_class: "wertiviewSubstantive",
+    span_class: "teaksta-Substantive",
     pos: r"N\+",
     selector: NUMBER_PATTERN,
     hints: Some(HintRules {
@@ -234,14 +234,6 @@ impl Default for Vislcg3NounEnhancer {
 }
 
 impl Vislcg3NounEnhancer {
-    /// Stands in for the enclosing instance captured by the Java inner
-    /// classes: `Word` and `SpanTag` fold the enclosing enhancer's identity
-    /// into their equality and hash, so instances only match when built by
-    /// the same enhancer.
-    pub(crate) fn outer_id(&self) -> usize {
-        self as *const Self as usize
-    }
-
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn]
     pub fn initialize(&mut self, n_tags: Option<&str>) -> Result<()> {
@@ -259,12 +251,12 @@ impl Vislcg3NounEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
-        cg_enhancer::run(doc, self.outer_id(), &TOPIC, &forms, &analyses)
+        cg_enhancer::run(doc, &TOPIC, &forms, &analyses)
     }
 
     /// Create all relevant morphological forms of the current token. It is the

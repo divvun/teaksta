@@ -238,7 +238,7 @@ fn colorize_wraps_the_nouns_in_topic_spans() {
     let starts = span_starts(&cas);
     assert_eq!(starts.len(), 2, "{starts:#?}");
     for start in &starts {
-        assert!(start.contains("class=\"wertiviewtoken wertiviewSubstantive\""));
+        assert!(start.contains("class=\"teaksta-token teaksta-Substantive\""));
         assert!(start.contains(" lemma=\"viessu\""));
     }
     assert_eq!(
@@ -265,11 +265,7 @@ fn the_json_protocol_keys_spans_by_id() {
         serde_json::from_str(&json).expect("a JSON object");
 
     assert_eq!(spans.len(), 2);
-    assert!(
-        spans["1"].contains("wertiviewSubstantive"),
-        "{}",
-        spans["1"]
-    );
+    assert!(spans["1"].contains("teaksta-Substantive"), "{}", spans["1"]);
     assert!(spans["1"].contains(">viesu</span>"), "{}", spans["1"]);
     assert!(spans["2"].contains(">Viesut</span>"), "{}", spans["2"]);
     for span in spans.values() {

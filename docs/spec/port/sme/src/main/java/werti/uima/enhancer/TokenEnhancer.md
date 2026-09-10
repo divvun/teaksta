@@ -29,11 +29,11 @@
 > mandatory `Method` parameter (default `Markup`) that this annotator
 > never reads.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
 > @SuppressWarnings("unchecked") public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
-> Wraps every non-punctuation token in a `wertiviewtoken` span, marking
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+> Wraps every non-punctuation token in a `teaksta-token` span, marking
 > those whose POS tag is in the configured `tags` list as hits. Consumes
 > `werti.uima.types.annot.Token` annotations (features `begin`, `end`,
 > `tag`, `lemma`) and produces `werti.uima.types.Enhancement` annotations
@@ -61,20 +61,22 @@
 > non-null and not the empty string, else 0; with `useLemmaFilter`
 > disabled the flag is 1. If the tag is not in `tags`, the flag is 0.
 >
-> When the flag is 1, sets a local hit class of `wertiviewhit` and sets
-> the enhancement's `relevant` feature to true; when it is 0, the hit
-> class is the empty string and `relevant` is set to false.
+> When the flag is 1 the span carries the hit class `teaksta-hit` in
+> addition to `teaksta-token` and the enhancement's `relevant` feature is
+> set to true; when it is 0 the span carries `teaksta-token` alone and
+> `relevant` is set to false.
 >
-> Sets `enhanceStart` to
-> `<span id="{spanId}" class="wertiviewtoken {hitclass}">` where
-> `{spanId}` is the id built by the shared id helper from the span class
-> `WERTi-span` and the counter, i.e. `WERTi-span-{id}`, and sets
-> `enhanceEnd` to `</span>`. Logs the covered text, tag and id at trace
+> Sets `enhanceStart` to `<span id="{spanId}" class="teaksta-token">` or
+> `<span id="{spanId}" class="teaksta-token teaksta-hit">`, the classes
+> separated by a single space, where `{spanId}` is the id built by the
+> shared id helper from the span class `WERTi-span` and the counter, i.e.
+> `WERTi-span-{id}`, and sets `enhanceEnd` to `</span>`. Logs the covered text, tag and id at trace
 > when trace is enabled, then adds the enhancement to the CAS indexes.
 >
 > After the loop, logs at debug that enhancement is finished. Declares
 > but never throws the analysis-engine process exception.
 >
-> Quirk: a non-hit token's class attribute keeps the interpolated empty
-> hit class, producing the trailing space in `class="wertiviewtoken "`.
+> A non-hit token carries no placeholder for the class it does not have:
+> the class attribute holds exactly the classes the span was built with,
+> so there is no trailing space.
 

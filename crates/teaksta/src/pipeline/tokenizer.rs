@@ -9,7 +9,6 @@ use tracing::{debug, info, trace};
 
 use crate::morpho::MorphoPipeline;
 use crate::types::{Document, RelevantText, Token};
-use crate::util::constants::{ABBR_DIR, TOOLS_DIR};
 
 /// Annotation index order: ascending `begin`, then descending `end`.
 fn index_order(spans: &[RelevantText]) -> Vec<&RelevantText> {
@@ -102,6 +101,11 @@ fn mask_to_relevant_text(text: &str, spans: &[RelevantText]) -> Result<String> {
 /// non-breaking spaces.
 static NON_SEPARATOR_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(?:.*?[^\p{Z}].*)$").expect("non separator pattern"));
+
+/// The deployment locations the Java concatenated the preprocessing command
+/// from, kept only because that command reaches the log.
+const TOOLS_DIR: &str = "/opt/smi/sme/bin/";
+const ABBR_DIR: &str = "/opt/smi/sme/bin/";
 
 static PREPROCESS_CMD: LazyLock<String> =
     LazyLock::new(|| format!("{}preprocess --abbr={}abbr.txt", TOOLS_DIR, ABBR_DIR));

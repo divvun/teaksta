@@ -252,7 +252,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3]
 > The annotator body. Consumes `CGToken` annotations (with their `readings` array of
 > `CGReading`) from the CAS and produces `Enhancement` annotations; it does not read or
 > modify any other annotation type, and it never removes anything.
@@ -291,7 +291,13 @@
 > true, `begin` set to the token's begin offset and `end` set to the token's end offset.
 > The per-tag counter is incremented (new value = old + 1) and the new value becomes the
 > span number. `enhanceStart` is set to exactly
-> `<span id="WERTi-span-<conT>-<newId>" class="wertiviewtoken  wertiviewSubstantiveSingular " lemma="<lemma>" distractors="<distractors>">`
+> `<span id="WERTi-span-<conT>-<newId>" class="teaksta-token teaksta-SubstantiveSingular" lemma="<lemma>" distractors="<distractors>">`
+>
+> The markup is rendered from a structured span tag rather than assembled as
+> text: the id, the class list and both attribute values are escaped for a
+> double-quoted attribute, so a base form or a generated form carrying `&`,
+> `<`, `>` or `"` cannot close the attribute or the tag, and the two classes are
+> joined by exactly one space with none trailing.
 > — the id is the string `WERTi-span-` concatenated with the tag, a hyphen and the number;
 > the class attribute has two spaces between the two class names and a trailing space.
 > `enhanceEnd` is set to `</span>`. The counter map is updated with the new value and the

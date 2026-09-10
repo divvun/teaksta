@@ -57,10 +57,10 @@
 > unambiguous. Returns false for a null readings array, for an empty array, and
 > for two or more readings. Pure; no side effects.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
 > Logs "Starting conjunction enhancement" at info, then reads the process-wide
 > static field WERTiServlet.enhancement_type into a local. That field holds the
 > exercise type chosen by the user — one of "colorize", "click", "mc", "cloze"
@@ -85,15 +85,19 @@
 >   in the CAS; sets its relevant feature to true; sets begin to cgt.getBegin()
 >   and end to cgt.getEnd(); computes newId = classCounts.get(conT) + 1; sets
 >   enhanceStart to the string
->   `<span id="WERTi-span-<conT>-<newId>" class="wertiviewtoken wertiviewconjunction wertiview<conT>">`
+>   `<span id="WERTi-span-<conT>-<newId>" class="teaksta-token teaksta-conjunction teaksta-<conT>">`
 >   — the id is produced by EnhancerUtils.get_id("WERTi-span-" + conT, newId),
 >   which joins with a single "-", the three class names are separated by single
 >   spaces with no trailing space, and the third class is the literal prefix
->   "wertiview" concatenated with the tag, so the default tags give
->   "wertiviewCC" and "wertiviewCS"; sets enhanceEnd to "</span>"; writes newId
+>   "teaksta-" concatenated with the tag, so the default tags give
+>   "teaksta-CC" and "teaksta-CS"; sets enhanceEnd to "</span>"; writes newId
 >   back into classCounts under conT; adds the Enhancement to the CAS indexes
 >   with cas.addFsToIndexes; and breaks out of the reading loop, so at most one
 >   Enhancement per token per tag is produced.
+>
+> The markup is rendered from a structured span tag rather than assembled as
+> text, so the id and the class list are escaped for a double-quoted attribute
+> and the classes are joined by exactly one space.
 >
 > Finishes by logging "Finished conjunction enhancement" at info. Returns void.
 > AnalysisEngineProcessException is declared but never thrown.

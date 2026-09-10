@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use anyhow::{Result, anyhow};
 use tracing::{debug, info};
 
+use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
 use crate::types::{CgReading, CgToken, Document, Enhancement};
 use crate::util::enhancer_utils;
 
@@ -45,8 +46,8 @@ impl Vislcg3ConjunctionEnhancer {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         info!("Starting conjunction enhancement");
         // colorize, click, mc or cloze - chosen by the user and sent to the
@@ -96,16 +97,21 @@ impl Vislcg3ConjunctionEnhancer {
                     if matches {
                         // increment id
                         let new_id = class_counts[con_t] + 1;
+                        let id = enhancer_utils::get_id(&format!("WERTi-span-{con_t}"), new_id);
+                        let span_tag = SpanTag::new(
+                            id,
+                            &[
+                                TOKEN_CLASS,
+                                "teaksta-conjunction",
+                                &format!("teaksta-{con_t}"),
+                            ],
+                        );
                         // make new enhancement
                         let e = Enhancement {
                             begin,
                             end,
-                            enhance_start: format!(
-                                "<span id=\"{}\" class=\"wertiviewtoken wertiviewconjunction wertiview{}\">",
-                                enhancer_utils::get_id(&format!("WERTi-span-{con_t}"), new_id),
-                                con_t
-                            ),
-                            enhance_end: "</span>".to_string(),
+                            enhance_start: span_tag.start_tag(),
+                            enhance_end: span_tag.end_tag().to_string(),
                             relevant: true,
                         };
                         class_counts.insert(con_t.clone(), new_id);
@@ -249,7 +255,7 @@ mod tests {
         assert!(!enhancer.contains_tag(&reading(&["\"ja\"", "CC"]), ""));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
     #[test]
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3ConjunctionEnhancer {
@@ -259,7 +265,7 @@ mod tests {
         assert_process_keeps_existing_enhancements("Mun ja don.", |doc| enhancer.process(doc));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
         let enhancer = Vislcg3ConjunctionEnhancer::new();
@@ -271,7 +277,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
     #[test]
     fn process_requires_enhancement_type_for_first_token() {
         let enhancer = Vislcg3ConjunctionEnhancer {
