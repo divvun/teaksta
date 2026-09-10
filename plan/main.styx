@@ -42,6 +42,15 @@ children (
             {
                 id router-binary
                 title "Poem router + server binary wiring the translated handlers"
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T13:39:31.548268Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
@@ -60,6 +69,15 @@ children (
             {
                 id dioxus-shell
                 title "Dioxus app shell: site chrome, activity picker, URL form"
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T13:39:33.856902Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
@@ -90,6 +108,15 @@ children (
             {
                 id idiomatize-enhancers
                 title "Consolidate the six enhancer clones (Word/SpanTag) into one parameterized enhancer"
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T13:39:39.246331Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
