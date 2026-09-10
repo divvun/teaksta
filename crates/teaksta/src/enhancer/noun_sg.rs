@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Cursor};
 
 use anyhow::{Result, bail};
-use tracing::{error, info};
+use tracing::{debug, error, info};
 
 use crate::morpho::MorphoPipeline;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
@@ -124,8 +124,8 @@ impl Vislcg3NounSgEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         info!("Starting Noun Sg enhancement");
         // colorize, click, mc or cloze - chosen by the user and sent to the
@@ -159,32 +159,19 @@ impl Vislcg3NounSgEnhancer {
                 // the exercise.
                 for i in 0..cgt.readings.len() {
                     let reading = &cgt.readings[i];
-                    let mut lemma = String::new();
-                    let mut stemtype = String::new();
-                    let mut distractors = String::new();
 
                     if self.contains_tag(reading, con_t, &enhancement_type) {
-                        if enhancement_type == "cloze" || enhancement_type == "mc" {
-                            // get lemma from the CG reading
-                            lemma = self.get_lemma(reading)?;
-                        }
-                        if enhancement_type == "mc" {
-                            let mut prop = false;
-                            // Proper nouns have the tag "Prop" in the
-                            // morphological information. This is needed when
-                            // generating distractors.
-                            if self.contains_tag(reading, "Prop", &enhancement_type) {
-                                prop = true;
+                        let fields = self.reading_fields(reading, &enhancement_type);
+                        let (lemma, distractors) = match fields {
+                            Ok(fields) => fields,
+                            // a reading whose base form or generator input
+                            // cannot be built is dropped on its own, not
+                            // together with the rest of the document
+                            Err(e) => {
+                                debug!("no exercise fields for {:?}: {}", reading, e);
+                                continue;
                             }
-                            // get stemtype from the CG reading, if any of
-                            // these: G3, G7, NomAg
-                            stemtype = self.get_stem_type(reading);
-                            // generate the distractors, based on the lemma,
-                            // stemtype and if it is a proper noun or not
-                            distractors = self.get_distractors(&lemma, &stemtype, prop)?;
-                        }
-                        // Delete # from the lemma of compound words if any
-                        lemma = lemma.replace("#", "");
+                        };
                         // make new enhancement
                         let mut e = Enhancement::default();
                         e.relevant = true;
@@ -211,6 +198,36 @@ impl Vislcg3NounSgEnhancer {
 
         info!("Finished N Sg enhancement");
         Ok(())
+    }
+
+    /// The base form and the distractor forms an exercise type needs. The
+    /// two activities that only mark the token up carry neither, so both
+    /// come back empty for them.
+    fn reading_fields(&self, cgr: &CgReading, enhancement_type: &str) -> Result<(String, String)> {
+        let mut lemma = String::new();
+        let mut distractors = String::new();
+
+        if enhancement_type == "cloze" || enhancement_type == "mc" {
+            // get lemma from the CG reading
+            lemma = self.get_lemma(cgr)?;
+        }
+        if enhancement_type == "mc" {
+            let mut prop = false;
+            // Proper nouns have the tag "Prop" in the morphological
+            // information. This is needed when generating distractors.
+            if self.contains_tag(cgr, "Prop", enhancement_type) {
+                prop = true;
+            }
+            // get stemtype from the CG reading, if any of these: G3, G7,
+            // NomAg
+            let stemtype = self.get_stem_type(cgr);
+            // generate the distractors, based on the lemma, stemtype and if
+            // it is a proper noun or not
+            distractors = self.get_distractors(&lemma, &stemtype, prop)?;
+        }
+
+        // Delete # from the lemma of compound words if any
+        Ok((lemma.replace("#", ""), distractors))
     }
 
     /// Determines whether the given token is safe, i.e. unambiguous.
@@ -269,8 +286,8 @@ impl Vislcg3NounSgEnhancer {
     }
 
     /// Obtains the lemma from the CG reading.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2]
     fn get_lemma(&self, cgr: &CgReading) -> Result<String> {
         let mut lemma = String::new();
 
@@ -299,8 +316,8 @@ impl Vislcg3NounSgEnhancer {
     }
 
     /// Generates distractors for the multiple choice exercise.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
     fn get_distractors(&self, lemma: &str, stemtype: &str, propernoun: bool) -> Result<String> {
         let distract_forms = [
             "Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess",
@@ -657,7 +674,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2/test]
     #[test]
     fn lemma_strips_quotes_and_last_quoted_tag_wins() {
         let enhancer = enhancer();
@@ -686,7 +703,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2/test]
     #[test]
     fn lemma_fails_on_empty_or_lone_quote_tag() {
         let enhancer = enhancer();
@@ -704,7 +721,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
@@ -735,7 +752,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
@@ -770,7 +787,37 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2/test]
+    #[test]
+    fn a_malformed_reading_reports_instead_of_unwinding() {
+        let enhancer = enhancer();
+        let broken = reading(&["", "N", "Sg", "Nom"]);
+
+        // The two activities that mark the token up and nothing more need
+        // neither field, so nothing can fail for them.
+        assert_eq!(
+            enhancer.reading_fields(&broken, "colorize").unwrap(),
+            (String::new(), String::new())
+        );
+
+        let err = enhancer.reading_fields(&broken, "cloze").unwrap_err();
+
+        assert!(
+            err.to_string().contains("string index out of range"),
+            "{err}"
+        );
+
+        // A well-formed reading still yields its base form, with the
+        // compound boundary deleted.
+        assert_eq!(
+            enhancer
+                .reading_fields(&reading(&["\"girji#gahppir\"", "N", "Sg", "Nom"]), "cloze")
+                .unwrap(),
+            ("girjigahppir".to_string(), String::new())
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2/test]
     #[test]
     fn distractors_hold_only_generated_surface_forms() {
         let enhancer = enhancer();
@@ -796,7 +843,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2/test]
     #[test]
     fn a_compound_lemma_takes_the_analyser_branch() {
         let enhancer = enhancer();

@@ -59,7 +59,7 @@ fn initialize_without_the_parameter_fails() {
     assert_eq!(enhancer.conneg_tags, None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+2/test]
 #[test]
 fn process_leaves_a_cancelled_document_untouched() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -75,7 +75,7 @@ fn process_leaves_a_cancelled_document_untouched() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+2/test]
 #[test]
 fn process_wraps_each_conneg_token_in_numbered_span() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -92,7 +92,7 @@ fn process_wraps_each_conneg_token_in_numbered_span() {
     assert_eq!(
         first.enhance_start,
         "<span id=\"WERTi-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-1\" \
-         class=\"wertiviewtoken  wertiviewConNeg\"lemma=\"boahtit\">"
+         class=\"wertiviewtoken wertiviewConNeg\" lemma=\"boahtit\">"
     );
     assert_eq!(first.enhance_end, "</span>");
 
@@ -101,11 +101,11 @@ fn process_wraps_each_conneg_token_in_numbered_span() {
     assert_eq!(
         second.enhance_start,
         "<span id=\"WERTi-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-2\" \
-         class=\"wertiviewtoken  wertiviewConNeg\"lemma=\"boahtit\">"
+         class=\"wertiviewtoken wertiviewConNeg\" lemma=\"boahtit\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn morphological_forms_emit_six_distractors_and_answer() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -126,7 +126,7 @@ fn morphological_forms_emit_six_distractors_and_answer() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn morphological_forms_keep_reading_without_syntax_tag() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -143,7 +143,7 @@ fn morphological_forms_keep_reading_without_syntax_tag() {
     assert!(err.to_string().contains("end -1"));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_drops_the_language_tag() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -155,7 +155,7 @@ fn write_lemma_and_analyses_drops_the_language_tag() {
     assert_eq!(line, "boahtit+V+Ind+Prs+ConNeg\n");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_needs_a_separator() {
     let enhancer = Vislcg3ConNegEnhancer::default();

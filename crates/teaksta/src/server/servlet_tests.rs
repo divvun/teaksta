@@ -332,7 +332,7 @@ fn get_reports_unavailable_combination_without_pipeline() {
     assert!(resp.body.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2/test]
 #[test]
 fn post_rejects_an_unsupported_protocol_version_with_490() {
     let mut servlet = WertiServlet::new();
@@ -351,7 +351,7 @@ fn post_rejects_an_unsupported_protocol_version_with_490() {
     assert!(resp.content_type.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2/test]
 #[test]
 fn post_reports_an_unknown_topic_with_491() {
     let root = temp_root();
@@ -371,7 +371,7 @@ fn post_reports_an_unknown_topic_with_491() {
     assert!(resp.body.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2/test]
 #[test]
 fn post_reports_topic_without_requested_language_with_492() {
     let root = temp_root();

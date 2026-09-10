@@ -16,7 +16,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn]
 > private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2]
 > Parses the inverted-FST generator output file written by the `mc`
 > pipeline, turns it into per-token distractor lists, and adds the matching
 > `Enhancement` annotations to the CAS.
@@ -43,9 +43,11 @@
 >   Then constructs an `Enhancement` on the CAS with `relevant` = true,
 >   `begin`, `end`, `enhanceStart` = the (now attribute-augmented)
 >   `spanTag.getSpanTagStart()` and `enhanceEnd` = `spanTag.getSpanTagEnd()`
->   (`</span>`), and adds it to the CAS indexes. If `distractforms` is
->   empty the whole `Word` line is ignored and that token gets no
->   enhancement at all.
+>   (`</span>`), and adds it to the CAS indexes. Then clears
+>   `distractforms` and `splitted_go`: the block just consumed described
+>   this token and no other. If `distractforms` is empty the whole `Word`
+>   line is ignored and that token gets no enhancement at all — which is
+>   what a second `Word` line arriving before the next marker gets.
 > - Line containing the marker `ñôŃßĘńŠē`: closes off the current block.
 >   Sets `splitted_go` to `generatorOutput.split("\\s")`, resets
 >   `generatorOutput` to empty, resets `distractforms` to empty, and
@@ -73,7 +75,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn]
 > private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2]
 > Parses the inverted-FST generator output file written by the `cloze`
 > pipeline, turns it into a per-token list of acceptable surface forms, and
 > adds the matching `Enhancement` annotations to the CAS. Structurally the
@@ -99,8 +101,11 @@
 >   `SpanTag`. Then constructs an `Enhancement` on the CAS with `relevant`
 >   = true, `begin`, `end`, `enhanceStart` = the augmented
 >   `spanTag.getSpanTagStart()` and `enhanceEnd` = `spanTag.getSpanTagEnd()`
->   (`</span>`), and adds it to the CAS indexes. If `possible_forms` is
->   empty the `Word` line is ignored and the token gets no enhancement.
+>   (`</span>`), and adds it to the CAS indexes. Then clears
+>   `possible_forms`: the block just consumed described this token and no
+>   other. If `possible_forms` is empty the `Word` line is ignored and the
+>   token gets no enhancement, which is what a second `Word` line arriving
+>   before the next marker gets.
 > - Line containing the marker `ñôŃßĘńŠē`: closes off the current block.
 >   Resets `generatorOutput` to empty and `possible_forms` to empty, then
 >   tokenises the accumulated `generatorOutput` on default whitespace. Each
@@ -170,7 +175,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2]
 > Consumes `CGToken` annotations produced by the vislcg3 analysis stage and
 > produces `Enhancement` annotations wrapping every finite North Sámi verb
 > form in an HTML `<span>`.
@@ -228,12 +233,12 @@
 >
 > Builds the span start tag as
 > `<span id="` + `EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count)` +
-> `" class="wertiviewtoken  wertiviewVerbConjugation">`, where `count` is
+> `" class="wertiviewtoken wertiviewVerbConjugation">`, where `count` is
 > the current counter's `value` field read directly, and `get_id` yields
-> `spanClass + "-" + id`. The class attribute contains two spaces between
-> `wertiviewtoken` and `wertiviewVerbConjugation`. Wraps it in a `SpanTag`
-> and calls `addAttribute("lemma", lemma)`. Stores `word -> spanTag` in
-> `wordToSpanMap`.
+> `spanClass + "-" + id`. The class attribute holds `wertiviewtoken` and
+> `wertiviewVerbConjugation` separated by a single space. Wraps it in a
+> `SpanTag` and calls `addAttribute("lemma", lemma)`. Stores
+> `word -> spanTag` in `wordToSpanMap`.
 >
 > Then, by activity:
 >
@@ -249,6 +254,12 @@
 >   `word.getBegin()`, `end` = `word.getEnd()`, `enhanceStart` =
 >   `spanTag.getSpanTagStart()`, `enhanceEnd` = `spanTag.getSpanTagEnd()`
 >   (`</span>`), and adds it to the CAS indexes. No external process runs.
+>
+> In the `mc` and `cloze` branches, a reading the topic cannot turn into a
+> generator input — one whose tag list has no mood slot, one carrying more
+> tags than the fixed array holds — is reported at debug level and
+> contributes no record. Only that reading is dropped; the token walk carries
+> on and every other token is still enhanced.
 >
 > After the token loop both writers are closed (flushing their buffers).
 >
@@ -294,35 +305,28 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2]
 > Strips analysis tags that the norm generator FST does not accept from
 > `input_str` and returns the result. Iterates the instance array
 > `tags_tbr` by index `h` from `0` to `tags_tbr.length - 1`.
 >
-> For every element except the last, the element is treated as a literal:
-> if `input_str` contains it, every occurrence is replaced with the empty
-> string. The literal entries, in order, are `+Err/Orth`, `+Err/Orth-a-á`,
-> `+Err/Orth-nom-gen`, `+Err/Orth-nom-acc`, `+Err/CmpSub`,
-> `+Err/MissingSpace`, `+Err/MissingHyph`, `+Err/Hyph`, `+Err/SpaceCmp`,
-> `+Err/Spellrelax`, `+Allegro`.
+> Every element except the last is a literal: every occurrence is replaced
+> with the empty string. The literal entries, in declaration order, are
+> `+Err/Orth`, `+Err/Orth-a-á`, `+Err/Orth-nom-gen`, `+Err/Orth-nom-acc`,
+> `+Err/CmpSub`, `+Err/MissingSpace`, `+Err/MissingHyph`, `+Err/Hyph`,
+> `+Err/SpaceCmp`, `+Err/Spellrelax`, `+Allegro`. They are applied longest
+> first rather than in that order: `+Err/Orth` is a prefix of the three
+> `+Err/Orth-*` variants, and stripping it first would leave the residues
+> `-a-á`, `-nom-gen` and `-nom-acc` where the longer entries no longer
+> match. Longest first, each variant comes out whole.
 >
 > The last element is the regular expression `\+<([a-zA-Z]*+_*+)*+>`
-> (matching tags of the shape `+<xxx_xxx>`). It is compiled and matched
-> against the current `input_str`; if a match is found, `group(0)` of the
-> first match is captured and every literal occurrence of that exact matched
-> text is replaced with the empty string.
+> (matching tags of the shape `+<xxx_xxx>`). It is compiled and every match
+> is removed, so a string containing two differently-spelled `+<...>` tags
+> loses both.
 >
 > Returns the accumulated string. Input is otherwise unchanged; there is no
 > trimming and no whitespace normalisation.
->
-> Quirk: because `+Err/Orth` is processed before the longer variants that
-> start with it, an input containing `+Err/Orth-a-á` has only the
-> `+Err/Orth` prefix removed, leaving the residue `-a-á` in the string; the
-> same happens for `+Err/Orth-nom-gen` (residue `-nom-gen`) and
-> `+Err/Orth-nom-acc` (residue `-nom-acc`), so those three array entries can
-> never match. Quirk: only the first regex match's literal text is removed,
-> so a string containing two differently-spelled `+<...>` tags keeps the
-> second one.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag]
 > public class SpanTag {
@@ -333,25 +337,24 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn]
-> Splices an HTML attribute into the stored opening tag by replacing every
-> occurrence of the literal `>` in `spanTagStart` with
-> `attributeName + "=\"" + attributeValue + "\">"`, and stores the result
-> back into `spanTagStart`. Returns nothing.
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn+2]
+> Splices exactly one HTML attribute into the stored opening tag,
+> immediately before the last `>` in `spanTagStart` and separated from
+> whatever precedes it by a space, and stores the result back into
+> `spanTagStart`. Returns nothing.
 >
-> Applied to `<span id="X" class="wertiviewtoken  wertiviewVerbConjugation">`
+> Applied to `<span id="X" class="wertiviewtoken wertiviewVerbConjugation">`
 > with name `lemma` and value `boahtit`, the field becomes
-> `<span id="X" class="wertiviewtoken  wertiviewVerbConjugation"lemma="boahtit">`.
+> `<span id="X" class="wertiviewtoken wertiviewVerbConjugation" lemma="boahtit">`.
 > Repeated calls therefore stack attributes immediately before the closing
 > `>`, in call order reading left to right.
 >
-> Quirk: no separating whitespace is inserted, so the new attribute is
-> written flush against the closing quote of the previous one. Quirk: the
-> replacement is a plain string replace-all, so a `>` anywhere else in the
-> tag (for example inside an attribute value) would also get the attribute
-> appended; callers avoid this by mapping `>` to `y` before building the id.
-> Quirk: `attributeValue` is not HTML-escaped, so a value containing `"` or
-> `>` corrupts the tag.
+> The value is HTML-escaped for a double-quoted attribute — `&`, `<`, `>`
+> and `"` become `&amp;`, `&lt;`, `&gt;` and `&quot;` — so no value can
+> close the attribute or the tag. A `>` elsewhere in the tag is left alone,
+> since only the last one is spliced before; callers still map `>` to `y`
+> before building the id, which keeps the ids they emit stable. A
+> `spanTagStart` holding no `>` is left exactly as it was.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.equals-fn]
 > @Override public boolean equals(Object obj)
@@ -550,7 +553,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn]
 > private String writeLemmaAndAnalyses(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn+2]
 > Builds the single generator input line for one token in the cloze
 > activity: the lemma plus its cleaned analysis string. Pure function of
 > `reading_str`; no I/O.
@@ -571,8 +574,10 @@
 > `removeTags` to strip the `+Err/...`, `+Allegro` and `+<...>` tags the
 > norm generator rejects, and returns the result.
 >
-> Throws `StringIndexOutOfBoundsException` if `reading_str` contains no `+`
-> (`indexOf` returns -1 and both substring calls receive invalid bounds).
+> Reports a failure if `reading_str` contains no `+` (`indexOf` returns -1
+> and both substring calls receive invalid bounds). `process` logs that at
+> debug level and drops the one reading; the rest of the document is
+> enhanced as usual.
 >
 > Quirk: the `length() - 1` upper bound always chops the last character of
 > the analysis, so a reading whose tail is not the `>` of `+<sme>` loses a
@@ -581,7 +586,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn]
 > private String writeMorphologicalForms(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2]
 > Builds the newline-separated generator input block for one token: all
 > paradigm-sibling forms that will become multiple-choice distractors, plus
 > the correct form last. Pure function of `reading_str`; no I/O.
@@ -591,9 +596,11 @@
 > `lemma = tag[0]`, `pos = tag[1]`, `trans = tag[2]`, `mood = tag[3]`,
 > `tense = tag[4]`, `person = tag[5]`. Only `lemma` and `mood` are used;
 > `pos`, `trans`, `tense` and `person` are dead. A reading with more than
-> 20 `+`-separated tokens throws `ArrayIndexOutOfBoundsException`; a reading
-> with fewer than four tokens leaves `mood` null and the first `mood.equals`
-> call throws `NullPointerException`.
+> 20 `+`-separated tokens overruns the array; a reading with fewer than four
+> tokens leaves `mood` null and the first `mood.equals` call has nothing to
+> compare. Either failure is reported to `process`, which logs it at debug
+> level and drops that one reading rather than abandoning the enhancement of
+> the whole document.
 >
 > Starts with an empty `generationInput` and, depending on `mood`, appends
 > `lemma + "+" + form + "\n"` for every `form` in the matching table (the

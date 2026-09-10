@@ -31,7 +31,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
     assert!(err.to_string().contains("finverbTags"), "{err}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2/test]
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -68,7 +68,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!(
         first.enhance_start,
         "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-1\" \
-         class=\"wertiviewtoken  wertiviewVerbConjugation\"lemma=\"boahtit\">"
+         class=\"wertiviewtoken wertiviewVerbConjugation\" lemma=\"boahtit\">"
     );
     assert_eq!(first.enhance_end, "</span>");
 
@@ -79,11 +79,11 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!(
         second.enhance_start,
         "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-2\" \
-         class=\"wertiviewtoken  wertiviewVerbConjugation\"lemma=\"boahtit\">"
+         class=\"wertiviewtoken wertiviewVerbConjugation\" lemma=\"boahtit\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2/test]
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -117,7 +117,7 @@ fn process_skips_readings_missing_verb_or_person_tag() {
     assert!(cancelled.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_emits_indicative_then_answer() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -152,7 +152,7 @@ fn write_morphological_forms_emits_indicative_then_answer() {
     assert!(!block.contains("Pl3"));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_selects_the_table_by_mood() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -197,7 +197,7 @@ fn write_morphological_forms_selects_the_table_by_mood() {
     assert_eq!(unknown, "boahtit+V+IV+Xyz+Prs+Sg3\n");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_trims_answer_at_syntactic_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -220,7 +220,7 @@ fn write_morphological_forms_trims_answer_at_syntactic_tag() {
     assert_eq!(tagged.lines().last().unwrap(), "boahtit+V+IV+Ind+Prs+Sg1");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_rejects_null_mood_and_overflow() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -240,7 +240,7 @@ fn write_morphological_forms_rejects_null_mood_and_overflow() {
     assert_eq!(overflow.to_string(), "Index 20 out of bounds for length 20");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_drops_langtag_and_tail() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -270,7 +270,7 @@ fn write_lemma_and_analyses_drops_langtag_and_tail() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_truncates_or_rejects_input() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();

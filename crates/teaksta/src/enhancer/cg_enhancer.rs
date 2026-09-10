@@ -24,7 +24,7 @@ use std::time::Instant;
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
-use tracing::info;
+use tracing::{debug, info};
 
 pub use crate::enhancer::cg_span::{MutableInt, SpanTag, Word};
 use crate::morpho::MorphoPipeline;
@@ -71,6 +71,15 @@ pub const FST: &str = constants::AN_FST;
 /// treats as a pattern rather than a literal.
 static TAG_REGEX: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(TAGS_TBR[TAGS_TBR.len() - 1]).expect("tags_tbr trailing pattern"));
+
+/// The literal entries of [`TAGS_TBR`], longest first. `+Err/Orth` is a
+/// prefix of its four `+Err/Orth-*` siblings, so the order is what keeps a
+/// shorter entry from consuming a longer one and stranding its suffix.
+static TAGS_TBR_LITERALS: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
+    let mut literals: Vec<&'static str> = TAGS_TBR[..TAGS_TBR.len() - 1].to_vec();
+    literals.sort_by_key(|tag| std::cmp::Reverse(tag.len()));
+    literals
+});
 
 /// A failure of the generator seam. This is the only step covered by the
 /// `catch (IOException | InterruptedException)` that wraps the Java body:
@@ -220,29 +229,23 @@ pub fn lemma_distractors(reading_str: &str, distract_forms: &[&str]) -> Result<S
     Ok(remove_tags(&generation_input))
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2]
 pub fn remove_tags(input_str: &str) -> String {
     let mut input_str = input_str.to_string();
-    for h in 0..TAGS_TBR.len() {
-        if h < TAGS_TBR.len() - 1 {
-            if input_str.contains(TAGS_TBR[h]) {
-                input_str = input_str.replace(TAGS_TBR[h], "");
-            }
-        } else if let Some(m) = TAG_REGEX.find(&input_str) {
-            let mytag = m.as_str().to_string();
-            input_str = input_str.replace(&mytag, "");
-        }
+    for tag in TAGS_TBR_LITERALS.iter() {
+        input_str = input_str.replace(tag, "");
     }
-    input_str
+    // every `<...>` tag goes, not only the first spelling to match
+    TAG_REGEX.replace_all(&input_str, "").into_owned()
 }
 
 /// The reading a token was accepted on, plus the hint tag the same pass
@@ -379,7 +382,7 @@ impl Run<'_> {
         for cgt in &cg_tokens {
             let found = self.matcher.select(cgt, &mut scan.hint_is_valid);
             if found.valid {
-                self.enhance_token(doc, cgt, &found, &mut scan)?;
+                self.enhance_token(doc, cgt, &found, &mut scan);
             } else if !found.hint_tag.is_empty() {
                 scan.hint_distance = 0;
                 emit_hint_span(doc, self.outer, cgt, &found.hint_tag, &mut scan);
@@ -413,13 +416,7 @@ impl Run<'_> {
 
     /// Build the span for an accepted token and either enhance in place or
     /// queue the token for the generator.
-    fn enhance_token(
-        &self,
-        doc: &mut Document,
-        cgt: &CgToken,
-        found: &Selection,
-        scan: &mut Scan,
-    ) -> Result<()> {
+    fn enhance_token(&self, doc: &mut Document, cgt: &CgToken, found: &Selection, scan: &mut Scan) {
         if self.spec.log_chosen_reading {
             info!("This reading will be used={}", found.reading);
         }
@@ -438,7 +435,7 @@ impl Run<'_> {
 
         // was: wertiviewhit
         let span_tag_start = format!(
-            "<span id=\"{}\" class=\"wertiviewtoken  {}\">",
+            "<span id=\"{}\" class=\"wertiviewtoken {}\">",
             enhancer_utils::get_id(&format!("WERTi-span-{}", span_reading_string), count),
             self.spec.span_class
         );
@@ -454,11 +451,16 @@ impl Run<'_> {
         scan.hint_is_valid = false;
 
         scan.word_to_span_map.insert(word.clone(), span_tag.clone());
-        self.queue_for_generator(doc, &word, &span_tag, found, scan)
+        self.queue_for_generator(doc, &word, &span_tag, found, scan);
     }
 
     /// mc and cloze both defer the span to the generator, writing one record
     /// per token; every other activity enhances straight away.
+    ///
+    /// A reading the topic cannot turn into a generator input — one carrying
+    /// no syntactic tag, or a case marker without the number the cut needs —
+    /// is dropped on its own rather than abandoning the enhancement of the
+    /// whole document.
     fn queue_for_generator(
         &self,
         doc: &mut Document,
@@ -466,7 +468,7 @@ impl Run<'_> {
         span_tag: &SpanTag,
         found: &Selection,
         scan: &mut Scan,
-    ) -> Result<()> {
+    ) {
         if self.mc {
             // generate the distractors, with lemma, gender, animacy, number
             // and case (needed for the form generator)
@@ -474,16 +476,19 @@ impl Run<'_> {
                 true => found.reading.replace("+<sme>", ""),
                 false => found.reading.clone(),
             };
-            let block = (self.forms)(&reading)?;
-            push_record(&mut scan.generator_input, &block, word);
+            match (self.forms)(&reading) {
+                Ok(block) => push_record(&mut scan.generator_input, &block, word),
+                Err(e) => debug!("no distractor input for {}: {}", reading, e),
+            }
         } else if self.cloze {
             // extract lemma and analyses from the reading
-            let block = (self.analyses)(&found.reading)?;
-            push_record(&mut scan.generator_input_cloze, &block, word);
+            match (self.analyses)(&found.reading) {
+                Ok(block) => push_record(&mut scan.generator_input_cloze, &block, word),
+                Err(e) => debug!("no cloze input for {}: {}", found.reading, e),
+            }
         } else {
             push_enhancement(doc, word.get_begin(), word.get_end(), span_tag);
         }
-        Ok(())
     }
 }
 
@@ -544,16 +549,16 @@ pub fn run(
 /// The output from the generator is used to create distractors and is
 /// placed into the right place in the span tag. Afterwards an enhancement
 /// with the span tag is created and passed to the cas.
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2]
 pub fn attach_distractors(
     doc: &mut Document,
     outer: usize,
@@ -589,6 +594,10 @@ pub fn attach_distractors(
                 if trace.enhancement {
                     info!("Enhancement={:?}", e);
                 }
+                // the block belongs to this token alone: a further Word
+                // record before the next marker has no forms of its own
+                distractforms.clear();
+                splitted_go.clear();
             }
         }
         // the marker (ñôŃßĘńŠē) was found, begin to process the generator
@@ -616,16 +625,16 @@ pub fn attach_distractors(
 
 /// Cloze counterpart of the distractor reader: every generable form is
 /// attached to the span, with no answer singled out and no minimum count.
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2]
 pub fn attach_possible_forms(
     doc: &mut Document,
     outer: usize,
@@ -653,6 +662,9 @@ pub fn attach_possible_forms(
                 }
                 span_tag.add_attribute("possibleforms", &possible_forms);
                 push_enhancement(doc, word.get_begin(), word.get_end(), span_tag);
+                // the block belongs to this token alone: a further Word
+                // record before the next marker has no forms of its own
+                possible_forms.clear();
             }
         }
         // the marker (ñôŃßĘńŠē) was found, begin to process the generator

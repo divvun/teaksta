@@ -59,18 +59,18 @@ fn exclude_find(input: &str) -> bool {
 /// čáhci+N+<sme>+Sem/Plc_Substnc_Wthr+Sg+Nom that was skipped is now
 /// considered valid.
 ///
-/// Quirk: alternation binds looser than the concatenation around it, so each
-/// case branch reads as `…Sg` or `Pl\+Nom…` rather than as a number followed
-/// by a case, and the bare `Sg` alternative accepts a reading carrying no
-/// case tag at all.
+/// The number alternation is grouped, so a branch is one number followed by
+/// one case — the thirteen combinations `NTags` names. The essive carries no
+/// number, matching the bare `Ess` entry of that same list, and the
+/// attributive branch stands on its own.
 const NUMBER_PATTERN: &str = concat!(
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Nom(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Acc(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Gen(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Ill(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Loc(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Com(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
-    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?Sg|Pl\+Ess(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Nom(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Acc(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Gen(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Ill(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Loc(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?(Sg|Pl)\+Com(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
+    r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?\+Ess(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?|",
     r"([a-zA-Z]*[0-9]*\+)?(Sem/([a-zA-Z]*_*)*\+)?\+Attr(\+<([a-zA-Z]*_*)*>)?(\+[a-zA-Z]*[0-9])?(\+[a-zA-Z]*)?(\+Foc/[a-zA-Z]*)?(\+[a-zA-Z]*)?",
 );
 
@@ -259,8 +259,8 @@ impl Vislcg3NounEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
@@ -269,8 +269,8 @@ impl Vislcg3NounEnhancer {
 
     /// Create all relevant morphological forms of the current token. It is the
     /// input for the distractor generation.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2]
     fn write_morphological_forms(&self, reading_str: &str) -> Result<String> {
         // add reading_str as last element in generationInput which will be
         // used as correct_answer
@@ -298,8 +298,8 @@ impl Vislcg3NounEnhancer {
         Ok(cg_enhancer::remove_tags(&generation_input2))
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2]
     fn write_lemma_and_analyses(&self, reading_str: &str) -> Result<String> {
         let plus = match reading_str.find('+') {
             Some(i) => i,

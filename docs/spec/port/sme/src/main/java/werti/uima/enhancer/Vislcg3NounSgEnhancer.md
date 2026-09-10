@@ -105,7 +105,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
 > private String getDistractors(String lemma, String stemtype, boolean propernoun)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
 > Generates the wrong-answer surface forms for the multiple-choice activity by driving the
 > Giellatekno finite-state transducers as external processes. Returns a single string of
 > generated word forms, each followed by one space (so the result has a trailing space and
@@ -170,8 +170,9 @@
 > Quirk: the lemma is interpolated into a shell double-quoted string with no escaping, so a
 > lemma containing `"`, `$`, `` ` `` or `\` alters or injects into the command. Quirk: in the
 > compound branch, an empty or malformed analyser response makes the tab-split element
-> access fail with an index-out-of-bounds error that escapes uncaught, since only
-> `IOException` is handled. Quirk: the stem type is compared against the empty string by
+> access fail with an index-out-of-bounds error, since only `IOException` is handled; the
+> failure is reported to `process`, which logs it at debug level and skips that one
+> reading rather than abandoning the enhancement of the whole document. Quirk: the stem type is compared against the empty string by
 > reference identity rather than by value; it works only because both sides are interned
 > string literals. Quirk: the compound branch strips exactly the literal `Sg+Nom`, so if the
 > analyser's first analysis is in some other case the leftover case tags remain in the
@@ -181,7 +182,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
 > private String getLemma(CGReading cgr)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2]
 > Extracts the base form from a CG reading. Iterates the reading's tag strings in list
 > order; for every tag whose first character is a double quote (`"`), sets the running
 > lemma to that tag with its first and last characters removed (i.e. strips the
@@ -195,8 +196,9 @@
 > Compound lemmas retain their `#` boundary markers here (e.g. `girji#gahppir`); callers
 > strip or exploit them themselves. A tag that is the empty string, or a tag consisting of
 > a single `"` character, makes the character/substring access fail with an index-out-of-
-> bounds error that propagates to the caller. No UTF-8 re-encoding is performed; the
-> string is used as it came out of the CG output, which is already decoded as UTF-8.
+> bounds error; the failure is reported to `process`, which logs it at debug level and
+> skips that one reading. No UTF-8 re-encoding is performed; the string is used as it came
+> out of the CG output, which is already decoded as UTF-8.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn]
 > private String getStemType(CGReading cgr)
@@ -250,7 +252,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+2]
 > The annotator body. Consumes `CGToken` annotations (with their `readings` array of
 > `CGReading`) from the CAS and produces `Enhancement` annotations; it does not read or
 > modify any other annotation type, and it never removes anything.
@@ -279,6 +281,11 @@
 > distractor surface forms are generated from lemma, stem type and the proper-noun flag by
 > spawning the external lookup FST. Afterwards every `#` compound boundary is deleted from
 > the lemma. For `colorize` and `click`, lemma and distractors stay empty.
+>
+> A reading whose base form or whose distractor generation cannot be built — an empty tag,
+> a tag that is a lone `"`, an analyser response the compound branch cannot split — is
+> reported at debug level and skipped on its own. The reading scan moves on to the next
+> reading of the same token and the rest of the document is enhanced as usual.
 >
 > A new `Enhancement` feature structure is created over the CAS with `relevant` set to
 > true, `begin` set to the token's begin offset and `end` set to the token's end offset.

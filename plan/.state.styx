@@ -2,11 +2,12 @@ schema_version 7
 
 assertions (
     {id dioxus-shell, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:33.856902Z}
-    {id idiomatize-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:39.246331Z}
-    {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
-    {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
-    {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
+    {id exercise-cloze, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:49:41.029218Z}
     {id exercise-colorize-click, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:48:23.496494Z}
     {id exercise-mc, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:49:32.523683Z}
-    {id exercise-cloze, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:49:41.029218Z}
+    {id fix-legacy-quirks, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:48:26.010262Z}
+    {id idiomatize-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:39.246331Z}
+    {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
+    {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
+    {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
 )

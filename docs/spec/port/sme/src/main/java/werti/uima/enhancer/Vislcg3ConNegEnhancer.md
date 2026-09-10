@@ -16,7 +16,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
 > private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2]
 > Reads the inverted-FST generator output written by the "mc" pipeline, turns
 > each token's generated forms into a distractor set, and adds the corresponding
 > Enhancement annotations to the CAS. Returns nothing.
@@ -36,9 +36,12 @@
 > distractors="<distractforms>" then answer="<last element of splitted_go>". A
 > new Enhancement is then created with relevant=true, the parsed begin and end,
 > enhanceStart = spanTag.getSpanTagStart() and enhanceEnd = spanTag.getSpanTagEnd()
-> ("</span>"), indexed via cas.addFsToIndexes, and logged at info level. When
-> distractforms is empty the whole "Word" line is ignored, so tokens with too few
-> distractors produce no enhancement.
+> ("</span>"), indexed via cas.addFsToIndexes, and logged at info level.
+> distractforms and splitted_go are then cleared: the block just consumed
+> described this token and no other. When distractforms is empty the whole
+> "Word" line is ignored, so tokens with too few distractors produce no
+> enhancement — and so does a second "Word" line arriving before the next
+> marker.
 >
 > If the line contains the literal marker "ñôŃßĘńŠē": the accumulated
 > generatorOutput is tokenised on whitespace, and splitted_go is set to
@@ -66,7 +69,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
 > private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2]
 > The cloze counterpart of generateSpanTagWithDistractors: reads the generator
 > output written by the "cloze" pipeline, collects each token's possible surface
 > forms, and adds the corresponding Enhancement annotations to the CAS. Returns
@@ -85,7 +88,10 @@
 > possibleforms="<possible_forms>"; a new Enhancement is created with
 > relevant=true, the parsed begin and end, enhanceStart = spanTag.getSpanTagStart()
 > and enhanceEnd = spanTag.getSpanTagEnd() ("</span>"), and indexed via
-> cas.addFsToIndexes. When possible_forms is empty the "Word" line is ignored.
+> cas.addFsToIndexes. possible_forms is then cleared: the block just consumed
+> described this token and no other. When possible_forms is empty the "Word"
+> line is ignored, which is also what a second "Word" line arriving before the
+> next marker gets.
 >
 > If the line contains the literal marker "ñôŃßĘńŠē": the accumulated
 > generatorOutput is tokenised on whitespace and then reset to ""; possible_forms
@@ -156,7 +162,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+2]
 > Per-CAS entry point. Consumes CGToken annotations (with their CGReading
 > FSArray) and produces Enhancement annotations wrapping connegative verb forms
 > in HTML span tags. Never throws AnalysisEngineProcessException in practice —
@@ -207,9 +213,9 @@
 >    is then read back as the occurrence counter.
 >  - word = Word(cgt.getBegin(), cgt.getEnd()).
 >  - spanTagStart = `<span id="` + EnhancerUtils.get_id("WERTi-span-" +
->    spanReadingString, counter) + `" class="wertiviewtoken  wertiviewConNeg">`,
->    where get_id joins its two arguments with "-". The class attribute contains
->    two consecutive spaces between "wertiviewtoken" and "wertiviewConNeg".
+>    spanReadingString, counter) + `" class="wertiviewtoken wertiviewConNeg">`,
+>    where get_id joins its two arguments with "-". The class attribute holds
+>    "wertiviewtoken" and "wertiviewConNeg" separated by a single space.
 >  - A SpanTag is built from that start tag and given the attribute
 >    lemma="<lemma>"; the pair (word, spanTag) is stored in wordToSpanMap.
 >
@@ -223,6 +229,11 @@
 >    relevant=true, begin/end taken from the word, enhanceStart = the span start
 >    tag (including the lemma attribute) and enhanceEnd = "</span>", then indexes
 >    it with cas.addFsToIndexes. No external process is run in this case.
+>
+> In the "mc" and "cloze" branches, a reading the topic cannot turn into a
+> generator input — one with no "+" for the lemma cut to land on — is reported
+> at debug level and contributes no record. Only that reading is dropped; the
+> token walk carries on and every other token is still enhanced.
 >
 > After the token loop both writers are closed.
 >
@@ -257,7 +268,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2]
 > Strips from `input_str` the analysis tags that the normative generator FST does
 > not accept, returning the cleaned string. Pure; the argument variable is
 > reassigned locally but the caller's string is unaffected.
@@ -269,19 +280,19 @@
 > "+Err/CmpSub", "+Err/MissingSpace", "+Err/MissingHyph", "+Err/Hyph",
 > "+Err/SpaceCmp", "+Err/Spellrelax", "+Allegro".
 >
+> The literals are applied longest first rather than in declaration order.
+> "+Err/Orth" is a prefix of "+Err/Orth-a-á", "+Err/Orth-nom-gen" and
+> "+Err/Orth-nom-acc", so removing it first would leave the residues "-a-á",
+> "-nom-gen" and "-nom-acc" behind, where the dedicated entries no longer match.
+> Longest first, each of the four comes out whole.
+>
 > The last element, `\+<([a-zA-Z]*+_*+)*+>`, is treated as a regex: it is
-> compiled and matched against the current string; if a match is found, the
-> matched text (group 0) is captured once and every literal occurrence of exactly
-> that text is removed. The pattern matches a "+" followed by "<", zero or more
-> runs of ASCII letters and underscores, and ">" — so it also removes "+<sme>".
+> compiled and every match is removed, so a string carrying two differently
+> spelled `+<xxx_xxx>` tags loses both. The pattern matches a "+" followed by
+> "<", zero or more runs of ASCII letters and underscores, and ">" — so it also
+> removes "+<sme>".
 >
 > Returns the resulting string.
->
-> Quirk: "+Err/Orth" is a prefix of "+Err/Orth-a-á", "+Err/Orth-nom-gen" and
-> "+Err/Orth-nom-acc" and is processed first, so those longer tags are only
-> partly removed and leave behind the residue "-a-á", "-nom-gen" or "-nom-acc".
-> Quirk: only the first distinct regex match is removed, so a string carrying two
-> different `+<xxx_xxx>` tags keeps the second one.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag]
 > public class SpanTag {
@@ -292,21 +303,22 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn]
-> Splices an attribute into the stored opening tag by replacing every ">"
-> character in `spanTagStart` with `attributeName + "=\"" + attributeValue + "\">"`,
-> and storing the result back into `spanTagStart`. Returns nothing; mutates the
-> SpanTag in place, so repeated calls stack attributes in call order, each one
-> ending up immediately to the left of the tag's closing ">".
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+2]
+> Splices exactly one attribute into the stored opening tag, immediately before
+> the last ">" in `spanTagStart` and separated from whatever precedes it by a
+> space, and stores the result back into `spanTagStart`. Returns nothing; mutates
+> the SpanTag in place, so repeated calls stack attributes in call order, each
+> one ending up immediately to the left of the tag's closing ">".
 >
-> No whitespace is inserted before the attribute name, so applying it to
-> `<span id="X" class="wertiviewtoken  wertiviewConNeg">` with ("lemma", "boahtit")
-> yields `<span id="X" class="wertiviewtoken  wertiviewConNeg"lemma="boahtit">` —
-> the new attribute abuts the preceding closing quote with no separator. Neither
-> the name nor the value is HTML-escaped or quote-escaped.
+> Applying it to `<span id="X" class="wertiviewtoken wertiviewConNeg">` with
+> ("lemma", "boahtit") yields
+> `<span id="X" class="wertiviewtoken wertiviewConNeg" lemma="boahtit">`.
 >
-> Quirk: the replacement is applied to all ">" occurrences, not just the last, so
-> a previously injected attribute value containing ">" would be corrupted.
+> The value is HTML-escaped for a double-quoted attribute — "&", "<", ">" and
+> '"' become "&amp;", "&lt;", "&gt;" and "&quot;" — so no value can close the
+> attribute or the tag. Only the last ">" is spliced before, so a ">" already
+> inside the tag stays where it is, and a `spanTagStart` holding no ">" is left
+> exactly as it was.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.equals-fn]
 > @Override public boolean equals(Object obj)
@@ -496,14 +508,15 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn]
 > private String writeLemmaAndAnalyses(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-lemma-and-analyses-fn+2]
 > Builds the single-line generator input for one cloze token — the lemma rejoined
 > to its own analysis tags — and returns it. Writes nothing itself; the caller
 > writes the returned string to the generator input file.
 >
 > Splits `reading_str` at its first "+": lemma_str is everything before it,
-> an_tmp is everything after it. A reading_str with no "+" raises
-> StringIndexOutOfBoundsException.
+> an_tmp is everything after it. A reading_str with no "+" reports a failure,
+> which `process` logs at debug level before dropping that one reading; the rest
+> of the document is enhanced as usual.
 >
 > Removes the literal "+<sme>" from an_tmp to produce analyses_str. If
 > analyses_str contains "@" at an index greater than 0, truncates analyses_str to
@@ -523,14 +536,16 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn]
 > private String writeMorphologicalForms(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.write-morphological-forms-fn+2]
 > Builds the newline-separated generator input block for one connegative verb
 > token: six finite distractor analyses plus the token's own correct analysis.
 > Returns that block as a string; writes nothing itself (the caller writes it to
 > the generator input file).
 >
 > Takes the lemma as the substring of `reading_str` before its first "+"; a
-> reading_str with no "+" raises StringIndexOutOfBoundsException.
+> reading_str with no "+" reports a failure, which `process` logs at debug level
+> before dropping that one reading rather than abandoning the enhancement of the
+> whole document.
 >
 > Emits, in this exact order, one line per entry of the fixed array
 > {"V+Ind+Prs+Sg1", "V+Ind+Prs+Sg2", "V+Ind+Prs+Sg3", "V+Ind+Prt+Sg1",
