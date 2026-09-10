@@ -38,7 +38,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -95,7 +95,26 @@
 > than XMI. XMI serialises a UIMA CAS and the port's document model is not one,
 > so there is nothing to write it as. The cache file keeps its `cas_<url>.xmi`
 > name, so an existing cache directory stays recognisable, and a file written by
-> a build whose document model differs fails to decode and lands in the same
-> info-logged handler as an unreadable file. Both the read and the write succeed
-> on a working deployment, so neither branch skips the postprocessor.
+> a build whose document model differs fails to decode and is unreadable like
+> any other.
+>
+> Port divergence: the cache file is the one input to the pipeline this process
+> did not produce, so the offsets it carries are checked before anything indexes
+> the text with them. Every span of the decoded document — tokens, CG tokens,
+> relevant texts, enhancements, sentences, enhancement ids and page segments —
+> has to be a readable stretch of the text that same file carries; one running
+> past the end, or ending before it begins, or landing inside a character, makes
+> the file unreadable exactly as a file that will not decode is. North Sámi is
+> multibyte throughout, so a document paired with the wrong text is off a
+> character boundary rather than merely out of range.
+>
+> Port divergence: a cache failure costs the request its cache, not its
+> enhancement. A file that cannot be read is logged at info as the original logs
+> it, and the request then takes the branch a missing file takes: the
+> preprocessor runs, and its output is written over the unreadable file, so the
+> page is whole again from the next request on. A file that cannot be written is
+> logged the same way and the postprocessor still runs. In the original, either
+> failure hands back a CAS the postprocessor never touched — from an unreadable
+> file, one holding no annotations at all, which renders as an empty page
+> answered as a success and stays that way for as long as the file does.
 

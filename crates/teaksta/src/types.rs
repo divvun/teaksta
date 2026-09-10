@@ -5,6 +5,7 @@
 //! The document is serialisable so the page handler can cache an analysed
 //! document between requests, which is what the UIMA XMI cache did.
 
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 
 /// One morphological reading of a token, as produced by the analyser +
@@ -121,10 +122,181 @@ impl Document {
         }
     }
 
-    /// The text covered by a `[begin, end)` span. Panics when the span is
-    /// not on a char boundary or out of range, matching the strictness of
-    /// the UIMA covered-text accessor.
-    pub fn covered_text(&self, begin: usize, end: usize) -> &str {
-        &self.text[begin..end]
+    /// The first span in the document that is not a readable stretch of
+    /// [`Document::text`], named by the store holding it, or `None` when
+    /// every span is readable.
+    ///
+    /// A document assembled by the pipeline stages is readable by
+    /// construction — every offset came from the text it indexes. One decoded
+    /// from the analysis cache is a file, so its offsets are checked here
+    /// before a stage indexes the text with them.
+    pub fn invalid_span(&self) -> Option<InvalidSpan> {
+        let mut spans = std::iter::empty()
+            .chain(spans_of("tokens", &self.tokens, |t| (t.begin, t.end)))
+            .chain(spans_of("cg_tokens", &self.cg_tokens, |t| (t.begin, t.end)))
+            .chain(spans_of("relevant_texts", &self.relevant_texts, |t| {
+                (t.begin, t.end)
+            }))
+            .chain(spans_of("enhancements", &self.enhancements, |e| {
+                (e.begin, e.end)
+            }))
+            .chain(spans_of("sentences", &self.sentences, |s| (s.begin, s.end)))
+            .chain(spans_of("enhancement_ids", &self.enhancement_ids, |i| {
+                (i.begin, i.end)
+            }))
+            .chain(spans_of("page.segments", &self.page.segments, |s| {
+                (s.begin, s.end)
+            }));
+
+        spans.find(|span| covered_text(&self.text, span.begin, span.end).is_err())
+    }
+}
+
+/// The text a `[begin, end)` span covers, or the failure naming the span when
+/// it runs past the end of the text, ends before it begins, or falls inside a
+/// multibyte character. North Sámi carries multibyte characters throughout, so
+/// an offset a byte off a character boundary is an ordinary consequence of a
+/// span paired with the wrong text rather than a remote one.
+///
+/// Every stage that reads the text at an annotation's offsets comes through
+/// here, so no offset the document carries can end a request by panicking.
+pub fn covered_text(text: &str, begin: usize, end: usize) -> Result<&str> {
+    text.get(begin..end)
+        .ok_or_else(|| anyhow!("span {}..{} is not within the document text", begin, end))
+}
+
+/// A span that does not index the text it belongs to, named by its store.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InvalidSpan {
+    pub store: &'static str,
+    pub begin: usize,
+    pub end: usize,
+}
+
+impl std::fmt::Display for InvalidSpan {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} span {}..{} is not a stretch of the document text",
+            self.store, self.begin, self.end
+        )
+    }
+}
+
+fn spans_of<T>(
+    store: &'static str,
+    items: &[T],
+    span: impl Fn(&T) -> (usize, usize),
+) -> impl Iterator<Item = InvalidSpan> {
+    items.iter().map(move |item| {
+        let (begin, end) = span(item);
+        InvalidSpan { store, begin, end }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A word whose second character is two bytes wide, so an offset one byte
+    /// past its start is inside a character rather than between two.
+    const TEXT: &str = "Sámegiella";
+
+    fn covered(begin: usize, end: usize) -> Option<String> {
+        covered_text(TEXT, begin, end).ok().map(str::to_string)
+    }
+
+    #[test]
+    fn a_mid_character_span_is_uncovered() {
+        assert_eq!(covered(0, 1).as_deref(), Some("S"));
+        assert_eq!(covered(0, TEXT.len()).as_deref(), Some(TEXT));
+        assert_eq!(covered(4, 4).as_deref(), Some(""));
+        // `á` occupies bytes 1 and 2.
+        assert_eq!(covered(1, 3).as_deref(), Some("á"));
+        assert_eq!(covered(0, 2), None);
+        assert_eq!(covered(2, 4), None);
+    }
+
+    #[test]
+    fn a_span_outside_the_text_is_uncovered() {
+        assert_eq!(covered(0, TEXT.len() + 1), None);
+        assert_eq!(covered(TEXT.len() + 1, TEXT.len() + 2), None);
+        assert_eq!(covered(5, 3), None);
+        assert_eq!(covered(usize::MAX, usize::MAX), None);
+        assert_eq!(
+            covered_text(TEXT, 0, 99).unwrap_err().to_string(),
+            "span 0..99 is not within the document text"
+        );
+    }
+
+    /// The store the document reports an unreadable span in, once `add` has
+    /// put one more annotation beside a readable token.
+    fn reported_store(add: impl FnOnce(&mut Document)) -> Option<&'static str> {
+        let mut doc = Document::new(TEXT, "sme");
+        doc.tokens.push(Token {
+            begin: 0,
+            end: 1,
+            ..Token::default()
+        });
+        add(&mut doc);
+        doc.invalid_span().map(|span| span.store)
+    }
+
+    #[test]
+    fn every_store_is_checked_for_unreadable_spans() {
+        assert_eq!(reported_store(|_| {}), None);
+        // Each span below is either inside the two-byte `á` or past the end.
+        assert_eq!(
+            reported_store(|doc| doc.tokens.push(Token {
+                begin: 0,
+                end: 2,
+                ..Token::default()
+            })),
+            Some("tokens")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.cg_tokens.push(CgToken {
+                begin: 0,
+                end: 99,
+                ..CgToken::default()
+            })),
+            Some("cg_tokens")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.relevant_texts.push(RelevantText {
+                begin: 2,
+                end: 4,
+                ..RelevantText::default()
+            })),
+            Some("relevant_texts")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.enhancements.push(Enhancement {
+                begin: 99,
+                end: 100,
+                ..Enhancement::default()
+            })),
+            Some("enhancements")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.sentences.push(SentenceAnnotation { begin: 0, end: 2 })),
+            Some("sentences")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.enhancement_ids.push(EnhancementId {
+                begin: 0,
+                end: 2,
+                enh_id: 1,
+            })),
+            Some("enhancement_ids")
+        );
+        assert_eq!(
+            reported_store(|doc| doc.page.segments.push(TextSegment {
+                begin: 0,
+                end: 2,
+                ..TextSegment::default()
+            })),
+            Some("page.segments")
+        );
     }
 }

@@ -479,6 +479,31 @@ impl Processors {
         None
     }
 
+    /// One engine pair registered under one (language, activity), for tests
+    /// that need a pipeline to run without a descriptor tree on disk to build
+    /// it from.
+    #[cfg(test)]
+    pub(crate) fn of_flows(lang: &str, activity: &str, pre: Flow, post: Flow) -> Self {
+        let registered = |name: &str, flow: Flow| {
+            BTreeMap::from([(
+                lang.to_string(),
+                BTreeMap::from([(
+                    activity.to_string(),
+                    AnalysisEngine {
+                        name: name.to_string(),
+                        flow,
+                        ..AnalysisEngine::default()
+                    },
+                )]),
+            )])
+        };
+
+        Processors {
+            pre_map: registered("pre", pre),
+            post_map: registered("post", post),
+        }
+    }
+
     /// Private helper that auto-converts a string to another type, depending on
     /// a given type. The fallback strategy is to produce a clone of the string
     /// passed to the method.

@@ -112,10 +112,10 @@
 > answered request carrying the address, the exercise and the elapsed time;
 > nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 > async fn enhance_spans(Json(request): Json<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -137,7 +137,23 @@
 > keyed by the position in the document text it covers. The analysed document
 > is cached under a key derived from the address for a fetched page and from
 > the page's own content for an inline one, so an inline request is never
-> answered from a fetched request's analysis or the other way round.
+> answered from a fetched request's analysis or the other way round. The
+> exercise is no part of either key: what is cached is the preprocessor's
+> output, which no exercise varies.
+>
+> The key is 128 bits of a cryptographic digest over the subject, written as
+> hex behind the version of the encoding the cached document is written in,
+> which is hashed into the digest as well. Two properties are being bought.
+> Collisions are out of reach, so a page whose address someone chooses cannot
+> be made to share a cache file with a page they do not control — the key names
+> a file the server reads back and serves to whoever asks for the other page.
+> And the key is a stated value rather than whatever the standard library's
+> hasher yields for the build that happens to be running, so upgrading the
+> toolchain leaves a deployment's cache addressable instead of silently
+> orphaning every file in it. Raising the encoding version moves every key at
+> once, which is how a change to the document model retires the files written
+> under the old one: they are never looked for again, rather than found and
+> failing to decode.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
 > pub fn new(config: Config) -> Result<AppState>
