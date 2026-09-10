@@ -15,7 +15,7 @@ serde_json = "1"
 divvun-runtime = { git = "https://github.com/divvun/divvun-runtime", default-features = false, features = ["mod-divvun", "mod-hfst", "mod-cg3"] }
 futures-util = "0.3"
 hfst = { git = "https://github.com/divvun/hfst-rs" }
-poem = { version = "3", features = ["multipart"] }
+poem = { version = "3", features = ["multipart", "static-files"] }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
@@ -26,5 +26,5 @@ html-escape = "0.2"
 urlencoding = "2"
 
 [dev-dependencies]
-poem = { version = "3", features = ["multipart", "test"] }
+poem = { version = "3", features = ["multipart", "static-files", "test"] }
 tempfile = "3"

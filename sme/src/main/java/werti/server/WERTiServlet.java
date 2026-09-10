@@ -88,7 +88,7 @@ import javax.servlet.http.HttpSession;
  * @author Aleksandar Dimitrov
  * @author Adriane Boyd
  */
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+2]
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
 		LogManager.getLogger(WERTiServlet.class);
