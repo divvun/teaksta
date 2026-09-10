@@ -1,7 +1,6 @@
 //! Teaksta's web client: pick a North Sámi grammar topic and an exercise
-//! type, name a page, and read that page with the exercise woven into it.
+//! mode, name a page, and read that page with the exercise woven into it.
 
-pub mod activities;
 pub mod api;
 pub mod route;
 pub mod ui;

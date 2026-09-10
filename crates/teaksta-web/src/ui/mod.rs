@@ -4,9 +4,17 @@ mod chrome;
 pub mod exercise;
 mod home;
 
+use dioxus::prelude::*;
+
+use crate::api::{ApiError, Registry};
+
 pub use chrome::Chrome;
 pub use exercise::Exercise;
-pub use home::Home;
+pub use home::{Home, Named, Picker, PickerProps};
+
+/// The registry fetch the chrome puts in context, shared by every view beneath
+/// it so the topics are asked for once per visit.
+pub type SharedRegistry = Resource<Result<Registry, ApiError>>;
 
 #[cfg(test)]
 mod tests {
@@ -17,7 +25,6 @@ mod tests {
     use dioxus::prelude::*;
 
     use crate::App;
-    use crate::activities::{EXERCISE_TYPES, TOPICS};
 
     #[component]
     fn Harness(path: String) -> Element {
@@ -46,7 +53,7 @@ mod tests {
     fn the_chrome_wraps_every_view() {
         for path in [
             "/",
-            "/exercise?topic=Object&exercise=click&url=http%3A%2F%2Fa.example",
+            "/exercise?topic=Object&mode=click&url=http%3A%2F%2Fa.example",
         ] {
             let html = render_at(path);
 
@@ -56,64 +63,38 @@ mod tests {
     }
 
     #[test]
-    fn the_picker_lists_every_topic_in_sami() {
+    fn the_form_waits_for_the_registry() {
         let html = render_at("/");
 
-        for topic in TOPICS {
-            assert!(html.contains(topic.sme), "missing {}", topic.sme);
-        }
-    }
-
-    #[test]
-    fn the_form_offers_the_url_field_and_radios() {
-        let html = render_at("/");
-
-        assert!(html.contains("name=\"url\""));
-        for kind in EXERCISE_TYPES {
-            assert!(html.contains(kind.sme), "missing {}", kind.sme);
-        }
-    }
-
-    #[test]
-    fn the_default_topic_shows_all_four_radios() {
-        let html = render_at("/");
-
-        assert_eq!(html.matches("type=\"radio\"").count(), EXERCISE_TYPES.len());
+        assert!(html.contains("state-pending"));
+        assert!(!html.contains("class=\"topics\""));
     }
 
     #[test]
     fn the_exercise_view_echoes_its_parameters() {
         let html =
-            render_at("/exercise?topic=NegVerbs&exercise=mc&url=http%3A%2F%2Fa.example%2Fartihkal");
+            render_at("/exercise?topic=NegVerbs&mode=mc&url=http%3A%2F%2Fa.example%2Fartihkal");
 
-        assert!(html.contains("Biehttalanvearbbat"));
-        assert!(html.contains("Vállje rivttes sániid!"));
+        assert!(html.contains("NegVerbs"));
         assert!(html.contains("http://a.example/artihkal"));
+        assert!(html.contains("class=\"instruction\">mc<"));
     }
 
     #[test]
-    fn the_exercise_view_shows_the_servlet_target() {
-        let html =
-            render_at("/exercise?topic=Subject&exercise=colorize&url=http%3A%2F%2Fa.example");
+    fn the_exercise_view_shows_the_api_target() {
+        let html = render_at("/exercise?topic=Subject&mode=colorize&url=http%3A%2F%2Fa.example");
 
-        assert!(html.contains("/WERTiServlet?url=http%3A%2F%2Fa.example"));
+        assert!(html.contains("/api/enhance?url=http%3A%2F%2Fa.example"));
         assert!(html.contains("activity=Subject"));
-        assert!(html.contains("language=en"));
+        assert!(html.contains("mode=colorize"));
+        assert!(!html.contains("WERTiServlet"));
     }
 
     #[test]
     fn the_exercise_view_starts_in_a_pending_state() {
-        let html = render_at("/exercise?topic=Adverbial&exercise=click&url=http%3A%2F%2Fa.example");
+        let html = render_at("/exercise?topic=Adverbial&mode=click&url=http%3A%2F%2Fa.example");
 
         assert!(html.contains("state-pending"));
         assert!(!html.contains("state-ready"));
-    }
-
-    #[test]
-    fn an_unknown_topic_renders_without_a_name() {
-        let html = render_at("/exercise?topic=Preps&exercise=colorize&url=http%3A%2F%2Fa.example");
-
-        assert!(html.contains("Preps"));
-        assert!(html.contains("—"));
     }
 }

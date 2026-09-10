@@ -1,20 +1,81 @@
-//! The entry form: pick a grammar topic, name a page, pick an exercise type.
+//! The entry form: pick a grammar topic, name a page, pick an exercise mode.
+//!
+//! Both lists come from the backend's registry rather than from a table of
+//! this app's own, so a topic is named here exactly as the deployment names it.
+
+use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::activities::{DEFAULT_EXERCISE, TOPICS, exercises_for, offers, topic};
+use crate::api::{DEFAULT_MODE, Registry};
 use crate::route::{ExerciseQuery, Route};
+use crate::ui::SharedRegistry;
 
 #[component]
 pub fn Home() -> Element {
     let navigator = use_navigator();
-    let mut chosen_topic = use_signal(|| TOPICS[0].id.to_string());
-    let mut chosen_exercise = use_signal(|| DEFAULT_EXERCISE.to_string());
+    let registry = use_context::<SharedRegistry>();
+    let value = registry.value();
+
+    rsx! {
+        match &*value.read_unchecked() {
+            None => rsx! {
+                p { class: "state state-pending",
+                    "Vuorddát…"
+                    span { class: "gloss", "Asking the backend which topics it offers" }
+                }
+            },
+            Some(Ok(offered)) => rsx! {
+                Picker {
+                    registry: Rc::new(offered.clone()),
+                    onstart: move |params| {
+                        navigator.push(Route::Exercise { params });
+                    },
+                }
+            },
+            Some(Err(error)) => rsx! {
+                p { class: "state state-error", "{error}" }
+            },
+        }
+    }
+}
+
+/// The picker over one registry: the topics as buttons, the page address, and
+/// the exercise modes as radios. Where a filled-in form leads is the caller's
+/// business, so the picker stands on its own without the router.
+#[component]
+pub fn Picker(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> Element {
+    let topics: Vec<Named> = registry
+        .activities
+        .iter()
+        .map(|activity| Named {
+            name: activity.name.clone(),
+            label: registry.activity_label(&activity.name).to_string(),
+            enabled: activity.enabled,
+        })
+        .collect();
+    let modes: Vec<Named> = registry
+        .modes
+        .iter()
+        .map(|mode| Named {
+            name: mode.name.clone(),
+            label: registry.mode_label(&mode.name).to_string(),
+            enabled: true,
+        })
+        .collect();
+
+    let first = topics
+        .iter()
+        .find(|topic| topic.enabled)
+        .map(|topic| topic.name.clone())
+        .unwrap_or_default();
+    let mut chosen_topic = use_signal(|| first);
+    let mut chosen_mode = use_signal(|| DEFAULT_MODE.to_string());
     let mut page_url = use_signal(String::new);
 
     let current_topic = chosen_topic();
-    let available = exercises_for(&current_topic);
-    let ready = !page_url().trim().is_empty();
+    let ready = !page_url().trim().is_empty() && !current_topic.is_empty();
+    let chosen_label = registry.activity_label(&current_topic).to_string();
 
     rsx! {
         section { class: "picker",
@@ -23,20 +84,12 @@ pub fn Home() -> Element {
                 span { class: "gloss", "Topic" }
             }
             ul { class: "topics",
-                for item in TOPICS {
-                    li { key: "{item.id}",
-                        button {
-                            r#type: "button",
-                            class: if item.id == current_topic { "topic topic-chosen" } else { "topic" },
-                            "aria-pressed": if item.id == current_topic { "true" } else { "false" },
-                            onclick: move |_| {
-                                chosen_topic.set(item.id.to_string());
-                                if !offers(item.id, &chosen_exercise()) {
-                                    chosen_exercise.set(DEFAULT_EXERCISE.to_string());
-                                }
-                            },
-                            span { class: "topic-sme", "{item.sme}" }
-                            span { class: "gloss", "{item.id}" }
+                for topic in topics.iter().cloned() {
+                    li { key: "{topic.name}",
+                        TopicButton {
+                            chosen: topic.name == current_topic,
+                            topic,
+                            onpick: move |name| chosen_topic.set(name),
                         }
                     }
                 }
@@ -48,9 +101,9 @@ pub fn Home() -> Element {
             onsubmit: move |event| {
                 event.prevent_default();
                 let target = page_url();
-                let params = ExerciseQuery::new(chosen_topic(), chosen_exercise(), target.trim());
+                let params = ExerciseQuery::new(chosen_topic(), chosen_mode(), target.trim());
                 if params.is_complete() {
-                    navigator.push(Route::Exercise { params });
+                    onstart.call(params);
                 }
             },
 
@@ -74,17 +127,12 @@ pub fn Home() -> Element {
                     "Hárjehus"
                     span { class: "gloss", "Exercise type" }
                 }
-                for kind in available.iter().copied() {
-                    label { key: "{kind.id}", class: "exercise",
-                        input {
-                            r#type: "radio",
-                            name: "client.enhancement",
-                            value: kind.id,
-                            checked: kind.id == chosen_exercise(),
-                            onchange: move |_| chosen_exercise.set(kind.id.to_string()),
-                        }
-                        span { class: "exercise-sme", "{kind.sme}" }
-                        span { class: "gloss", "{kind.id}" }
+                for mode in modes.iter().cloned() {
+                    ModeRadio {
+                        key: "{mode.name}",
+                        chosen: mode.name == chosen_mode(),
+                        mode,
+                        onpick: move |name| chosen_mode.set(name),
                     }
                 }
             }
@@ -92,11 +140,174 @@ pub fn Home() -> Element {
             button { r#type: "submit", class: "go", disabled: !ready, "Mana!" }
         }
 
-        if let Some(item) = topic(&current_topic) {
-            p { class: "chosen-note",
-                "{item.sme}"
-                span { class: "gloss", "{available.len()} exercise types available" }
-            }
+        p { class: "chosen-note",
+            "{chosen_label}"
+            span { class: "gloss", "{modes.len()} exercise types available" }
         }
+    }
+}
+
+/// One registry entry as the picker shows it: what the backend calls it, what
+/// the learner reads, and whether it can be chosen at all.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Named {
+    pub name: String,
+    pub label: String,
+    pub enabled: bool,
+}
+
+#[component]
+fn TopicButton(topic: Named, chosen: bool, onpick: EventHandler<String>) -> Element {
+    let class = if chosen {
+        "topic topic-chosen"
+    } else {
+        "topic"
+    };
+    let pressed = if chosen { "true" } else { "false" };
+    let picked = topic.name.clone();
+
+    rsx! {
+        button {
+            r#type: "button",
+            class: "{class}",
+            "aria-pressed": "{pressed}",
+            disabled: !topic.enabled,
+            onclick: move |_| onpick.call(picked.clone()),
+            span { class: "topic-sme", "{topic.label}" }
+            span { class: "gloss", "{topic.name}" }
+        }
+    }
+}
+
+#[component]
+fn ModeRadio(mode: Named, chosen: bool, onpick: EventHandler<String>) -> Element {
+    let picked = mode.name.clone();
+
+    rsx! {
+        label { class: "exercise",
+            input {
+                r#type: "radio",
+                name: "mode",
+                value: "{mode.name}",
+                checked: chosen,
+                onchange: move |_| onpick.call(picked.clone()),
+            }
+            span { class: "exercise-sme", "{mode.label}" }
+            span { class: "gloss", "{mode.name}" }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::api::{Activity, Mode};
+
+    fn topic(name: &str, label: Option<&str>, enabled: bool) -> Activity {
+        Activity {
+            name: name.to_string(),
+            label: label.map(str::to_string),
+            enabled,
+        }
+    }
+
+    /// A registry shaped like the backend's, with the first topic switched off
+    /// and the second carrying no North Sámi name.
+    fn offered() -> Registry {
+        Registry {
+            activities: vec![
+                topic("Adverbial", Some("Adverbiála"), false),
+                topic("Preps", None, true),
+                topic("Subject", Some("Subjeakta"), true),
+            ],
+            modes: vec![
+                Mode {
+                    name: "colorize".to_string(),
+                    label: Some("Geahča ivdnejuvvon sániid.".to_string()),
+                },
+                Mode {
+                    name: "cloze".to_string(),
+                    label: None,
+                },
+            ],
+        }
+    }
+
+    /// The picker on its own, with nowhere for a filled-in form to lead.
+    #[component]
+    fn Offered(registry: Rc<Registry>) -> Element {
+        rsx! {
+            Picker { registry, onstart: move |_| {} }
+        }
+    }
+
+    fn render(registry: Registry) -> String {
+        let mut dom = VirtualDom::new_with_props(
+            Offered,
+            OfferedProps {
+                registry: Rc::new(registry),
+            },
+        );
+        dom.rebuild_in_place();
+        dioxus_ssr::render(&dom)
+    }
+
+    #[test]
+    fn every_offered_topic_reaches_the_page() {
+        let html = render(offered());
+
+        assert_eq!(html.matches("aria-pressed").count(), 3);
+        for name in ["Adverbial", "Preps", "Subject"] {
+            assert!(html.contains(name), "missing {name}");
+        }
+    }
+
+    #[test]
+    fn a_topic_with_no_label_shows_its_name() {
+        let html = render(offered());
+
+        assert!(html.contains("class=\"topic-sme\">Preps<"));
+        assert!(html.contains("class=\"topic-sme\">Adverbiála<"));
+    }
+
+    #[test]
+    fn a_topic_switched_off_cannot_be_chosen() {
+        let html = render(offered());
+
+        assert!(html.contains("disabled"));
+        assert_eq!(html.matches("topic-chosen").count(), 1);
+        assert!(!html.contains(
+            "topic topic-chosen\" aria-pressed=\"true\"><span class=\"topic-sme\">Adverbiála"
+        ));
+    }
+
+    #[test]
+    fn the_first_live_topic_starts_out_chosen() {
+        let html = render(offered());
+        let chosen = html
+            .find("topic-chosen")
+            .expect("one topic starts out chosen");
+
+        assert!(html[chosen..].contains("Preps"));
+        assert_eq!(html.matches("aria-pressed=\"true\"").count(), 1);
+    }
+
+    #[test]
+    fn every_mode_is_offered_for_every_topic() {
+        let html = render(offered());
+
+        assert_eq!(html.matches("type=\"radio\"").count(), 2);
+        assert!(html.contains("Geahča ivdnejuvvon sániid."));
+        assert!(html.contains("class=\"exercise-sme\">cloze<"));
+    }
+
+    #[test]
+    fn a_registry_with_no_topics_still_renders() {
+        let html = render(Registry::default());
+
+        assert!(html.contains("class=\"topics\""));
+        assert!(!html.contains("topic-chosen"));
+        assert!(html.contains("0 exercise types available"));
     }
 }

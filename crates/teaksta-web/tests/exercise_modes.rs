@@ -1,6 +1,6 @@
 //! The four exercises, rendered from pages the backend really answered with.
 //!
-//! The fixtures are the servlet's own replies for the `Substantive` topic over
+//! The fixtures are `GET /api/enhance` replies for the `Substantive` topic over
 //! one North Sámi page, saved as they arrived. The colorize reply carries the
 //! markup the click exercise reads as well: the enhancer writes the same spans
 //! for both and only the instruction differs.
@@ -87,8 +87,8 @@ fn cloze_page() -> String {
 }
 
 #[test]
-fn the_exercise_id_picks_the_mode() {
-    for (exercise, mode) in [
+fn the_mode_parameter_picks_the_exercise() {
+    for (mode, rendered) in [
         ("colorize", "mode-colorize"),
         ("click", "mode-click"),
         ("mc", "mode-mc"),
@@ -100,11 +100,11 @@ fn the_exercise_id_picks_the_mode() {
             EnhancedPageProps {
                 html: COLORIZE.to_string(),
                 topic: TOPIC.to_string(),
-                exercise: exercise.to_string(),
+                mode: mode.to_string(),
             },
         );
 
-        assert!(html.contains(mode), "{exercise} did not render {mode}");
+        assert!(html.contains(rendered), "{mode} did not render {rendered}");
     }
 }
 
@@ -128,7 +128,7 @@ fn the_page_survives_being_taken_apart() {
     assert!(html.contains("leat stuorrát"));
     assert!(html.contains("viehká olgun, ja mii boahtit ruoktot"));
     assert!(!html.contains("<script"));
-    assert!(!html.contains("wertiview.substantive"));
+    assert!(!html.contains("wertiview"));
 }
 
 #[test]
@@ -182,7 +182,7 @@ fn click_marks_any_other_word_wrong() {
     let markup = parse(COLORIZE);
     let noun = token_reading(&markup, "Viesut");
     // The shape the generic token enhancer writes for a word outside the topic.
-    let plain = parse("<p><span class=\"wertiviewtoken \" id=\"x\">ikte</span></p>");
+    let plain = parse("<p><span class=\"teaksta-token\" id=\"x\">ikte</span></p>");
 
     assert_eq!(
         teaksta_web::ui::exercise::click::judge(&noun, "VerbConjugation"),

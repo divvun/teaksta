@@ -177,7 +177,7 @@ mod tests {
     use crate::ui::exercise::markup::parse;
 
     fn token(attributes: &str) -> TokenSpan {
-        let page = format!("<p><span class=\"wertiviewtoken \" {attributes}>Viesut</span></p>");
+        let page = format!("<p><span class=\"teaksta-token\" {attributes}>Viesut</span></p>");
         parse(&page).tokens()[0].clone()
     }
 
