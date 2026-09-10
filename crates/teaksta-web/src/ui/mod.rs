@@ -118,7 +118,10 @@ mod tests {
         assert!(html.contains("/api/enhance?url=http%3A%2F%2Fa.example"));
         assert!(html.contains("activity=Subject"));
         assert!(html.contains("mode=colorize"));
-        assert!(!html.contains("WERTiServlet"));
+        // Nothing of the old servlet's naming survives anywhere in what the
+        // view puts on the page — not the endpoint, not a class, not an id.
+        assert!(!html.contains("WERTi"));
+        assert!(!html.contains("wertiview"));
     }
 
     #[test]

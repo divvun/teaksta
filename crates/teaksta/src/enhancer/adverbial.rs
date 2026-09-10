@@ -20,6 +20,10 @@ pub struct Vislcg3AdverbialEnhancer {
 }
 
 impl Vislcg3AdverbialEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = "teaksta-Adverbial";
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
@@ -54,7 +58,7 @@ impl Vislcg3AdverbialEnhancer {
             &syntactic::FunctionSpec {
                 start_log: "Starting Adverbial enhancement",
                 finish_log: "Finished adv enhancement",
-                span_class: "teaksta-Adverbial",
+                span_class: Self::SPAN_CLASS,
                 tags: &self.adv_tags,
                 is_safe: &|t| self.is_safe(t),
                 contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),

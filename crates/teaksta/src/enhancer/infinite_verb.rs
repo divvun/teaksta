@@ -19,7 +19,7 @@ use crate::types::Document;
 /// What this topic changes about the shared enhancement pass.
 const TOPIC: TopicSpec = TopicSpec {
     label: "InfiniteVerb",
-    span_class: "teaksta-InfiniteVerb",
+    span_class: "teaksta-InfiniteVerbs",
     pos: r"V\+",
     selector: r"PrfPrc|VGen|VAbess|Ger|Actio\+Ess|Inf|ConNeg",
     hints: None,
@@ -42,6 +42,11 @@ pub struct Vislcg3InfiniteVerbEnhancer {
 }
 
 impl Vislcg3InfiniteVerbEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = TOPIC.span_class;
+
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.initialize-fn]
     pub fn initialize(&mut self, infiniteverb_tags: Option<&str>) -> Result<()> {
@@ -59,8 +64,8 @@ impl Vislcg3InfiniteVerbEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);

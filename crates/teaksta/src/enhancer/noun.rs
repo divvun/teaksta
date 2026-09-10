@@ -223,6 +223,11 @@ pub struct Vislcg3NounEnhancer {
 }
 
 impl Vislcg3NounEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = TOPIC.span_class;
+
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn]
     pub fn initialize(&mut self, n_tags: Option<&str>) -> Result<()> {

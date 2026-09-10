@@ -21,6 +21,10 @@ pub struct Vislcg3ConjunctionEnhancer {
 }
 
 impl Vislcg3ConjunctionEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = "teaksta-Conjunctions";
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
@@ -47,8 +51,8 @@ impl Vislcg3ConjunctionEnhancer {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         info!("Starting conjunction enhancement");
 
@@ -92,11 +96,7 @@ impl Vislcg3ConjunctionEnhancer {
                         let id = enhancer_utils::get_id(&format!("teaksta-span-{con_t}"), new_id);
                         let span_tag = SpanTag::new(
                             id,
-                            &[
-                                TOKEN_CLASS,
-                                "teaksta-conjunction",
-                                &format!("teaksta-{con_t}"),
-                            ],
+                            &[TOKEN_CLASS, Self::SPAN_CLASS, &format!("teaksta-{con_t}")],
                         );
                         // make new enhancement
                         let e = Enhancement {
@@ -246,7 +246,7 @@ mod tests {
         assert!(!enhancer.contains_tag(&reading(&["\"ja\"", "CC"]), ""));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4/test]
     #[test]
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3ConjunctionEnhancer {
@@ -258,7 +258,7 @@ mod tests {
         });
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
         let enhancer = Vislcg3ConjunctionEnhancer::new();
@@ -274,7 +274,7 @@ mod tests {
     /// that can keep the token out of the output is the exercise: `mc` and
     /// `cloze` pass over it for its second reading, `colorize` and `click`
     /// take it.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4/test]
     #[test]
     fn an_ambiguous_token_reaches_the_marking_exercises_only() {
         let enhancer = Vislcg3ConjunctionEnhancer {

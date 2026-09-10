@@ -20,6 +20,10 @@ pub struct Vislcg3ObjectEnhancer {
 }
 
 impl Vislcg3ObjectEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = "teaksta-Object";
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
@@ -54,7 +58,7 @@ impl Vislcg3ObjectEnhancer {
             &syntactic::FunctionSpec {
                 start_log: "Starting Object enhancement",
                 finish_log: "Finished Object enhancement",
-                span_class: "teaksta-Object",
+                span_class: Self::SPAN_CLASS,
                 tags: &self.object_tags,
                 is_safe: &|t| self.is_safe(t),
                 contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),
