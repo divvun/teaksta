@@ -51,10 +51,10 @@
 > empty `page`, because the caller decides where the map lives. A page with
 > no analysable text yields an empty document text and no records at all.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
 > pub fn render_page(map: &PageMap, doc: &Document, mode: Option<Mode>, base_url: Option<&str>) -> Result<String>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
 > Parses the page the map holds, places every enhancement of `doc` into it,
 > and serialises it once.
 >
@@ -63,6 +63,16 @@
 > words out of every candidate. A caller with no exercise in hand passes none,
 > and only the relevant enhancements reach the page. The chosen enhancements are taken
 > in annotation-index order: ascending begin, then descending end.
+>
+> An irrelevant enhancement is the click exercise's decoy: a word the topic
+> did not mark, wrapped so the learner can pick it and be told it was not
+> one. The generic token enhancer writes one for every token it sees, the
+> topic's own hits among them, so a decoy whose text a relevant enhancement
+> already covers is dropped before any of this. Only the topic's span
+> carries the class naming it and the forms generated for it, and only one
+> wrapper is ever built over a stretch of text; without that rule the decoy
+> would take the hit's place and the hit would read as a word the topic
+> left alone.
 >
 > Each enhancement is intersected with every segment of the map. A non-empty
 > intersection becomes a piece of one DOM text node, at the offsets the
@@ -93,15 +103,17 @@
 > exactly once. A page with no `head`, or a call with no base URL, gets no
 > base element.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
 > pub fn render_spans(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<BTreeMap<String, String>>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
 > The enhanced fragments alone, for a client that already has the page and
 > only wants what changed. Enhancements are placed exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]`
-> places them, no base URL is added, and each enhancement that reached the
-> page contributes one entry.
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]`
+> places them — the click exercise's decoys among them, and a decoy the
+> topic also marked dropped in favour of the topic's own span — no base URL
+> is added, and each enhancement that reached the page contributes one
+> entry.
 >
 > The key is the enhancement's begin offset in the document text, written as
 > a decimal string. The value is the outer HTML of every wrapper element

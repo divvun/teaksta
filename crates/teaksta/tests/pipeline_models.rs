@@ -211,6 +211,70 @@ async fn the_page_endpoint_answers_one_request() {
     assert_eq!(page.matches("teaksta-token").count(), 2, "{page}");
 }
 
+/// Click is the one exercise the decoys reach: every other word of the page
+/// is wrapped too, carrying `teaksta-token` without the topic's own class,
+/// so the learner has something to pick wrongly. Colorize over the same page
+/// carries the hits alone.
+#[tokio::test]
+async fn the_click_page_carries_decoys() {
+    if !models_available() {
+        return;
+    }
+    let directory = TempDir::new().expect("a page directory");
+    let url = page_url(&directory, "artihkal.html", DOCUMENT);
+
+    let mut pages: HashMap<&str, String> = HashMap::new();
+    for mode in ["click", "colorize"] {
+        let response = client()
+            .get("/api/enhance")
+            .query("url", &url)
+            .query("activity", &"Substantive")
+            .query("mode", &mode)
+            .send()
+            .await;
+        response.assert_status_is_ok();
+        pages.insert(
+            mode,
+            response.0.into_body().into_string().await.expect("a body"),
+        );
+    }
+    let click = &pages["click"];
+    let colorize = &pages["colorize"];
+
+    // The two nouns are hits under both, and only under click do the other
+    // five words of the page get a span of their own.
+    for hit in [">viesu</span>", ">Viesut</span>"] {
+        assert!(click.contains(hit), "{click}");
+        assert!(colorize.contains(hit), "{colorize}");
+    }
+    assert_eq!(click.matches("teaksta-Substantive").count(), 2, "{click}");
+    assert_eq!(
+        colorize.matches("teaksta-Substantive").count(),
+        2,
+        "{colorize}"
+    );
+
+    for decoy in ["Mun", "oidnen", "ikte", "leat", "stuorrát"] {
+        assert!(
+            click.contains(&format!(">{decoy}</span>")),
+            "click marked no decoy for {decoy}: {click}"
+        );
+        assert!(
+            !colorize.contains(&format!(">{decoy}</span>")),
+            "colorize marked {decoy}: {colorize}"
+        );
+    }
+
+    // Seven words, two of them the topic's: five decoys and two hits.
+    assert_eq!(click.matches("teaksta-token").count(), 7, "{click}");
+    assert_eq!(colorize.matches("teaksta-token").count(), 2, "{colorize}");
+
+    // A hit is never wrapped twice: the decoy gives way to the topic's own
+    // span, which is the one carrying the class and the base form.
+    assert_eq!(click.matches("lemma=\"viessu\"").count(), 2, "{click}");
+    assert!(!click.contains("></span>"), "{click}");
+}
+
 #[tokio::test]
 async fn the_span_endpoint_keys_spans_by_position() {
     if !models_available() {

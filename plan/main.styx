@@ -283,12 +283,20 @@ children (
                 id hd-click-decoys
                 title "Click-mode decoys: settle the dead TokenEnhancer path against the Java reference"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:49:53.144664Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence H2: TokenEnhancer (first stage of every shipped postprocessor) is dead two ways — Vislcg3Annotator empties cas.tokens (vislcg3.rs:210-226) before it runs, and nothing writes Token.tag/.lemma (tokenizer.rs:235 sets only begin/end). So teaksta-hit and relevant:false are never produced, the frontend GENERIC_HIT_CLASS fallback (markup.rs:121) never fires, and click mode has zero decoys — every clickable word is correct; exercise_modes.rs:120 asserts the degenerate state. Check sme/ Java reference: did legacy click actually have decoys (did anything populate tag/lemma there)? If yes, resurrect the pass over cg_tokens; if legacy was equally broken, excise TokenEnhancer + the relevant flag + html_utils.rs:349-358's stated intent honestly and give click real decoys from the cg data by design. Also panic-audit finding 4: token.rs:87 calls the unchecked Document::covered_text (types.rs:124) — kept safe only by the accidental emptiness; whatever resurrection happens must use the checked form."
+                    }
+
+                    {
+                        at 2026-09-10T23:21:33.811414Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

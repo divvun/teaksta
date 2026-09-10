@@ -9,9 +9,9 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
 > public String enhance()
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
 > Renders the enhanced fragments of the stored document, per
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]`,
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]`,
 > against the page map the document carries and with the stored `mode` as the
 > exercise, and serialises the resulting map as JSON.
 >

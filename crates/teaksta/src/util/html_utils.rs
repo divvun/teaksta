@@ -126,8 +126,8 @@ pub fn extract(html: &str) -> (Document, PageMap) {
 /// The whole page as HTML, with every enhancement wrapped around the text it
 /// covers. `base_url`, when given, is recorded in the page's `head` so the
 /// relative links of the page as fetched still resolve where it is served.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
 pub fn render_page(
     map: &PageMap,
     doc: &Document,
@@ -146,8 +146,8 @@ pub fn render_page(
 /// One entry per enhancement that reached the page, keyed by its position in
 /// the document text, holding the enhanced fragment wrapped in a span that
 /// preserves the layout of wherever the client puts it.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
 pub fn render_spans(
     map: &PageMap,
     doc: &Document,
@@ -347,13 +347,32 @@ fn split_text_node(
 
 /// The enhancements that reach the output, in annotation-index order. One
 /// marked irrelevant is carried only by the click exercise, which asks the
-/// learner to pick the right words out of every candidate.
+/// learner to pick the right words out of every candidate — those are the
+/// decoys, and without them the click exercise would offer the learner
+/// nothing but right answers.
+///
+/// A decoy the topic also marked gives way to the topic's own span. The
+/// generic token enhancer writes one for every token it sees, the topic's
+/// hits among them, and the two cover the very same text; only the topic's
+/// span carries the class naming it and the forms generated for it, and
+/// only one wrapper is ever built over a stretch of text.
 fn selected_enhancements<'a>(doc: &'a Document, mode: Option<Mode>) -> Vec<&'a Enhancement> {
     let click = mode == Some(Mode::Click);
+    let hits: Vec<(usize, usize)> = doc
+        .enhancements
+        .iter()
+        .filter(|enhancement| enhancement.relevant)
+        .map(|enhancement| (enhancement.begin, enhancement.end))
+        .collect();
+    let marked = |decoy: &Enhancement| {
+        hits.iter()
+            .any(|(begin, end)| *begin <= decoy.begin && decoy.end <= *end)
+    };
+
     let mut selected: Vec<&Enhancement> = doc
         .enhancements
         .iter()
-        .filter(|enhancement| enhancement.relevant || click)
+        .filter(|enhancement| enhancement.relevant || (click && !marked(enhancement)))
         .collect();
     selected.sort_by(|left, right| left.begin.cmp(&right.begin).then(right.end.cmp(&left.end)));
     selected
@@ -532,7 +551,7 @@ mod tests {
         assert_eq!(doc.text, "Tom & caf\u{e9}");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_wraps_the_covered_text_only() {
         let (doc, map) = enhanced(PAGE, vec![enhancement(11, 16, "<span class=\"t\">")]);
@@ -551,7 +570,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_escapes_text_it_moves_around() {
         let source = "<html><body><p>Tom &amp; Jerry</p></body></html>";
@@ -566,7 +585,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_keeps_irrelevant_spans_for_click() {
         let mut irrelevant = enhancement(0, 3, "<span id=\"a\">");
@@ -585,7 +604,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_hands_back_the_whole_page() {
         let (doc, map) = enhanced(PAGE, vec![enhancement(0, 3, "<span id=\"a\">")]);
@@ -607,7 +626,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_adds_no_base_without_a_url() {
         let (doc, map) = enhanced(PAGE, Vec::new());
@@ -619,7 +638,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_splits_a_span_crossing_two_nodes() {
         let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
@@ -634,7 +653,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
     #[test]
     fn render_drops_an_overlapping_second_span() {
         let (doc, map) = enhanced(
@@ -655,7 +674,7 @@ mod tests {
         assert!(!html.contains("id=\"b\""), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
     #[test]
     fn spans_are_keyed_by_document_position() {
         let (doc, map) = enhanced(
@@ -686,7 +705,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
     #[test]
     fn spans_join_the_pieces_of_one_enhancement() {
         let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
@@ -702,7 +721,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
     #[test]
     fn spans_are_empty_without_enhancements() {
         let (doc, map) = enhanced(PAGE, Vec::new());

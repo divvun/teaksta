@@ -37,8 +37,8 @@ public class JSONEnhancer {
 	 * 
 	 * @return JSON string of CAS including enhancements
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+3]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
 	public String enhance() {
 		String enhanced = EnhancerUtils.casToEnhanced(cas, activity);
 		enhanced = enhancedToJSON(enhanced);		
