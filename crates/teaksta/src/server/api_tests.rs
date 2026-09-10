@@ -89,9 +89,33 @@ fn each_page_source_gets_its_own_key() {
 
     assert_eq!(cache_key(page), cache_key(page));
     assert_ne!(cache_key(page), cache_key("http://example.org/a"));
-    assert_eq!(cache_key(page).len(), 16);
-    // The key is a filename component, so it carries no separator.
-    assert!(!cache_key("http://example.org/a/b").contains('/'));
+    // The key is a filename component, so it carries no separator and
+    // nothing else a path is read for.
+    for subject in [page, "http://example.org/a/b", "", "../../etc/passwd"] {
+        let key = cache_key(subject);
+        assert!(
+            key.starts_with(&format!("v{CACHE_FORMAT_VERSION}-")),
+            "{key}"
+        );
+        assert_eq!(key.len(), 35, "{key}");
+        assert!(
+            key.strip_prefix(&format!("v{CACHE_FORMAT_VERSION}-"))
+                .is_some_and(|digest| digest.chars().all(|c| c.is_ascii_hexdigit())),
+            "{key}"
+        );
+    }
+}
+
+// The key is a stated value, not whatever the toolchain hashes to this
+// month: a deployment that upgrades its compiler keeps reaching the analyses
+// it has already paid for.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
+#[test]
+fn the_key_of_a_page_is_fixed() {
+    assert_eq!(
+        cache_key("http://example.org/artihkal"),
+        "v1-011989fb2c268625fd589de14e3d74f6"
+    );
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2/test]

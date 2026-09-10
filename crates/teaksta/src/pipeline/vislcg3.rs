@@ -16,7 +16,7 @@ use regex::Regex;
 use tracing::{debug, error, info};
 
 use crate::morpho::MorphoPipeline;
-use crate::types::{CgReading, CgToken, Document, SentenceAnnotation, Token};
+use crate::types::{CgReading, CgToken, Document, SentenceAnnotation, Token, covered_text};
 
 trait Spanned {
     fn begin(&self) -> usize;
@@ -53,11 +53,6 @@ fn index_order<T: Spanned>(items: &[T]) -> Vec<usize> {
             .then(items[b].end().cmp(&items[a].end()))
     });
     ordered
-}
-
-fn covered_text(text: &str, begin: usize, end: usize) -> Result<&str> {
-    text.get(begin..end)
-        .ok_or_else(|| anyhow!("span {}..{} is not within the document text", begin, end))
 }
 
 /// The rendering of a cohort's first reading: the string the skip loop tests

@@ -10,7 +10,6 @@
 //! while the caller waits.
 
 use std::any::Any;
-use std::hash::{Hash as _, Hasher as _};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -525,13 +524,38 @@ pub fn page_url(raw: &str) -> poem::Result<Url> {
     Url::parse(&absolute).map_err(|_| bad_request("url is not a valid address"))
 }
 
+/// Which encoding the cached analysis is written in. A build that changes the
+/// document model raises this, so every file an earlier encoding wrote is
+/// keyed somewhere the new one never looks: the cache goes cold rather than
+/// sour, and no deployment has to be told to empty a directory.
+pub const CACHE_FORMAT_VERSION: u32 = 1;
+
+/// How much of the digest the key carries. 128 bits is past the reach of a
+/// search for two subjects sharing one.
+const CACHE_KEY_BYTES: usize = 16;
+
 /// The analysed document is cached under this key. A fetched page is keyed by
 /// its address and an inline one by its own content, so neither is answered
 /// from the other's analysis.
+///
+/// The digest is cryptographic, and the encoding version is hashed into it as
+/// well as written in front of it. A key that could be collided is a key a
+/// cache file could be planted under: whoever controls one page's address
+/// would choose what another page's readers are served. Nothing about the key
+/// varies with the build either, so a toolchain upgrade leaves a deployment's
+/// cache addressable rather than silently orphaning it.
 pub fn cache_key(subject: &str) -> String {
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    subject.hash(&mut hasher);
-    format!("{:016x}", hasher.finish())
+    let mut hasher = blake3::Hasher::new();
+    // The version and the subject are separated, so no subject can present
+    // itself as one keyed under another version.
+    hasher.update(format!("teaksta-analysis-v{CACHE_FORMAT_VERSION}\0").as_bytes());
+    hasher.update(subject.as_bytes());
+    let digest = hasher.finalize();
+
+    format!(
+        "v{CACHE_FORMAT_VERSION}-{}",
+        &digest.to_hex()[..CACHE_KEY_BYTES * 2]
+    )
 }
 
 /// The page as fetched. A `file:` address is read from disk, which is how an

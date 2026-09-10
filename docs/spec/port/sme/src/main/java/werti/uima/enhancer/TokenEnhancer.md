@@ -29,10 +29,10 @@
 > mandatory `Method` parameter (default `Markup`) that this annotator
 > never reads.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
 > @SuppressWarnings("unchecked") public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
 > Wraps every non-punctuation token in a `teaksta-token` span, marking
 > those whose POS tag is in the configured `tags` list as hits. Consumes
 > `werti.uima.types.annot.Token` annotations (features `begin`, `end`,
@@ -49,6 +49,14 @@
 > character that is not Unicode punctuation. Because `.` does not match
 > line terminators here, a token whose text spans more than one line break
 > also fails the test and is skipped.
+>
+> Port divergence: a token whose span the document text cannot be read at —
+> out of range, or inside one of the multibyte characters North Sámi is
+> written with — is logged at warn and skipped, consuming no id, rather than
+> ending the request. The covered-text accessor is checked, so the enhancer
+> cannot be the thing that fails on a document some earlier stage mispaired
+> with its text; a token that covers nothing readable carries nothing to
+> wrap either way.
 >
 > For a token that passes: creates a new `Enhancement` over the CAS with
 > `begin` and `end` copied from the token, then increments `id` (so ids

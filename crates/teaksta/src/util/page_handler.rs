@@ -48,16 +48,26 @@ fn analysis_engine_process(
         .map_err(|e| EngineError::AnalysisEngineProcess(format!("{e:#}")))
 }
 
-/// `CasIOUtil.readXmi(cas, file)`: replaces the CAS contents with the cached
-/// document. The encoding is JSON rather than XMI — the document model is not
-/// a UIMA type system and has no XMI representation — so a cache file written
-/// by another build is rejected as unreadable, which is the case the caller
-/// already handles.
-fn read_xmi(cas: &mut Document, casfile: &Path) -> std::io::Result<()> {
+/// `CasIOUtil.readXmi(cas, file)`: the cached document. The encoding is JSON
+/// rather than XMI — the document model is not a UIMA type system and has no
+/// XMI representation — so a cache file written by another build is rejected
+/// as unreadable, which is the case the caller already handles.
+///
+/// The file is the one input to the pipeline nothing in this process wrote,
+/// so its offsets are checked against the text it carries before it is handed
+/// on: a span the text cannot be read at makes the file unreadable, on the
+/// same footing as one that will not decode at all.
+fn read_xmi(casfile: &Path) -> std::io::Result<Document> {
     let encoded = std::fs::read_to_string(casfile)?;
-    *cas = serde_json::from_str(&encoded)
+    let cas: Document = serde_json::from_str(&encoded)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-    Ok(())
+    if let Some(span) = cas.invalid_span() {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            span.to_string(),
+        ));
+    }
+    Ok(cas)
 }
 
 /// `CasIOUtil.writeXmi(cas, file)`. The counterpart of [`read_xmi`].
@@ -109,8 +119,8 @@ impl<'a> PageHandler<'a> {
 
     /// Creates a CAS from the text and runs the pre- and postprocessors for the
     /// topic.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
     pub fn process(&self) -> Result<Option<Document>> {
         let preprocessor = self.processors.get_preprocessor(&self.lang, &self.topic);
         let postprocessor = self.processors.get_postprocessor(&self.lang, &self.topic);
@@ -128,29 +138,35 @@ impl<'a> PageHandler<'a> {
                     let _ = std::fs::create_dir_all(&casfile_path);
                 }
                 let casfile = casfile_path.join(format!("cas_{}.xmi", self.url));
-                if casfile.is_file() {
-                    let cached = read_xmi(&mut cas, &casfile);
-                    match cached {
-                        // The postprocessor runs from inside the same try
-                        // block as the read; only the read raises the
-                        // `IOException` that lands in the handler below.
-                        Ok(()) => analysis_engine_process(postprocessor, &mut cas, self.mode)?,
-                        Err(cas_read) => {
+                let cached = match casfile.is_file() {
+                    true => read_xmi(&casfile)
+                        .inspect_err(|cas_read| {
                             info!("Failed to load cas from file! {}", cas_read);
-                        }
-                    }
-                } else {
-                    analysis_engine_process(preprocessor, &mut cas, self.mode)?;
-                    let written = write_xmi(&cas, &casfile);
-                    match written {
-                        // The postprocessor runs from inside the same try
-                        // block as the write, so a failed write skips it.
-                        Ok(()) => analysis_engine_process(postprocessor, &mut cas, self.mode)?,
-                        Err(cas_write) => {
+                        })
+                        .ok(),
+                    false => None,
+                };
+
+                match cached {
+                    // The cached document is the preprocessor's output, so
+                    // the preprocessor is not run over it again.
+                    Some(cached) => cas = cached,
+                    // A file that could not be read is rewritten from this
+                    // run's analysis, so a cache the deployment cannot decode
+                    // costs one request rather than every later one.
+                    None => {
+                        analysis_engine_process(preprocessor, &mut cas, self.mode)?;
+                        if let Err(cas_write) = write_xmi(&cas, &casfile) {
                             info!("Failed to write cas to file! {}", cas_write);
                         }
                     }
                 }
+
+                // Whichever branch produced the document, the request is
+                // answered from the postprocessor's output: a cache that
+                // cannot be read or written costs the request its cache, not
+                // its enhancement.
+                analysis_engine_process(postprocessor, &mut cas, self.mode)?;
                 Ok(cas)
             })();
 
@@ -175,7 +191,19 @@ impl<'a> PageHandler<'a> {
 mod tests {
     use super::*;
 
+    use crate::pipeline::flow::{Flow, Parameters};
     use crate::server::activities::Activities;
+    use crate::types::{PageMap, TextSegment, Token};
+
+    /// The page the cache tests analyse. Its text is North Sámi, so a token
+    /// offset one byte out lands inside a character rather than between two.
+    const PAGE: &str = "<html><body><p>Sámegiella lea somá.</p></body></html>";
+
+    /// What the preprocessing flow leaves as the document text for [`PAGE`].
+    const ANALYSED: &str = "Sámegiella lea somá.";
+
+    /// The cache key the handler builds its filename from.
+    const KEY: &str = "http:--example.org-page";
 
     /// A registry built over a directory holding no activities, so no engine
     /// pair is registered for any (language, topic).
@@ -183,6 +211,70 @@ mod tests {
         let activity_dir = tempfile::tempdir().expect("temp dir");
         let mut activities = Activities::new(activity_dir.path()).expect("activities");
         Processors::new(&mut activities).expect("processors")
+    }
+
+    /// A registry whose engine pair needs no models: the preprocessor turns
+    /// the page into analysable text and the postprocessor wraps every token
+    /// carrying an `N` tag, so which of the two ran over a document is
+    /// readable off the document itself.
+    fn model_free_processors() -> Processors {
+        let preprocessor = Flow::new(
+            &["GenericRelevanceAnnotator".to_string()],
+            &Parameters::new(),
+        )
+        .expect("the relevance annotator needs no parameters");
+        let postprocessor = Flow::new(
+            &["TokenEnhancer".to_string()],
+            &Parameters::from([("Tags".to_string(), "N".to_string())]),
+        )
+        .expect("the token enhancer takes its tags");
+
+        Processors::of_flows("sme", "Nouns", preprocessor, postprocessor)
+    }
+
+    /// A handler over [`PAGE`] caching under `cache_dir`.
+    fn handler_over<'a>(processors: &'a Processors, cache_dir: &Path) -> PageHandler<'a> {
+        PageHandler::new(
+            processors,
+            "Nouns",
+            KEY,
+            cache_dir.to_str().expect("utf-8 path"),
+            PAGE,
+            "sme",
+            Mode::Colorize,
+        )
+    }
+
+    fn casfile(cache_dir: &Path) -> PathBuf {
+        cache_dir.join(format!("cas_{KEY}.xmi"))
+    }
+
+    /// A cache file holding the analysed text with one token over `span`,
+    /// written straight to disk the way an earlier run's cache would be.
+    fn cache_a_document(cache_dir: &Path, span: (usize, usize)) {
+        let mut cached = Document::new(ANALYSED, "sme");
+        cached.page = PageMap {
+            html: PAGE.to_string(),
+            segments: vec![TextSegment {
+                begin: 0,
+                end: ANALYSED.len(),
+                node: 0,
+                block_start: true,
+            }],
+        };
+        cached.tokens.push(Token {
+            begin: span.0,
+            end: span.1,
+            tag: Some("N".to_string()),
+            ..Token::default()
+        });
+
+        std::fs::create_dir_all(cache_dir).expect("the cache directory");
+        std::fs::write(
+            casfile(cache_dir),
+            serde_json::to_string(&cached).expect("the document encodes"),
+        )
+        .expect("the cache file");
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1/test]
@@ -232,7 +324,7 @@ mod tests {
         assert_eq!(handler.mode, Mode::Cloze);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
     #[test]
     fn process_returns_nothing_when_topic_lacks_engines() {
         let processors = empty_processors();
@@ -255,7 +347,7 @@ mod tests {
         assert!(!cache_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
     #[test]
     fn process_returns_nothing_when_the_language_is_unknown() {
         let processors = empty_processors();
@@ -276,5 +368,87 @@ mod tests {
                 .expect("lookup miss is not an error")
                 .is_none()
         );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    #[test]
+    fn an_undecodable_cache_file_is_replaced() {
+        let processors = model_free_processors();
+        let cache_root = tempfile::tempdir().expect("temp dir");
+        let cache_dir = cache_root.path().join("analyzedTexts");
+        std::fs::create_dir_all(&cache_dir).expect("the cache directory");
+        std::fs::write(casfile(&cache_dir), "{\"text\":").expect("a truncated cache file");
+
+        let document = handler_over(&processors, &cache_dir)
+            .process()
+            .expect("a cache file that will not decode is not an analysis failure")
+            .expect("the topic has an engine pair");
+
+        // The preprocessor ran, so the request is answered from the page
+        // rather than from the empty document the read left behind.
+        assert_eq!(document.text, ANALYSED);
+        assert_eq!(document.page.html, PAGE);
+        // And its output replaced the file, so the next request is a hit.
+        let repaired = read_xmi(&casfile(&cache_dir)).expect("the cache file was rewritten");
+        assert_eq!(repaired.text, ANALYSED);
+        assert_eq!(repaired.page.html, PAGE);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    #[test]
+    fn a_readable_cache_file_is_postprocessed() {
+        let processors = model_free_processors();
+        let cache_root = tempfile::tempdir().expect("temp dir");
+        let cache_dir = cache_root.path().join("analyzedTexts");
+        cache_a_document(&cache_dir, (0, "Sámegiella".len()));
+        let before = std::fs::read_to_string(casfile(&cache_dir)).expect("the cache file");
+
+        let document = handler_over(&processors, &cache_dir)
+            .process()
+            .expect("analysis succeeds")
+            .expect("the topic has an engine pair");
+
+        // Only the cached document carries a token, so an enhancement over
+        // one is the postprocessor running over what the file held.
+        assert_eq!(document.enhancements.len(), 1);
+        assert_eq!(
+            (document.enhancements[0].begin, document.enhancements[0].end),
+            (0, "Sámegiella".len())
+        );
+        assert!(document.enhancements[0].relevant);
+        assert_eq!(
+            std::fs::read_to_string(casfile(&cache_dir)).expect("the cache file"),
+            before,
+            "a readable cache file is left as it is"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    #[test]
+    fn an_unreadable_cached_span_is_a_miss() {
+        for span in [
+            // Inside the `á` of `Sámegiella`, which occupies two bytes.
+            (0, 2),
+            // Past the end of the text the same file carries.
+            (0, 9_999),
+        ] {
+            let processors = model_free_processors();
+            let cache_root = tempfile::tempdir().expect("temp dir");
+            let cache_dir = cache_root.path().join("analyzedTexts");
+            cache_a_document(&cache_dir, span);
+
+            let document = handler_over(&processors, &cache_dir)
+                .process()
+                .unwrap_or_else(|e| panic!("the span {span:?} was not survived: {e:#}"))
+                .expect("the topic has an engine pair");
+
+            // The file was treated as unreadable, so its token never reached
+            // the enhancer and the page was analysed instead.
+            assert!(document.enhancements.is_empty(), "span {span:?}");
+            assert_eq!(document.text, ANALYSED, "span {span:?}");
+            assert_eq!(document.page.html, PAGE, "span {span:?}");
+            let repaired = read_xmi(&casfile(&cache_dir)).expect("the cache file was rewritten");
+            assert!(repaired.tokens.is_empty(), "span {span:?}");
+        }
     }
 }

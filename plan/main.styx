@@ -289,12 +289,20 @@ children (
                 id hd-cache
                 title "Analysis-cache safety: recover from bad cache files, validate offsets, keyed stable cache key"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:01.332393Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence H3 + panic 4/7 + cache-poisoning. (1) page_handler.rs:123-133: cache read failure logs, skips both pipelines, serves the empty PageMap as 200, and never rewrites the file — fall through to re-analysis and overwrite on parse failure. (2) read_xmi (page_handler.rs:53) deserializes offsets with no validation; make Document::covered_text (types.rs:124) checked (the safe helper already exists at vislcg3.rs:58) and validate spans against text at the deserialization edge — any types.rs change or offset-semantics drift currently becomes a repeatable per-page failure. (3) api.rs:444-448 cache key: DefaultHasher (unstable across releases, unkeyed SipHash — offline-collidable, attacker controls both sides via POST html) over URL only — ignores activity and mode, so an analysis for one topic is reused for another. Use a keyed/stable hash and include activity+mode in the key. Also panic 13: write_xmi failure silently skips the postprocessor (page_handler.rs:136-144) — surface it."
+                    }
+
+                    {
+                        at 2026-09-10T23:19:14.755691Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

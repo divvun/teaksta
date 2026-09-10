@@ -9,10 +9,10 @@ use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow};
 use regex::Regex;
-use tracing::{Level, debug, enabled, trace};
+use tracing::{Level, debug, enabled, trace, warn};
 
 use crate::enhancer::cg_span::{HIT_CLASS, SpanTag, TOKEN_CLASS};
-use crate::types::{Document, Enhancement};
+use crate::types::{Document, Enhancement, covered_text};
 use crate::util::enhancer_utils;
 
 /// `.*[^\p{P}].*` as a full match: the token has to carry at least one
@@ -64,8 +64,8 @@ impl TokenEnhancer {
 
     /// Iterate over all tokens and put a span around them. If a token matches
     /// one of the given POS tags, then mark it up as a hit.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
     pub fn process(&self, cas: &mut Document) -> Result<()> {
         let mut id: i32 = 0;
         debug!("Starting enhancement");
@@ -84,7 +84,15 @@ impl TokenEnhancer {
 
         for index in text_index {
             let t = &cas.tokens[index];
-            let covered_text = cas.covered_text(t.begin, t.end);
+            let covered_text = match covered_text(&cas.text, t.begin, t.end) {
+                Ok(covered) => covered,
+                // A token the document text cannot be read at covers nothing
+                // to wrap, so there is no enhancement to make from it.
+                Err(unreadable) => {
+                    warn!("Skipping token: {}", unreadable);
+                    continue;
+                }
+            };
             // enhance all non-punctuation tokens
             if NON_PUNCTUATION.is_match(covered_text) {
                 let mut e = Enhancement {
@@ -233,7 +241,7 @@ mod tests {
         assert!(err.to_string().contains("not a boolean"), "{}", err);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn punctuation_tokens_are_skipped_and_consume_no_id() {
         let mut cas = Document::new(". Mun boran", "sme");
@@ -266,7 +274,7 @@ mod tests {
         assert_eq!(cas.enhancements[1].enhance_end, "</span>");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_spanning_two_line_breaks_is_skipped() {
         let mut cas = Document::new("a\nb\nc", "sme");
@@ -281,7 +289,7 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_single_line_break_still_yields_an_enhancement() {
         let mut cas = Document::new("a\nb", "sme");
@@ -296,7 +304,7 @@ mod tests {
         assert_eq!(cas.enhancements.len(), 1);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_token_made_only_of_punctuation_is_skipped() {
         let mut cas = Document::new("...", "sme");
@@ -311,7 +319,34 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
+    #[test]
+    fn an_unreadable_token_span_is_skipped() {
+        let mut cas = Document::new("Sámegiella", "sme");
+        // Inside the two-byte `á`, past the end, and readable.
+        cas.tokens.push(token(0, 2, Some("N"), None));
+        cas.tokens.push(token(0, 99, Some("N"), None));
+        cas.tokens.push(token(3, 10, Some("N"), None));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 1);
+        assert_eq!(
+            (cas.enhancements[0].begin, cas.enhancements[0].end),
+            (3, 10)
+        );
+        // The skipped tokens consumed no id.
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token teaksta-hit\">"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn a_null_tag_is_never_a_hit() {
         let mut cas = Document::new("beana", "sme");
@@ -331,7 +366,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn the_lemma_filter_demotes_matches_without_a_lemma() {
         let mut cas = Document::new("aaa bbb ccc", "sme");
@@ -349,7 +384,7 @@ mod tests {
         assert_eq!(relevant, vec![false, false, true]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3/test]
     #[test]
     fn existing_enhancements_are_kept_and_new_ones_appended() {
         let mut cas = Document::new("beana", "sme");
