@@ -57,6 +57,15 @@ children (
                 id json-api
                 title "JSON enhancement API endpoint (the add-on protocol contract)"
                 deps (router-binary)
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T14:28:46.845008Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
         )
     }
