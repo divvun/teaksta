@@ -9,18 +9,23 @@
 //! directly: analysing a page takes well under a second, so nothing is served
 //! while the caller waits.
 
+use std::any::Any;
 use std::hash::{Hash as _, Hasher as _};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
 use poem::endpoint::StaticFilesEndpoint;
+use poem::error::ParseJsonError;
 use poem::http::StatusCode;
 use poem::http::header::CONTENT_TYPE;
-use poem::middleware::SizeLimit;
-use poem::web::{Data, Json, Multipart, Query};
-use poem::{EndpointExt, IntoResponse, Response, Route, get, handler, post};
+use poem::middleware::{CatchPanic, SizeLimit};
+use poem::web::{Data, Json, Multipart, Query, RequestBody};
+use poem::{
+    Endpoint, EndpointExt, FromRequest, IntoResponse, Request, Response, Route, get, handler, post,
+};
 use reqwest::Url;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{info, warn};
@@ -46,6 +51,11 @@ const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
 /// What the upload body may weigh, counting the multipart framing around the
 /// file the cap in [`MAX_UPLOAD_BYTES`] applies to.
 const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
+
+/// What the span endpoint's body may weigh. A page carried inline is the
+/// largest thing it holds, so it weighs what an upload may, with the same
+/// room for the framing around it.
+const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
 /// The exercise a request asks for.
 // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
@@ -85,7 +95,7 @@ pub struct Topic {
 
 /// Everything a request is served from: the deployment configuration, the
 /// per-topic pipelines, and the topic list they were built from.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+3]
 pub struct AppState {
     pub config: Config,
     pub processors: Processors,
@@ -160,7 +170,10 @@ impl AppState {
 /// path the bundle has no file for answered by `index.html` so the client's
 /// own router owns it. The `/api` paths are static routes and the client's is
 /// a catch-all, so the API answers first whatever the client routes.
-pub fn routes(config: &Config) -> Route {
+///
+/// The whole map is served behind a panic guard, so a handler that panics is
+/// answered rather than dropping the connection under the caller.
+pub fn routes(config: &Config) -> impl Endpoint + use<> {
     let api = Route::new()
         .at("/api/activities", get(registry))
         .at("/api/enhance", get(enhance_page).post(enhance_spans))
@@ -169,7 +182,10 @@ pub fn routes(config: &Config) -> Route {
             post(upload_text).with(SizeLimit::new(MAX_UPLOAD_BODY)),
         );
 
-    match &config.webapp_dist {
+    #[cfg(test)]
+    let api = api.at("/api/panic", get(panics));
+
+    let map = match &config.webapp_dist {
         Some(dist) => api.nest(
             "/",
             StaticFilesEndpoint::new(dist)
@@ -177,13 +193,36 @@ pub fn routes(config: &Config) -> Route {
                 .fallback_to_index(),
         ),
         None => api.at("/", get(index)),
-    }
+    };
+
+    map.with(CatchPanic::new().with_handler(panicked))
+}
+
+/// What a panicking handler is answered with. The guard unwinds the panic and
+/// hands its payload here, so the failure is recorded and the caller is told
+/// something rather than seeing the connection reset with nothing on it.
+fn panicked(payload: Box<dyn Any + Send + 'static>) -> (StatusCode, &'static str) {
+    let raised = payload
+        .downcast_ref::<&str>()
+        .map(|message| (*message).to_string())
+        .or_else(|| payload.downcast_ref::<String>().cloned())
+        .unwrap_or_else(|| "a payload of no known type".to_string());
+    warn!("A request handler panicked: {raised}");
+    (StatusCode::INTERNAL_SERVER_ERROR, "internal server error")
+}
+
+/// A route that panics, so the guard the map is served behind can be shown to
+/// answer. It is compiled only under test and reaches no deployment.
+#[cfg(test)]
+#[handler]
+async fn panics() -> &'static str {
+    panic!("the panic this route exists to raise")
 }
 
 /// The root of a deployment with no web client: the endpoint listing, so an
 /// API-only deployment can be probed without one.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
 #[handler]
 async fn index() -> Response {
     let body = concat!(
@@ -252,6 +291,48 @@ async fn enhance_page(
         .body(page))
 }
 
+/// A JSON body read under a cap, which is what the span endpoint takes
+/// instead of poem's own `Json`.
+///
+/// The cap has to bound the read itself rather than a declared length.
+/// poem's `SizeLimit` middleware weighs only the `Content-Length` header —
+/// and refuses a request carrying none outright — while `Json` then buffers
+/// however many bytes actually arrive. A chunked request declares no length,
+/// so a body streamed forever would be read forever; here it is read up to
+/// the cap and refused with 413 at it, declared or not.
+struct CappedJson<T>(T);
+
+impl<'a, T: DeserializeOwned> FromRequest<'a> for CappedJson<T> {
+    async fn from_request(request: &'a Request, body: &mut RequestBody) -> poem::Result<Self> {
+        let content_type = request
+            .headers()
+            .get(CONTENT_TYPE)
+            .and_then(|value| value.to_str().ok())
+            .ok_or(ParseJsonError::ContentTypeRequired)?;
+        if !is_json(content_type) {
+            return Err(ParseJsonError::InvalidContentType(content_type.to_string()).into());
+        }
+
+        let bytes = body.take()?.into_bytes_limit(MAX_ENHANCE_BODY).await?;
+        serde_json::from_slice(&bytes)
+            .map(CappedJson)
+            .map_err(|error| ParseJsonError::Parse(error).into())
+    }
+}
+
+/// Whether a body announces itself as JSON. Requiring it is what keeps a
+/// plain HTML form, which can announce nothing of the sort, from reaching an
+/// endpoint that analyses whatever it is given.
+fn is_json(content_type: &str) -> bool {
+    let media = content_type
+        .split(';')
+        .next()
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_lowercase();
+    media == "application/json" || (media.starts_with("application/") && media.ends_with("+json"))
+}
+
 /// The body the span endpoint takes: the page itself, or where to fetch it.
 #[derive(Debug, Deserialize)]
 struct SpanRequest {
@@ -263,11 +344,11 @@ struct SpanRequest {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 #[handler]
 async fn enhance_spans(
-    Json(request): Json<SpanRequest>,
+    CappedJson(request): CappedJson<SpanRequest>,
     state: Data<&Arc<AppState>>,
 ) -> poem::Result<Response> {
     let state = state.0.clone();

@@ -1,6 +1,6 @@
 # sme/src/main/java/werti/server/WERTiServlet.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+3]
 > pub struct AppState {
 >   pub config: Config,
 >   pub processors: Processors,
@@ -9,7 +9,7 @@
 >
 > pub struct Topic { pub name: String, pub label: Option<String>, pub enabled: bool }
 >
-> pub fn routes(config: &Config) -> Route
+> pub fn routes(config: &Config) -> impl Endpoint
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
 > pub enum Mode { Colorize, Click, Mc, Cloze }
@@ -37,10 +37,10 @@
 > hand, so an enhancer never has to decide what to do without one, and the
 > four cases a topic distinguishes are exhaustive.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
 > async fn index() -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
 > What the root answers depends on whether the deployment carries a built web
 > client, which is what `TEAKSTA_WEBAPP_DIST` names.
 >
@@ -55,6 +55,12 @@
 > `/api` paths are registered as themselves and the client's as a catch-all,
 > so an API request is never answered by the client whatever the client would
 > route that address to.
+>
+> Every route the map holds is served behind a panic guard, the client's
+> included. A handler that panics is answered with 500 and a plain
+> `internal server error` body, and what was raised is logged, rather than the
+> connection being dropped with nothing on it — a caller sees a status it can
+> act on and the failure is recorded where the operator reads.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
@@ -112,10 +118,10 @@
 > answered request carrying the address, the exercise and the elapsed time;
 > nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
-> async fn enhance_spans(Json(request): Json<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+> async fn enhance_spans(CappedJson(request): CappedJson<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -125,6 +131,15 @@
 > one carrying both are each a 400. `mode` and `activity` are validated as for
 > the whole-page endpoint, and `url` is read the same way, with the same 502
 > for a page that cannot be fetched.
+>
+> The body is weighed before any of that. It may carry 5 MiB and a little
+> framing — what an upload may weigh, since a page carried inline is the
+> largest thing it holds — and a body over that is a 413 with nothing parsed.
+> The cap bounds the bytes actually read rather than a declared length, so a
+> request that announces no `Content-Length`, as a chunked one need not, is
+> refused at the same weight instead of being read for as long as it streams.
+> The body must still announce itself as JSON, so a form post cannot reach the
+> analyser; one that announces nothing, or announces something else, is a 415.
 >
 > There is no protocol version member and no version gate: the 490, 491 and
 > 492 status codes the browser add-on was answered with are gone along with

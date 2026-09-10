@@ -82,7 +82,7 @@ fn a_bare_host_is_taken_as_http() {
     assert!(page_url("http://").is_err());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
 #[test]
 fn each_page_source_gets_its_own_key() {
     let page = "<html><body><p>Mun oidnen viesu.</p></body></html>";
@@ -125,7 +125,7 @@ fn served(config: Config) -> TestClient<impl Endpoint> {
 }
 
 /// A deployment carrying no web client, which is the API-only one.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn the_index_lists_every_endpoint() {
     let root = webapp_with(&["Substantive"]);
@@ -144,7 +144,7 @@ async fn the_index_lists_every_endpoint() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn a_configured_client_answers_the_root() {
     let root = webapp_with(&["Substantive"]);
@@ -158,7 +158,7 @@ async fn a_configured_client_answers_the_root() {
     assert_eq!(body, CLIENT_INDEX);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn a_client_route_is_answered_by_the_document() {
     let root = webapp_with(&["Substantive"]);
@@ -177,7 +177,7 @@ async fn a_client_route_is_answered_by_the_document() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn an_asset_is_served_from_the_bundle() {
     let root = webapp_with(&["Substantive"]);
@@ -254,7 +254,7 @@ async fn the_page_endpoint_needs_all_three() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
 #[tokio::test]
 async fn the_span_endpoint_needs_one_source() {
     let root = webapp_with(&["Substantive"]);
@@ -279,6 +279,92 @@ async fn the_span_endpoint_needs_one_source() {
             .await
             .assert_status(StatusCode::BAD_REQUEST);
     }
+}
+
+/// A span request whose page weighs the given number of bytes, which is the
+/// only member of the body that grows.
+fn span_body_of(page_bytes: usize) -> String {
+    let page = "a".repeat(page_bytes);
+    format!("{{\"html\":\"{page}\",\"activity\":\"Kitchens\",\"mode\":\"colorize\"}}")
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
+#[tokio::test]
+async fn an_oversized_span_body_is_refused() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+    let body = span_body_of(MAX_ENHANCE_BODY);
+
+    // A body that declares its weight, which is the ordinary request.
+    client
+        .post("/api/enhance")
+        .content_type("application/json")
+        .header("content-length", body.len())
+        .body(body.clone())
+        .send()
+        .await
+        .assert_status(StatusCode::PAYLOAD_TOO_LARGE);
+
+    // And one that declares nothing, which is what a chunked request is: the
+    // read itself is bounded, so it is refused at the same weight rather than
+    // being buffered for as long as it streams.
+    client
+        .post("/api/enhance")
+        .content_type("application/json")
+        .body(body)
+        .send()
+        .await
+        .assert_status(StatusCode::PAYLOAD_TOO_LARGE);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
+#[tokio::test]
+async fn a_body_under_the_cap_reaches_the_handler() {
+    let root = webapp_with(&["Substantive"]);
+    let body = span_body_of(1024 * 1024);
+
+    let response = served(config_for(root.path()))
+        .post("/api/enhance")
+        .content_type("application/json")
+        .header("content-length", body.len())
+        .body(body)
+        .send()
+        .await;
+
+    // Only the handler knows `Kitchens` is not a topic the registry loaded,
+    // so a 400 says the megabyte passed the cap and was parsed.
+    response.assert_status(StatusCode::BAD_REQUEST);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5/test]
+#[tokio::test]
+async fn a_body_that_is_not_json_is_refused() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+    let body = "html=%3Cp%3Ea%3C%2Fp%3E&activity=Substantive&mode=colorize";
+
+    for content_type in ["application/x-www-form-urlencoded", "text/plain"] {
+        client
+            .post("/api/enhance")
+            .content_type(content_type)
+            .body(body)
+            .send()
+            .await
+            .assert_status(StatusCode::UNSUPPORTED_MEDIA_TYPE);
+    }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
+#[tokio::test]
+async fn a_panicking_handler_is_answered_rather_than_dropped() {
+    let root = webapp_with(&["Substantive"]);
+
+    let response = served(config_for(root.path()))
+        .get("/api/panic")
+        .send()
+        .await;
+
+    response.assert_status(StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2/test]
