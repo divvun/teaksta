@@ -9,26 +9,13 @@ use std::collections::HashMap;
 use anyhow::{Result, anyhow};
 use tracing::info;
 
-use crate::types::{CgReading, CgToken, Document, Enhancement};
-use crate::util::constants;
-use crate::util::enhancer_utils;
+use crate::enhancer::syntactic;
+use crate::types::{CgReading, CgToken, Document};
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Vislcg3SubjectEnhancer {
     pub subject_tags: Vec<String>,
-    pub lookup_loc: String,
-    pub lookup_flags: String,
-}
-
-impl Default for Vislcg3SubjectEnhancer {
-    fn default() -> Self {
-        Vislcg3SubjectEnhancer {
-            subject_tags: Vec::new(),
-            lookup_loc: constants::LOOKUP_LOC.to_string(),
-            lookup_flags: constants::LOOKUP_FLAGS.to_string(),
-        }
-    }
 }
 
 impl Vislcg3SubjectEnhancer {
@@ -39,8 +26,8 @@ impl Vislcg3SubjectEnhancer {
         Self::default()
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
     pub fn initialize(&mut self, context: &HashMap<String, String>) -> Result<()> {
         info!("Subject tags {:?}", self.subject_tags);
         let subj_tags = context
@@ -58,83 +45,20 @@ impl Vislcg3SubjectEnhancer {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
-        info!("Starting Subject enhancement");
-        // colorize, click, mc or cloze - chosen by the user and sent to the
-        // servlet as a request parameter
-        let enhancement_type = crate::server::servlet::ENHANCEMENT_TYPE
-            .read()
-            .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))?
-            .clone();
-
-        // keep track of ids for each annotation class
-        let mut class_counts: HashMap<String, i32> = HashMap::new();
-        for con_t in &self.subject_tags {
-            class_counts.insert(con_t.clone(), 0);
-            info!("Tag: {}", con_t);
-        }
-
-        // iterating over the configured tags instead of the class-count key set
-        // because it is important to control the order in which spans are
-        // enhanced
-
-        for con_t in &self.subject_tags {
-            // go through tokens
-            for token_index in 0..doc.cg_tokens.len() {
-                let enhancement_type = enhancement_type
-                    .as_deref()
-                    .ok_or_else(|| anyhow!("WERTiServlet.enhancement_type is unset"))?;
-                if enhancement_type == "cloze" || enhancement_type == "mc" {
-                    // more than one reading? don't mark up if the exercise type
-                    // is mc or cloze
-                    if !self.is_safe(&doc.cg_tokens[token_index]) {
-                        continue;
-                    }
-                }
-
-                let (begin, end, reading_count) = {
-                    let cgt = &doc.cg_tokens[token_index];
-                    (cgt.begin, cgt.end, cgt.readings.len())
-                };
-
-                // analyze reading(s)
-                // Loop over all the readings. If there is one analysis that
-                // matches the tag pattern then the token will be selected for
-                // the exercise.
-                for i in 0..reading_count {
-                    let matches = self.contains_tag(&doc.cg_tokens[token_index].readings[i], con_t);
-
-                    if matches {
-                        // the lemma of the CG reading and the distractors
-                        // generated from it are not needed for exercises on
-                        // syntactic functions
-
-                        // increment id
-                        let new_id = class_counts[con_t] + 1;
-                        let span_start_tag = format!(
-                            "<span id=\"{}\" class=\"wertiviewtoken  wertiviewSubject \">",
-                            enhancer_utils::get_id(&format!("WERTi-span-{con_t}"), new_id)
-                        );
-                        // make new enhancement
-                        let e = Enhancement {
-                            begin,
-                            end,
-                            enhance_start: span_start_tag,
-                            enhance_end: "</span>".to_string(),
-                            relevant: true,
-                        };
-                        class_counts.insert(con_t.clone(), new_id);
-                        doc.enhancements.push(e);
-                        break;
-                    }
-                }
-            }
-        }
-
-        info!("Finished subject enhancement");
-        Ok(())
+        syntactic::run(
+            doc,
+            &syntactic::FunctionSpec {
+                start_log: "Starting Subject enhancement",
+                finish_log: "Finished subject enhancement",
+                span_class: "teaksta-Subject",
+                tags: &self.subject_tags,
+                is_safe: &|t| self.is_safe(t),
+                contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),
+            },
+        )
     }
 
     /// Determines whether the given token is safe, i.e. unambiguous
@@ -185,7 +109,7 @@ mod tests {
         enhancer.subject_tags.clone()
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
     #[test]
     fn initialize_splits_subj_tags_on_commas_without_trimming() {
         let mut enhancer = Vislcg3SubjectEnhancer::new();
@@ -199,12 +123,9 @@ mod tests {
             ],
             |subj_tags| configured(&mut enhancer, subj_tags),
         );
-
-        assert_eq!(enhancer.lookup_loc, constants::LOOKUP_LOC);
-        assert_eq!(enhancer.lookup_flags, constants::LOOKUP_FLAGS);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
     #[test]
     fn initialize_drops_trailing_empties_only_with_comma() {
         let mut enhancer = Vislcg3SubjectEnhancer::new();
@@ -220,7 +141,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
     #[test]
     fn initialize_fails_absent_subj_tags_keeps_field() {
         let mut enhancer = Vislcg3SubjectEnhancer::new();
@@ -293,7 +214,7 @@ mod tests {
         assert!(enhancer.contains_tag(&empty, ""));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2/test]
     #[test]
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3SubjectEnhancer {
@@ -306,7 +227,7 @@ mod tests {
         });
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
         let enhancer = Vislcg3SubjectEnhancer::new();
@@ -318,7 +239,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2/test]
     #[test]
     fn process_requires_enhancement_type_for_first_token() {
         let enhancer = Vislcg3SubjectEnhancer {

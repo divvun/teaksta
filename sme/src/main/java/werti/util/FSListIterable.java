@@ -56,7 +56,6 @@ import org.apache.uima.jcas.cas.TOP;
  * @author Ramon Ziai, Niels Ott
  * @version $Id$
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable]
 public class FSListIterable implements Iterable<TOP> {
 
 	private NonEmptyFSList list;
@@ -65,21 +64,16 @@ public class FSListIterable implements Iterable<TOP> {
 	 * The iterator used by this FSListIterable
 	 * @author Ramon Ziai, Niels Ott
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator]
 	private class FSListIterator implements Iterator<TOP> {
 		
 		private NonEmptyFSList work_list;
 		
-		// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.fs-list-iterator-fn]
-		// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.fs-list-iterator-fn]
 		public FSListIterator() {
 			// the list needs to be modified so save it
 			// TODO: this is by reference, shouldn't the list (not its items) be cloned?
 			work_list = list;
 		}
 
-		// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.has-next-fn]
-		// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.has-next-fn]
 		public boolean hasNext() {
 			
 			// nothing left
@@ -99,8 +93,6 @@ public class FSListIterable implements Iterable<TOP> {
 			
 		}
 
-		// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.next-fn]
-		// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.next-fn]
 		public TOP next() {
 			// illegal call
 			if ( ! hasNext() ) {
@@ -121,8 +113,6 @@ public class FSListIterable implements Iterable<TOP> {
 			return old_head;
 		}
 
-		// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.remove-fn]
-		// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterator.remove-fn]
 		public void remove() {
 			// I'm afraid I'm incapable of serving your request, my dear.
 			throw new UnsupportedOperationException();
@@ -135,15 +125,11 @@ public class FSListIterable implements Iterable<TOP> {
 	 * that then can be used e.g. in for (... ) loops
 	 * @param list the list to use
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterable-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.fs-list-iterable-fn]
 	public FSListIterable(NonEmptyFSList list) {
 		this.list = list;
 	}
 	
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.iterator-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.fs-list-iterable.fs-list-iterable.iterator-fn]
 	public Iterator<TOP> iterator() {
 		return new FSListIterator();
 	}

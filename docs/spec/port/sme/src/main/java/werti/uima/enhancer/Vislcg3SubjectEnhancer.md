@@ -32,10 +32,10 @@
 > string also matches. No case check is performed even though the surrounding
 > comment claims the nominative is also required.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
 > @Override public void initialize(UimaContext context) throws ResourceInitializationException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
 > Called once by the UIMA framework when the analysis engine instance is
 > created. Logs "Subject tags {}" at info with the current value of the
 > subjectTags field, then delegates to the superclass initialize(context), then
@@ -53,10 +53,8 @@
 > ResourceInitializationException is declared but never thrown directly.
 >
 > Quirk: the log call reads subjectTags before it is assigned, so it always
-> reports null. Quirk: the instance fields lookupLoc (Constants.lookup_Loc =
-> "/usr/local/bin/lookup") and lookupFlags (Constants.lookup_Flags = the empty
-> string) are assigned at construction and are never read by any method of this
-> class.
+> reports null. The lookup binary and flag paths the Java class carried as
+> instance fields and never read are not held at all.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.is-safe-fn]
 > private boolean isSafe(CGToken t)
@@ -67,10 +65,10 @@
 > unambiguous. Returns false for a null readings array, for an empty array, and
 > for two or more readings. Pure; no side effects.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+2]
 > Logs "Starting Subject enhancement" at info, then reads the process-wide
 > static field WERTiServlet.enhancement_type into a local. That field holds the
 > exercise type chosen by the user — one of "colorize", "click", "mc", "cloze"
@@ -95,14 +93,19 @@
 >   in the CAS; sets its relevant feature to true; sets begin to cgt.getBegin()
 >   and end to cgt.getEnd(); computes newId = classCounts.get(conT) + 1; sets
 >   enhanceStart to the string
->   `<span id="WERTi-span-<conT>-<newId>" class="wertiviewtoken  wertiviewSubject ">`
+>   `<span id="WERTi-span-<conT>-<newId>" class="teaksta-token teaksta-Subject">`
 >   — the id is produced by EnhancerUtils.get_id("WERTi-span-" + conT, newId),
->   which joins with a single "-", and the class attribute has two spaces
->   between "wertiviewtoken" and "wertiviewSubject" plus a trailing space before
->   the closing quote, both of which are part of the literal; sets enhanceEnd to
+>   which joins with a single "-", and the class attribute holds
+>   "teaksta-token" and "teaksta-Subject" separated by a single
+>   space; sets enhanceEnd to
 >   "</span>"; writes newId back into classCounts under conT; adds the
 >   Enhancement to the CAS indexes with cas.addFsToIndexes; and breaks out of
 >   the reading loop, so at most one Enhancement per token per tag is produced.
+>
+>
+> The markup is rendered from a structured span tag rather than assembled as
+> text, so the id and the class list are escaped for a double-quoted attribute
+> and the classes are joined by exactly one space.
 >
 > Finishes by logging "Finished subject enhancement" at info. Returns void.
 > AnalysisEngineProcessException is declared but never thrown.

@@ -26,11 +26,9 @@ use anyhow::{Result, anyhow, bail};
 use regex::Regex;
 use tracing::{debug, info};
 
-pub use crate::enhancer::cg_span::{MutableInt, SpanTag, Word};
+pub use crate::enhancer::cg_span::{HINT_CLASS, SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
 use crate::types::{CgToken, Document, Enhancement};
-use crate::util::constants;
-use crate::util::jstring::{char_index_of, java_trim, split_ws, string_tokenizer};
 use crate::util::{cas_utils, enhancer_utils};
 
 /// Separates one token's generator input (and, in the generator output, one
@@ -59,13 +57,6 @@ pub const TAGS_TBR: [&str; 12] = [
 /// them reads; the enhancers select on morphological readings instead.
 pub const CHUNK_BEGIN_SUFFIX: &str = "-B";
 pub const CHUNK_INSIDE_SUFFIX: &str = "-I";
-
-pub const LOOKUP_LOC: &str = constants::LOOKUP_LOC;
-pub const LOOKUP_FLAGS: &str = constants::LOOKUP_FLAGS;
-pub const INVERTED_FST: &str = constants::INVERTED_FST;
-/// The analyser FST. Held by every one of the five Java classes and used by
-/// none of them; only the inverted generator FST is.
-pub const FST: &str = constants::AN_FST;
 
 /// The regex form of the last entry of [`TAGS_TBR`], which [`remove_tags`]
 /// treats as a pattern rather than a literal.
@@ -166,7 +157,7 @@ pub fn substring_to_index_of(s: &str, marker: &str) -> Result<String> {
 pub fn split_lemma_dropping_last(reading_str: &str) -> Result<(String, String)> {
     let chars: Vec<char> = reading_str.chars().collect();
     let length = chars.len();
-    let plus = match char_index_of(reading_str, '+') {
+    let plus = match chars.iter().position(|c| *c == '+') {
         Some(index) => index,
         // substring(0, -1) when there is no "+"
         None => bail!("begin 0, end -1, length {}", length),
@@ -185,12 +176,10 @@ pub fn split_lemma_dropping_last(reading_str: &str) -> Result<(String, String)> 
 /// not accept.
 pub fn cloze_line(lemma_str: &str, an_tmp: &str) -> String {
     let mut analyses_str = an_tmp.replace("+<sme>", "");
-    // remove @ only if it is in analyses_str (otherwise get "String index
-    // out of range" error)
-    if let Some(index) = char_index_of(&analyses_str, '@') {
-        if index > 0 {
-            analyses_str = analyses_str.chars().take(index - 1).collect::<String>();
-        }
+    // the syntactic tag and the separator in front of it are cut away, and
+    // only when the reading carries one
+    if let Some(cut) = cut_before_syntactic_tag(&analyses_str) {
+        analyses_str.truncate(cut);
     }
     // if analyses contains tags_tbr, remove it
     remove_tags(&format!("{}+{}\n", lemma_str, analyses_str))
@@ -201,10 +190,18 @@ pub fn cloze_line(lemma_str: &str, an_tmp: &str) -> String {
 /// Removing the `@` is conditional because `substring(0, -2)` would
 /// otherwise raise "String index out of range".
 pub fn correct_answer_line(reading_str: &str) -> String {
-    match char_index_of(reading_str, '@') {
-        Some(index) if index > 0 => reading_str.chars().take(index - 1).collect::<String>() + "\n",
-        _ => reading_str.to_string() + "\n",
+    match cut_before_syntactic_tag(reading_str) {
+        Some(cut) => reading_str[..cut].to_string() + "\n",
+        None => reading_str.to_string() + "\n",
     }
+}
+
+/// Where a reading has to be cut to lose its syntactic tag and the separator
+/// in front of it. `None` when the reading carries no tag, or opens with one
+/// and so has no separator to drop.
+fn cut_before_syntactic_tag(reading: &str) -> Option<usize> {
+    let at = reading.find('@')?;
+    reading[..at].char_indices().next_back().map(|(cut, _)| cut)
 }
 
 /// The mc generator input a fixed-table topic builds: one row per distractor
@@ -212,15 +209,15 @@ pub fn correct_answer_line(reading_str: &str) -> String {
 /// tags the generator will not accept stripped from the whole block.
 pub fn lemma_distractors(reading_str: &str, distract_forms: &[&str]) -> Result<String> {
     // Get lemma from the reading
-    let lemma = match char_index_of(reading_str, '+') {
-        Some(index) => reading_str.chars().take(index).collect::<String>(),
+    let lemma = match reading_str.find('+') {
+        Some(index) => &reading_str[..index],
         // substring(0, -1) when there is no "+"
         None => bail!("begin 0, end -1, length {}", reading_str.chars().count()),
     };
     let mut generation_input = String::new();
     // Assign distractorforms from the array
     for form in distract_forms {
-        generation_input = generation_input + &lemma + "+" + form + "\n";
+        generation_input = generation_input + lemma + "+" + form + "\n";
     }
     // add reading_str as last element in generationInput which will be used
     // as correct_answer
@@ -349,7 +346,7 @@ impl Matcher {
 /// only the branch that is actually taken contributes content.
 #[derive(Default)]
 struct Scan {
-    class_counts: HashMap<String, MutableInt>,
+    class_counts: HashMap<String, i32>,
     word_to_span_map: HashMap<Word, SpanTag>,
     generator_input: String,
     generator_input_cloze: String,
@@ -361,7 +358,6 @@ struct Scan {
 /// One `process` call: the topic it runs for and the generator inputs that
 /// topic builds.
 struct Run<'a> {
-    outer: usize,
     spec: &'a TopicSpec,
     matcher: Matcher,
     mc: bool,
@@ -385,7 +381,7 @@ impl Run<'_> {
                 self.enhance_token(doc, cgt, &found, &mut scan);
             } else if !found.hint_tag.is_empty() {
                 scan.hint_distance = 0;
-                emit_hint_span(doc, self.outer, cgt, &found.hint_tag, &mut scan);
+                emit_hint_span(doc, cgt, &found.hint_tag, &mut scan);
             }
             scan.hint_distance += 1;
         }
@@ -393,11 +389,10 @@ impl Run<'_> {
         if self.mc {
             // generate distractors only when the activity is "mc" (multiple
             // choice)
-            info!("Distractor generation pipeline: {}", generation_pipeline());
             let started = Instant::now();
             let output = generate_forms(&scan.generator_input)?;
             let trace = self.spec.trace;
-            attach_distractors(doc, self.outer, trace, &output, &mut scan.word_to_span_map)?;
+            attach_distractors(doc, trace, &output, &mut scan.word_to_span_map)?;
             *elapsed += started.elapsed().as_secs_f64() * 1000.0;
         }
 
@@ -407,7 +402,7 @@ impl Run<'_> {
             let started = Instant::now();
             let output = generate_forms(&scan.generator_input_cloze)?;
             let trace = self.spec.trace;
-            attach_possible_forms(doc, self.outer, trace, &output, &mut scan.word_to_span_map)?;
+            attach_possible_forms(doc, trace, &output, &mut scan.word_to_span_map)?;
             *elapsed += started.elapsed().as_secs_f64() * 1000.0;
         }
 
@@ -431,15 +426,10 @@ impl Run<'_> {
         let count = bump(&mut scan.class_counts, &span_reading_string);
 
         // create a word with begin and end of the current CGToken
-        let word = Word::new(self.outer, cgt.begin, cgt.end);
+        let word = Word::new(cgt.begin, cgt.end);
 
-        // was: wertiviewhit
-        let span_tag_start = format!(
-            "<span id=\"{}\" class=\"wertiviewtoken {}\">",
-            enhancer_utils::get_id(&format!("WERTi-span-{}", span_reading_string), count),
-            self.spec.span_class
-        );
-        let mut span_tag = SpanTag::new(self.outer, span_tag_start);
+        let id = enhancer_utils::get_id(&format!("WERTi-span-{}", span_reading_string), count);
+        let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, self.spec.span_class]);
         span_tag.add_attribute("lemma", &found.lemma);
 
         // only add the hint ID if the distance is allowed and the hint still
@@ -450,7 +440,7 @@ impl Run<'_> {
         // reset the validity of a hint
         scan.hint_is_valid = false;
 
-        scan.word_to_span_map.insert(word.clone(), span_tag.clone());
+        scan.word_to_span_map.insert(word, span_tag.clone());
         self.queue_for_generator(doc, &word, &span_tag, found, scan);
     }
 
@@ -487,7 +477,7 @@ impl Run<'_> {
                 Err(e) => debug!("no cloze input for {}: {}", found.reading, e),
             }
         } else {
-            push_enhancement(doc, word.get_begin(), word.get_end(), span_tag);
+            push_enhancement(doc, word.begin, word.end, span_tag);
         }
     }
 }
@@ -497,7 +487,6 @@ impl Run<'_> {
 /// changes about it.
 pub fn run(
     doc: &mut Document,
-    outer: usize,
     spec: &TopicSpec,
     morphological_forms: &dyn Fn(&str) -> Result<String>,
     lemma_and_analyses: &dyn Fn(&str) -> Result<String>,
@@ -515,7 +504,6 @@ pub fn run(
     let start_time = Instant::now();
 
     let pass = Run {
-        outer,
         spec,
         matcher: Matcher::new(spec)?,
         mc: enhancement_type == "mc",
@@ -549,29 +537,28 @@ pub fn run(
 /// The output from the generator is used to create distractors and is
 /// placed into the right place in the span tag. Afterwards an enhancement
 /// with the span tag is created and passed to the cas.
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+3]
 pub fn attach_distractors(
     doc: &mut Document,
-    outer: usize,
     trace: Trace,
     cg3_generator_output: &str,
     word_to_span_map: &mut HashMap<Word, SpanTag>,
 ) -> Result<()> {
     let mut generator_output = String::new();
     let mut distractforms = String::new();
-    let mut splitted_go: Vec<String> = vec![String::new()];
+    let mut answer = String::new();
 
     for raw_line in cg3_generator_output.lines() {
-        let line = java_trim(raw_line);
+        let line = raw_line.trim();
         if line.is_empty() {
             continue;
         }
@@ -580,31 +567,32 @@ pub fn attach_distractors(
         else if line.starts_with("Word") {
             // only enhance tokens with more than one distractor form
             if !distractforms.is_empty() {
-                let word = word_record(outer, line)?;
+                let word = word_record(line)?;
                 let span_tag = span_for(word_to_span_map, &word)?;
                 if trace.span_tag {
                     info!("spantag before adding distractors:{}", span_tag);
                 }
                 span_tag.add_attribute("distractors", &distractforms);
-                if splitted_go.is_empty() {
-                    bail!("Index -1 out of bounds for length 0");
-                }
-                span_tag.add_attribute("answer", &splitted_go[splitted_go.len() - 1]);
-                let e = push_enhancement(doc, word.get_begin(), word.get_end(), span_tag);
+                span_tag.add_attribute("answer", &answer);
+                let e = push_enhancement(doc, word.begin, word.end, span_tag);
                 if trace.enhancement {
                     info!("Enhancement={:?}", e);
                 }
                 // the block belongs to this token alone: a further Word
                 // record before the next marker has no forms of its own
                 distractforms.clear();
-                splitted_go.clear();
+                answer.clear();
             }
         }
         // the marker (ñôŃßĘńŠē) was found, begin to process the generator
         // output, create distractors
         else if line.contains(MARKER) {
             let go = std::mem::take(&mut generator_output);
-            splitted_go = split_ws(&go).into_iter().map(str::to_string).collect();
+            answer = go
+                .split_whitespace()
+                .next_back()
+                .unwrap_or_default()
+                .to_string();
             let (forms, unique) = collect_forms(&go);
             // exclude the distractor if its only one, you need at least 2
             // distractors for mc
@@ -625,19 +613,18 @@ pub fn attach_distractors(
 
 /// Cloze counterpart of the distractor reader: every generable form is
 /// attached to the span, with no answer singled out and no minimum count.
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+3]
 pub fn attach_possible_forms(
     doc: &mut Document,
-    outer: usize,
     trace: Trace,
     cg3_generator_output: &str,
     word_to_span_map: &mut HashMap<Word, SpanTag>,
@@ -646,7 +633,7 @@ pub fn attach_possible_forms(
     let mut possible_forms = String::new();
 
     for raw_line in cg3_generator_output.lines() {
-        let line = java_trim(raw_line);
+        let line = raw_line.trim();
         if line.is_empty() {
             continue;
         }
@@ -655,13 +642,13 @@ pub fn attach_possible_forms(
         // wordToSpanMap
         else if line.starts_with("Word") {
             if !possible_forms.is_empty() {
-                let word = word_record(outer, line)?;
+                let word = word_record(line)?;
                 let span_tag = span_for(word_to_span_map, &word)?;
                 if trace.possible_forms {
                     info!("possibleforms= {}", possible_forms);
                 }
                 span_tag.add_attribute("possibleforms", &possible_forms);
-                push_enhancement(doc, word.get_begin(), word.get_end(), span_tag);
+                push_enhancement(doc, word.begin, word.end, span_tag);
                 // the block belongs to this token alone: a further Word
                 // record before the next marker has no forms of its own
                 possible_forms.clear();
@@ -688,27 +675,26 @@ pub fn attach_possible_forms(
 /// Forms that could not be generated are excluded, as well as input strings
 /// of the iFST; the set's purpose is to filter out duplicates.
 fn collect_forms(block: &str) -> (String, usize) {
-    let mut kept = String::new();
-    let mut seen: HashSet<String> = HashSet::new();
-    for word in string_tokenizer(block) {
-        if !word.contains('+') && !word.contains('-') && seen.insert(word.to_string()) {
-            kept = kept + word + " ";
+    let mut kept: Vec<&str> = Vec::new();
+    let mut seen: HashSet<&str> = HashSet::new();
+    for word in block.split_whitespace() {
+        if !word.contains(['+', '-']) && seen.insert(word) {
+            kept.push(word);
         }
     }
-    // remove the whitespace at the end
-    (java_trim(&kept).to_string(), seen.len())
+    (kept.join(" "), seen.len())
 }
 
 /// The `Word <begin> <end>` record the generator input carried through, read
 /// back with the index and parse failures Java raises on a malformed line.
-fn word_record(outer: usize, line: &str) -> Result<Word> {
-    let line_parts = split_ws(line);
+fn word_record(line: &str) -> Result<Word> {
+    let line_parts: Vec<&str> = line.split_whitespace().collect();
     if line_parts.len() < 3 {
         bail!("Index 2 out of bounds for length {}", line_parts.len());
     }
     let begin = parse_offset(line_parts[1])?;
     let end = parse_offset(line_parts[2])?;
-    Ok(Word::new(outer, begin, end))
+    Ok(Word::new(begin, end))
 }
 
 /// `Integer.parseInt`: a non-numeric field raises NumberFormatException,
@@ -739,6 +725,7 @@ fn push_record(writer: &mut String, block: &str, word: &Word) {
     writer.push_str(MARKER);
     writer.push('\n');
     writer.push_str(&word.to_string());
+    writer.push('\n');
 }
 
 /// make new enhancement, pass it to the cas
@@ -748,12 +735,13 @@ fn push_enhancement(
     end: usize,
     span_tag: &SpanTag,
 ) -> Enhancement {
-    let mut e = Enhancement::default();
-    e.relevant = true;
-    e.begin = begin;
-    e.end = end;
-    e.enhance_start = span_tag.get_span_tag_start().to_string();
-    e.enhance_end = span_tag.get_span_tag_end().to_string();
+    let e = Enhancement {
+        relevant: true,
+        begin,
+        end,
+        enhance_start: span_tag.start_tag(),
+        enhance_end: span_tag.end_tag().to_string(),
+    };
     // update CAS
     doc.enhancements.push(e.clone());
     e
@@ -761,48 +749,22 @@ fn push_enhancement(
 
 /// The hint span a preposition gets in its own right, and the id the noun
 /// that follows will point back at.
-fn emit_hint_span(
-    doc: &mut Document,
-    outer: usize,
-    cgt: &CgToken,
-    hint_tag: &str,
-    scan: &mut Scan,
-) {
+fn emit_hint_span(doc: &mut Document, cgt: &CgToken, hint_tag: &str, scan: &mut Scan) {
     // create a word with begin and end of the current CGToken
-    let word = Word::new(outer, cgt.begin, cgt.end);
+    let word = Word::new(cgt.begin, cgt.end);
     let count = bump(&mut scan.class_counts, hint_tag);
     scan.hint_id = enhancer_utils::get_id(&format!("WERTi-span-{}", hint_tag), count);
-    let span_tag_start = format!("<span id=\"{}\" class=\"wertiviewhinttag\">", scan.hint_id);
-    let span_tag = SpanTag::new(outer, span_tag_start);
-    push_enhancement(doc, word.get_begin(), word.get_end(), &span_tag);
+    let span_tag = SpanTag::new(scan.hint_id.clone(), &[HINT_CLASS]);
+    push_enhancement(doc, word.begin, word.end, &span_tag);
 }
 
 /// Count one sighting of a span id and report the running total: the first
 /// stores a fresh counter, which already stands at one, and later ones
 /// increment it in place.
-fn bump(class_counts: &mut HashMap<String, MutableInt>, key: &str) -> i32 {
-    if let Some(count) = class_counts.get_mut(key) {
-        count.increment();
-    } else {
-        class_counts.insert(key.to_string(), MutableInt::default());
-    }
-    class_counts[key].get()
-}
-
-/// The shell line the Java assembles for `Runtime.exec`. The Rust generator
-/// seam runs the same inverted FST through the morpho pipeline, so the
-/// command itself is only logged. The timestamped file names that would
-/// isolate simultaneous users are commented out in the source; every request
-/// shares these two paths.
-fn generation_pipeline() -> String {
-    format!(
-        "/bin/cat {} | {} {} {} > {}",
-        constants::CG3_GENERATOR_INPUT_FILE_LOC,
-        LOOKUP_LOC,
-        LOOKUP_FLAGS,
-        INVERTED_FST,
-        constants::CG3_GENERATOR_OUTPUT_FILE_LOC
-    )
+fn bump(class_counts: &mut HashMap<String, i32>, key: &str) -> i32 {
+    let count = class_counts.entry(key.to_string()).or_insert(0);
+    *count += 1;
+    *count
 }
 
 /// The generator seam. Its failures are the IOException and

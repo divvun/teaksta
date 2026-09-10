@@ -250,7 +250,7 @@ fn colorize_wraps_the_nouns_in_topic_spans() {
     let starts = span_starts(&cas);
     assert_eq!(starts.len(), 2, "{starts:#?}");
     for start in &starts {
-        assert!(start.contains("class=\"wertiviewtoken wertiviewSubstantive\""));
+        assert!(start.contains("class=\"teaksta-token teaksta-Substantive\""));
         assert!(start.contains(" lemma=\"viessu\""));
     }
     assert_eq!(
@@ -329,7 +329,8 @@ fn the_json_protocol_keys_spans_by_position() {
             span.contains(&format!(">{}</span>", cas.covered_text(at, covered.end))),
             "{span}"
         );
-        assert!(span.contains("token"), "{span}");
+        assert!(span.contains("teaksta-token"), "{span}");
+        assert!(span.contains("teaksta-Substantive"), "{span}");
         assert!(
             span.starts_with("<span class=\"teaksta-page\" style="),
             "{span}"

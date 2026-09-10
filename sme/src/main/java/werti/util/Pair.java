@@ -10,20 +10,15 @@ package werti.util;
  * @param <T> type of the first object
  * @param <U> type of the second object
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.pair.pair]
 public class Pair<T,U> {
 	public T first;
 	public U second;
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.util.pair.pair.pair-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.pair.pair.pair-fn]
 	public Pair(T first, U second) {
 		this.first = first;
 		this.second = second;
 	}
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.util.pair.pair.to-string-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.pair.pair.to-string-fn]
 	@Override
 	public String toString() {
 		return "<" + first.toString() + ", " + second.toString() + ">";

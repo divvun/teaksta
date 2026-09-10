@@ -128,11 +128,10 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
 > private List<CGToken> parseCGOutput(String cgOutput, JCas jcas)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
 > Parses VISL CG-3 cohort output into a fresh list of `CGToken` feature structures.
-> Splits `cgOutput` on the regex `\n+`, so runs of blank lines collapse into a
-> single separator and the blank line between cohorts disappears. Walks the
-> resulting lines in order, holding a "current" `CGToken` (initially null) and a
+> Walks `cgOutput` line by line, skipping the empty ones, so the blank line
+> between cohorts disappears. Holds a "current" `CGToken` (initially null) and a
 > growing list of `CGReading`s for it.
 >
 > A line whose text starts with the two characters `"<` opens a new cohort. Before
@@ -144,28 +143,22 @@
 > is stored, so a token's identity is only its position in the returned list, and
 > `begin`/`end`/`tag`/`lemma` stay unset until the caller fills them in.
 >
-> Any other line is treated as a reading of the current cohort. It is split on the
-> regex `\s+`, which yields a leading empty element for the tab- or space-indented
-> reading lines CG-3 emits. A `CGReading` (a UIMA `NonEmptyStringList` node) is
-> built for the last field with `tail` set to a new `EmptyStringList` and `head`
-> set to that last field; then the remaining fields are walked backwards from
-> index `length-2` down to 0, each producing a new `CGReading` whose `tail` is the
-> node built so far and whose `head` is that field. The backward walk stops early
-> at the first empty field, which is exactly the leading indentation element, so
-> the indentation never enters the list. The outermost node — head = first tag,
-> chained through to the last tag, terminated by the empty list — is what gets
-> added to the current cohort's reading list.
+> An indented line is treated as a reading of the current cohort. It is split on
+> whitespace, which yields the reading's tags in order and no empty fields, so
+> the indentation CG-3 puts in front of every reading is dropped by the split
+> itself rather than by a backward walk that stopped at it. A reading holding no
+> tags at all — a line of nothing but whitespace — fails the parse. The tag list
+> is what gets added to the current cohort's reading list.
 >
 > After the last line, if a current token exists it is flushed the same way and
 > appended. Returns the result list, which is empty when `cgOutput` produced no
 > cohort header line at all. The created `CGToken` and `CGReading` structures are
 > allocated in `jcas` but are not added to any CAS index here.
 >
-> Quirk: reading lines seen before the first `"<` header are parsed into
-> `CGReading`s and then silently dropped when the first cohort resets the list —
-> including the empty leading element that `split` produces when `cgOutput` starts
-> with a newline. Quirk: a cohort with no reading lines yields a `CGToken` with a
-> zero-length `readings` array, which the caller then indexes at 0.
+> Quirk: reading lines seen before the first `"<` header are parsed and then
+> silently dropped when the first cohort resets the list. Quirk: a cohort with no
+> reading lines yields a `CGToken` with a zero-length `readings` array, which the
+> caller then indexes at 0.
 >
 > Port divergence: the stream parsed is the one a current VISL CG-3 emits, not
 > the 2013 `lookup2cg` output this walk was written against, and it carries
@@ -244,53 +237,30 @@
 > loop never changes inside the loop, so it only disables skipping on the final
 > original token.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
 > private String runFST_CG(String input) throws IOException,InterruptedException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn]
-> Runs the external morphological-analysis and constraint-grammar pipeline over
-> `input` by way of two temporary files, and returns the pipeline's output text.
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
+> Runs the morphological-analysis and constraint-grammar pipeline over `input`
+> and returns its output text.
 >
-> Takes `System.currentTimeMillis()` as a timestamp and derives two paths:
-> input `Constants.inputfile_Loc + timestamp + ".tmp"` and output
-> `Constants.outputfile_Loc + timestamp + ".tmp"` (deployed values
-> `/home/teaksta/output/cg3input<millis>.tmp` and
-> `/home/teaksta/output/cg3output<millis>.tmp`). The timestamp suffix is there to
-> keep simultaneous users from colliding. Creates both files if absent, then writes
-> `input` verbatim to the input path through a buffered UTF-8 writer, closing the
-> writer in a `finally` block.
+> Splits `input` into one token per line, dropping the empty line a trailing
+> newline leaves behind, and hands the tokens to the analyse-and-disambiguate
+> pipeline the divvun-runtime bundle already holds open. The result is rebuilt
+> line by line, each line plus `"\n"`, so every line ends in exactly one
+> terminator; that string is logged at INFO level and returned. An empty stream
+> yields the empty string.
 >
-> Builds the command as a three-element argv `{"/bin/sh", "-c", <pipeline>}` where
-> `<pipeline>` is the concatenation
-> `"/bin/cat " + inputfileLoc + " | " + Constants.lookup_Loc + " " + Constants.lookup_Flags + Constants.an_FST + Constants.lookup_2cgLoc + Constants.vislcg3_Loc + " -g " + Constants.vislcg3_DisGrammarLoc + " | " + Constants.vislcg3_Loc + " -g " + Constants.vislcg3_SyntGrammarLoc + " > " + outputfileLoc`.
-> Note that `Constants.lookup_2cgLoc` itself supplies the surrounding pipe
-> characters (` | /opt/smi/sme/bin/lookup2cg | `) and `Constants.an_FST` carries a
-> leading space, so with the deployed constants the shell line reads
-> `/bin/cat <in> | /usr/local/bin/lookup  /opt/smi/sme/bin/analyser-disamb-gt-desc.xfst | /opt/smi/sme/bin/lookup2cg | /bin/vislcg3 -g /opt/smi/sme/bin/disambiguator.cg3 | /bin/vislcg3 -g /opt/smi/sme/bin/konteaksta.cg3 > <out>`
-> (`Constants.lookup_Flags` is empty, hence the doubled space after `lookup`). The
-> pipeline string is logged at INFO level.
->
-> Spawns the command with `Runtime.exec` and blocks in `waitFor()`. The exit status
-> is ignored, and neither the child's stdout nor its stderr pipe is drained. Then
-> reads the output file back line by line through a `UTF8`-decoded buffered reader,
-> rebuilding a string as each line plus `"\n"`, logs that string at INFO level,
-> closes the reader, and returns it. An empty or missing-content output file yields
-> the empty string; a missing output file surfaces as an `IOException`. Declares
-> `IOException` and `InterruptedException`, both propagated to the caller.
->
-> Side effects: two files are created under the `Constants.inputfile_Loc` /
-> `Constants.outputfile_Loc` directory per invocation and neither is removed — the
-> `delete()` calls are commented out, so temp files accumulate indefinitely. The
-> `preprocessLoc` (`Constants.preprocess_Loc`) and `abbr` (`Constants.abbr_file`)
-> fields are read into the annotator but take no part in this pipeline; the source
-> tokenisation is done upstream by the OpenNLP tokeniser instead of the `preprocess`
-> script.
->
-> Quirk: the input file is written as UTF-8 but the output file is read with the
-> charset name `UTF8`. Quirk: because nothing consumes the child's stderr, a
-> sufficiently chatty `lookup` or `vislcg3` can fill the pipe buffer and wedge
-> `waitFor()` forever. Quirk: file paths are interpolated straight into a `/bin/sh -c`
-> string with no quoting.
+> The shell the Java drove is gone with the deployment paths that fed it: no
+> timestamped temporary files under `Constants.inputfile_Loc` /
+> `Constants.outputfile_Loc`, no `/bin/sh -c` argv concatenated from
+> `Constants.lookup_Loc`, `Constants.an_FST`, `Constants.lookup_2cgLoc` and the
+> two `vislcg3` grammar paths, no spawned process whose exit status went
+> uninspected and whose stderr pipe could wedge `waitFor()`, and no pipeline
+> string logged before it ran. The annotator carries none of those paths as
+> fields any more, `preprocessLoc` and `abbr` among them, since none took part in
+> the pipeline even in the Java. A failure of the bundle propagates to the
+> caller.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
 > private String toCG3Input(List<Token> tokenList, List<SentenceAnnotation> sentList)

@@ -31,7 +31,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
     assert!(err.to_string().contains("finverbTags"), "{err}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+3/test]
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -68,7 +68,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!(
         first.enhance_start,
         "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-1\" \
-         class=\"wertiviewtoken wertiviewVerbConjugation\" lemma=\"boahtit\">"
+         class=\"teaksta-token teaksta-VerbConjugation\" lemma=\"boahtit\">"
     );
     assert_eq!(first.enhance_end, "</span>");
 
@@ -79,11 +79,11 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!(
         second.enhance_start,
         "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-2\" \
-         class=\"wertiviewtoken wertiviewVerbConjugation\" lemma=\"boahtit\">"
+         class=\"teaksta-token teaksta-VerbConjugation\" lemma=\"boahtit\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+3/test]
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();

@@ -16,7 +16,6 @@ use tracing::info;
 
 use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
 use crate::types::Document;
-use crate::util::jstring::char_index_of;
 
 /// Since the analyses can be the following:
 /// N+(Subclass)+(Semclass)+Number+Case(+Possessivesuffix)(+Clitic), all types
@@ -35,7 +34,7 @@ const NUMBER_CASE_PATTERN: &str = concat!(
 /// What this topic changes about the shared enhancement pass.
 const TOPIC: TopicSpec = TopicSpec {
     label: "Noun Pl",
-    span_class: "wertiviewSubstantivePlural",
+    span_class: "teaksta-SubstantivePlural",
     pos: r"N\+",
     selector: NUMBER_CASE_PATTERN,
     hints: None,
@@ -57,10 +56,12 @@ const DISTRACT_FORMS_CASE: [&str; 7] = ["+Nom", "+Acc", "+Gen", "+Ill", "+Loc", 
 /// one whose first character is `@` asks for `substring(0, -1)`, so a reading
 /// the parser left untagged fails the whole call.
 fn cut_at_syntactic_tag(analyses: &str) -> Result<String> {
-    match char_index_of(analyses, '@') {
-        Some(index) if index >= 1 => Ok(analyses.chars().take(index - 1).collect()),
-        Some(_) => bail!("begin 0, end -1, length {}", analyses.chars().count()),
-        None => bail!("begin 0, end -2, length {}", analyses.chars().count()),
+    let Some(at) = analyses.find('@') else {
+        bail!("begin 0, end -2, length {}", analyses.chars().count());
+    };
+    match analyses[..at].char_indices().next_back() {
+        Some((cut, _)) => Ok(analyses[..cut].to_string()),
+        None => bail!("begin 0, end -1, length {}", analyses.chars().count()),
     }
 }
 
@@ -71,14 +72,6 @@ pub struct Vislcg3NounPlEnhancer {
 }
 
 impl Vislcg3NounPlEnhancer {
-    /// Stands in for the enclosing instance captured by the Java inner
-    /// classes: `Word` and `SpanTag` fold the enclosing enhancer's identity
-    /// into their equality and hash, so instances only match when built by
-    /// the same enhancer.
-    pub(crate) fn outer_id(&self) -> usize {
-        self as *const Self as usize
-    }
-
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.initialize-fn]
     pub fn initialize(&mut self, n_pl_tags: Option<&str>) -> Result<()> {
@@ -99,12 +92,12 @@ impl Vislcg3NounPlEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+3]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
-        cg_enhancer::run(doc, self.outer_id(), &TOPIC, &forms, &analyses)
+        cg_enhancer::run(doc, &TOPIC, &forms, &analyses)
     }
 
     /// Create all relevant morphological forms of the current token. It is the

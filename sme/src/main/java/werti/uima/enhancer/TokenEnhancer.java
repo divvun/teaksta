@@ -55,8 +55,8 @@ public class TokenEnhancer extends JCasAnnotator_ImplBase {
 	 * POS tags, then mark it up as a hit.
 	 *
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
 	@SuppressWarnings("unchecked")
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		int id = 0;

@@ -9,5 +9,6 @@ pub mod noun_pl;
 pub mod noun_sg;
 pub mod object;
 pub mod subject;
+pub mod syntactic;
 pub mod token;
 pub mod verb_conjugation;

@@ -1,6 +1,5 @@
-//! An enhancement class that puts WERTi-`<span>`s around *all* tokens and
-//! optionally gives them the attribute 'wertiviewhit' when they belong to a
-//! given POS.
+//! An enhancement class that puts a `<span>` around *all* tokens and gives
+//! them the hit class as well when they belong to a given POS.
 //!
 //! Authors: Aleksandar Dimitrov, Adriane Boyd
 //! Version: 0.1
@@ -12,6 +11,7 @@ use anyhow::{Result, anyhow};
 use regex::Regex;
 use tracing::{Level, debug, enabled, trace};
 
+use crate::enhancer::cg_span::{HIT_CLASS, SpanTag, TOKEN_CLASS};
 use crate::types::{Document, Enhancement};
 use crate::util::enhancer_utils;
 
@@ -64,8 +64,8 @@ impl TokenEnhancer {
 
     /// Iterate over all tokens and put a span around them. If a token matches
     /// one of the given POS tags, then mark it up as a hit.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2]
     pub fn process(&self, cas: &mut Document) -> Result<()> {
         let mut id: i32 = 0;
         debug!("Starting enhancement");
@@ -117,19 +117,14 @@ impl TokenEnhancer {
                     }
                 }
 
-                let mut hitclass = "";
-                if hit == 1 {
-                    hitclass = "wertiviewhit";
-                    e.relevant = true;
-                } else {
-                    e.relevant = false;
-                }
-                e.enhance_start = format!(
-                    "<span id=\"{}\" class=\"wertiviewtoken {}\">",
-                    enhancer_utils::get_id("WERTi-span", id),
-                    hitclass
-                );
-                e.enhance_end = "</span>".to_string();
+                e.relevant = hit == 1;
+                let classes: &[&str] = match e.relevant {
+                    true => &[TOKEN_CLASS, HIT_CLASS],
+                    false => &[TOKEN_CLASS],
+                };
+                let span_tag = SpanTag::new(enhancer_utils::get_id("WERTi-span", id), classes);
+                e.enhance_start = span_tag.start_tag();
+                e.enhance_end = span_tag.end_tag().to_string();
 
                 if enabled!(Level::TRACE) {
                     trace!(
@@ -238,7 +233,7 @@ mod tests {
         assert!(err.to_string().contains("not a boolean"), "{}", err);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn punctuation_tokens_are_skipped_and_consume_no_id() {
         let mut cas = Document::new(". Mun boran", "sme");
@@ -256,7 +251,7 @@ mod tests {
         assert_eq!((cas.enhancements[0].begin, cas.enhancements[0].end), (2, 5));
         assert_eq!(
             cas.enhancements[0].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken \">"
+            "<span id=\"WERTi-span-1\" class=\"teaksta-token\">"
         );
         assert!(!cas.enhancements[0].relevant);
         assert_eq!(
@@ -265,13 +260,13 @@ mod tests {
         );
         assert_eq!(
             cas.enhancements[1].enhance_start,
-            "<span id=\"WERTi-span-2\" class=\"wertiviewtoken wertiviewhit\">"
+            "<span id=\"WERTi-span-2\" class=\"teaksta-token teaksta-hit\">"
         );
         assert!(cas.enhancements[1].relevant);
         assert_eq!(cas.enhancements[1].enhance_end, "</span>");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn a_token_spanning_two_line_breaks_is_skipped() {
         let mut cas = Document::new("a\nb\nc", "sme");
@@ -286,7 +281,7 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn a_single_line_break_still_yields_an_enhancement() {
         let mut cas = Document::new("a\nb", "sme");
@@ -301,7 +296,7 @@ mod tests {
         assert_eq!(cas.enhancements.len(), 1);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn a_token_made_only_of_punctuation_is_skipped() {
         let mut cas = Document::new("...", "sme");
@@ -316,7 +311,7 @@ mod tests {
         assert!(cas.enhancements.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn a_null_tag_is_never_a_hit() {
         let mut cas = Document::new("beana", "sme");
@@ -332,11 +327,11 @@ mod tests {
         assert!(!cas.enhancements[0].relevant);
         assert_eq!(
             cas.enhancements[0].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken \">"
+            "<span id=\"WERTi-span-1\" class=\"teaksta-token\">"
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn the_lemma_filter_demotes_matches_without_a_lemma() {
         let mut cas = Document::new("aaa bbb ccc", "sme");
@@ -354,7 +349,7 @@ mod tests {
         assert_eq!(relevant, vec![false, false, true]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+2/test]
     #[test]
     fn existing_enhancements_are_kept_and_new_ones_appended() {
         let mut cas = Document::new("beana", "sme");
@@ -377,7 +372,7 @@ mod tests {
         assert_eq!(cas.enhancements[0].enhance_start, "<e>");
         assert_eq!(
             cas.enhancements[1].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken wertiviewhit\">"
+            "<span id=\"WERTi-span-1\" class=\"teaksta-token teaksta-hit\">"
         );
         assert_eq!(cas.tokens.len(), 1);
     }

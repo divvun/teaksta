@@ -76,7 +76,7 @@ pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
             Stage::SentenceDetector(detector)
         }
         "HTMLSentenceAnnotator" => Stage::HtmlSentences(HtmlSentenceAnnotator::new()),
-        "vislcg3Annotator" => Stage::Vislcg3(Box::new(vislcg3_annotator(parameters))),
+        "vislcg3Annotator" => Stage::Vislcg3(Box::new(Vislcg3Annotator::new())),
         "TokenEnhancer" => Stage::Token(token_enhancer(parameters)?),
         "vislcg3NounEnhancer" => {
             Stage::Noun(Vislcg3NounEnhancer::new(tag_list(parameters, "NTags"))?)
@@ -124,22 +124,6 @@ pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
 
 fn tag_list<'a>(parameters: &'a Parameters, key: &str) -> Option<&'a str> {
     parameters.get(key).map(String::as_str)
-}
-
-/// The three grammar locations the aggregate descriptor overrides on the
-/// annotator; an absent one leaves the annotator's own default in place.
-fn vislcg3_annotator(parameters: &Parameters) -> Vislcg3Annotator {
-    let mut annotator = Vislcg3Annotator::new();
-    if let Some(value) = parameters.get("vislcg3Loc") {
-        annotator.vislcg3_loc = value.clone();
-    }
-    if let Some(value) = parameters.get("vislcg3DisGrammarLoc") {
-        annotator.vislcg3_dis_grammar_loc = value.clone();
-    }
-    if let Some(value) = parameters.get("vislcg3SyntGrammarLoc") {
-        annotator.vislcg3_synt_grammar_loc = value.clone();
-    }
-    annotator
 }
 
 /// `UseLemmaFilter` is declared on the delegate rather than on the
@@ -230,7 +214,7 @@ mod tests {
                 "HTMLSentenceAnnotator".to_string(),
                 "vislcg3Annotator".to_string(),
             ],
-            &parameters(&[("vislcg3SyntGrammarLoc", "/opt/konteaksta.cg3")]),
+            &parameters(&[]),
         )
         .expect("the shipped preprocessor flow");
 
@@ -239,7 +223,7 @@ mod tests {
         let Some(Stage::Vislcg3(annotator)) = flow.stages.last() else {
             panic!("the flow ends in the CG annotator");
         };
-        assert_eq!(annotator.vislcg3_synt_grammar_loc, "/opt/konteaksta.cg3");
+        assert_eq!(annotator.cg_sentence_boundary_token, ".");
     }
 
     #[test]

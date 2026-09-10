@@ -18,7 +18,7 @@ use crate::types::Document;
 /// What this topic changes about the shared enhancement pass.
 const TOPIC: TopicSpec = TopicSpec {
     label: "InfiniteVerb",
-    span_class: "wertiviewInfiniteVerb",
+    span_class: "teaksta-InfiniteVerb",
     pos: r"V\+",
     selector: r"PrfPrc|VGen|VAbess|Ger|Actio\+Ess|Inf|ConNeg",
     hints: None,
@@ -41,14 +41,6 @@ pub struct Vislcg3InfiniteVerbEnhancer {
 }
 
 impl Vislcg3InfiniteVerbEnhancer {
-    /// Stands in for the enclosing instance captured by the Java inner
-    /// classes: `Word` and `SpanTag` fold the enclosing enhancer's identity
-    /// into their equality and hash, so instances only match when built by
-    /// the same enhancer.
-    pub(crate) fn outer_id(&self) -> usize {
-        self as *const Self as usize
-    }
-
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.initialize-fn]
     pub fn initialize(&mut self, infiniteverb_tags: Option<&str>) -> Result<()> {
@@ -66,12 +58,12 @@ impl Vislcg3InfiniteVerbEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3]
     pub fn process(&self, doc: &mut Document) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
-        cg_enhancer::run(doc, self.outer_id(), &TOPIC, &forms, &analyses)
+        cg_enhancer::run(doc, &TOPIC, &forms, &analyses)
     }
 
     /// Create all relevant morphological forms of the current token. It is the

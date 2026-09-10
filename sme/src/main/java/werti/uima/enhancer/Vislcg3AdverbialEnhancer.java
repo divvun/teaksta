@@ -47,8 +47,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
   private final String lookupFlags = Constants.lookup_Flags;
 	private final String invertedFST = Constants.inverted_FST;
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -57,8 +57,8 @@ public class Vislcg3AdverbialEnhancer extends JCasAnnotator_ImplBase {
 		advTags = Arrays.asList(((String)context.getConfigParameterValue("AdvTags")).split(","));
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Adverbial enhancement");
