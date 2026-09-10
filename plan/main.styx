@@ -486,12 +486,20 @@ children (
                 id hd-upload-ui
                 title "Frontend upload flow over /api/upload"
                 kind @feat
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:51:45.762931Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence M3: POST /api/upload has no client — Rejection's four wire codes (no-file/too-large/not-a-page/not-north-sami, upload.rs:56-65) and the {\"url\": ...} success shape (api.rs:349) have no counterpart in teaksta-web. Build the frontend flow: file picker, multipart POST, per-code user-facing messages (North Sámi labels, matching the registry's label conventions), and on success route into the exercise flow with the returned file URL as the page source. The 5MB cap and the analyzer gate (0.6 recognized-token share) are server-side; the client just renders the rejections."
+                    }
+
+                    {
+                        at 2026-09-10T22:53:19.129688Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
