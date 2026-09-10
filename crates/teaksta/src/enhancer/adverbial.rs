@@ -183,3 +183,188 @@ impl Vislcg3AdverbialEnhancer {
         lemma
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::{
+        assert_process_ignores_token_without_tags, assert_process_keeps_existing_enhancements,
+        assert_process_requires_enhancement_type, assert_safe_only_single_reading,
+        assert_splits_tags, cg_token as token, reading,
+    };
+
+    fn context(adv_tags: &str) -> HashMap<String, String> {
+        HashMap::from([("AdvTags".to_string(), adv_tags.to_string())])
+    }
+
+    /// Apply one `AdvTags` value and report the tags the enhancer stored.
+    fn configured(enhancer: &mut Vislcg3AdverbialEnhancer, adv_tags: &str) -> Vec<String> {
+        enhancer
+            .initialize(&context(adv_tags))
+            .expect("AdvTags is set");
+        enhancer.adv_tags.clone()
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_splits_adv_tags_on_commas_without_trimming() {
+        let mut enhancer = Vislcg3AdverbialEnhancer::new();
+        assert!(enhancer.adv_tags.is_empty());
+
+        assert_splits_tags(
+            &[
+                ("ADVL", &["ADVL"]),
+                (" ADVL ,@<ADVL", &[" ADVL ", "@<ADVL"]),
+                ("ADVL,,@ADVL>", &["ADVL", "", "@ADVL>"]),
+            ],
+            |adv_tags| configured(&mut enhancer, adv_tags),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_drops_trailing_empties_only_with_comma() {
+        let mut enhancer = Vislcg3AdverbialEnhancer::new();
+
+        assert_splits_tags(
+            &[
+                ("ADVL,,", &["ADVL"]),
+                (",,", &[]),
+                ("", &[""]),
+                (",ADVL", &["", "ADVL"]),
+            ],
+            |adv_tags| configured(&mut enhancer, adv_tags),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_fails_absent_adv_tags_keeps_paths() {
+        let mut enhancer = Vislcg3AdverbialEnhancer::new();
+        enhancer.adv_tags = vec!["ADVL".to_string()];
+
+        let err = enhancer
+            .initialize(&HashMap::new())
+            .expect_err("AdvTags is mandatory");
+        assert!(err.to_string().contains("AdvTags"), "{err}");
+        assert_eq!(enhancer.adv_tags, ["ADVL"]);
+        assert_eq!(enhancer.lookup_loc, constants::LOOKUP_LOC);
+        assert_eq!(enhancer.lookup_flags, constants::LOOKUP_FLAGS);
+        assert_eq!(enhancer.inverted_fst, constants::INVERTED_FST);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.is-safe-fn/test]
+    #[test]
+    fn is_safe_holds_only_for_exactly_one_reading() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+
+        assert_safe_only_single_reading(
+            0,
+            5,
+            &["\"ikte\"", "Adv", "@ADVL>"],
+            &[&["Adv", "@ADVL>"], &["N", "Sg", "Nom", "@SUBJ→"]],
+            |t| enhancer.is_safe(t),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_matches_substring_of_flattened_reading() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let locative = reading(&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]);
+
+        assert!(enhancer.contains_tag(&locative, "ADVL"));
+        assert!(enhancer.contains_tag(&reading(&["Adv", "@<ADVL"]), "ADVL"));
+        assert!(enhancer.contains_tag(&locative, "Sg Loc"));
+        assert!(enhancer.contains_tag(&locative, "@ADVL> "));
+
+        assert!(!enhancer.contains_tag(&locative, "advl"));
+        assert!(!enhancer.contains_tag(&locative, "Loc Sg"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_matches_lemma_embedding_tag_text() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let subject_with_telling_lemma = reading(&["\"ADVLijk\"", "N", "Sg", "Nom", "@SUBJ→"]);
+
+        assert!(enhancer.contains_tag(&subject_with_telling_lemma, "ADVL"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_flattens_empty_reading_to_empty_string() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let empty = reading(&[]);
+
+        assert!(!enhancer.contains_tag(&empty, "ADVL"));
+        assert!(enhancer.contains_tag(&empty, ""));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.get-lemma-fn/test]
+    #[test]
+    fn get_lemma_strips_quotes_keeps_last_quoted() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+
+        assert_eq!(
+            enhancer.get_lemma(&reading(&["\"viessu\"", "N", "Sg", "Loc"])),
+            "viessu"
+        );
+        assert_eq!(
+            enhancer.get_lemma(&reading(&["\"first\"", "Adv", "\"second\""])),
+            "second"
+        );
+        assert_eq!(enhancer.get_lemma(&reading(&["Adv", "@ADVL>"])), "");
+        assert_eq!(enhancer.get_lemma(&reading(&[])), "");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.get-lemma-fn/test]
+    #[test]
+    #[should_panic(expected = "starts at 1 but ends at 0")]
+    fn get_lemma_panics_on_lone_double_quote() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let _ = enhancer.get_lemma(&reading(&["\""]));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn/test]
+    #[test]
+    fn process_walks_tags_but_adds_nothing_without_tokens() {
+        let enhancer = Vislcg3AdverbialEnhancer {
+            adv_tags: vec!["ADVL".to_string(), "SUBJ".to_string()],
+            ..Default::default()
+        };
+
+        assert_process_keeps_existing_enhancements("Mun oidnen viesus ikte.", |doc| {
+            enhancer.process(doc)
+        });
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn/test]
+    #[test]
+    fn process_without_configured_tags_never_inspects_a_token() {
+        let enhancer = Vislcg3AdverbialEnhancer::new();
+
+        assert_process_ignores_token_without_tags(
+            "Mun oidnen viesus ikte.",
+            token(11, 17, &[&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]]),
+            |doc| enhancer.process(doc),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn/test]
+    #[test]
+    fn process_requires_enhancement_type_for_first_token() {
+        let enhancer = Vislcg3AdverbialEnhancer {
+            adv_tags: vec!["ADVL".to_string()],
+            ..Default::default()
+        };
+        let mut doc = Document::new("Mun oidnen viesus ikte.", "sme");
+        doc.cg_tokens.push(token(
+            11,
+            17,
+            &[&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]],
+        ));
+
+        assert_process_requires_enhancement_type(&mut doc, |doc| enhancer.process(doc));
+    }
+}

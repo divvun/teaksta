@@ -7,6 +7,7 @@ pub mod html_enhancer;
 pub mod html_utils;
 pub mod iterables;
 pub mod json_enhancer;
+pub(crate) mod jstring;
 pub mod page_handler;
 pub mod pair;
 pub mod post_request;

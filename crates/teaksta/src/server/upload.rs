@@ -1,14 +1,14 @@
 //! The upload endpoint behind the web form, plus the context listener that
 //! creates the upload directories at web-application startup.
 //!
-//! The servlet container types this file is written against have no axum
+//! The servlet container types this file is written against have no poem
 //! counterpart with the same shape, so the minimum surface each one is used
 //! through is modelled locally at the bottom of this module: the context with
 //! its init parameters *and* its mutable attribute map (the listener publishes
 //! into it, the servlet reads back out of it), the already-collected multipart
 //! request, and the commons-fileupload pair that walks it. The response is the
-//! one [`crate::server::servlet`] already models, so both servlets produce an
-//! axum response the same way.
+//! one [`crate::server::servlet`] already models, so both servlets produce a
+//! poem response the same way.
 
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, BufWriter, Write};
@@ -17,7 +17,7 @@ use std::path::{MAIN_SEPARATOR, Path, PathBuf};
 use std::process::{Command, Stdio};
 
 use anyhow::{Result, anyhow};
-use axum::extract::Multipart;
+use poem::web::Multipart;
 use rand::Rng;
 use rand::distr::Alphanumeric;
 use scraper::{Html, Node};
@@ -816,7 +816,7 @@ impl HttpServletRequest {
     }
 }
 
-/// Collects an axum multipart body into the parsed-part view the request
+/// Collects a poem multipart body into the parsed-part view the request
 /// carries. The container does this before the servlet method is entered, so
 /// the servlet body itself stays synchronous.
 pub async fn collect_multipart(
@@ -829,7 +829,7 @@ pub async fn collect_multipart(
         let field_name = field.name().unwrap_or_default().to_string();
         let file_name = field.file_name().map(str::to_string);
         let part_content_type = field.content_type().map(str::to_string);
-        let content = field.bytes().await?.to_vec();
+        let content = field.bytes().await?;
         items.push(FileItem {
             field_name,
             file_name,
@@ -935,3 +935,7 @@ impl ServletFileUpload {
         Ok(request.items.clone())
     }
 }
+
+#[cfg(test)]
+#[path = "upload_tests.rs"]
+mod tests;

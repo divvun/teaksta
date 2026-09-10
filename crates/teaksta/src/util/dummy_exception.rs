@@ -74,3 +74,57 @@ impl Error for DummyException {
         self.source.as_deref().map(|e| e as &(dyn Error + 'static))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.dummy-exception.dummy-exception.dummy-exception-fn/test]
+    #[test]
+    fn dummy_exception_new_carries_no_payload() {
+        let e = DummyException::new();
+        assert!(e.message().is_none());
+        assert!(e.source().is_none());
+        assert_eq!(e.to_string(), "DummyException");
+
+        // The no-argument form is what `Default` produces too.
+        let d = DummyException::default();
+        assert!(d.message().is_none());
+        assert!(d.source().is_none());
+        assert_eq!(d.to_string(), "DummyException");
+
+        // Usable purely as a control-flow signal that forces execution out of
+        // a block and into the enclosing handler.
+        let mut reached_cleanup = false;
+        let outcome: Result<(), DummyException> = (|| {
+            let result = Err(DummyException::new());
+            reached_cleanup = true;
+            result
+        })();
+        assert!(reached_cleanup);
+        assert!(outcome.is_err());
+        assert!(outcome.unwrap_err().message().is_none());
+    }
+
+    #[test]
+    fn dummy_exception_alternate_forms_carry_message_and_cause() {
+        let with_message = DummyException::with_message("stop here");
+        assert_eq!(with_message.message(), Some("stop here"));
+        assert!(with_message.source().is_none());
+        assert_eq!(with_message.to_string(), "DummyException: stop here");
+
+        let with_cause = DummyException::with_cause(DummyException::with_message("inner"));
+        assert_eq!(with_cause.message(), Some("DummyException: inner"));
+        assert_eq!(
+            with_cause.source().map(|s| s.to_string()),
+            Some("DummyException: inner".to_string())
+        );
+
+        let both = DummyException::with_message_and_cause("outer", DummyException::new());
+        assert_eq!(both.message(), Some("outer"));
+        assert_eq!(
+            both.source().map(|s| s.to_string()),
+            Some("DummyException".to_string())
+        );
+    }
+}

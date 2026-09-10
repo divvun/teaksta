@@ -81,3 +81,138 @@ impl<'a> JsonEnhancer<'a> {
         Ok(serde_json::to_string(&new_nodes)?)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::Enhancement;
+
+    fn wrapped(content: &str) -> String {
+        format!(
+            "<span class=\"wertiview\" style=\"{}\">{}</span>",
+            enhancer_utils::ADDED_SPAN_STYLE,
+            content
+        )
+    }
+
+    fn spans(json: &str) -> HashMap<String, String> {
+        serde_json::from_str(json).expect("JSON object")
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn/test]
+    #[test]
+    fn the_constructor_stores_the_cas_and_activity_unchanged() {
+        let cas = Document::new("beana", "sme");
+
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        assert!(std::ptr::eq(enhancer.cas, &cas));
+        assert_eq!(enhancer.activity, "click");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    #[test]
+    fn enhance_spans_become_wertiview_spans_keyed_by_id() {
+        let cas = Document::new("", "sme");
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer
+            .enhanced_to_json("<p><e id=\"3\" class=\"x\">boaris</e></p>")
+            .unwrap();
+
+        assert_eq!(
+            spans(&json),
+            HashMap::from([("3".to_string(), wrapped("boaris"))])
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    #[test]
+    fn an_attribute_less_enhance_span_never_matches() {
+        let cas = Document::new("", "sme");
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer.enhanced_to_json("<e>boaris</e>").unwrap();
+
+        assert_eq!(json, "{}");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    #[test]
+    fn spans_without_an_id_collapse_onto_key_zero() {
+        let cas = Document::new("", "sme");
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer
+            .enhanced_to_json("<e class=\"a\">first</e><e class=\"b\">second</e>")
+            .unwrap();
+
+        assert_eq!(
+            spans(&json),
+            HashMap::from([("0".to_string(), wrapped("second"))])
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    #[test]
+    fn nested_span_content_stops_at_the_first_close() {
+        let cas = Document::new("", "sme");
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer
+            .enhanced_to_json("<e id=\"1\" >outer <e id=\"2\" >inner</e> tail</e>")
+            .unwrap();
+
+        assert_eq!(
+            spans(&json),
+            HashMap::from([("1".to_string(), wrapped("outer <e id=\"2\" >inner"))])
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    #[test]
+    fn span_content_spans_newlines_and_is_copied_verbatim() {
+        let cas = Document::new("", "sme");
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer
+            .enhanced_to_json("<e id=\"9\">a &amp; <b>b</b>\nc</e>")
+            .unwrap();
+
+        assert_eq!(
+            spans(&json),
+            HashMap::from([("9".to_string(), wrapped("a &amp; <b>b</b>\nc"))])
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn/test]
+    #[test]
+    fn enhance_splices_cas_enhancements_and_extracts_json() {
+        let mut cas = Document::new("<p>boaris beana</p>", "sme");
+        cas.enhancements.push(Enhancement {
+            begin: 3,
+            end: 9,
+            enhance_start: "<e id=\"1\" class=\"wertiviewtoken \">".to_string(),
+            enhance_end: "</e>".to_string(),
+            relevant: true,
+        });
+        cas.enhancements.push(Enhancement {
+            begin: 10,
+            end: 15,
+            enhance_start: "<e id=\"2\" class=\"wertiviewtoken \">".to_string(),
+            enhance_end: "</e>".to_string(),
+            relevant: true,
+        });
+        let enhancer = JsonEnhancer::new(&cas, "click");
+
+        let json = enhancer.enhance().unwrap();
+
+        assert_eq!(
+            spans(&json),
+            HashMap::from([
+                ("1".to_string(), wrapped("boaris")),
+                ("2".to_string(), wrapped("beana")),
+            ])
+        );
+    }
+}

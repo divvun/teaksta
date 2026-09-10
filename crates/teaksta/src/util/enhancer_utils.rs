@@ -313,3 +313,258 @@ fn escape_html(c: char) -> String {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::RelevantText;
+
+    fn enhancement(begin: usize, end: usize, start: &str, end_tag: &str) -> Enhancement {
+        Enhancement {
+            begin,
+            end,
+            enhance_start: start.to_string(),
+            enhance_end: end_tag.to_string(),
+            relevant: true,
+        }
+    }
+
+    fn relevant_text(begin: usize, end: usize) -> RelevantText {
+        RelevantText {
+            begin,
+            end,
+            relevant: true,
+            ..RelevantText::default()
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn/test]
+    #[test]
+    fn span_id_joins_class_and_counter_with_hyphen() {
+        assert_eq!(get_id("WERTi-span", 7), "WERTi-span-7");
+        assert_eq!(get_id("", 0), "-0");
+        assert_eq!(get_id("x", -3), "x--3");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.add-span-style-fn/test]
+    #[test]
+    fn every_span_gets_the_layout_preserving_style() {
+        let styled =
+            add_span_style("<p>keep <span class=\"a\">one</span> and <span>two</span></p>");
+
+        assert_eq!(styled.matches(ADDED_SPAN_STYLE).count(), 2, "{}", styled);
+        assert!(
+            styled.starts_with("<p>keep <span class=\"a\" style=\""),
+            "{}",
+            styled
+        );
+        assert!(styled.contains("<p>"), "{}", styled);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.add-span-style-fn/test]
+    #[test]
+    fn existing_span_style_overwritten_and_fragment_renormalised() {
+        let styled = add_span_style("<span style=\"color: red\">hi");
+
+        assert_eq!(
+            styled,
+            format!("<span style=\"{}\">hi</span>", ADDED_SPAN_STYLE)
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-relevant-text-positions-fn/test]
+    #[test]
+    fn relevant_spans_expand_to_end_exclusive_offsets() {
+        let mut cas = Document::new("abcdefgh", "sme");
+        cas.relevant_texts.push(relevant_text(1, 4));
+        cas.relevant_texts.push(relevant_text(3, 5));
+
+        let positions = get_relevant_text_positions(&cas);
+
+        assert_eq!(positions, HashSet::from([1, 2, 3, 4]));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-relevant-text-positions-fn/test]
+    #[test]
+    fn positions_ignore_the_relevance_flag_and_empty_spans() {
+        let mut cas = Document::new("abcdefgh", "sme");
+        cas.relevant_texts.push(RelevantText {
+            begin: 0,
+            end: 2,
+            relevant: false,
+            ..RelevantText::default()
+        });
+        cas.relevant_texts.push(relevant_text(6, 6));
+
+        let positions = get_relevant_text_positions(&cas);
+
+        assert_eq!(positions, HashSet::from([0, 1]));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.escape-substring-fn/test]
+    #[test]
+    fn only_relevant_offsets_escaped_markup_passes_through() {
+        let positions = HashSet::from([0, 1]);
+
+        let escaped = escape_substring("a<b>", &positions, 0, 4, 0);
+
+        assert_eq!(escaped, "a&lt;b>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.escape-substring-fn/test]
+    #[test]
+    fn skew_shifts_buffer_read_not_relevance_lookup() {
+        let positions = HashSet::from([0, 1]);
+
+        let escaped = escape_substring("<e>a&", &positions, 0, 2, 3);
+
+        assert_eq!(escaped, "a&amp;");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.escape-substring-fn/test]
+    #[test]
+    fn named_html_four_entities_are_used_when_present() {
+        let text = "\u{e1}\u{161}\"&";
+        let positions: HashSet<usize> = (0..text.len()).collect();
+
+        let escaped = escape_substring(text, &positions, 0, text.len(), 0);
+
+        assert_eq!(escaped, "&aacute;&scaron;&quot;&amp;");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn/test]
+    #[test]
+    fn each_enhancement_contributes_start_and_end_tags() {
+        let mut cas = Document::new("abcde", "sme");
+        cas.enhancements.push(enhancement(1, 4, "<e>", "</e>"));
+
+        let tags = get_inserted_tags(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(
+            tags,
+            HashMap::from([(1, "<e>".to_string()), (4, "</e>".to_string())])
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn/test]
+    #[test]
+    fn coincident_starts_append_and_coincident_ends_prepend() {
+        let mut cas = Document::new("abcdefgh", "sme");
+        cas.enhancements
+            .push(enhancement(0, 3, "<inner>", "</inner>"));
+        cas.enhancements
+            .push(enhancement(0, 6, "<outer>", "</outer>"));
+        cas.enhancements
+            .push(enhancement(4, 6, "<tail>", "</tail>"));
+
+        let tags = get_inserted_tags(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(tags[&0], "<outer><inner>");
+        assert_eq!(tags[&3], "</inner>");
+        assert_eq!(tags[&4], "<tail>");
+        assert_eq!(tags[&6], "</tail></outer>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn/test]
+    #[test]
+    fn zero_length_enhancement_folds_tags_into_one_slot() {
+        let mut cas = Document::new("abcde", "sme");
+        cas.enhancements.push(enhancement(2, 2, "<e>", "</e>"));
+
+        let tags = get_inserted_tags(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(tags, HashMap::from([(2, "</e><e>".to_string())]));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn/test]
+    #[test]
+    fn irrelevant_enhancements_dropped_unless_activity_is_click() {
+        let mut cas = Document::new("abcde", "sme");
+        let mut e = enhancement(1, 4, "<e>", "</e>");
+        e.relevant = false;
+        cas.enhancements.push(e);
+
+        assert!(
+            get_inserted_tags(&cas, Some("colorize"))
+                .unwrap()
+                .is_empty()
+        );
+        assert!(get_inserted_tags(&cas, Some("clicked")).unwrap().is_empty());
+        assert_eq!(get_inserted_tags(&cas, Some("click")).unwrap().len(), 2);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn/test]
+    #[test]
+    fn missing_activity_surfaces_on_first_irrelevant_enhancement() {
+        let mut cas = Document::new("abcde", "sme");
+        cas.enhancements.push(enhancement(1, 4, "<e>", "</e>"));
+
+        assert_eq!(get_inserted_tags(&cas, None).unwrap().len(), 2);
+
+        let mut e = enhancement(0, 5, "<f>", "</f>");
+        e.relevant = false;
+        cas.enhancements.push(e);
+
+        let err = get_inserted_tags(&cas, None).unwrap_err();
+        assert!(err.to_string().contains("NullPointerException"), "{}", err);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn/test]
+    #[test]
+    fn enhancement_tags_are_spliced_in_at_their_offsets() {
+        let mut cas = Document::new("<p>abc</p>", "sme");
+        cas.enhancements.push(enhancement(3, 6, "<e>", "</e>"));
+
+        let enhanced = cas_to_enhanced(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(enhanced, "<p><e>abc</e></p>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn/test]
+    #[test]
+    fn relevant_text_is_escaped_but_markup_is_not() {
+        let mut cas = Document::new("<p>a&b</p>", "sme");
+        cas.relevant_texts.push(relevant_text(3, 6));
+        cas.enhancements.push(enhancement(3, 6, "<e>", "</e>"));
+
+        let enhanced = cas_to_enhanced(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(enhanced, "<p><e>a&amp;b</e></p>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn/test]
+    #[test]
+    fn the_remainder_after_the_last_tag_is_escaped() {
+        let mut cas = Document::new("ab<x>cd", "sme");
+        cas.relevant_texts.push(relevant_text(0, 2));
+        cas.relevant_texts.push(relevant_text(5, 7));
+        cas.enhancements.push(enhancement(0, 2, "<e>", "</e>"));
+
+        let enhanced = cas_to_enhanced(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(enhanced, "<e>ab</e><x>cd");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn/test]
+    #[test]
+    fn inserted_tags_are_never_themselves_escaped() {
+        let mut cas = Document::new("ab", "sme");
+        cas.relevant_texts.push(relevant_text(0, 2));
+        cas.enhancements
+            .push(enhancement(0, 2, "<e id=\"1\" & >", "</e>"));
+
+        let enhanced = cas_to_enhanced(&cas, Some("colorize")).unwrap();
+
+        assert_eq!(enhanced, "<e id=\"1\" & >ab</e>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn/test]
+    #[test]
+    fn a_document_without_enhancements_comes_back_unchanged() {
+        let cas = Document::new("<p>plain &amp; simple</p>", "sme");
+
+        let enhanced = cas_to_enhanced(&cas, None).unwrap();
+
+        assert_eq!(enhanced, "<p>plain &amp; simple</p>");
+    }
+}

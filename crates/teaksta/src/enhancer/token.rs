@@ -153,3 +153,232 @@ impl TokenEnhancer {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::types::Token;
+
+    fn context(pairs: &[(&str, &str)]) -> HashMap<String, String> {
+        pairs
+            .iter()
+            .map(|(key, value)| (key.to_string(), value.to_string()))
+            .collect()
+    }
+
+    fn token(begin: usize, end: usize, tag: Option<&str>, lemma: Option<&str>) -> Token {
+        Token {
+            begin,
+            end,
+            tag: tag.map(str::to_string),
+            lemma: lemma.map(str::to_string),
+            ..Token::default()
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    #[test]
+    fn tags_are_split_on_commas_without_trimming() {
+        let mut enhancer = TokenEnhancer::new();
+
+        enhancer
+            .initialize(&context(&[
+                ("Tags", "in, to ,"),
+                ("UseLemmaFilter", "true"),
+            ]))
+            .unwrap();
+
+        assert_eq!(enhancer.tags, vec!["in", " to "]);
+        assert!(enhancer.use_lemma_filter);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    #[test]
+    fn a_separator_free_tag_string_stays_one_element() {
+        let mut enhancer = TokenEnhancer::new();
+
+        enhancer
+            .initialize(&context(&[("Tags", ""), ("UseLemmaFilter", "false")]))
+            .unwrap();
+
+        assert_eq!(enhancer.tags, vec![""]);
+        assert!(!enhancer.use_lemma_filter);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    #[test]
+    fn interior_empty_fields_survive_trailing_ones_dropped() {
+        let mut enhancer = TokenEnhancer::new();
+
+        enhancer
+            .initialize(&context(&[("Tags", "a,,b,,"), ("UseLemmaFilter", "false")]))
+            .unwrap();
+
+        assert_eq!(enhancer.tags, vec!["a", "", "b"]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    #[test]
+    fn missing_or_bad_config_parameters_fail_initialisation() {
+        let mut enhancer = TokenEnhancer::new();
+
+        let err = enhancer
+            .initialize(&context(&[("UseLemmaFilter", "false")]))
+            .unwrap_err();
+        assert!(err.to_string().contains("Tags"), "{}", err);
+
+        let err = enhancer
+            .initialize(&context(&[("Tags", "in")]))
+            .unwrap_err();
+        assert!(err.to_string().contains("UseLemmaFilter"), "{}", err);
+
+        let err = enhancer
+            .initialize(&context(&[("Tags", "in"), ("UseLemmaFilter", "yes")]))
+            .unwrap_err();
+        assert!(err.to_string().contains("not a boolean"), "{}", err);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn punctuation_tokens_are_skipped_and_consume_no_id() {
+        let mut cas = Document::new(". Mun boran", "sme");
+        cas.tokens.push(token(2, 5, Some("Pron"), Some("mun")));
+        cas.tokens.push(token(0, 1, Some("CLB"), None));
+        cas.tokens.push(token(6, 11, Some("V"), Some("borrat")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["V".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 2);
+        assert_eq!((cas.enhancements[0].begin, cas.enhancements[0].end), (2, 5));
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken \">"
+        );
+        assert!(!cas.enhancements[0].relevant);
+        assert_eq!(
+            (cas.enhancements[1].begin, cas.enhancements[1].end),
+            (6, 11)
+        );
+        assert_eq!(
+            cas.enhancements[1].enhance_start,
+            "<span id=\"WERTi-span-2\" class=\"wertiviewtoken wertiviewhit\">"
+        );
+        assert!(cas.enhancements[1].relevant);
+        assert_eq!(cas.enhancements[1].enhance_end, "</span>");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn a_token_spanning_two_line_breaks_is_skipped() {
+        let mut cas = Document::new("a\nb\nc", "sme");
+        cas.tokens.push(token(0, 5, Some("N"), Some("a")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert!(cas.enhancements.is_empty());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn a_single_line_break_still_yields_an_enhancement() {
+        let mut cas = Document::new("a\nb", "sme");
+        cas.tokens.push(token(0, 3, Some("N"), Some("a")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 1);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn a_token_made_only_of_punctuation_is_skipped() {
+        let mut cas = Document::new("...", "sme");
+        cas.tokens.push(token(0, 3, Some("CLB"), None));
+        let enhancer = TokenEnhancer {
+            tags: vec!["CLB".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert!(cas.enhancements.is_empty());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn a_null_tag_is_never_a_hit() {
+        let mut cas = Document::new("beana", "sme");
+        cas.tokens.push(token(0, 5, None, Some("beana")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 1);
+        assert!(!cas.enhancements[0].relevant);
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken \">"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn the_lemma_filter_demotes_matches_without_a_lemma() {
+        let mut cas = Document::new("aaa bbb ccc", "sme");
+        cas.tokens.push(token(0, 3, Some("N"), None));
+        cas.tokens.push(token(4, 7, Some("N"), Some("")));
+        cas.tokens.push(token(8, 11, Some("N"), Some("ccc")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: true,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        let relevant: Vec<bool> = cas.enhancements.iter().map(|e| e.relevant).collect();
+        assert_eq!(relevant, vec![false, false, true]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn/test]
+    #[test]
+    fn existing_enhancements_are_kept_and_new_ones_appended() {
+        let mut cas = Document::new("beana", "sme");
+        cas.enhancements.push(Enhancement {
+            begin: 0,
+            end: 5,
+            enhance_start: "<e>".to_string(),
+            enhance_end: "</e>".to_string(),
+            relevant: true,
+        });
+        cas.tokens.push(token(0, 5, Some("N"), Some("beana")));
+        let enhancer = TokenEnhancer {
+            tags: vec!["N".to_string()],
+            use_lemma_filter: false,
+        };
+
+        enhancer.process(&mut cas).unwrap();
+
+        assert_eq!(cas.enhancements.len(), 2);
+        assert_eq!(cas.enhancements[0].enhance_start, "<e>");
+        assert_eq!(
+            cas.enhancements[1].enhance_start,
+            "<span id=\"WERTi-span-1\" class=\"wertiviewtoken wertiviewhit\">"
+        );
+        assert_eq!(cas.tokens.len(), 1);
+    }
+}

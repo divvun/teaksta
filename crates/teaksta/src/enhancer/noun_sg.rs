@@ -424,3 +424,391 @@ impl Vislcg3NounSgEnhancer {
         Ok(result)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Read;
+
+    fn reading(tags: &[&str]) -> CgReading {
+        tags.iter().map(|tag| (*tag).to_string()).collect()
+    }
+
+    fn token(begin: usize, end: usize, readings: Vec<CgReading>) -> CgToken {
+        CgToken {
+            begin,
+            end,
+            readings,
+        }
+    }
+
+    fn enhancer() -> Vislcg3NounSgEnhancer {
+        Vislcg3NounSgEnhancer::default()
+    }
+
+    fn span_start(id: &str) -> String {
+        format!(
+            "<span id=\"{}\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">",
+            id
+        )
+    }
+
+    /// Serves `data` and then fails, standing in for the stdout of a child
+    /// process that goes away mid-stream.
+    struct FailingSource {
+        data: Vec<u8>,
+        pos: usize,
+    }
+
+    impl Read for FailingSource {
+        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+            if self.pos >= self.data.len() {
+                return Err(std::io::Error::other("stdout closed unexpectedly"));
+            }
+            let n = std::cmp::min(buf.len(), self.data.len() - self.pos);
+            buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
+            self.pos += n;
+            Ok(n)
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn/test]
+    #[test]
+    fn new_consumer_starts_unfinished_and_does_no_reading() {
+        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("one\ntwo\n")));
+
+        assert!(!consumer.finished);
+        assert_eq!(consumer.buffer, "");
+
+        let mut untouched = String::new();
+        consumer.reader.read_to_string(&mut untouched).unwrap();
+        assert_eq!(untouched, "one\ntwo\n");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn/test]
+    #[test]
+    fn run_normalises_terminators_and_terminates_the_last_line() {
+        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new(
+            "first\r\n\r\nlast without terminator",
+        )));
+
+        consumer.run();
+
+        assert_eq!(consumer.buffer, "first\n\nlast without terminator\n");
+        assert!(consumer.finished);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn/test]
+    #[test]
+    fn run_keeps_read_text_when_stream_breaks() {
+        let source = FailingSource {
+            data: b"kept\n".to_vec(),
+            pos: 0,
+        };
+        let mut consumer = ExtCommandConsume2String::new(BufReader::new(source));
+
+        consumer.run();
+
+        assert_eq!(consumer.buffer, "kept\n");
+        assert!(consumer.finished);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn/test]
+    #[test]
+    fn is_done_flips_once_the_stream_is_drained() {
+        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("line\n")));
+
+        assert!(!consumer.is_done());
+        consumer.run();
+        assert!(consumer.is_done());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn/test]
+    #[test]
+    fn get_buffer_withholds_text_until_drain_finishes() {
+        let mut consumer =
+            ExtCommandConsume2String::new(BufReader::new(Cursor::new("alfa\nbeta\n")));
+
+        assert_eq!(consumer.get_buffer(), None);
+        consumer.run();
+        assert_eq!(consumer.get_buffer(), Some("alfa\nbeta\n"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn/test]
+    #[test]
+    fn get_buffer_is_empty_for_stream_without_lines() {
+        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("")));
+
+        consumer.run();
+
+        assert_eq!(consumer.get_buffer(), Some(""));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_splits_tag_list_on_commas_without_trimming() {
+        let mut enhancer = Vislcg3NounSgEnhancer::default();
+
+        enhancer
+            .initialize(Some("Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess"))
+            .unwrap();
+
+        assert_eq!(
+            enhancer.n_sg_tags,
+            vec![
+                "Sg Nom", " Sg Acc", " Sg Gen", " Sg Ill", " Sg Loc", " Sg Com", " Ess"
+            ]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_fails_when_the_tag_parameter_is_missing() {
+        let mut enhancer = Vislcg3NounSgEnhancer::default();
+
+        let err = enhancer.initialize(None).unwrap_err();
+
+        assert!(err.to_string().contains("NSgTags"));
+        assert!(enhancer.n_sg_tags.is_empty());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.is-safe-fn/test]
+    #[test]
+    fn only_token_with_exactly_one_reading_is_safe() {
+        let enhancer = enhancer();
+        let sole = reading(&["\"gietta\"", "N", "Sg", "Nom"]);
+
+        assert!(!enhancer.is_safe(&token(0, 6, vec![])));
+        assert!(enhancer.is_safe(&token(0, 6, vec![sole.clone()])));
+        assert!(!enhancer.is_safe(&token(0, 6, vec![sole.clone(), sole])));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_matches_substring_of_flattened_reading() {
+        let enhancer = enhancer();
+        let noun = reading(&["\"gietta\"", "N", "Sg", "Nom"]);
+
+        assert!(enhancer.contains_tag(&noun, "Sg Nom", "colorize"));
+        assert!(enhancer.contains_tag(&noun, " Sg Nom", "colorize"));
+        assert!(enhancer.contains_tag(&noun, "\"gietta\"", "colorize"));
+        assert!(!enhancer.contains_tag(&noun, "Sg Acc", "colorize"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_needs_the_space_delimited_noun_tag() {
+        let enhancer = enhancer();
+
+        let verb = reading(&["\"boahtit\"", "V", "Sg", "Nom"]);
+        assert!(!enhancer.contains_tag(&verb, "Sg Nom", "colorize"));
+
+        let unquoted_first_tag = reading(&["N", "Sg", "Nom"]);
+        assert!(!enhancer.contains_tag(&unquoted_first_tag, "Sg Nom", "colorize"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn/test]
+    #[test]
+    fn derived_and_clitic_excluded_only_for_cloze_mc() {
+        let enhancer = enhancer();
+
+        let derived = reading(&["\"gietta\"", "N", "Der/vuohta", "Sg", "Nom"]);
+        assert!(!enhancer.contains_tag(&derived, "Sg Nom", "cloze"));
+        assert!(!enhancer.contains_tag(&derived, "Sg Nom", "mc"));
+        assert!(enhancer.contains_tag(&derived, "Sg Nom", "colorize"));
+        assert!(enhancer.contains_tag(&derived, "Sg Nom", "click"));
+
+        let clitic = reading(&["\"gietta\"", "N", "Sg", "Nom", "Qst"]);
+        assert!(!enhancer.contains_tag(&clitic, "Sg Nom", "mc"));
+        assert!(enhancer.contains_tag(&clitic, "Sg Nom", "click"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn/test]
+    #[test]
+    fn stem_type_reports_first_of_g3_g7_nomag() {
+        let enhancer = enhancer();
+
+        assert_eq!(
+            enhancer.get_stem_type(&reading(&["\"bassi\"", "N", "G3", "G7", "NomAg"])),
+            "G3"
+        );
+        assert_eq!(
+            enhancer.get_stem_type(&reading(&["\"bassi\"", "N", "G7", "NomAg"])),
+            "G7"
+        );
+        assert_eq!(
+            enhancer.get_stem_type(&reading(&["\"lohkki\"", "N", "NomAg"])),
+            "NomAg"
+        );
+        assert_eq!(
+            enhancer.get_stem_type(&reading(&["\"gietta\"", "N", "Sg", "Nom"])),
+            ""
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn/test]
+    #[test]
+    fn stem_type_matches_inside_the_quoted_base_form() {
+        let enhancer = enhancer();
+
+        assert_eq!(
+            enhancer.get_stem_type(&reading(&["\"G7-gáhkku\"", "N", "Sg", "Nom"])),
+            "G7"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn/test]
+    #[test]
+    fn lemma_strips_quotes_and_last_quoted_tag_wins() {
+        let enhancer = enhancer();
+
+        assert_eq!(
+            enhancer
+                .get_lemma(&reading(&["\"gietta\"", "N", "Sg", "Nom"]))
+                .unwrap(),
+            "gietta"
+        );
+        assert_eq!(
+            enhancer
+                .get_lemma(&reading(&["\"first\"", "N", "\"second\""]))
+                .unwrap(),
+            "second"
+        );
+        assert_eq!(
+            enhancer
+                .get_lemma(&reading(&["\"girji#gahppir\"", "N", "Sg", "Nom"]))
+                .unwrap(),
+            "girji#gahppir"
+        );
+        assert_eq!(
+            enhancer.get_lemma(&reading(&["N", "Sg", "Nom"])).unwrap(),
+            ""
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn/test]
+    #[test]
+    fn lemma_fails_on_empty_or_lone_quote_tag() {
+        let enhancer = enhancer();
+
+        let empty = enhancer.get_lemma(&reading(&["", "N"])).unwrap_err();
+        assert!(
+            empty.to_string().contains("string index out of range: 0"),
+            "{empty}"
+        );
+
+        let lone_quote = enhancer.get_lemma(&reading(&["\"", "N"])).unwrap_err();
+        assert!(
+            lone_quote.to_string().contains("begin 1, end 0, length 1"),
+            "{lone_quote}"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn/test]
+    #[test]
+    fn process_wraps_tokens_in_numbered_substantive_spans() {
+        let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
+        let mut doc = Document::new("gietta beana", "sme");
+        doc.cg_tokens = vec![
+            token(0, 6, vec![reading(&["\"gietta\"", "N", "Sg", "Nom"])]),
+            token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Acc"])]),
+        ];
+
+        enhancer.process(&mut doc).unwrap();
+
+        assert_eq!(doc.enhancements.len(), 2);
+
+        let first = &doc.enhancements[0];
+        assert!(first.relevant);
+        assert_eq!((first.begin, first.end), (0, 6));
+        assert_eq!(
+            first.enhance_start,
+            "<span id=\"WERTi-span-Sg Nom-1\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">"
+        );
+        assert_eq!(first.enhance_end, "</span>");
+
+        let second = &doc.enhancements[1];
+        assert_eq!((second.begin, second.end), (7, 12));
+        assert_eq!(
+            second.enhance_start,
+            "<span id=\"WERTi-span- Sg Acc-1\" class=\"wertiviewtoken  wertiviewSubstantiveSingular \" lemma=\"\" distractors=\"\">"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn/test]
+    #[test]
+    fn process_numbers_per_tag_stopping_at_first_match() {
+        let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
+        let mut doc = Document::new("gietta beana", "sme");
+        doc.cg_tokens = vec![
+            token(
+                0,
+                6,
+                vec![
+                    reading(&["\"gietta\"", "N", "Sg", "Nom"]),
+                    reading(&["\"gietta\"", "N", "Sg", "Gen"]),
+                ],
+            ),
+            token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Nom"])]),
+        ];
+
+        enhancer.process(&mut doc).unwrap();
+
+        let emitted: Vec<(usize, usize, &str)> = doc
+            .enhancements
+            .iter()
+            .map(|e| (e.begin, e.end, e.enhance_start.as_str()))
+            .collect();
+        assert_eq!(
+            emitted,
+            vec![
+                (0, 6, span_start("WERTi-span-Sg-1").as_str()),
+                (7, 12, span_start("WERTi-span-Sg-2").as_str()),
+                (0, 6, span_start("WERTi-span-Nom-1").as_str()),
+                (7, 12, span_start("WERTi-span-Nom-2").as_str()),
+            ]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn/test]
+    #[test]
+    fn distractors_hold_only_generated_surface_forms() {
+        let enhancer = enhancer();
+
+        for (lemma, stemtype, proper) in [
+            ("gietta", "", false),
+            ("lohkki", "NomAg", false),
+            ("Deatnu", "G7", true),
+        ] {
+            let result = enhancer
+                .get_distractors(lemma, stemtype, proper)
+                .expect("the non-compound branch swallows generator failures");
+
+            assert!(result.is_empty() || result.ends_with(' '), "{result:?}");
+            assert!(
+                !result.contains('\n') && !result.contains('\t'),
+                "{result:?}"
+            );
+            for word in result.split_whitespace() {
+                assert!(!word.contains('+'), "{word} still carries generator tags");
+                assert!(!word.contains('-'), "{word} is an ungenerated form");
+            }
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn/test]
+    #[test]
+    fn a_compound_lemma_takes_the_analyser_branch() {
+        let enhancer = enhancer();
+
+        match enhancer.get_distractors("girji#gahppir", "", false) {
+            Ok(result) => {
+                assert!(result.is_empty() || result.ends_with(' '), "{result:?}");
+                for word in result.split_whitespace() {
+                    assert!(!word.contains('+') && !word.contains('-'), "{word}");
+                }
+            }
+            Err(err) => assert!(err.to_string().contains("Index 1 out of bounds"), "{err}"),
+        }
+    }
+}

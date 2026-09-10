@@ -516,3 +516,7 @@ impl<R: BufRead> ExtCommandConsume2String<R> {
         Some(&self.buffer)
     }
 }
+
+#[cfg(test)]
+#[path = "vislcg3_tests.rs"]
+mod tests;

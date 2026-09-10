@@ -19,6 +19,9 @@ use tracing::info;
 use crate::morpho::MorphoPipeline;
 use crate::types::{Document, Enhancement};
 use crate::util::constants;
+use crate::util::jstring::{
+    char_index_of, java_string_hash, java_trim, split_ws, string_tokenizer,
+};
 use crate::util::{cas_utils, enhancer_utils};
 
 /// Separates one token's generator input (and, in the generator output, one
@@ -34,58 +37,9 @@ static TAG_REGEX: LazyLock<Regex> = LazyLock::new(|| {
     .expect("tags_tbr trailing pattern")
 });
 
-/// `String.trim()`: strips characters at or below U+0020 from both ends,
-/// which is narrower than Rust's Unicode-aware `str::trim`.
-fn java_trim(s: &str) -> &str {
-    s.trim_matches(|c: char| c <= ' ')
-}
-
-/// `String.split("\\s")`: splits on single ASCII whitespace characters,
-/// keeping interior empty fields and dropping trailing empty ones.
-fn split_ws(input: &str) -> Vec<&str> {
-    let mut parts: Vec<&str> = input
-        .split(|c| matches!(c, ' ' | '\t' | '\n' | '\x0B' | '\x0C' | '\r'))
-        .collect();
-    while parts.len() > 1 && parts.last().is_some_and(|p| p.is_empty()) {
-        parts.pop();
-    }
-    if parts.len() == 1 && parts[0].is_empty() && !input.is_empty() {
-        parts.clear();
-    }
-    parts
-}
-
-/// `StringTokenizer`'s default delimiter set is `" \t\n\r\f"`.
-fn string_tokenizer<'a>(input: &'a str) -> impl Iterator<Item = &'a str> + 'a {
-    input
-        .split(|c| matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0C'))
-        .filter(|w| !w.is_empty())
-}
-
-/// `String.indexOf(char)` counted in characters rather than bytes, so that the
-/// `index - 1` slices below cut where Java's UTF-16 offsets cut.
-fn char_index_of(s: &str, needle: char) -> Option<usize> {
-    s.chars().position(|c| c == needle)
-}
-
-/// `String.substring(0, n)` counted in characters.
-fn take_chars(s: &str, n: usize) -> String {
-    s.chars().take(n).collect()
-}
-
 /// `String.substring(begin, end)` counted in characters.
 fn slice_chars(s: &str, begin: usize, end: usize) -> String {
     s.chars().skip(begin).take(end - begin).collect()
-}
-
-/// `String.hashCode()`: 31-multiplier polynomial over UTF-16 code units with
-/// 32-bit wrapping arithmetic.
-fn java_string_hash(s: &str) -> i32 {
-    let mut h: i32 = 0;
-    for unit in s.encode_utf16() {
-        h = h.wrapping_mul(31).wrapping_add(unit as i32);
-    }
-    h
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer]
@@ -401,7 +355,7 @@ impl Vislcg3InfiniteVerbEnhancer {
         let mut generation_input = String::new();
 
         let lemma = match char_index_of(reading_str, '+') {
-            Some(i) => take_chars(reading_str, i),
+            Some(i) => reading_str.chars().take(i).collect::<String>(),
             // substring(0, -1) when there is no "+"
             None => bail!("begin 0, end -1, length {}", reading_str.chars().count()),
         };
@@ -415,7 +369,8 @@ impl Vislcg3InfiniteVerbEnhancer {
         // get "String index out of range" error)
         match char_index_of(reading_str, '@') {
             Some(i) if i > 0 => {
-                generation_input = generation_input + &take_chars(reading_str, i - 1) + "\n";
+                generation_input =
+                    generation_input + &reading_str.chars().take(i - 1).collect::<String>() + "\n";
             }
             _ => {
                 generation_input = generation_input + reading_str + "\n";
@@ -435,7 +390,7 @@ impl Vislcg3InfiniteVerbEnhancer {
             Some(i) => i,
             None => bail!("begin 0, end -1, length {}", reading_str.chars().count()),
         };
-        let lemma_str = take_chars(reading_str, plus);
+        let lemma_str = reading_str.chars().take(plus).collect::<String>();
         // The end offset is length() - 1 with no check on what the final
         // character is, so the last analysis tag always loses its last
         // character.
@@ -449,7 +404,7 @@ impl Vislcg3InfiniteVerbEnhancer {
         // out of range" error)
         if let Some(i) = char_index_of(&analyses_str, '@') {
             if i > 0 {
-                analyses_str = take_chars(&analyses_str, i - 1);
+                analyses_str = analyses_str.chars().take(i - 1).collect::<String>();
             }
         }
         let lem_and_an = format!("{}+{}\n", lemma_str, analyses_str);
@@ -879,3 +834,7 @@ impl fmt::Display for SpanTag {
         )
     }
 }
+
+#[cfg(test)]
+#[path = "infinite_verb_tests.rs"]
+mod tests;

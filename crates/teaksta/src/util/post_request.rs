@@ -57,3 +57,54 @@ impl fmt::Display for PostRequest {
         write!(f, "{}", sb)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.post-request.post-request.to-string-fn/test]
+    #[test]
+    fn display_renders_absent_members_as_the_literal_null() {
+        let request = PostRequest::default();
+
+        assert_eq!(
+            request.to_string(),
+            "PostRequest(\n  type = null\n  url = null\n  language = null\n  topic = null\n  activity = null\n  document = null\n  version = null\n)"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.post-request.post-request.to-string-fn/test]
+    #[test]
+    fn display_renders_the_members_in_the_declared_order() {
+        let request = PostRequest {
+            r#type: Some("enhance".to_string()),
+            url: Some("http://example.org/page?a=b&c=d".to_string()),
+            language: Some("sme".to_string()),
+            topic: Some("Nouns".to_string()),
+            activity: Some("click".to_string()),
+            document: Some("<p>&amp; raw\n  body</p>".to_string()),
+            version: Some("0.9.1".to_string()),
+        };
+
+        assert_eq!(
+            request.to_string(),
+            "PostRequest(\n  type = enhance\n  url = http://example.org/page?a=b&c=d\n  language = sme\n  topic = Nouns\n  activity = click\n  document = <p>&amp; raw\n  body</p>\n  version = 0.9.1\n)"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.post-request.post-request.to-string-fn/test]
+    #[test]
+    fn display_embeds_a_large_document_verbatim() {
+        let document = "á".repeat(4096);
+        let request = PostRequest {
+            document: Some(document.clone()),
+            ..PostRequest::default()
+        };
+
+        let rendered = request.to_string();
+
+        assert!(rendered.contains(&format!("\n  document = {}\n  version = null", document)));
+        assert!(rendered.starts_with("PostRequest(\n  type = null\n"));
+        assert!(rendered.ends_with("\n)"));
+    }
+}

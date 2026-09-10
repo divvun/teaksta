@@ -283,3 +283,198 @@ impl HtmlSentenceAnnotator {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn token(begin: usize, end: usize) -> Token {
+        Token {
+            begin,
+            end,
+            ..Default::default()
+        }
+    }
+
+    fn relevant(begin: usize, end: usize) -> RelevantText {
+        RelevantText {
+            begin,
+            end,
+            ..Default::default()
+        }
+    }
+
+    fn plain(begin: usize, end: usize) -> PlainTextSentenceAnnotation {
+        PlainTextSentenceAnnotation { begin, end }
+    }
+
+    /// `mun<gap>guolli`, with a relevant span on either side of the gap and a
+    /// single plain-text sentence covering the whole thing.
+    fn gapped(gap: &str) -> (Document, Vec<PlainTextSentenceAnnotation>) {
+        let text = format!("mun{gap}guolli");
+        let second = 3 + gap.len();
+        let len = text.len();
+
+        let mut doc = Document::new(text, "sme");
+        doc.relevant_texts.push(relevant(0, 3));
+        doc.relevant_texts.push(relevant(second, second + 6));
+
+        (doc, vec![plain(0, len)])
+    }
+
+    fn html_sentences(gap: &str) -> Vec<(usize, usize)> {
+        let (mut doc, sents) = gapped(gap);
+        HtmlSentenceAnnotator::new()
+            .process(&mut doc, &sents)
+            .unwrap();
+        doc.sentences.iter().map(|s| (s.begin, s.end)).collect()
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn/test]
+    #[test]
+    fn initialize_registers_english_and_nothing_else() {
+        OpenNlpSentenceDetector::new().initialize().unwrap();
+
+        let registry = detectors();
+        assert_eq!(registry.len(), 1);
+        assert!(registry.contains_key("en"));
+        assert!(!registry.contains_key("sme"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
+    #[test]
+    fn process_refuses_a_language_that_has_no_detector() {
+        let mut doc = Document::new("Mun boran guoli.", "sme");
+        doc.tokens.push(token(0, 3));
+
+        let err = OpenNlpSentenceDetector::new()
+            .process(&mut doc)
+            .expect_err("no detector is ever registered for sme");
+
+        assert!(
+            err.to_string()
+                .contains("analysis engine process exception")
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
+    #[test]
+    fn process_masks_tokens_before_detector_lookup() {
+        let mut doc = Document::new("Mun", "sme");
+        doc.tokens.push(token(0, 99));
+
+        let err = OpenNlpSentenceDetector::new()
+            .process(&mut doc)
+            .expect_err("the token span runs off the end of the document");
+
+        assert!(err.to_string().contains("is not within the document"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
+    #[test]
+    fn process_over_english_yields_at_least_one_sentence() {
+        let mut detector = OpenNlpSentenceDetector::new();
+        detector.initialize().unwrap();
+
+        let mut doc = Document::new("Mun boran guoli.", "en");
+        doc.tokens.push(token(0, 3));
+        doc.tokens.push(token(4, 9));
+        doc.tokens.push(token(10, 16));
+
+        match detector.process(&mut doc) {
+            Ok(sentences) => {
+                assert!(!sentences.is_empty());
+                for s in &sentences {
+                    assert!(s.begin <= s.end);
+                    assert!(s.end <= doc.text.len());
+                }
+            }
+            Err(e) => {
+                let message = e.to_string();
+                assert!(
+                    message.contains("TEAKSTA_BUNDLE") || message.contains("sentences"),
+                    "unexpected failure: {message}"
+                );
+            }
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_keeps_sentence_whole_without_relevant_text() {
+        let mut doc = Document::new("Mun boran guoli.", "sme");
+
+        HtmlSentenceAnnotator::new()
+            .process(&mut doc, &[plain(0, 16)])
+            .unwrap();
+
+        assert_eq!(doc.sentences.len(), 1);
+        assert_eq!((doc.sentences[0].begin, doc.sentences[0].end), (0, 16));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_keeps_sentence_whole_within_one_span() {
+        let mut doc = Document::new("Mun boran guoli.", "sme");
+        doc.relevant_texts.push(relevant(0, 16));
+
+        HtmlSentenceAnnotator::new()
+            .process(&mut doc, &[plain(0, 16)])
+            .unwrap();
+
+        assert_eq!(doc.sentences.len(), 1);
+        assert_eq!((doc.sentences[0].begin, doc.sentences[0].end), (0, 16));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_splits_sentence_at_block_level_markup() {
+        assert_eq!(html_sentences("<li>"), vec![(0, 3), (7, 13)]);
+        assert_eq!(html_sentences("</ul>"), vec![(0, 3), (8, 14)]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_lower_cases_the_gap_before_matching() {
+        assert_eq!(html_sentences("<LI>"), vec![(0, 3), (7, 13)]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_breaks_on_literal_heading_class_members() {
+        assert_eq!(html_sentences("<h1>").len(), 2);
+        assert_eq!(html_sentences("<h6>").len(), 2);
+        assert_eq!(html_sentences("<h.>").len(), 2);
+        assert_eq!(html_sentences("<h2>").len(), 1);
+        assert_eq!(html_sentences("<h5>").len(), 1);
+        assert_eq!(html_sentences("</h2>").len(), 2);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_fails_on_overlapping_relevant_spans() {
+        let mut doc = Document::new("mun boran guoli.", "sme");
+        doc.relevant_texts.push(relevant(0, 9));
+        doc.relevant_texts.push(relevant(5, 12));
+
+        let err = HtmlSentenceAnnotator::new()
+            .process(&mut doc, &[plain(0, 16)])
+            .expect_err("the gap runs backwards");
+
+        assert!(err.to_string().contains("gap slice 9..5 is out of range"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    #[test]
+    fn html_process_appends_one_annotation_per_sentence() {
+        let mut doc = Document::new("Mun boran. Guolli lea buorre.", "sme");
+        doc.sentences.push(SentenceAnnotation { begin: 0, end: 0 });
+
+        HtmlSentenceAnnotator::new()
+            .process(&mut doc, &[plain(11, 29), plain(0, 10)])
+            .unwrap();
+
+        let spans: Vec<(usize, usize)> = doc.sentences.iter().map(|s| (s.begin, s.end)).collect();
+        assert_eq!(spans, vec![(0, 0), (0, 10), (11, 29)]);
+    }
+}

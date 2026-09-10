@@ -861,3 +861,7 @@ impl StdError for TopLevelWertiContextException {
             .map(|cause| cause as &(dyn StdError + 'static))
     }
 }
+
+#[cfg(test)]
+#[path = "context_tests.rs"]
+mod tests;

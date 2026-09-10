@@ -16,7 +16,7 @@
 //! Authors: Aleksandar Dimitrov, Adriane Boyd
 //!
 //! The servlet container types this class is written against — request,
-//! response, config and context — have no axum counterpart with the same
+//! response, config and context — have no poem counterpart with the same
 //! shape, so the minimum surface each one is used through is modelled locally
 //! at the bottom of this module. The session half of the request is the one
 //! `ActivitiesSessionLoader` already models, and is threaded through as its
@@ -30,10 +30,9 @@ use std::sync::{LazyLock, RwLock};
 use std::time::{Duration, Instant};
 
 use anyhow::{Result, anyhow, bail};
-use axum::body::Body;
-use axum::http::StatusCode;
-use axum::http::header::{CONTENT_TYPE, LOCATION};
-use axum::response::{IntoResponse, Response};
+use poem::http::StatusCode;
+use poem::http::header::{CONTENT_TYPE, LOCATION};
+use poem::{Body, IntoResponse, Response};
 use regex::Regex;
 use reqwest::Url;
 use scraper::Html;
@@ -974,7 +973,7 @@ impl HttpServletRequest {
 }
 
 /// Minimal stand-in for `javax.servlet.http.HttpServletResponse`. The body is
-/// accumulated in memory and converted to an axum response once the handler
+/// accumulated in memory and converted to a poem response once the handler
 /// returns, so a handler that fails part-way discards what it had written —
 /// which is what a container does for a `ServletException` raised before the
 /// response is committed.
@@ -1051,10 +1050,7 @@ impl IntoResponse for HttpServletResponse {
             builder = builder.header(CONTENT_TYPE, header);
         }
 
-        match builder.body(Body::from(self.body)) {
-            Ok(response) => response,
-            Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
-        }
+        builder.body(Body::from(self.body))
     }
 }
 
@@ -1078,3 +1074,7 @@ impl PrintWriter<'_> {
         *self.closed = true;
     }
 }
+
+#[cfg(test)]
+#[path = "servlet_tests.rs"]
+mod tests;

@@ -139,3 +139,148 @@ impl Vislcg3ConjunctionEnhancer {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_support::{
+        assert_process_ignores_token_without_tags, assert_process_keeps_existing_enhancements,
+        assert_process_requires_enhancement_type, assert_safe_only_single_reading,
+        assert_splits_tags, cg_token as token, reading,
+    };
+
+    fn context(conjunction_tags: &str) -> HashMap<String, String> {
+        HashMap::from([("conjunctionTags".to_string(), conjunction_tags.to_string())])
+    }
+
+    /// Apply one `conjunctionTags` value and report the tags the enhancer
+    /// stored.
+    fn configured(
+        enhancer: &mut Vislcg3ConjunctionEnhancer,
+        conjunction_tags: &str,
+    ) -> Vec<String> {
+        enhancer
+            .initialize(&context(conjunction_tags))
+            .expect("conjunctionTags is set");
+        enhancer.conjunction_tags.clone()
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_splits_conjunction_tags_without_trimming() {
+        let mut enhancer = Vislcg3ConjunctionEnhancer::new();
+        assert!(enhancer.conjunction_tags.is_empty());
+
+        assert_splits_tags(
+            &[
+                ("CC,CS", &["CC", "CS"]),
+                (" CC , CS ", &[" CC ", " CS "]),
+                ("CC", &["CC"]),
+            ],
+            |conjunction_tags| configured(&mut enhancer, conjunction_tags),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_drops_trailing_empties_only_with_comma() {
+        let mut enhancer = Vislcg3ConjunctionEnhancer::new();
+
+        assert_splits_tags(
+            &[
+                ("CC,CS,,", &["CC", "CS"]),
+                ("CC,,CS", &["CC", "", "CS"]),
+                (",,", &[]),
+                ("", &[""]),
+            ],
+            |conjunction_tags| configured(&mut enhancer, conjunction_tags),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn/test]
+    #[test]
+    fn initialize_fails_absent_conjunction_tags_keeps_field() {
+        let mut enhancer = Vislcg3ConjunctionEnhancer::new();
+        enhancer.conjunction_tags = vec!["CC".to_string()];
+
+        let err = enhancer
+            .initialize(&HashMap::new())
+            .expect_err("conjunctionTags is mandatory");
+        assert!(err.to_string().contains("conjunctionTags"), "{err}");
+        assert_eq!(enhancer.conjunction_tags, ["CC"]);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.is-safe-fn/test]
+    #[test]
+    fn is_safe_holds_only_for_exactly_one_reading() {
+        let enhancer = Vislcg3ConjunctionEnhancer::new();
+
+        assert_safe_only_single_reading(
+            4,
+            6,
+            &["\"ja\"", "CC", "@CVP"],
+            &[&["\"ja\"", "CC", "@CVP"], &["\"ja\"", "Pcle", "@ADVL>"]],
+            |t| enhancer.is_safe(t),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_requires_an_equal_element() {
+        let enhancer = Vislcg3ConjunctionEnhancer::new();
+        let coordinator = reading(&["\"ja\"", "CC", "@CVP"]);
+
+        assert!(enhancer.contains_tag(&coordinator, "CC"));
+        assert!(!enhancer.contains_tag(&coordinator, "CS"));
+        assert!(!enhancer.contains_tag(&reading(&["\"go\"", "CS", "@CVP"]), "CC"));
+        assert!(enhancer.contains_tag(&reading(&["\"go\"", "CS", "@CVP"]), "CS"));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.contains-tag-fn/test]
+    #[test]
+    fn contains_tag_rejects_substrings_and_decorations() {
+        let enhancer = Vislcg3ConjunctionEnhancer::new();
+        let coordinator = reading(&["\"CC\"", "CC-decorated", "@CC", "CCx"]);
+
+        assert!(!enhancer.contains_tag(&coordinator, "CC"));
+        assert!(!enhancer.contains_tag(&coordinator, "C"));
+        assert!(!enhancer.contains_tag(&reading(&["\"ja\"", "CC"]), "cc"));
+        assert!(!enhancer.contains_tag(&reading(&[]), "CC"));
+        assert!(!enhancer.contains_tag(&reading(&["\"ja\"", "CC"]), ""));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    #[test]
+    fn process_walks_tags_but_adds_nothing_without_tokens() {
+        let enhancer = Vislcg3ConjunctionEnhancer {
+            conjunction_tags: vec!["CC".to_string(), "CS".to_string()],
+        };
+
+        assert_process_keeps_existing_enhancements("Mun ja don.", |doc| enhancer.process(doc));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    #[test]
+    fn process_without_configured_tags_never_inspects_a_token() {
+        let enhancer = Vislcg3ConjunctionEnhancer::new();
+
+        assert_process_ignores_token_without_tags(
+            "Mun ja don.",
+            token(4, 6, &[&["\"ja\"", "CC", "@CVP"]]),
+            |doc| enhancer.process(doc),
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn/test]
+    #[test]
+    fn process_requires_enhancement_type_for_first_token() {
+        let enhancer = Vislcg3ConjunctionEnhancer {
+            conjunction_tags: vec!["CC".to_string()],
+        };
+        let mut doc = Document::new("Mun ja don.", "sme");
+        doc.cg_tokens
+            .push(token(4, 6, &[&["\"ja\"", "CC", "@CVP"]]));
+
+        assert_process_requires_enhancement_type(&mut doc, |doc| enhancer.process(doc));
+    }
+}

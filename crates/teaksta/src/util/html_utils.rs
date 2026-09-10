@@ -149,3 +149,127 @@ fn normalise_whitespace(text: &str) -> String {
 fn is_whitespace(c: char) -> bool {
     c == ' ' || c == '\t' || c == '\n' || c == '\u{000C}' || c == '\r'
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn element_id(doc: &Html, name: &str) -> NodeId {
+        doc.tree
+            .nodes()
+            .find(|node| {
+                node.value()
+                    .as_element()
+                    .is_some_and(|element| element.name() == name)
+            })
+            .map(|node| node.id())
+            .unwrap_or_else(|| panic!("no <{}> in document", name))
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn wraps_text_nodes_in_a_marker_class_span() {
+        let mut doc = Html::parse_document("<html><body><p>Hei</p></body></html>");
+        let body = element_id(&doc, "body");
+
+        mark_text_nodes(&mut doc, body).unwrap();
+
+        assert!(
+            doc.html()
+                .contains("<p><span class=\"PCZRlWLK\">Hei</span></p>"),
+            "{}",
+            doc.html()
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn leaves_whitespace_only_text_nodes_alone() {
+        let mut doc = Html::parse_document("<html><body><p>   \n\t</p></body></html>");
+        let body = element_id(&doc, "body");
+
+        mark_text_nodes(&mut doc, body).unwrap();
+
+        let html = doc.html();
+        assert!(!html.contains(CLASS_NAME), "{}", html);
+        assert!(html.contains("<p>   \n\t</p>"), "{}", html);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn decodes_html_entities_left_in_the_text_node() {
+        let mut doc = Html::parse_document("<html><body><p>caf&amp;eacute;</p></body></html>");
+        let body = element_id(&doc, "body");
+
+        mark_text_nodes(&mut doc, body).unwrap();
+
+        assert!(
+            doc.html()
+                .contains("<span class=\"PCZRlWLK\">caf\u{e9}</span>"),
+            "{}",
+            doc.html()
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn collapses_whitespace_runs_inside_the_replacement_span() {
+        let mut doc = Html::parse_document("<html><body><p>a\n   b</p></body></html>");
+        let body = element_id(&doc, "body");
+
+        mark_text_nodes(&mut doc, body).unwrap();
+
+        assert!(
+            doc.html().contains("<span class=\"PCZRlWLK\">a b</span>"),
+            "{}",
+            doc.html()
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn skips_script_and_head_subtrees() {
+        let mut doc = Html::parse_document(
+            "<html><head><title>T</title></head><body><p>Hi</p><script>var i = 1;</script></body></html>",
+        );
+        let html_element = element_id(&doc, "html");
+
+        mark_text_nodes(&mut doc, html_element).unwrap();
+
+        let html = doc.html();
+        assert_eq!(html.matches(CLASS_NAME).count(), 1, "{}", html);
+        assert!(
+            html.contains("<span class=\"PCZRlWLK\">Hi</span>"),
+            "{}",
+            html
+        );
+        assert!(html.contains("<script>var i = 1;</script>"), "{}", html);
+        assert!(html.contains("<title>T</title>"), "{}", html);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    #[test]
+    fn marks_the_given_node_even_if_head() {
+        let mut doc =
+            Html::parse_document("<html><head><title>T</title></head><body></body></html>");
+        let head = element_id(&doc, "head");
+
+        mark_text_nodes(&mut doc, head).unwrap();
+
+        assert!(doc.html().contains(CLASS_NAME), "{}", doc.html());
+    }
+
+    #[test]
+    fn blankness_follows_the_five_ascii_whitespace_characters() {
+        assert!(is_blank(""));
+        assert!(is_blank(" \t\n\r\u{000C}"));
+        assert!(!is_blank("\u{a0}"));
+        assert!(!is_blank(" a "));
+    }
+
+    #[test]
+    fn whitespace_normalisation_collapses_edge_runs_too() {
+        assert_eq!(normalise_whitespace("  a \n\t b  "), " a b ");
+        assert_eq!(normalise_whitespace(""), "");
+    }
+}

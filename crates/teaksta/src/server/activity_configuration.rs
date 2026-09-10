@@ -681,3 +681,7 @@ pub fn main(args: &[String]) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "activity_configuration_tests.rs"]
+mod tests;

@@ -163,3 +163,98 @@ impl<'a> PageHandler<'a> {
         Ok(None)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::server::activities::Activities;
+
+    /// A registry built over a directory holding no activities, so no engine
+    /// pair is registered for any (language, topic).
+    fn empty_processors() -> Processors {
+        let activity_dir = tempfile::tempdir().expect("temp dir");
+        let mut activities = Activities::new(activity_dir.path()).expect("activities");
+        Processors::new(&mut activities).expect("processors")
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn/test]
+    #[test]
+    fn constructor_maps_third_fourth_args_to_url_path() {
+        let processors = empty_processors();
+
+        let handler = PageHandler::new(
+            &processors,
+            "Nouns",
+            "http:--example.org-page",
+            "/home/teaksta/analyzedTexts",
+            "Sámegiella lea somá.",
+            "sme",
+        );
+
+        assert!(std::ptr::eq(handler.processors, &processors));
+        assert_eq!(handler.topic, "Nouns");
+        assert_eq!(handler.url, "http:--example.org-page");
+        assert_eq!(handler.path, "/home/teaksta/analyzedTexts");
+        assert_eq!(handler.text, "Sámegiella lea somá.");
+        assert_eq!(handler.lang, "sme");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn/test]
+    #[test]
+    fn constructor_stores_every_argument_untouched() {
+        let processors = empty_processors();
+
+        let handler = PageHandler::new(&processors, "Conjunctions", "  ", "", " &amp; ", "eng");
+
+        assert_eq!(handler.topic, "Conjunctions");
+        assert_eq!(handler.url, "  ");
+        assert_eq!(handler.path, "");
+        assert_eq!(handler.text, " &amp; ");
+        assert_eq!(handler.lang, "eng");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn/test]
+    #[test]
+    fn process_returns_nothing_when_topic_lacks_engines() {
+        let processors = empty_processors();
+        let cache_root = tempfile::tempdir().expect("temp dir");
+        let cache_dir = cache_root.path().join("analyzedTexts");
+        let handler = PageHandler::new(
+            &processors,
+            "Nouns",
+            "http:--example.org-page",
+            cache_dir.to_str().expect("utf-8 path"),
+            "Sámegiella",
+            "sme",
+        );
+
+        let processed = handler.process().expect("lookup miss is not an error");
+
+        assert!(processed.is_none());
+        // The lookup miss returns before the cache directory is created.
+        assert!(!cache_dir.exists());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn/test]
+    #[test]
+    fn process_returns_nothing_when_the_language_is_unknown() {
+        let processors = empty_processors();
+        let cache_root = tempfile::tempdir().expect("temp dir");
+        let handler = PageHandler::new(
+            &processors,
+            "Nouns",
+            "page",
+            cache_root.path().to_str().expect("utf-8 path"),
+            "text",
+            "klingon",
+        );
+
+        assert!(
+            handler
+                .process()
+                .expect("lookup miss is not an error")
+                .is_none()
+        );
+    }
+}

@@ -308,3 +308,291 @@ fn set_element_text(doc: &mut Html, element: NodeId, text: &str) {
         }));
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    const PAGE: &str = "<html><head><title>Old</title></head><body><p>abc</p></body></html>";
+
+    /// The smallest activity descriptor `ActivityConfiguration` will load. The
+    /// value is threaded through `enhance` untouched, so its contents are
+    /// irrelevant to what is under test.
+    fn activity_configuration(dir: &TempDir) -> ActivityConfiguration {
+        let path = dir.path().join("activity.xml");
+        std::fs::write(&path, "<activity><server-cfg></server-cfg></activity>").unwrap();
+        ActivityConfiguration::new(&path).unwrap()
+    }
+
+    fn request(request_url: &str, enhancement: Option<&str>) -> HttpServletRequest {
+        let mut req = HttpServletRequest {
+            request_url: request_url.to_string(),
+            ..HttpServletRequest::default()
+        };
+        if let Some(enhancement) = enhancement {
+            req.parameters
+                .insert("client.enhancement".to_string(), enhancement.to_string());
+        }
+        req
+    }
+
+    fn enhance(
+        cas: &Document,
+        activity: &str,
+        baseurl: &str,
+        request_url: &str,
+        enhancement: Option<&str>,
+    ) -> String {
+        let dir = TempDir::new().unwrap();
+        let config = activity_configuration(&dir);
+        HtmlEnhancer::new(cas)
+            .enhance(
+                activity,
+                baseurl,
+                &request(request_url, enhancement),
+                &config,
+                "teaksta",
+            )
+            .unwrap()
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn/test]
+    #[test]
+    fn the_constructor_stores_the_cas_by_reference() {
+        let cas = Document::new(PAGE, "sme");
+
+        let enhancer = HtmlEnhancer::new(&cas);
+
+        assert!(std::ptr::eq(enhancer.cas, &cas));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn head_gets_the_base_url_and_asset_list() {
+        let cas = Document::new(PAGE, "sme");
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(
+            html.contains("<base href=\"http://example.org/page.html\">"),
+            "{}",
+            html
+        );
+        let (head, _) = html.split_once("</head>").expect("a closed head");
+        let mut cursor = 0;
+        for asset in [
+            "js-lib/jquery-1.4.2.min.js",
+            "js-lib/wertiview.js",
+            "js-lib/blur.js",
+            "js-lib/notification.js",
+            "js-lib/wertiview.css",
+            "js-lib/lib.js",
+            "js-lib/activity.js",
+            "js-lib/substantive.js",
+        ] {
+            let expected = if asset.ends_with(".css") {
+                format!(
+                    "<link href=\"https://example.org/teaksta/{}\" rel=\"stylesheet\" type=\"text/css\">",
+                    asset
+                )
+            } else {
+                format!(
+                    "<script language=\"javascript\" src=\"https://example.org/teaksta/{}\" type=\"text/javascript\"></script>",
+                    asset
+                )
+            };
+            let at = head[cursor..]
+                .find(&expected)
+                .unwrap_or_else(|| panic!("missing {}\nin {}", expected, head));
+            cursor += at + expected.len();
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn title_and_reminder_carry_north_sami_labels() {
+        let cas = Document::new(PAGE, "sme");
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(
+            html.contains("<title>Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</title>"),
+            "{}",
+            html
+        );
+        assert!(
+            html.contains(
+                "<p class=\"p_reminder\"><span class=\"span_reminder\">Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</span></p><p>abc</p>"
+            ),
+            "{}",
+            html
+        );
+        assert!(!html.contains("Old"), "{}", html);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn the_inline_loader_interpolates_topic_and_activity_unescaped() {
+        let cas = Document::new(PAGE, "sme");
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(
+            html.contains("wertiview.jQuery('body').data('wertiview-topic', 'Substantive');"),
+            "{}",
+            html
+        );
+        assert!(html.contains("var topic = \"substantive\";"), "{}", html);
+        assert!(html.contains("var activity = \"colorize\";"), "{}", html);
+        assert!(
+            html.contains("wertiview.substantive.colorize();"),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn an_https_request_url_is_mangled_into_httpss() {
+        let cas = Document::new(PAGE, "sme");
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "https://example.org/page.html",
+            "https://example.org/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(
+            html.contains("src=\"httpss://example.org/js-lib/lib.js\""),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn unknown_topic_and_missing_enhancement_render_as_null() {
+        let cas = Document::new(PAGE, "sme");
+
+        let html = enhance(
+            &cas,
+            "Unknown",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            None,
+        );
+
+        assert!(html.contains("<title>null: null</title>"), "{}", html);
+        assert!(
+            html.contains("<span class=\"span_reminder\">null: null</span>"),
+            "{}",
+            html
+        );
+        assert!(html.contains("var activity = \"null\";"), "{}", html);
+        assert!(html.contains("wertiview.unknown.null();"), "{}", html);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn arts_and_dets_are_rewritten_to_pos() {
+        let cas = Document::new(PAGE, "sme");
+
+        for activity in ["Arts", "Dets"] {
+            let html = enhance(
+                &cas,
+                activity,
+                "http://example.org/page.html",
+                "http://example.org/teaksta/WERTiServlet",
+                Some("click"),
+            );
+
+            assert!(
+                html.contains("src=\"https://example.org/teaksta/js-lib/pos.js\""),
+                "{}",
+                html
+            );
+            assert!(html.contains("var topic = \"pos\";"), "{}", html);
+            assert!(
+                html.contains(&format!("data('wertiview-topic', '{}');", activity)),
+                "{}",
+                html
+            );
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn bare_enhance_tags_and_children_become_styled_spans() {
+        let cas = Document::new(
+            "<html><head><title>Old</title></head><body><p><e>boaris <b>beana</b><span>!</span></e></p></body></html>",
+            "sme",
+        );
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(!html.contains("<e>"), "{}", html);
+        assert_eq!(
+            html.matches(enhancer_utils::ADDED_SPAN_STYLE).count(),
+            2,
+            "{}",
+            html
+        );
+        assert!(
+            html.contains(&format!(
+                "<span class=\"wertiview\" style=\"{}\">boaris <b>beana</b><span style=\"{}\">!</span></span>",
+                enhancer_utils::ADDED_SPAN_STYLE,
+                enhancer_utils::ADDED_SPAN_STYLE
+            )),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    #[test]
+    fn a_document_without_a_title_skips_that_step() {
+        let cas = Document::new("<html><head></head><body><p>abc</p></body></html>", "sme");
+
+        let html = enhance(
+            &cas,
+            "Substantive",
+            "http://example.org/page.html",
+            "http://example.org/teaksta/WERTiServlet",
+            Some("colorize"),
+        );
+
+        assert!(!html.contains("<title>"), "{}", html);
+        assert!(
+            html.contains("<span class=\"span_reminder\">Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</span>"),
+            "{}",
+            html
+        );
+    }
+}

@@ -492,3 +492,486 @@ impl Processors {
         produce_analysis_engine(description)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    const AGGREGATE_DESCRIPTOR_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<analysisEngineDescription xmlns="http://uima.apache.org/resourceSpecifier">
+  <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
+  <primitive>false</primitive>
+  <delegateAnalysisEngineSpecifiers>
+    <delegateAnalysisEngine key="Tokenizer">
+      <import location="/operators/tokenizer.xml"/>
+    </delegateAnalysisEngine>
+    <delegateAnalysisEngine key="Tagger">
+      <import location="/operators/tagger.xml"/>
+    </delegateAnalysisEngine>
+  </delegateAnalysisEngineSpecifiers>
+  <analysisEngineMetaData>
+    <name>Vislcg3 Pipe</name>
+    <version>1.0</version>
+    <configurationParameterSettings>
+      <nameValuePair>
+        <name>MaxLength</name>
+        <value><integer>10</integer></value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>Verbose</name>
+        <value><boolean>false</boolean></value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>Ratio</name>
+        <value><float>0.5</float></value>
+      </nameValuePair>
+      <nameValuePair>
+        <name>Tags</name>
+        <value><array><string>N</string><string>V</string></array></value>
+      </nameValuePair>
+    </configurationParameterSettings>
+    <flowConstraints>
+      <fixedFlow>
+        <node>Tokenizer</node>
+        <node>Tagger</node>
+      </fixedFlow>
+    </flowConstraints>
+  </analysisEngineMetaData>
+</analysisEngineDescription>
+"#;
+
+    const ACTIVITY_WITHOUT_LANGUAGES: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<activity enabled="yes">
+  <meta><name>No Languages</name></meta>
+  <server-cfg/>
+</activity>
+"#;
+
+    const ACTIVITY_WITH_UNRESOLVABLE_DESCRIPTORS: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<activity enabled="yes">
+  <meta><name>Unresolvable</name></meta>
+  <server-cfg>
+    <lang code="sme">
+      <pre>
+        <entry key="mode" value="strict" overridable="no"/>
+        <pipeline desc="/teaksta-absent-descriptors/pre.xml"/>
+      </pre>
+      <post>
+        <entry key="depth" value="2" overridable="no"/>
+        <pipeline desc="/teaksta-absent-descriptors/post.xml"/>
+      </post>
+    </lang>
+  </server-cfg>
+</activity>
+"#;
+
+    fn write_activity(root: &Path, name: &str, xml: &str) {
+        let dir = root.join(name);
+        fs::create_dir_all(&dir).expect("create activity directory");
+        fs::write(dir.join("activity.xml"), xml).expect("write activity.xml");
+    }
+
+    fn file_url(path: &Path) -> String {
+        format!("file://{}", path.display())
+    }
+
+    fn description_with(pairs: &[(&str, ParameterValue)]) -> AnalysisEngineDescription {
+        let mut settings = ConfigurationParameterSettings::new();
+        for (name, value) in pairs {
+            settings.set_parameter_value(name, value.clone());
+        }
+
+        AnalysisEngineDescription {
+            source_url: "file:///operators/vislcg3Pipe.xml".to_string(),
+            framework_implementation: "org.apache.uima.java".to_string(),
+            primitive: true,
+            annotator_implementation_name: Some("werti.uima.ae.Vislcg3Annotator".to_string()),
+            delegate_analysis_engine_specifiers: Vec::new(),
+            analysis_engine_meta_data: AnalysisEngineMetaData {
+                name: "Vislcg3 Pipe".to_string(),
+                version: "1.0".to_string(),
+                configuration_parameter_settings: settings,
+                fixed_flow: vec!["Tokenizer".to_string(), "Tagger".to_string()],
+            },
+        }
+    }
+
+    fn engine_named(name: &str) -> AnalysisEngine {
+        AnalysisEngine {
+            name: name.to_string(),
+            ..Default::default()
+        }
+    }
+
+    fn processors_fixture() -> Processors {
+        let mut pre_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
+        let mut post_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
+
+        let mut sme_pre = BTreeMap::new();
+        sme_pre.insert("Nouns".to_string(), engine_named("pre-sme-nouns"));
+        pre_map.insert("sme".to_string(), sme_pre);
+        pre_map.insert("nob".to_string(), BTreeMap::new());
+
+        let mut sme_post = BTreeMap::new();
+        sme_post.insert("Nouns".to_string(), engine_named("post-sme-nouns"));
+        post_map.insert("sme".to_string(), sme_post);
+        post_map.insert("nob".to_string(), BTreeMap::new());
+
+        Processors { pre_map, post_map }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.auto-convert-parameter-fn/test]
+    #[test]
+    fn auto_convert_parameter_dispatches_on_witness_type() {
+        let boolean = ParameterValue::Boolean(false);
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&boolean), "TrUe").unwrap(),
+            ParameterValue::Boolean(true)
+        );
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&boolean), "1").unwrap(),
+            ParameterValue::Boolean(false)
+        );
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&boolean), "yes").unwrap(),
+            ParameterValue::Boolean(false)
+        );
+
+        let integer = ParameterValue::Integer(10);
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&integer), "-42").unwrap(),
+            ParameterValue::Integer(-42)
+        );
+
+        let float = ParameterValue::Float(0.5);
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&float), "0.25").unwrap(),
+            ParameterValue::Float(0.25)
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.auto-convert-parameter-fn/test]
+    #[test]
+    fn auto_convert_parameter_falls_back_to_string() {
+        let string = ParameterValue::Str("default".to_string());
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&string), "7").unwrap(),
+            ParameterValue::Str("7".to_string())
+        );
+
+        let array = ParameterValue::Array(vec![ParameterValue::Str("N".to_string())]);
+        assert_eq!(
+            Processors::auto_convert_parameter(Some(&array), "V").unwrap(),
+            ParameterValue::Str("V".to_string())
+        );
+
+        assert_eq!(
+            Processors::auto_convert_parameter(None, "42").unwrap(),
+            ParameterValue::Str("42".to_string())
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.auto-convert-parameter-fn/test]
+    #[test]
+    fn auto_convert_parameter_reports_unparsable_numbers() {
+        let integer = ParameterValue::Integer(10);
+        let err = Processors::auto_convert_parameter(Some(&integer), "ten").unwrap_err();
+        assert!(matches!(err, UimaError::NumberFormat(_)));
+        assert_eq!(
+            err.to_string(),
+            "NumberFormatException: For input string: \"ten\""
+        );
+
+        let float = ParameterValue::Float(0.5);
+        let err = Processors::auto_convert_parameter(Some(&float), "a half").unwrap_err();
+        assert!(matches!(err, UimaError::NumberFormat(_)));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn/test]
+    #[test]
+    fn load_descriptor_parses_description_from_file_url() {
+        let dir = TempDir::new().expect("temp dir");
+        let path = dir.path().join("vislcg3Pipe.xml");
+        fs::write(&path, AGGREGATE_DESCRIPTOR_XML).expect("write descriptor");
+        let url = file_url(&path);
+
+        let description =
+            Processors::load_descriptor(Some(url.as_str())).expect("descriptor parses");
+
+        assert_eq!(description.source_url, url);
+        assert_eq!(description.framework_implementation, "org.apache.uima.java");
+        assert!(!description.primitive);
+        assert_eq!(description.analysis_engine_meta_data.name, "Vislcg3 Pipe");
+        assert_eq!(description.analysis_engine_meta_data.version, "1.0");
+        assert_eq!(
+            description.analysis_engine_meta_data.fixed_flow,
+            vec!["Tokenizer".to_string(), "Tagger".to_string()]
+        );
+        assert_eq!(
+            description.delegate_analysis_engine_specifiers,
+            vec![
+                (
+                    "Tokenizer".to_string(),
+                    "/operators/tokenizer.xml".to_string()
+                ),
+                ("Tagger".to_string(), "/operators/tagger.xml".to_string()),
+            ]
+        );
+
+        let settings = &description
+            .analysis_engine_meta_data
+            .configuration_parameter_settings;
+        assert_eq!(
+            settings.get_parameter_value("MaxLength"),
+            Some(&ParameterValue::Integer(10))
+        );
+        assert_eq!(
+            settings.get_parameter_value("Verbose"),
+            Some(&ParameterValue::Boolean(false))
+        );
+        assert_eq!(
+            settings.get_parameter_value("Ratio"),
+            Some(&ParameterValue::Float(0.5))
+        );
+        assert_eq!(
+            settings.get_parameter_value("Tags"),
+            Some(&ParameterValue::Array(vec![
+                ParameterValue::Str("N".to_string()),
+                ParameterValue::Str("V".to_string()),
+            ]))
+        );
+        assert_eq!(settings.get_parameter_value("Absent"), None);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn/test]
+    #[test]
+    fn load_descriptor_rejects_url_absent_from_classpath() {
+        let err = Processors::load_descriptor(None).unwrap_err();
+
+        assert!(matches!(err, UimaError::NullPointer(_)));
+        assert_eq!(
+            err.to_string(),
+            "NullPointerException: descriptor URL was not found on the classpath"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn/test]
+    #[test]
+    fn load_descriptor_surfaces_read_and_parse_failures_unchanged() {
+        let dir = TempDir::new().expect("temp dir");
+
+        let missing = file_url(&dir.path().join("absent.xml"));
+        let err = Processors::load_descriptor(Some(missing.as_str())).unwrap_err();
+        assert!(matches!(err, UimaError::Io(_)));
+
+        let malformed = dir.path().join("malformed.xml");
+        fs::write(&malformed, "<analysisEngineDescription>").expect("write malformed");
+        let err = Processors::load_descriptor(Some(file_url(&malformed).as_str())).unwrap_err();
+        assert!(matches!(err, UimaError::InvalidXml(_)));
+
+        let wrong_root = dir.path().join("wrongRoot.xml");
+        fs::write(
+            &wrong_root,
+            "<taeDescription><name>x</name></taeDescription>",
+        )
+        .expect("write wrong root");
+        let err = Processors::load_descriptor(Some(file_url(&wrong_root).as_str())).unwrap_err();
+        assert_eq!(
+            err.to_string(),
+            "InvalidXMLException: expected <analysisEngineDescription>, found <taeDescription>"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.load-descriptor-fn/test]
+    #[test]
+    fn load_descriptor_re_reads_resource_on_every_call() {
+        let dir = TempDir::new().expect("temp dir");
+        let path = dir.path().join("vislcg3Pipe.xml");
+        fs::write(&path, AGGREGATE_DESCRIPTOR_XML).expect("write descriptor");
+        let url = file_url(&path);
+
+        let mut first = Processors::load_descriptor(Some(url.as_str())).expect("first parse");
+        first
+            .get_analysis_engine_meta_data()
+            .get_configuration_parameter_settings()
+            .set_parameter_value("MaxLength", ParameterValue::Integer(99));
+
+        let second = Processors::load_descriptor(Some(url.as_str())).expect("second parse");
+        assert_eq!(
+            second
+                .analysis_engine_meta_data
+                .configuration_parameter_settings
+                .get_parameter_value("MaxLength"),
+            Some(&ParameterValue::Integer(10))
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn/test]
+    #[test]
+    fn init_ae_coerces_config_values_to_declared_types() {
+        let description = description_with(&[
+            ("MaxLength", ParameterValue::Integer(10)),
+            ("Verbose", ParameterValue::Boolean(false)),
+            ("Ratio", ParameterValue::Float(0.5)),
+            ("Model", ParameterValue::Str("default".to_string())),
+        ]);
+
+        let mut config = HashMap::new();
+        config.insert("MaxLength".to_string(), "25".to_string());
+        config.insert("Verbose".to_string(), "true".to_string());
+        config.insert("Ratio".to_string(), "0.125".to_string());
+        config.insert("Model".to_string(), "sme".to_string());
+
+        let engine = Processors::init_ae(description, &config).expect("engine produced");
+
+        assert_eq!(
+            engine.settings.get_parameter_value("MaxLength"),
+            Some(&ParameterValue::Integer(25))
+        );
+        assert_eq!(
+            engine.settings.get_parameter_value("Verbose"),
+            Some(&ParameterValue::Boolean(true))
+        );
+        assert_eq!(
+            engine.settings.get_parameter_value("Ratio"),
+            Some(&ParameterValue::Float(0.125))
+        );
+        assert_eq!(
+            engine.settings.get_parameter_value("Model"),
+            Some(&ParameterValue::Str("sme".to_string()))
+        );
+        assert_eq!(engine.name, "Vislcg3 Pipe");
+        assert_eq!(
+            engine.fixed_flow,
+            vec!["Tokenizer".to_string(), "Tagger".to_string()]
+        );
+        assert_eq!(
+            engine.annotator_implementation_name.as_deref(),
+            Some("werti.uima.ae.Vislcg3Annotator")
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn/test]
+    #[test]
+    fn init_ae_injects_undeclared_parameters_as_strings() {
+        let description = description_with(&[("MaxLength", ParameterValue::Integer(10))]);
+
+        let mut config = HashMap::new();
+        config.insert("Threshold".to_string(), "3".to_string());
+
+        let engine = Processors::init_ae(description, &config).expect("engine produced");
+
+        assert_eq!(
+            engine.settings.get_parameter_value("Threshold"),
+            Some(&ParameterValue::Str("3".to_string()))
+        );
+        assert_eq!(
+            engine.settings.get_parameter_value("MaxLength"),
+            Some(&ParameterValue::Integer(10))
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn/test]
+    #[test]
+    fn init_ae_propagates_a_coercion_failure() {
+        let description = description_with(&[("MaxLength", ParameterValue::Integer(10))]);
+
+        let mut config = HashMap::new();
+        config.insert("MaxLength".to_string(), "very long".to_string());
+
+        let err = Processors::init_ae(description, &config).unwrap_err();
+
+        assert!(matches!(err, UimaError::NumberFormat(_)));
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn/test]
+    #[test]
+    fn init_ae_with_empty_config_leaves_settings_untouched() {
+        let description = description_with(&[
+            ("MaxLength", ParameterValue::Integer(10)),
+            ("Verbose", ParameterValue::Boolean(false)),
+        ]);
+
+        let engine = Processors::init_ae(description, &HashMap::new()).expect("engine produced");
+
+        assert_eq!(
+            engine.settings.pairs().to_vec(),
+            vec![
+                ("MaxLength".to_string(), ParameterValue::Integer(10)),
+                ("Verbose".to_string(), ParameterValue::Boolean(false)),
+            ]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-preprocessor-fn/test]
+    #[test]
+    fn get_preprocessor_two_level_lookup_yields_shared_engine() {
+        let processors = processors_fixture();
+
+        let engine = processors
+            .get_preprocessor("sme", "Nouns")
+            .expect("registered preprocessor");
+        assert_eq!(engine.name, "pre-sme-nouns");
+
+        let again = processors
+            .get_preprocessor("sme", "Nouns")
+            .expect("registered preprocessor");
+        assert!(std::ptr::eq(engine, again));
+
+        assert!(processors.get_preprocessor("sme", "Verbs").is_none());
+        assert!(processors.get_preprocessor("nob", "Nouns").is_none());
+        assert!(processors.get_preprocessor("fin", "Nouns").is_none());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-postprocessor-fn/test]
+    #[test]
+    fn get_postprocessor_two_level_lookup_over_own_map() {
+        let processors = processors_fixture();
+
+        let engine = processors
+            .get_postprocessor("sme", "Nouns")
+            .expect("registered postprocessor");
+        assert_eq!(engine.name, "post-sme-nouns");
+
+        assert!(processors.get_postprocessor("sme", "Verbs").is_none());
+        assert!(processors.get_postprocessor("nob", "Nouns").is_none());
+        assert!(processors.get_postprocessor("fin", "Nouns").is_none());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn/test]
+    #[test]
+    fn processors_registers_nothing_without_languages() {
+        let dir = TempDir::new().expect("temp dir");
+        write_activity(dir.path(), "Articles", ACTIVITY_WITHOUT_LANGUAGES);
+        write_activity(dir.path(), "Nouns", ACTIVITY_WITHOUT_LANGUAGES);
+        let mut activities = Activities::new(dir.path()).expect("registry builds");
+
+        let processors = Processors::new(&mut activities).expect("construction succeeds");
+
+        assert!(processors.pre_map.is_empty());
+        assert!(processors.post_map.is_empty());
+        assert!(processors.get_preprocessor("sme", "Nouns").is_none());
+        assert!(processors.get_postprocessor("sme", "Nouns").is_none());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn/test]
+    #[test]
+    fn processors_aborts_when_a_descriptor_url_is_missing() {
+        let dir = TempDir::new().expect("temp dir");
+        write_activity(dir.path(), "Nouns", ACTIVITY_WITH_UNRESOLVABLE_DESCRIPTORS);
+        let mut activities = Activities::new(dir.path()).expect("registry builds");
+
+        let Err(err) = Processors::new(&mut activities) else {
+            panic!("a missing descriptor URL must abort construction");
+        };
+
+        assert_eq!(err.to_string(), "");
+        assert_eq!(
+            err.root_cause().to_string(),
+            "NullPointerException: descriptor URL was not found on the classpath"
+        );
+    }
+}

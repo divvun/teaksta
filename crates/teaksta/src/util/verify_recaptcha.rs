@@ -88,3 +88,36 @@ pub fn verify(g_recaptcha_response: &str, secret: &str) -> Result<bool> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.verify-recaptcha.verify-recaptcha.verify-fn/test]
+    #[test]
+    fn empty_token_is_rejected_before_the_endpoint() {
+        assert!(!verify("", "a-shared-secret").unwrap());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.verify-recaptcha.verify-recaptcha.verify-fn/test]
+    #[test]
+    fn secret_is_not_checked_when_token_is_empty() {
+        assert!(!verify("", "").unwrap());
+    }
+
+    #[test]
+    fn request_body_keeps_only_each_low_byte() {
+        assert_eq!(
+            write_bytes("secret=abc&response=xyz"),
+            b"secret=abc&response=xyz".to_vec()
+        );
+        assert_eq!(write_bytes("á"), vec![0xE1]);
+        assert_eq!(write_bytes("š"), b"a".to_vec());
+        assert_eq!(write_bytes("ŋ"), b"K".to_vec());
+    }
+
+    #[test]
+    fn the_endpoint_is_the_google_siteverify_url() {
+        assert_eq!(URL, "https://www.google.com/recaptcha/api/siteverify");
+    }
+}

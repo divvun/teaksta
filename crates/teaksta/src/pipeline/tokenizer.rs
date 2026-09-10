@@ -303,3 +303,198 @@ fn ends_with_possessive(covered: &str) -> bool {
     let mut chars = covered.chars().rev();
     matches!((chars.next(), chars.next()), (Some('s'), Some('\u{2019}')))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn relevant(begin: usize, end: usize) -> RelevantText {
+        RelevantText {
+            begin,
+            end,
+            ..Default::default()
+        }
+    }
+
+    /// The document text handed to the tokeniser, with the given spans marked
+    /// relevant.
+    fn document(text: &str, spans: &[(usize, usize)]) -> Document {
+        let mut doc = Document::new(text, "sme");
+        for (begin, end) in spans {
+            doc.relevant_texts.push(relevant(*begin, *end));
+        }
+        doc
+    }
+
+    /// The buffer the stdout consumer accumulates: one trailing newline per
+    /// line read.
+    fn drained(lines: &[&str]) -> String {
+        lines.iter().map(|line| format!("{line}\n")).collect()
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn/test]
+    #[test]
+    fn initialize_registers_english_and_process_never_consults_it() {
+        GiellateknoTokenizer::new().initialize().unwrap();
+
+        {
+            let registry = tokenizers();
+            assert_eq!(registry.len(), 1);
+            assert!(registry.contains_key("en"));
+            assert!(!registry.contains_key("de"));
+        }
+
+        let mut doc = document("mun boran", &[(0, 9)]);
+        doc.language = "de".to_string();
+        assert!(GiellateknoTokenizer::new().process(&mut doc).is_ok());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn/test]
+    #[test]
+    fn process_rejects_a_relevant_span_outside_the_document() {
+        let mut doc = document("mun", &[(0, 99)]);
+
+        let err = GiellateknoTokenizer::new()
+            .process(&mut doc)
+            .expect_err("the relevant span runs off the end of the document");
+
+        assert!(err.to_string().contains("is not within the document"));
+        assert!(doc.tokens.is_empty());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn/test]
+    #[test]
+    fn process_annotates_only_spans_slicing_document_text() {
+        let mut doc = document("mun boran guoli.", &[(0, 16)]);
+
+        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+
+        for t in &doc.tokens {
+            assert!(t.begin <= t.end);
+            let covered = doc
+                .text
+                .get(t.begin..t.end)
+                .expect("token spans a valid slice of the document");
+            assert!(!covered.is_empty());
+            assert!(!covered.contains('\n'));
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn/test]
+    #[test]
+    fn process_accumulates_nothing_without_relevant_text() {
+        let mut doc = document("mun boran guoli.", &[]);
+
+        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+
+        assert!(doc.tokens.is_empty());
+        assert_eq!(doc.text, "mun boran guoli.");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.run-fn/test]
+    #[test]
+    fn drained_buffer_ends_lines_with_newlines_and_resplits() {
+        let buffer = drained(&["mun", "boran", "guoli", "."]);
+
+        assert_eq!(buffer, "mun\nboran\nguoli\n.\n");
+        assert!(buffer.ends_with('\n'));
+        assert_eq!(split_lines(&buffer), vec!["mun", "boran", "guoli", "."]);
+        assert_eq!(
+            split_lines(&drained(&["mun", "", "boran"])),
+            ["mun", "", "boran"]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn/test]
+    #[test]
+    fn empty_buffer_yields_one_never_annotated_token() {
+        assert_eq!(drained(&[]), "");
+        assert_eq!(split_lines(""), vec![""]);
+        assert!(!NON_SEPARATOR_PATTERN.is_match(""));
+
+        let mut doc = document("", &[]);
+        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+
+        assert!(doc.tokens.is_empty());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn/test]
+    #[test]
+    fn process_completes_with_or_without_pipeline_output() {
+        let mut doc = document("mun boran guoli.", &[(0, 16)]);
+
+        assert!(GiellateknoTokenizer::new().process(&mut doc).is_ok());
+    }
+
+    #[test]
+    fn masking_blanks_everything_outside_the_relevant_spans() {
+        let masked = mask_to_relevant_text("Mun boran guoli.", &[relevant(4, 9)]).unwrap();
+
+        assert_eq!(masked, "    boran       ");
+        assert_eq!(masked.len(), "Mun boran guoli.".len());
+    }
+
+    #[test]
+    fn masking_keeps_multibyte_offsets_intact() {
+        let text = "áigi guolli";
+        let masked = mask_to_relevant_text(text, &[relevant(0, 5)]).unwrap();
+
+        assert_eq!(masked, "áigi       ");
+        assert_eq!(masked.len(), text.len());
+    }
+
+    #[test]
+    fn masking_rejects_a_span_that_splits_a_character() {
+        let err = mask_to_relevant_text("áigi", &[relevant(0, 1)]).unwrap_err();
+
+        assert!(err.to_string().contains("is not within the document"));
+    }
+
+    #[test]
+    fn splitting_lines_drops_only_trailing_empty_segments() {
+        assert_eq!(split_lines("mun"), vec!["mun"]);
+        assert_eq!(split_lines("mun\nboran\n\n"), vec!["mun", "boran"]);
+        assert_eq!(split_lines("\n\nmun"), vec!["", "", "mun"]);
+        assert!(split_lines("\n\n").is_empty());
+    }
+
+    #[test]
+    fn searching_from_cursor_matches_java_index_of() {
+        assert_eq!(index_of_from("guolli guolli", "guolli", 0), 0);
+        assert_eq!(index_of_from("guolli guolli", "guolli", 1), 7);
+        assert_eq!(index_of_from("guolli", "boran", 0), -1);
+        assert_eq!(index_of_from("guolli", "guollit", 0), -1);
+        assert_eq!(index_of_from("áigi", "igi", 0), 2);
+        assert_eq!(index_of_from("guolli", "g", -5), 0);
+        assert_eq!(index_of_from("guolli", "", 3), 3);
+        assert_eq!(index_of_from("guolli", "", 99), 6);
+        assert_eq!(index_of_from("guolli", "g", 99), -1);
+    }
+
+    #[test]
+    fn character_before_index_found_by_its_width() {
+        assert_eq!(prev_char_index("mun-boran", 3), 2);
+        assert_eq!(prev_char_index("mun-boran", 0), -1);
+        assert_eq!(prev_char_index("á-boran", 2), 0);
+    }
+
+    #[test]
+    fn only_tokens_holding_non_separator_chars_annotated() {
+        assert!(NON_SEPARATOR_PATTERN.is_match("guolli"));
+        assert!(NON_SEPARATOR_PATTERN.is_match(" guolli "));
+        assert!(NON_SEPARATOR_PATTERN.is_match("."));
+        assert!(NON_SEPARATOR_PATTERN.is_match("\t"));
+        assert!(!NON_SEPARATOR_PATTERN.is_match(" "));
+        assert!(!NON_SEPARATOR_PATTERN.is_match("\u{00a0}"));
+        assert!(!NON_SEPARATOR_PATTERN.is_match(""));
+    }
+
+    #[test]
+    fn possessive_wants_right_single_quote_before_s() {
+        assert!(ends_with_possessive("boy\u{2019}s"));
+        assert!(!ends_with_possessive("boy's"));
+        assert!(!ends_with_possessive("boy\u{2019}S"));
+        assert!(!ends_with_possessive("guolli"));
+        assert!(!ends_with_possessive("s"));
+    }
+}
