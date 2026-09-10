@@ -195,11 +195,29 @@ children (
             {
                 id dj-core
                 title "Idiomatic enhancer core: burn jstring, Java types, and the wertiview vocabulary"
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T18:49:41.023667Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
                 id dj-annotate
                 title "DOM-native annotation mapping replacing the e-tag/sentinel protocol"
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T18:49:42.418061Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
