@@ -61,6 +61,35 @@ pub enum Stage {
     Subject(Vislcg3SubjectEnhancer),
 }
 
+impl Stage {
+    /// The class this stage marks a hit of its topic with, for the stages that
+    /// stand for a topic. There is one scheme: the class is `teaksta-` and the
+    /// name the activity registry serves that topic under, which is what the
+    /// client derives the class from. The stages that annotate the document,
+    /// and the generic token enhancer — which marks a hit for whatever the
+    /// topic's own stage does not, under a class of its own — name no topic.
+    pub fn topic_span_class(&self) -> Option<&'static str> {
+        match self {
+            Stage::Noun(_) => Some(Vislcg3NounEnhancer::SPAN_CLASS),
+            Stage::NounSg(_) => Some(Vislcg3NounSgEnhancer::SPAN_CLASS),
+            Stage::NounPl(_) => Some(Vislcg3NounPlEnhancer::SPAN_CLASS),
+            Stage::VerbConjugation(_) => Some(Vislcg3VerbConjugationEnhancer::SPAN_CLASS),
+            Stage::ConNeg(_) => Some(Vislcg3ConNegEnhancer::SPAN_CLASS),
+            Stage::InfiniteVerb(_) => Some(Vislcg3InfiniteVerbEnhancer::SPAN_CLASS),
+            Stage::Adverbial(_) => Some(Vislcg3AdverbialEnhancer::SPAN_CLASS),
+            Stage::Conjunction(_) => Some(Vislcg3ConjunctionEnhancer::SPAN_CLASS),
+            Stage::Object(_) => Some(Vislcg3ObjectEnhancer::SPAN_CLASS),
+            Stage::Subject(_) => Some(Vislcg3SubjectEnhancer::SPAN_CLASS),
+            Stage::Relevance(_)
+            | Stage::Tokenizer(_)
+            | Stage::SentenceDetector(_)
+            | Stage::HtmlSentences(_)
+            | Stage::Vislcg3(_)
+            | Stage::Token(_) => None,
+        }
+    }
+}
+
 /// The delegate keys the shipped `sme` descriptors use in their fixed flows.
 /// A key outside this set names a delegate with no counterpart here.
 pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {

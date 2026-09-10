@@ -23,6 +23,10 @@ pub struct Vislcg3NounSgEnhancer {
 }
 
 impl Vislcg3NounSgEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = "teaksta-SubstantiveSingular";
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
     const LOOKUP_LOC: &'static str = "/usr/local/bin/lookup";
@@ -168,8 +172,7 @@ impl Vislcg3NounSgEnhancer {
                         // increment id
                         new_id = class_counts[con_t.as_str()] + 1;
                         let id = enhancer_utils::get_id(&format!("teaksta-span-{}", con_t), new_id);
-                        let mut span_tag =
-                            SpanTag::new(id, &[TOKEN_CLASS, "teaksta-SubstantiveSingular"]);
+                        let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, Self::SPAN_CLASS]);
                         span_tag.add_attribute("lemma", &lemma);
                         span_tag.add_attribute("distractors", &distractors);
                         e.enhance_start = span_tag.start_tag();

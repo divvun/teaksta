@@ -20,7 +20,7 @@ use crate::types::Document;
 /// What this topic changes about the shared enhancement pass.
 const TOPIC: TopicSpec = TopicSpec {
     label: "ConNeg",
-    span_class: "teaksta-ConNeg",
+    span_class: "teaksta-NegVerbs",
     pos: r"V\+",
     selector: r"Ind\+Prs\+ConNeg|Ind\+Prt\+ConNeg",
     hints: None,
@@ -41,6 +41,11 @@ pub struct Vislcg3ConNegEnhancer {
 }
 
 impl Vislcg3ConNegEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = TOPIC.span_class;
+
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.initialize-fn]
     pub fn initialize(&mut self, conneg_tags: Option<&str>) -> Result<()> {
@@ -61,8 +66,8 @@ impl Vislcg3ConNegEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);

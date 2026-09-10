@@ -11,10 +11,6 @@ pub const ADDED_SPAN_STYLE: &str = "display: inline; background-image: none; pad
 /// in, so the page it is dropped into keeps its layout.
 pub const PAGE_SPAN_CLASS: &str = "teaksta-page";
 
-/// The prefix every enhanced span's id is built on, so the client can find
-/// a span by id without knowing which enhancer wrote it.
-pub const SPAN_ID_PREFIX: &str = "teaksta-span";
-
 // need those two to supply JS-annotations with IDs.
 // [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
 // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
@@ -29,7 +25,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2/test]
     #[test]
     fn span_id_joins_class_and_counter_with_hyphen() {
-        assert_eq!(get_id(SPAN_ID_PREFIX, 7), "teaksta-span-7");
+        assert_eq!(get_id("teaksta-span", 7), "teaksta-span-7");
         assert_eq!(get_id("", 0), "-0");
         assert_eq!(get_id("x", -3), "x--3");
     }

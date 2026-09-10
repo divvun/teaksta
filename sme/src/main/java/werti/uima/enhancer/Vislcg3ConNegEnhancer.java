@@ -94,8 +94,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		connegTags = Arrays.asList(((String)context.getConfigParameterValue("connegTags")).split(","));
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
     // stop processing if the client has requested it
@@ -669,8 +669,8 @@ public class SpanTag{
     public void setSpanTagStart(String spanTagStart) {
 	this.spanTagStart = spanTagStart;
     }
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+4]
     public void addAttribute(String attributeName, String attributeValue) {
 	this.spanTagStart = this.spanTagStart.replace(">", attributeName + "=\"" + attributeValue + "\">");
     }

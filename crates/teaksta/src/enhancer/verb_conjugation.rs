@@ -141,6 +141,11 @@ pub struct Vislcg3VerbConjugationEnhancer {
 }
 
 impl Vislcg3VerbConjugationEnhancer {
+    /// The class every hit of this topic carries: `teaksta-` and the name the
+    /// activity registry serves the topic under, which is how the client tells
+    /// a hit from a plain word.
+    pub const SPAN_CLASS: &'static str = TOPIC.span_class;
+
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.initialize-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.initialize-fn]
     pub fn initialize(&mut self, finverb_tags: Option<&str>) -> Result<()> {

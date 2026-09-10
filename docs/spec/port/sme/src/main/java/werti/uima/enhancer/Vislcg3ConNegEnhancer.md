@@ -127,7 +127,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
 > Per-CAS entry point. Consumes CGToken annotations (with their CGReading
 > FSArray) and produces Enhancement annotations wrapping connegative verb forms
 > in HTML span tags. Never throws AnalysisEngineProcessException in practice —
@@ -172,7 +172,9 @@
 >  - word = Word(cgt.getBegin(), cgt.getEnd()).
 >  - A SpanTag is built over the id EnhancerUtils.get_id("teaksta-span-" +
 >    spanReadingString, counter), where get_id joins its two arguments with "-",
->    and the two classes "teaksta-token" and "teaksta-ConNeg", which render
+>    and the two classes "teaksta-token" and "teaksta-NegVerbs" — the second
+>    being the literal prefix "teaksta-" concatenated with the name the
+>    activity registry serves this topic under — which render
 >    separated by a single space. It is given the attribute lemma="<lemma>", and
 >    the pair (word, spanTag) is stored in wordToSpanMap.
 >
@@ -256,7 +258,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+4]
 > Records one attribute name and value on the tag. Nothing is spliced into
 > markup: the pair is appended to the tag's attribute list, and a name already
 > present has its value replaced where it stands, so one name cannot reach the
@@ -264,9 +266,9 @@
 >
 > Attributes render in the order they were first added, after the id and the
 > class list, so a tag opened on
-> `<span id="X" class="teaksta-token teaksta-ConNeg">` and given `("lemma", "boahtit")`
+> `<span id="X" class="teaksta-token teaksta-NegVerbs">` and given `("lemma", "boahtit")`
 > renders as
-> `<span id="X" class="teaksta-token teaksta-ConNeg" lemma="boahtit">`.
+> `<span id="X" class="teaksta-token teaksta-NegVerbs" lemma="boahtit">`.
 >
 > The value is stored exactly as supplied; escaping happens when the markup is
 > built.

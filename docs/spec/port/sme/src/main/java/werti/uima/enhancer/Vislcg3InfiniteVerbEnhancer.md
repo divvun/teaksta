@@ -123,7 +123,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
 > Consumes `CGToken` annotations (with their `CGReading` feature-structure array) and produces
 > `Enhancement` annotations wrapping every token whose morphological reading is an infinite verb form.
 >
@@ -161,7 +161,9 @@
 >     and read back, so the first occurrence stays at 1 and there is no `-0` suffix.
 >   - Creates `word = new Word(cgt.getBegin(), cgt.getEnd())`.
 >   - Builds a `SpanTag` over the id `EnhancerUtils.get_id("teaksta-span-" + spanReadingString, count)`
->     and the two classes `teaksta-token` and `teaksta-InfiniteVerb`, which render separated by a
+>     and the two classes `teaksta-token` and `teaksta-InfiniteVerbs` — the second being the
+>     literal prefix `teaksta-` concatenated with the name the activity registry serves this
+>     topic under — which render separated by a
 >     single space. `get_id` appends `-` and the count, so the id has the shape
 >     `teaksta-span-<reading-with-dashes>-<n>`.
 >   - Calls `addAttribute("lemma", lemma)` on it and stores it in `wordToSpanMap` keyed by `word`.
@@ -234,7 +236,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn+4]
 > Records one attribute name and value on the tag. Nothing is spliced into
 > markup: the pair is appended to the tag's attribute list, and a name already
 > present has its value replaced where it stands, so one name cannot reach the
@@ -242,9 +244,9 @@
 >
 > Attributes render in the order they were first added, after the id and the
 > class list, so a tag opened on
-> `<span id="X" class="teaksta-token teaksta-InfiniteVerb">` and given `("lemma", "boahtit")`
+> `<span id="X" class="teaksta-token teaksta-InfiniteVerbs">` and given `("lemma", "boahtit")`
 > renders as
-> `<span id="X" class="teaksta-token teaksta-InfiniteVerb" lemma="boahtit">`.
+> `<span id="X" class="teaksta-token teaksta-InfiniteVerbs" lemma="boahtit">`.
 >
 > The value is stored exactly as supplied; escaping happens when the markup is
 > built.

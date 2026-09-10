@@ -128,7 +128,26 @@ fn the_page_survives_being_taken_apart() {
     assert!(html.contains("leat stuorrát"));
     assert!(html.contains("viehká olgun, ja mii boahtit ruoktot"));
     assert!(!html.contains("<script"));
-    assert!(!html.contains("wertiview"));
+}
+
+/// Nothing of the old servlet's naming reaches the client. It was written as
+/// span ids as well as class names, and the exercises drop the ids, so the
+/// pages the backend really answered with are read here rather than the
+/// rendering of them: the spelling itself is the guard, not any one of the
+/// shapes it was written in.
+#[test]
+fn no_naming_from_before_the_rename_survives() {
+    let rendered = colorize_page();
+
+    for (name, page) in [
+        ("colorize", COLORIZE),
+        ("mc", MC),
+        ("cloze", CLOZE),
+        ("rendered", rendered.as_str()),
+    ] {
+        assert!(!page.contains("WERTi"), "{name}");
+        assert!(!page.contains("wertiview"), "{name}");
+    }
 }
 
 #[test]
