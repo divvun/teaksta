@@ -1,7 +1,87 @@
 name teaksta
+
 source {
     url "git@github.com:divvun/teaksta.git"
     ref main
 }
 
-children ()
+children (
+    {
+        id runtime
+        title "divvun-runtime integration"
+        kind @feat
+        children (
+            {
+                id sme-bundle
+                title "Author the sme .drb bundle: tokenize/analyze/generate/sentences named pipelines"
+            }
+        )
+    }
+
+    {
+        id server
+        title "Backend service (poem)"
+        kind @feat
+        children (
+            {
+                id router-binary
+                title "Poem router + server binary wiring the translated handlers"
+            }
+
+            {
+                id json-api
+                title "JSON enhancement API endpoint (the add-on protocol contract)"
+                deps (router-binary)
+            }
+        )
+    }
+
+    {
+        id frontend
+        title "Dioxus web frontend"
+        kind @feat
+        children (
+            {
+                id dioxus-shell
+                title "Dioxus app shell: site chrome, activity picker, URL form"
+            }
+
+            {
+                id exercise-colorize-click
+                title "Colorize and click exercise modes"
+                deps (dioxus-shell json-api)
+            }
+
+            {
+                id exercise-mc
+                title "Multiple-choice exercise mode (distractor selects)"
+                deps (dioxus-shell json-api)
+            }
+
+            {
+                id exercise-cloze
+                title "Cloze exercise mode (hints, parallel-form answers)"
+                deps (dioxus-shell json-api)
+            }
+        )
+    }
+
+    {
+        id port-completion
+        title "Port completion (idiomatize)"
+        kind @refactor
+        children (
+            {
+                id idiomatize-enhancers
+                title "Consolidate the six enhancer clones (Word/SpanTag) into one parameterized enhancer"
+            }
+
+            {
+                id fix-legacy-quirks
+                title "Fix documented legacy quirks as visible spec-rule changes"
+                kind @fix
+                deps (idiomatize-enhancers)
+            }
+        )
+    }
+)
