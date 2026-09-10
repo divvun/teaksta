@@ -2,7 +2,7 @@
 //!
 //! `OpenNlpSentenceDetector` turns the token-masked document into plain-text
 //! sentence boundaries; `HtmlSentenceAnnotator` splits those further wherever
-//! block-level HTML markup sits between two relevant text spans.
+//! a relevant text span opens a new block box in the page it came from.
 //!
 //! Both depend on the [`Token`] annotations from
 //! [`crate::pipeline::tokenizer::GiellateknoTokenizer`].
@@ -187,14 +187,6 @@ impl OpenNlpSentenceDetector {
     }
 }
 
-// HTML tags that typically indicate sentence breaks, but not necessarily
-// a shift in content type. The `<h[1..6]` alternative is a class over the
-// literal characters `1`, `.` and `6`, and `</h[1-6]` has no closing `>`.
-static HTML_BREAK_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?s)^.*(<li|</li>|<ul|</ul>|<ol|</ol>|<h[1..6]|</h[1-6]).*$")
-        .expect("html break pattern")
-});
-
 // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HtmlSentenceAnnotator;
@@ -204,8 +196,8 @@ impl HtmlSentenceAnnotator {
         HtmlSentenceAnnotator
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2]
     pub fn process(
         &self,
         jcas: &mut Document,
@@ -235,22 +227,15 @@ impl HtmlSentenceAnnotator {
                     prev_rt_end = s.begin;
                 }
 
-                // if a sentence boundary was not just added but any of the
-                // HTML tags in the pattern appear between the previous rt span
-                // and the current one, insert a sentence boundary
-                if current_sent_start != t.begin as i64 {
-                    // Taken with no ordering check: out-of-order spans fail here.
-                    let gap = jcas.text.get(prev_rt_end..t.begin).ok_or_else(|| {
-                        anyhow!("gap slice {}..{} is out of range", prev_rt_end, t.begin)
-                    })?;
-                    if HTML_BREAK_PATTERN.is_match(&gap.to_lowercase()) {
-                        produced.push(SentenceAnnotation {
-                            begin: current_sent_start as usize,
-                            end: prev_rt_end,
-                        });
-                        current_sent_start = t.begin as i64;
-                        last_added_sent_end = prev_rt_end as i64;
-                    }
+                // if a sentence boundary was not just added but this span
+                // opens a block box of its own, insert a sentence boundary
+                if current_sent_start != t.begin as i64 && t.block_start {
+                    produced.push(SentenceAnnotation {
+                        begin: current_sent_start as usize,
+                        end: prev_rt_end,
+                    });
+                    current_sent_start = t.begin as i64;
+                    last_added_sent_end = prev_rt_end as i64;
                 }
 
                 prev_rt_end = t.end;
@@ -308,22 +293,22 @@ mod tests {
         PlainTextSentenceAnnotation { begin, end }
     }
 
-    /// `mun<gap>guolli`, with a relevant span on either side of the gap and a
-    /// single plain-text sentence covering the whole thing.
-    fn gapped(gap: &str) -> (Document, Vec<PlainTextSentenceAnnotation>) {
-        let text = format!("mun{gap}guolli");
-        let second = 3 + gap.len();
-        let len = text.len();
-
-        let mut doc = Document::new(text, "sme");
+    /// `mun guolli`, with a relevant span per word and a single plain-text
+    /// sentence covering both. `block` says whether the second word opened a
+    /// block box of its own in the page the text came from.
+    fn two_spans(block: bool) -> (Document, Vec<PlainTextSentenceAnnotation>) {
+        let mut doc = Document::new("mun guolli", "sme");
         doc.relevant_texts.push(relevant(0, 3));
-        doc.relevant_texts.push(relevant(second, second + 6));
+        doc.relevant_texts.push(RelevantText {
+            block_start: block,
+            ..relevant(4, 10)
+        });
 
-        (doc, vec![plain(0, len)])
+        (doc, vec![plain(0, 10)])
     }
 
-    fn html_sentences(gap: &str) -> Vec<(usize, usize)> {
-        let (mut doc, sents) = gapped(gap);
+    fn html_sentences(block: bool) -> Vec<(usize, usize)> {
+        let (mut doc, sents) = two_spans(block);
         HtmlSentenceAnnotator::new()
             .process(&mut doc, &sents)
             .unwrap();
@@ -399,7 +384,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_keeps_sentence_whole_without_relevant_text() {
         let mut doc = Document::new("Mun boran guoli.", "sme");
@@ -412,7 +397,7 @@ mod tests {
         assert_eq!((doc.sentences[0].begin, doc.sentences[0].end), (0, 16));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_keeps_sentence_whole_within_one_span() {
         let mut doc = Document::new("Mun boran guoli.", "sme");
@@ -426,45 +411,36 @@ mod tests {
         assert_eq!((doc.sentences[0].begin, doc.sentences[0].end), (0, 16));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
-    fn html_process_splits_sentence_at_block_level_markup() {
-        assert_eq!(html_sentences("<li>"), vec![(0, 3), (7, 13)]);
-        assert_eq!(html_sentences("</ul>"), vec![(0, 3), (8, 14)]);
+    fn html_process_splits_sentence_at_a_block_start() {
+        assert_eq!(html_sentences(true), vec![(0, 3), (4, 10)]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
-    fn html_process_lower_cases_the_gap_before_matching() {
-        assert_eq!(html_sentences("<LI>"), vec![(0, 3), (7, 13)]);
+    fn html_process_keeps_one_block_sentence_whole() {
+        assert_eq!(html_sentences(false), vec![(0, 10)]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
-    fn html_process_breaks_on_literal_heading_class_members() {
-        assert_eq!(html_sentences("<h1>").len(), 2);
-        assert_eq!(html_sentences("<h6>").len(), 2);
-        assert_eq!(html_sentences("<h.>").len(), 2);
-        assert_eq!(html_sentences("<h2>").len(), 1);
-        assert_eq!(html_sentences("<h5>").len(), 1);
-        assert_eq!(html_sentences("</h2>").len(), 2);
+    fn html_process_never_breaks_before_the_first_span() {
+        let mut doc = Document::new("mun guolli", "sme");
+        doc.relevant_texts.push(RelevantText {
+            block_start: true,
+            ..relevant(0, 3)
+        });
+
+        HtmlSentenceAnnotator::new()
+            .process(&mut doc, &[plain(0, 10)])
+            .unwrap();
+
+        assert_eq!(doc.sentences.len(), 1);
+        assert_eq!((doc.sentences[0].begin, doc.sentences[0].end), (0, 10));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
-    #[test]
-    fn html_process_fails_on_overlapping_relevant_spans() {
-        let mut doc = Document::new("mun boran guoli.", "sme");
-        doc.relevant_texts.push(relevant(0, 9));
-        doc.relevant_texts.push(relevant(5, 12));
-
-        let err = HtmlSentenceAnnotator::new()
-            .process(&mut doc, &[plain(0, 16)])
-            .expect_err("the gap runs backwards");
-
-        assert!(err.to_string().contains("gap slice 9..5 is out of range"));
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_appends_one_annotation_per_sentence() {
         let mut doc = Document::new("Mun boran. Guolli lea buorre.", "sme");

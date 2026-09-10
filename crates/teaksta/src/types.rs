@@ -40,16 +40,34 @@ pub struct RelevantText {
     pub relevant: bool,
     pub html_content_type: Option<String>,
     pub enclosing_tag: Option<String>,
+    /// Whether a block-level element boundary sits before this stretch, so a
+    /// sentence running across it is really two.
+    pub block_start: bool,
 }
 
-/// One `<e>`-protocol XML tag occurrence in the document text.
+/// Where one stretch of the analysed text sits in the page it was taken
+/// from: a half-open range of [`Document::text`] paired with the DOM text
+/// node that supplied it, addressed by its position in a document-order walk
+/// of the page's text nodes.
+///
+/// The range covers a whole text node, so a document offset inside it is the
+/// same distance into the node's own text.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct EnhanceXml {
+pub struct TextSegment {
     pub begin: usize,
     pub end: usize,
-    pub tag_name: String,
-    pub closing: bool,
-    pub irrelevant: bool,
+    pub node: usize,
+    pub block_start: bool,
+}
+
+/// The page an analysis document was extracted from, with the map from its
+/// text back to the DOM. Held as source rather than as a parsed tree because
+/// the analysis document is cached between requests, and reparsing is
+/// deterministic: the same source yields the same walk.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct PageMap {
+    pub html: String,
+    pub segments: Vec<TextSegment>,
 }
 
 /// The HTML fragments to splice around a span in the final output.
@@ -85,10 +103,10 @@ pub struct EnhancementId {
 pub struct Document {
     pub text: String,
     pub language: String,
+    pub page: PageMap,
     pub tokens: Vec<Token>,
     pub cg_tokens: Vec<CgToken>,
     pub relevant_texts: Vec<RelevantText>,
-    pub enhance_xml: Vec<EnhanceXml>,
     pub enhancements: Vec<Enhancement>,
     pub sentences: Vec<SentenceAnnotation>,
     pub enhancement_ids: Vec<EnhancementId>,

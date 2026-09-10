@@ -28,7 +28,6 @@ use crate::enhancer::object::Vislcg3ObjectEnhancer;
 use crate::enhancer::subject::Vislcg3SubjectEnhancer;
 use crate::enhancer::token::TokenEnhancer;
 use crate::enhancer::verb_conjugation::Vislcg3VerbConjugationEnhancer;
-use crate::pipeline::enhance_xml::EnhanceXmlAnnotator;
 use crate::pipeline::relevance::GenericRelevanceAnnotator;
 use crate::pipeline::sentences::{
     HtmlSentenceAnnotator, OpenNlpSentenceDetector, PlainTextSentenceAnnotation,
@@ -43,7 +42,6 @@ pub type Parameters = HashMap<String, String>;
 
 /// One delegate of a fixed flow.
 pub enum Stage {
-    EnhanceXml(EnhanceXmlAnnotator),
     Relevance(GenericRelevanceAnnotator),
     Tokenizer(GiellateknoTokenizer),
     SentenceDetector(OpenNlpSentenceDetector),
@@ -66,7 +64,6 @@ pub enum Stage {
 /// A key outside this set names a delegate with no counterpart here.
 pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
     let stage = match key {
-        "EnhanceXMLAnnotator" => Stage::EnhanceXml(EnhanceXmlAnnotator::new()),
         "GenericRelevanceAnnotator" => Stage::Relevance(GenericRelevanceAnnotator::new()),
         "GiellateknoTokenizer" => {
             let mut tokenizer = GiellateknoTokenizer::new();
@@ -190,7 +187,6 @@ impl Flow {
         let mut sentences: Vec<PlainTextSentenceAnnotation> = Vec::new();
         for stage in &self.stages {
             match stage {
-                Stage::EnhanceXml(s) => s.process(cas)?,
                 Stage::Relevance(s) => s.process(cas)?,
                 Stage::Tokenizer(s) => s.process(cas)?,
                 Stage::SentenceDetector(s) => sentences = s.process(cas)?,
@@ -228,7 +224,6 @@ mod tests {
     fn the_preprocessor_flow_builds_every_stage() {
         let flow = Flow::new(
             &[
-                "EnhanceXMLAnnotator".to_string(),
                 "GenericRelevanceAnnotator".to_string(),
                 "GiellateknoTokenizer".to_string(),
                 "OpenNlpSentenceDetector".to_string(),
@@ -239,7 +234,7 @@ mod tests {
         )
         .expect("the shipped preprocessor flow");
 
-        assert_eq!(flow.len(), 6);
+        assert_eq!(flow.len(), 5);
         assert!(!flow.is_empty());
         let Some(Stage::Vislcg3(annotator)) = flow.stages.last() else {
             panic!("the flow ends in the CG annotator");

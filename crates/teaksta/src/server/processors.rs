@@ -567,8 +567,8 @@ mod tests {
   <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
   <primitive>false</primitive>
   <delegateAnalysisEngineSpecifiers>
-    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
-      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
+    <delegateAnalysisEngine key="HTMLSentenceAnnotator">
+      <import location="../annotators/HTMLSentenceAnnotator.xml"/>
     </delegateAnalysisEngine>
     <delegateAnalysisEngine key="GenericRelevanceAnnotator">
       <import location="../annotators/GenericRelevanceAnnotator.xml"/>
@@ -597,7 +597,7 @@ mod tests {
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
-        <node>EnhanceXMLAnnotator</node>
+        <node>HTMLSentenceAnnotator</node>
         <node>GenericRelevanceAnnotator</node>
       </fixedFlow>
     </flowConstraints>
@@ -657,7 +657,7 @@ mod tests {
                 version: "1.0".to_string(),
                 configuration_parameter_settings: settings,
                 fixed_flow: vec![
-                    "EnhanceXMLAnnotator".to_string(),
+                    "HTMLSentenceAnnotator".to_string(),
                     "GenericRelevanceAnnotator".to_string(),
                 ],
             },
@@ -774,7 +774,7 @@ mod tests {
         assert_eq!(
             description.analysis_engine_meta_data.fixed_flow,
             vec![
-                "EnhanceXMLAnnotator".to_string(),
+                "HTMLSentenceAnnotator".to_string(),
                 "GenericRelevanceAnnotator".to_string()
             ]
         );
@@ -782,8 +782,8 @@ mod tests {
             description.delegate_analysis_engine_specifiers,
             vec![
                 (
-                    "EnhanceXMLAnnotator".to_string(),
-                    "../annotators/EnhanceXMLAnnotator.xml".to_string()
+                    "HTMLSentenceAnnotator".to_string(),
+                    "../annotators/HTMLSentenceAnnotator.xml".to_string()
                 ),
                 (
                     "GenericRelevanceAnnotator".to_string(),
@@ -918,7 +918,7 @@ mod tests {
         assert_eq!(
             engine.fixed_flow,
             vec![
-                "EnhanceXMLAnnotator".to_string(),
+                "HTMLSentenceAnnotator".to_string(),
                 "GenericRelevanceAnnotator".to_string()
             ]
         );

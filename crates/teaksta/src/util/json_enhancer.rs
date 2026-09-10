@@ -1,22 +1,13 @@
-//! JSONEnhancer produces a JSON array containing each enhanced span from a CAS
-//! containing a sequence of `<e>` spans and Enhancements.
+//! JSONEnhancer produces a JSON object holding each enhanced span of a
+//! document, for a client that already has the page and only wants the
+//! fragments that changed.
 //!
 //! Author: Adriane Boyd
 
-use std::collections::HashMap;
-use std::sync::LazyLock;
-
 use anyhow::Result;
-use regex::Regex;
 
 use crate::types::Document;
-use crate::util::enhancer_utils;
-
-/// regex to match the <e> enhance spans
-static ENHANCE_PATT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"(?s)<e ([^>]*)>(.*?)</e>").expect("enhance-span pattern"));
-static COUNTER_PATT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"id="(\d+)""#).expect("counter pattern"));
+use crate::util::html_utils;
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer]
 pub struct JsonEnhancer<'a> {
@@ -34,65 +25,46 @@ impl<'a> JsonEnhancer<'a> {
         }
     }
 
-    /// Converts a CAS with Enhancements to an array of enhanced spans
-    /// in JSON format.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
+    /// Converts a document with Enhancements to a JSON object of enhanced
+    /// spans, keyed by the position in the document text each one covers.
+    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2]
     pub fn enhance(&self) -> Result<String> {
-        let enhanced = enhancer_utils::cas_to_enhanced(self.cas, Some(self.activity))?;
-        let enhanced = self.enhanced_to_json(&enhanced)?;
+        let spans = html_utils::render_spans(&self.cas.page, self.cas, Some(self.activity))?;
 
-        Ok(enhanced)
-    }
-
-    /// Converts a string containing a sequence of `<e></e>` enhanced spans into
-    /// a JSON array where each array element is wrapped with a `<span>` that
-    /// minimizes layout changes.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn]
-    fn enhanced_to_json(&self, enhanced: &str) -> Result<String> {
-        // The EnhanceXML annotations are no longer useful at this point
-        // because the enhancements have already been inserted.
-
-        let mut new_nodes: HashMap<i32, String> = HashMap::new();
-
-        for enhance_match in ENHANCE_PATT.captures_iter(enhanced) {
-            // find index
-            let attributes = enhance_match.get(1).map_or("", |group| group.as_str());
-            let content = enhance_match.get(2).map_or("", |group| group.as_str());
-
-            let mut counter = 0;
-            if let Some(counter_match) = COUNTER_PATT.captures(attributes) {
-                counter = counter_match[1].parse::<i32>()?;
-            }
-            // wrap outer span around each group; add_span_style runs once
-            // per group
-            new_nodes.insert(
-                counter,
-                format!(
-                    "<span class=\"wertiview\" style=\"{}\">{}</span>",
-                    enhancer_utils::ADDED_SPAN_STYLE,
-                    content
-                ),
-            );
-        }
-
-        // convert the list of new nodes to JSON and return
-        Ok(serde_json::to_string(&new_nodes)?)
+        Ok(serde_json::to_string(&spans)?)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::Enhancement;
+    use std::collections::HashMap;
 
-    fn wrapped(content: &str) -> String {
-        format!(
-            "<span class=\"wertiview\" style=\"{}\">{}</span>",
-            enhancer_utils::ADDED_SPAN_STYLE,
-            content
-        )
+    use crate::types::Enhancement;
+    use crate::util::enhancer_utils::{ADDED_SPAN_STYLE, PAGE_SPAN_CLASS};
+
+    const PAGE: &str = concat!(
+        "<html><head><title>t</title></head>",
+        "<body><p>Mun oidnen viesu.</p><p>Viesut leat stuorr\u{e1}t.</p></body></html>"
+    );
+
+    fn enhancement(begin: usize, end: usize, id: &str, relevant: bool) -> Enhancement {
+        Enhancement {
+            begin,
+            end,
+            enhance_start: format!("<span id=\"{}\" class=\"teaksta-token\">", id),
+            enhance_end: "</span>".to_string(),
+            relevant,
+        }
+    }
+
+    /// A document seeded from `PAGE`, carrying the given enhancements.
+    fn analysed(enhancements: Vec<Enhancement>) -> Document {
+        let (mut cas, map) = html_utils::extract(PAGE);
+        cas.page = map;
+        cas.enhancements = enhancements;
+        cas
     }
 
     fn spans(json: &str) -> HashMap<String, String> {
@@ -110,109 +82,71 @@ mod tests {
         assert_eq!(enhancer.activity, "click");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
     #[test]
-    fn enhance_spans_become_wertiview_spans_keyed_by_id() {
-        let cas = Document::new("", "sme");
-        let enhancer = JsonEnhancer::new(&cas, "click");
+    fn each_enhancement_is_keyed_by_its_position() {
+        let cas = analysed(vec![
+            enhancement(11, 16, "teaksta-span-1", true),
+            enhancement(18, 24, "teaksta-span-2", true),
+        ]);
 
-        let json = enhancer
-            .enhanced_to_json("<p><e id=\"3\" class=\"x\">boaris</e></p>")
-            .unwrap();
-
-        assert_eq!(
-            spans(&json),
-            HashMap::from([("3".to_string(), wrapped("boaris"))])
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
-    #[test]
-    fn an_attribute_less_enhance_span_never_matches() {
-        let cas = Document::new("", "sme");
-        let enhancer = JsonEnhancer::new(&cas, "click");
-
-        let json = enhancer.enhanced_to_json("<e>boaris</e>").unwrap();
-
-        assert_eq!(json, "{}");
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
-    #[test]
-    fn spans_without_an_id_collapse_onto_key_zero() {
-        let cas = Document::new("", "sme");
-        let enhancer = JsonEnhancer::new(&cas, "click");
-
-        let json = enhancer
-            .enhanced_to_json("<e class=\"a\">first</e><e class=\"b\">second</e>")
-            .unwrap();
-
-        assert_eq!(
-            spans(&json),
-            HashMap::from([("0".to_string(), wrapped("second"))])
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
-    #[test]
-    fn nested_span_content_stops_at_the_first_close() {
-        let cas = Document::new("", "sme");
-        let enhancer = JsonEnhancer::new(&cas, "click");
-
-        let json = enhancer
-            .enhanced_to_json("<e id=\"1\" >outer <e id=\"2\" >inner</e> tail</e>")
-            .unwrap();
-
-        assert_eq!(
-            spans(&json),
-            HashMap::from([("1".to_string(), wrapped("outer <e id=\"2\" >inner"))])
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhanced-to-json-fn/test]
-    #[test]
-    fn span_content_spans_newlines_and_is_copied_verbatim() {
-        let cas = Document::new("", "sme");
-        let enhancer = JsonEnhancer::new(&cas, "click");
-
-        let json = enhancer
-            .enhanced_to_json("<e id=\"9\">a &amp; <b>b</b>\nc</e>")
-            .unwrap();
-
-        assert_eq!(
-            spans(&json),
-            HashMap::from([("9".to_string(), wrapped("a &amp; <b>b</b>\nc"))])
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn/test]
-    #[test]
-    fn enhance_splices_cas_enhancements_and_extracts_json() {
-        let mut cas = Document::new("<p>boaris beana</p>", "sme");
-        cas.enhancements.push(Enhancement {
-            begin: 3,
-            end: 9,
-            enhance_start: "<e id=\"1\" class=\"wertiviewtoken \">".to_string(),
-            enhance_end: "</e>".to_string(),
-            relevant: true,
-        });
-        cas.enhancements.push(Enhancement {
-            begin: 10,
-            end: 15,
-            enhance_start: "<e id=\"2\" class=\"wertiviewtoken \">".to_string(),
-            enhance_end: "</e>".to_string(),
-            relevant: true,
-        });
-        let enhancer = JsonEnhancer::new(&cas, "click");
-
-        let json = enhancer.enhance().unwrap();
+        let json = JsonEnhancer::new(&cas, "colorize").enhance().unwrap();
 
         assert_eq!(
             spans(&json),
             HashMap::from([
-                ("1".to_string(), wrapped("boaris")),
-                ("2".to_string(), wrapped("beana")),
+                (
+                    "11".to_string(),
+                    format!(
+                        "<span class=\"{}\" style=\"{}\"><span class=\"teaksta-token\" id=\"teaksta-span-1\">viesu</span></span>",
+                        PAGE_SPAN_CLASS, ADDED_SPAN_STYLE
+                    )
+                ),
+                (
+                    "18".to_string(),
+                    format!(
+                        "<span class=\"{}\" style=\"{}\"><span class=\"teaksta-token\" id=\"teaksta-span-2\">Viesut</span></span>",
+                        PAGE_SPAN_CLASS, ADDED_SPAN_STYLE
+                    )
+                ),
             ])
         );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    #[test]
+    fn text_the_client_gets_back_is_escaped() {
+        let (mut cas, map) =
+            html_utils::extract("<html><body><p>Tom &amp; Jerry</p></body></html>");
+        cas.page = map;
+        cas.enhancements
+            .push(enhancement(0, 11, "teaksta-span-1", true));
+
+        let json = JsonEnhancer::new(&cas, "colorize").enhance().unwrap();
+
+        assert!(
+            spans(&json)["0"].contains(">Tom &amp; Jerry</span>"),
+            "{json}"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    #[test]
+    fn irrelevant_spans_are_served_to_click_alone() {
+        let cas = analysed(vec![enhancement(11, 16, "teaksta-span-1", false)]);
+
+        assert_eq!(JsonEnhancer::new(&cas, "colorize").enhance().unwrap(), "{}");
+        assert_eq!(
+            spans(&JsonEnhancer::new(&cas, "click").enhance().unwrap()).len(),
+            1
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+2/test]
+    #[test]
+    fn a_document_without_enhancements_yields_no_spans() {
+        let cas = analysed(Vec::new());
+
+        assert_eq!(JsonEnhancer::new(&cas, "click").enhance().unwrap(), "{}");
     }
 }

@@ -6,9 +6,6 @@
     <delegateAnalysisEngine key="vislcg3Annotator">
       <import location="../annotators/vislcg3Annotator.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
-      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
-    </delegateAnalysisEngine>
     <delegateAnalysisEngine key="GenericRelevanceAnnotator">
       <import location="../annotators/GenericRelevanceAnnotator.xml"/>
     </delegateAnalysisEngine>
@@ -88,7 +85,6 @@
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
-        <node>EnhanceXMLAnnotator</node>
         <node>GenericRelevanceAnnotator</node>
         <node>GiellateknoTokenizer</node>
         <node>OpenNlpSentenceDetector</node>

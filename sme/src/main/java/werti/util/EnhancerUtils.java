@@ -27,8 +27,8 @@ public class EnhancerUtils {
 	public static final String addedSpanStyle = "display: inline; background-image: none; padding: 0px; margin: 0px; color: inherit; font: inherit; font-size: 100%; position: relative; top: 0px; left: 0px;";
 	
 	// need those two to supply JS-annotations with IDs.
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
 	public static String get_id(String spanClass, int id) {
 		return spanClass + "-" + id;
 	}
@@ -39,8 +39,6 @@ public class EnhancerUtils {
      * @param html an HTML fragment
      * @return the HTML fragment with added style attributes
      */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.add-span-style-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.add-span-style-fn]
 	public static String addSpanStyle(String html) {
 		// add layout-preserving style to all spans from cas
 		Document doc = Jsoup.parse("<html><head></head><body>" + html + "</body></html>");
@@ -58,8 +56,6 @@ public class EnhancerUtils {
 	 * @param activity
 	 * @return Document with enhancements
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.cas-to-enhanced-fn]
 	public static String casToEnhanced(JCas cas, String activity) {
 		final String docText = cas.getDocumentText();
 		final StringBuilder rtext = new StringBuilder(docText);
@@ -97,8 +93,6 @@ public class EnhancerUtils {
 		return rtext.toString();
 	}
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-inserted-tags-fn]
 	@SuppressWarnings("unchecked")
 	public static HashMap<Integer, String> getInsertedTags(JCas cas, String activity) {
     	final FSIndex tagIndex = cas.getAnnotationIndex(Enhancement.type);
@@ -141,10 +135,8 @@ public class EnhancerUtils {
 	 * @param cas document
 	 * @return set of relevant positions
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-relevant-text-positions-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-relevant-text-positions-fn]
 	@SuppressWarnings("unchecked")
-	public static HashSet<Integer> getRelevantTextPositions(JCas cas) {		
+	public static HashSet<Integer> getRelevantTextPositions(JCas cas) {
 		final FSIndex textIndex = cas.getAnnotationIndex(RelevantText.type);
 		final Iterator<RelevantText> tit = textIndex.iterator();
 		HashSet<Integer> positions = new HashSet<Integer>();
@@ -170,8 +162,6 @@ public class EnhancerUtils {
 	 * @param skew skew from previously inserted elements
 	 * @return the text with non-markup non-ASCII characters escaped to HTML
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.escape-substring-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.escape-substring-fn]
 	public static String escapeSubstring(StringBuilder rtext, HashSet<Integer> RelevantTextPositions, int start, int end, int skew) {
 		String textSubstring = rtext.substring(start + skew, end + skew);
 		String escapedTextSubstring = "";

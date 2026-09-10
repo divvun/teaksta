@@ -186,4 +186,16 @@ children (
             }
         )
     }
+
+    {
+        id dejavaize
+        title "De-Javaization: idiomatic Rust throughout"
+        kind @refactor
+        children (
+            {
+                id dj-annotate
+                title "DOM-native annotation mapping replacing the e-tag/sentinel protocol"
+            }
+        )
+    }
 )

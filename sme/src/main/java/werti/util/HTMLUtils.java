@@ -25,9 +25,7 @@ public class HTMLUtils {
      * @param doc the Jsoup document
      * @param node the node to traverse
      */	
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn]
-    public static void markTextNodes(Document doc, Node node) {	
+    public static void markTextNodes(Document doc, Node node) {
     	// if this is a non-empty text node, add an <e> tag
     	if (node instanceof TextNode) {
     		if (!((TextNode) node).isBlank()) {
