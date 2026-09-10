@@ -4,7 +4,7 @@ use std::fmt;
 
 use dioxus::prelude::*;
 
-use crate::activities::DEFAULT_EXERCISE;
+use crate::api::DEFAULT_MODE;
 use crate::ui::{Chrome, Exercise, Home};
 
 #[derive(Routable, Clone, Debug, PartialEq)]
@@ -24,29 +24,25 @@ pub enum Route {
 pub struct ExerciseQuery {
     /// The activity directory name, e.g. `NegVerbs`.
     pub topic: String,
-    /// The `client.enhancement` value: colorize, click, mc or cloze.
-    pub exercise: String,
+    /// The exercise asked for: colorize, click, mc or cloze.
+    pub mode: String,
     /// The page to practise on.
     pub url: String,
 }
 
 impl ExerciseQuery {
-    pub fn new(
-        topic: impl Into<String>,
-        exercise: impl Into<String>,
-        url: impl Into<String>,
-    ) -> Self {
+    pub fn new(topic: impl Into<String>, mode: impl Into<String>, url: impl Into<String>) -> Self {
         Self {
             topic: topic.into(),
-            exercise: exercise.into(),
+            mode: mode.into(),
             url: url.into(),
         }
     }
 
-    /// Whether all three parameters are present, which is what the result view
-    /// needs before it can ask the backend for anything.
+    /// Whether all three parameters are present, which is what the exercise
+    /// view needs before it can ask the backend for anything.
     pub fn is_complete(&self) -> bool {
-        !self.topic.is_empty() && !self.exercise.is_empty() && !self.url.is_empty()
+        !self.topic.is_empty() && !self.mode.is_empty() && !self.url.is_empty()
     }
 }
 
@@ -54,7 +50,7 @@ impl Default for ExerciseQuery {
     fn default() -> Self {
         Self {
             topic: String::new(),
-            exercise: DEFAULT_EXERCISE.to_string(),
+            mode: DEFAULT_MODE.to_string(),
             url: String::new(),
         }
     }
@@ -74,7 +70,7 @@ impl From<&str> for ExerciseQuery {
 
             match key {
                 "topic" => parsed.topic = value,
-                "exercise" => parsed.exercise = value,
+                "mode" => parsed.mode = value,
                 "url" => parsed.url = value,
                 _ => {}
             }
@@ -88,9 +84,9 @@ impl fmt::Display for ExerciseQuery {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "topic={}&exercise={}&url={}",
+            "topic={}&mode={}&url={}",
             urlencoding::encode(&self.topic),
-            urlencoding::encode(&self.exercise),
+            urlencoding::encode(&self.mode),
             urlencoding::encode(&self.url),
         )
     }
@@ -115,7 +111,7 @@ mod tests {
 
         assert_eq!(
             query.to_string(),
-            "topic=Object&exercise=colorize&url=http%3A%2F%2Fa.example%2Fx%3Fy%3Dz"
+            "topic=Object&mode=colorize&url=http%3A%2F%2Fa.example%2Fx%3Fy%3Dz"
         );
     }
 
@@ -124,7 +120,7 @@ mod tests {
         let parsed = ExerciseQuery::from("");
 
         assert_eq!(parsed, ExerciseQuery::default());
-        assert_eq!(parsed.exercise, "colorize");
+        assert_eq!(parsed.mode, "colorize");
         assert!(!parsed.is_complete());
     }
 
@@ -134,7 +130,7 @@ mod tests {
 
         assert_eq!(parsed.topic, "Subject");
         assert_eq!(parsed.url, "http://a.example");
-        assert_eq!(parsed.exercise, "colorize");
+        assert_eq!(parsed.mode, "colorize");
     }
 
     #[test]

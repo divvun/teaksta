@@ -106,21 +106,21 @@ mod tests {
 
     #[test]
     fn a_topic_word_is_judged_right() {
-        let hit = token("wertiviewtoken  wertiviewSubstantive");
+        let hit = token("teaksta-token teaksta-Substantive");
 
         assert_eq!(judge(&hit, "Substantive"), Verdict::Right);
     }
 
     #[test]
     fn a_word_of_another_topic_is_wrong() {
-        let hit = token("wertiviewtoken  wertiviewSubstantive");
+        let hit = token("teaksta-token teaksta-Substantive");
 
         assert_eq!(judge(&hit, "VerbConjugation"), Verdict::Wrong);
     }
 
     #[test]
     fn a_word_the_topic_left_alone_is_wrong() {
-        let plain = token("wertiviewtoken ");
+        let plain = token("teaksta-token");
 
         assert_eq!(judge(&plain, "Substantive"), Verdict::Wrong);
     }

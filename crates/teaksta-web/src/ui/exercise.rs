@@ -11,9 +11,9 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::activities::{exercise_type, topic};
-use crate::api::{ApiError, Backend, EnhanceRequest, fetch_enhanced};
+use crate::api::{Backend, EnhanceRequest, fetch_enhanced};
 use crate::route::{ExerciseQuery, Route};
+use crate::ui::SharedRegistry;
 
 use click::ClickMode;
 use cloze::ClozeMode;
@@ -24,36 +24,38 @@ use mc::McMode;
 #[component]
 pub fn Exercise(params: ExerciseQuery) -> Element {
     let backend = use_context::<Backend>();
-    let request = EnhanceRequest::new(params.url.clone(), params.topic.clone(), &params.exercise);
+    let request = EnhanceRequest::new(params.url.clone(), params.topic.clone(), &params.mode);
     let target = backend.enhance_url(&request);
 
     let page = use_resource(use_reactive!(|request| {
         let backend = backend.clone();
-        async move {
-            if request.url.is_empty() || request.activity.is_empty() {
-                return Err(ApiError::Incomplete);
-            }
-            fetch_enhanced(&backend, &request).await
-        }
+        async move { fetch_enhanced(&backend, &request).await }
     }));
 
-    let topic_sme = topic(&params.topic).map(|item| item.sme);
-    let exercise_sme = exercise_type(&params.exercise).map(|kind| kind.sme);
+    let registry = use_context::<SharedRegistry>();
+    let named = registry.value();
+    let (topic_label, mode_label) = match &*named.read_unchecked() {
+        Some(Ok(offered)) => (
+            offered.activity_label(&params.topic).to_string(),
+            offered.mode_label(&params.mode).to_string(),
+        ),
+        _ => (params.topic.clone(), params.mode.clone()),
+    };
     let value = page.value();
 
     rsx! {
         section { class: "exercise",
             h2 {
-                {topic_sme.unwrap_or("—")}
+                "{topic_label}"
                 span { class: "gloss", "{params.topic}" }
             }
-            p { class: "instruction", {exercise_sme.unwrap_or("—")} }
+            p { class: "instruction", "{mode_label}" }
 
             dl { class: "params",
                 dt { "Neahttasiidu" }
                 dd { class: "param-url", "{params.url}" }
                 dt { "Hárjehus" }
-                dd { "{params.exercise}" }
+                dd { "{params.mode}" }
                 dt { "Bálvá" }
                 dd { class: "param-url", "{target}" }
             }
@@ -70,7 +72,7 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                         EnhancedPage {
                             html: html.clone(),
                             topic: params.topic.clone(),
-                            exercise: params.exercise.clone(),
+                            mode: params.mode.clone(),
                         }
                     },
                     Some(Err(error)) => rsx! {
@@ -88,13 +90,13 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
 }
 
 /// One enhanced page, read once and handed to the exercise that was asked
-/// for. An unknown exercise type reads as colorize, which every topic offers.
+/// for. An unknown mode reads as colorize, which every topic offers.
 #[component]
-pub fn EnhancedPage(html: String, topic: String, exercise: String) -> Element {
+pub fn EnhancedPage(html: String, topic: String, mode: String) -> Element {
     let parsed = use_memo(use_reactive!(|html| Rc::new(markup::parse(&html))));
     let markup = parsed();
 
-    match exercise.as_str() {
+    match mode.as_str() {
         "click" => rsx! {
             ClickMode { markup, topic }
         },

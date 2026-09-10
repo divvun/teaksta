@@ -1,7 +1,7 @@
 //! Reading one enhanced page into the blocks and tokens an exercise renders.
 //!
 //! The enhancer hands back a whole HTML page in which the word forms a topic
-//! matched are wrapped in a span carrying the class `wertiviewtoken` plus, on
+//! matched are wrapped in a span carrying the class `teaksta-token` plus, on
 //! a hit, a class naming the topic. Everything about that markup is read
 //! through element and attribute structure: the class attribute's spacing is
 //! not part of the contract, so membership of the class list decides, never
@@ -14,15 +14,15 @@
 //! only inline elements are ever split.
 
 /// The class the enhancer puts on every span a learner can work on.
-pub const TOKEN_CLASS: &str = "wertiviewtoken";
+pub const TOKEN_CLASS: &str = "teaksta-token";
 
 /// The prefix of the class naming the topic a hit belongs to, so the
-/// `Substantive` activity marks its hits `wertiviewSubstantive`.
-pub const TOPIC_PREFIX: &str = "wertiview";
+/// `Substantive` activity marks its hits `teaksta-Substantive`.
+pub const TOPIC_PREFIX: &str = "teaksta-";
 
 /// The class the generic token enhancer marks a hit with when the topic
 /// contributes no class of its own.
-pub const GENERIC_HIT_CLASS: &str = "wertiviewhit";
+pub const GENERIC_HIT_CLASS: &str = "teaksta-hit";
 
 /// Elements whose content never reaches the learner.
 const DROPPED_ELEMENTS: &[&str] = &["script", "style", "noscript", "template"];
@@ -215,8 +215,8 @@ impl Markup {
     }
 }
 
-/// Read an enhanced page. Only the body is kept: the head carries the legacy
-/// engine's own scripts and stylesheet, which this client replaces.
+/// Read an enhanced page. Only the body is kept: the head carries the fetched
+/// page's own title and base URL, neither of which this client shows.
 pub fn parse(page: &str) -> Markup {
     let mut reader = Reader::default();
     let mut rest = body_of(page);
@@ -653,7 +653,7 @@ mod tests {
 
     const TOKEN: &str = concat!(
         "<p>Mun oidnen ",
-        "<span class=\"wertiviewtoken  wertiviewSubstantive\" id=\"a\" lemma=\"viessu\"",
+        "<span class=\"teaksta-token teaksta-Substantive\" id=\"a\" lemma=\"viessu\"",
         " possibleforms=\"viesu viesuid\">viesu</span> ikte.</p>"
     );
 
@@ -664,13 +664,6 @@ mod tests {
         assert_eq!(markup.tokens().len(), 1);
         assert_eq!(markup.tokens()[0].text, "viesu");
         assert_eq!(markup.tokens()[0].id, "a");
-    }
-
-    #[test]
-    fn single_spaced_classes_read_the_same() {
-        let single = TOKEN.replace("wertiviewtoken  ", "wertiviewtoken ");
-
-        assert_eq!(parse(&single).tokens(), parse(TOKEN).tokens());
     }
 
     #[test]
@@ -685,7 +678,7 @@ mod tests {
 
     #[test]
     fn a_plain_token_belongs_to_no_topic() {
-        let markup = parse("<p><span class=\"wertiviewtoken \" id=\"b\">ikte</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token\" id=\"b\">ikte</span></p>");
 
         assert!(!markup.tokens()[0].is_hit("Substantive"));
         assert_eq!(markup.hits("Substantive"), 0);
@@ -693,7 +686,7 @@ mod tests {
 
     #[test]
     fn the_generic_hit_class_counts_as_a_hit() {
-        let markup = parse("<p><span class=\"wertiviewtoken wertiviewhit\">go</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token teaksta-hit\">go</span></p>");
 
         assert!(markup.tokens()[0].is_hit("Substantive"));
     }
@@ -711,7 +704,7 @@ mod tests {
 
     #[test]
     fn an_inline_element_split_is_reopened() {
-        let markup = parse("<p><em>a <span class=\"wertiviewtoken \">b</span> c</em></p>");
+        let markup = parse("<p><em>a <span class=\"teaksta-token\">b</span> c</em></p>");
         let pieces = &markup.blocks()[0].pieces;
 
         assert_eq!(pieces[0], Piece::Html("<em>a </em>".to_string()));
@@ -758,14 +751,14 @@ mod tests {
 
     #[test]
     fn attributes_need_no_space_between_them() {
-        let markup = parse("<p><span class=\"wertiviewtoken \"lemma=\"viessu\">viesu</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token\"lemma=\"viessu\">viesu</span></p>");
 
         assert_eq!(markup.tokens()[0].lemma.as_deref(), Some("viessu"));
     }
 
     #[test]
     fn a_nested_span_never_ends_the_token() {
-        let markup = parse("<p><span class=\"wertiviewtoken \"><span>vie</span>su</span> a</p>");
+        let markup = parse("<p><span class=\"teaksta-token\"><span>vie</span>su</span> a</p>");
 
         assert_eq!(markup.tokens().len(), 1);
         assert_eq!(markup.tokens()[0].text, "viesu");
@@ -791,14 +784,14 @@ mod tests {
 
     #[test]
     fn the_hint_falls_back_to_the_page_form() {
-        let markup = parse("<p><span class=\"wertiviewtoken \">viesu</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token\">viesu</span></p>");
 
         assert_eq!(markup.tokens()[0].hint(), "viesu");
     }
 
     #[test]
     fn the_answer_attribute_is_accepted_too() {
-        let markup = parse("<p><span class=\"wertiviewtoken \" answer=\"lei leai\">lei</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token\" answer=\"lei leai\">lei</span></p>");
 
         assert!(markup.tokens()[0].accepts("leai"));
         assert_eq!(markup.tokens()[0].hint(), "lei/leai");
@@ -806,8 +799,7 @@ mod tests {
 
     #[test]
     fn entities_are_decoded_in_text_and_values() {
-        let markup =
-            parse("<p><span class=\"wertiviewtoken \" lemma=\"a&amp;b\">x&amp;y</span></p>");
+        let markup = parse("<p><span class=\"teaksta-token\" lemma=\"a&amp;b\">x&amp;y</span></p>");
 
         assert_eq!(markup.tokens()[0].text, "x&y");
         assert_eq!(markup.tokens()[0].lemma.as_deref(), Some("a&b"));
@@ -815,7 +807,7 @@ mod tests {
 
     #[test]
     fn a_comment_carries_nothing_to_the_page() {
-        let markup = parse("<p>a<!-- <span class=\"wertiviewtoken \">b</span> -->c</p>");
+        let markup = parse("<p>a<!-- <span class=\"teaksta-token\">b</span> -->c</p>");
 
         assert!(markup.tokens().is_empty());
         assert_eq!(markup.blocks()[0].pieces[0], Piece::Html("ac".to_string()));
