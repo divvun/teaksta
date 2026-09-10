@@ -1,13 +1,21 @@
 //! Typed client for the teaksta backend.
 //!
-//! Three endpoints answer this app: one names the topics and exercise modes on
-//! offer, one hands back a whole enhanced page, and one hands back the span map
-//! for a page the caller already holds. Each is answered in a single request.
+//! Four endpoints answer this app: one names the topics and exercise modes on
+//! offer, one hands back a whole enhanced page, one hands back the span map for
+//! a page the caller already holds, and one takes a teacher's own text and hands
+//! back the URL the other two read it from. Each is answered in a single
+//! request.
 
 use std::collections::BTreeMap;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+
+mod upload;
+
+pub use upload::{
+    MAX_UPLOAD_BYTES, Rejection, UploadFile, boundary_for, multipart_body, parse_upload, upload,
+};
 
 /// Where both enhancement endpoints live: the page one under GET, the span map
 /// under POST.
@@ -15,6 +23,9 @@ pub const ENHANCE_PATH: &str = "/api/enhance";
 
 /// Where the topic and mode registry lives.
 pub const ACTIVITIES_PATH: &str = "/api/activities";
+
+/// Where a teacher's own text is offered.
+pub const UPLOAD_PATH: &str = "/api/upload";
 
 /// The mode the entry form pre-selects. Every topic offers it, so it is always
 /// a safe fallback when a request names a mode the backend does not know.
@@ -63,6 +74,11 @@ impl Backend {
     /// Where the registry is read from.
     pub fn activities_url(&self) -> String {
         format!("{}{}", self.base, ACTIVITIES_PATH)
+    }
+
+    /// Where a text is offered.
+    pub fn upload_url(&self) -> String {
+        format!("{}{}", self.base, UPLOAD_PATH)
     }
 }
 
@@ -213,6 +229,8 @@ pub enum ApiError {
     /// The request lacks a parameter the backend requires, so it was never
     /// sent.
     Incomplete,
+    /// An offered text did not pass one of the upload endpoint's gates.
+    Rejected(Rejection),
     /// No fetch client exists outside the browser.
     Unsupported,
 }
@@ -224,6 +242,9 @@ impl fmt::Display for ApiError {
             ApiError::Status(code) => write!(f, "backend answered {code}"),
             ApiError::Malformed(detail) => write!(f, "malformed response: {detail}"),
             ApiError::Incomplete => write!(f, "no topic, exercise mode or page was given"),
+            ApiError::Rejected(rejection) => {
+                write!(f, "the text was turned away: {}", rejection.gloss())
+            }
             ApiError::Unsupported => write!(f, "no fetch client outside the browser"),
         }
     }
