@@ -1,0 +1,10 @@
+[application]
+name = "teaksta-web"
+asset_dir = "assets"
+
+[web.app]
+title = "Teaksta"
+
+[web.watcher]
+watch_path = ["src", "assets"]
+index_on_404 = true
