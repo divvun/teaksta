@@ -1,9 +1,6 @@
 package werti;
 
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception]
 public final class WERTiContextException extends Exception {
-	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.spam-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.spam-fn]
 	private static String spam(final String message) {
 		return "WERTiContext found a problem: "+message;
 	}
@@ -14,8 +11,6 @@ public final class WERTiContextException extends Exception {
 	/**
 	 * @see Exception#Exception(String)
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.wer-ti-context-exception-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.wer-ti-context-exception-fn]
 	public WERTiContextException(String message) {
 		super(spam(message));
 	}
@@ -34,8 +29,6 @@ public final class WERTiContextException extends Exception {
 		super(cause);
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.ioe-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context-exception.wer-ti-context-exception.ioe-fn]
 	public static WERTiContextException ioe(String path) {
 		return new WERTiContextException("Could not access "+path);
 	}

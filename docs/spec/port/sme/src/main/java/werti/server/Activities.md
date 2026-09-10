@@ -1,11 +1,14 @@
 # sme/src/main/java/werti/server/Activities.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities]
-> public class Activities implements Iterable<String> {
->   public static final String ATT_NAME = "werti.activities";
->   private TreeMap<String, ActivityConfiguration> configMap;
->   private Set<String> ignoredActivities;
+> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities+1]
+> pub struct Activities {
+>   config_map: BTreeMap<String, ActivityConfiguration>,
+>   ignored_activities: HashSet<String>,
 > }
+>
+> The registry is built once at startup and read from there. It carries no
+> session attribute name, because it is never stashed in a session: there are
+> no sessions.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
 > public Activities(File actDir) throws IOException

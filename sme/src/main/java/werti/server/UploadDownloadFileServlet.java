@@ -104,13 +104,11 @@ import java.io.FileReader;
 
 import werti.util.VerifyRecaptcha;
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet+1]
 public class UploadDownloadFileServlet extends HttpServlet {
 	private static final long serialVersionUID = 15;
   private ServletFileUpload uploader = null;
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.init-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.init-fn]
 	@Override
 	public void init() throws ServletException{
     DiskFileItemFactory fileFactory = new DiskFileItemFactory();
@@ -119,8 +117,8 @@ public class UploadDownloadFileServlet extends HttpServlet {
     this.uploader = new ServletFileUpload(fileFactory);
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+1]
 	public static boolean checkMetaData(File f, String getContentType) {
 		 try {
 			 InputStream is = new FileInputStream(f);
@@ -153,8 +151,8 @@ public class UploadDownloadFileServlet extends HttpServlet {
 	 }
 
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if(!ServletFileUpload.isMultipartContent(request)){
 			throw new ServletException("Content type is not multipart/form-data");

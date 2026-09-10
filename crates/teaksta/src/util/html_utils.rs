@@ -21,13 +21,9 @@ use scraper::{ElementRef, Html, Node, StrTendril};
 use crate::types::{Document, Enhancement, PageMap, RelevantText, TextSegment};
 use crate::util::enhancer_utils::{ADDED_SPAN_STYLE, PAGE_SPAN_CLASS};
 
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils]
-/// random temporary class name used to avoid Jsoup whitespace preservation
-/// problem with non-HTML <e> tag
-pub static CLASS_NAME: &str = "PCZRlWLK";
-
 /// Subtrees whose text is markup, code or chrome rather than prose. `head`
 /// is among them, so a page's title and metadata are never analysed.
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils+1]
 static SKIPPED_TAGS: &[&str] = &[
     "script", "noscript", "style", "form", "object", "embed", "head", "template",
 ];
@@ -70,13 +66,6 @@ static BLOCK_TAGS: &[&str] = &[
 /// The text of two adjacent segments is joined by this, so a token can never
 /// run across a boundary between two DOM text nodes.
 const SEGMENT_JOIN: char = '\n';
-
-/// The servlet marks the page's text nodes before serialising it for
-/// analysis. [`extract`] reads the DOM the serialised page parses back to,
-/// so there is nothing to mark and the subtree is handed on as fetched.
-pub fn mark_text_nodes(_doc: &mut Html, _node: NodeId) -> Result<()> {
-    Ok(())
-}
 
 /// Seeds an analysis document from a page: its analysable text, one relevant
 /// stretch per text node that text came from, and the map back to the page.
@@ -718,17 +707,6 @@ mod tests {
         let (doc, map) = enhanced(PAGE, Vec::new());
 
         assert!(render_spans(&map, &doc, Some("click")).unwrap().is_empty());
-    }
-
-    #[test]
-    fn marking_text_nodes_leaves_the_page_alone() {
-        let mut page = Html::parse_document(PAGE);
-        let before = page.html();
-        let root = page.tree.root().id();
-
-        mark_text_nodes(&mut page, root).unwrap();
-
-        assert_eq!(page.html(), before);
     }
 
     #[test]

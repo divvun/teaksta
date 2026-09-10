@@ -6,7 +6,6 @@ package werti.util;
  * 
  * @author Adriane Boyd
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.post-request.post-request]
 public class PostRequest {
 	public String type;
 	public String url;
@@ -16,8 +15,6 @@ public class PostRequest {
 	public String document;
 	public String version;
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.util.post-request.post-request.to-string-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.post-request.post-request.to-string-fn]
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("PostRequest(");

@@ -36,7 +36,7 @@ impl Vislcg3NounSgEnhancer {
 impl Default for Vislcg3NounSgEnhancer {
     fn default() -> Self {
         Vislcg3NounSgEnhancer {
-            enhancement_type: crate::server::servlet::enhancement_type(),
+            enhancement_type: crate::server::exercise::selected(),
             n_sg_tags: Vec::new(),
         }
     }
@@ -131,7 +131,7 @@ impl Vislcg3NounSgEnhancer {
         info!("Starting Noun Sg enhancement");
         // colorize, click, mc or cloze - chosen by the user and sent to the
         // servlet as a request parameter
-        let enhancement_type = crate::server::servlet::enhancement_type();
+        let enhancement_type = crate::server::exercise::selected();
         // keep track of ids for each annotation class
         let mut class_counts: HashMap<String, i32> = HashMap::new();
         for con_t in &self.n_sg_tags {

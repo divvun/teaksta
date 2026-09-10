@@ -497,7 +497,7 @@ pub fn run(
     }
     // colorize, click, mc or cloze - chosen by the user and sent to the
     // servlet as a request parameter
-    let enhancement_type = crate::server::servlet::enhancement_type();
+    let enhancement_type = crate::server::exercise::selected();
     info!("Starting {} enhancement {}.", spec.label, enhancement_type);
 
     let mut elapsed_generating: f64 = 0.0;

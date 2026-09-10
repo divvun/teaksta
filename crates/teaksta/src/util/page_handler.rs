@@ -1,5 +1,5 @@
-//! Methods needed for processing a document regardless of whether it came
-//! from the web form or from the add-on.
+//! Running one topic's pipeline pair over a page, with the analysed document
+//! cached on disk under a caller-chosen key.
 //!
 //! Author: Adriane Boyd
 //!
@@ -18,8 +18,8 @@ use tracing::{error, info};
 use crate::server::processors::{AnalysisEngine, Processors};
 use crate::types::Document;
 
-/// The two checked failures the original tells apart by catch clause. They
-/// carry different log messages but produce the same `ServletException`.
+/// The two failure kinds the engine seam tells apart. They carry different
+/// log messages but reach the caller as the same analysis failure.
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
     #[error("AnalysisEngineProcessException: {0}")]
