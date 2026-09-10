@@ -261,12 +261,20 @@ children (
                 id hd-topic-classes
                 title "One topic-class scheme: registry-served span classes; revive the three inert topics"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:49:43.434494Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence H1: frontend derives hit class as \"teaksta-\"+registry name (teaksta-web markup.rs:115), but Conjunctions/NegVerbs/InfiniteVerbs emit teaksta-conjunction (+teaksta-CC/CS), teaksta-ConNeg, teaksta-InfiniteVerb (conjunction.rs:104, con_neg.rs:22, infinite_verb.rs:21) — those three topics are inert in every mode. Fix: make the registry the single source (serve span_class per activity in /api/activities; frontend uses the served class), or rename the three enhancer constants to match directory names. Also: regenerate live fixtures (they still carry WERTi-span ids), fix the residue guards (ui/mod.rs:90 greps WERTiServlet, exercise_modes.rs:131 greps wertiview — neither matches actual residue), and add at least one non-Substantive fixture family so the seam is tested. Related M12: SPAN_ID_PREFIX const exists unused while five sites hand-roll the literal."
+                    }
+
+                    {
+                        at 2026-09-10T23:19:57.548742Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
