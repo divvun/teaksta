@@ -18,6 +18,7 @@ use regex::Regex;
 use tracing::info;
 
 use crate::enhancer::cg_enhancer::{self, HintRules, TopicSpec, Trace, Unchecked};
+use crate::server::api::Mode;
 use crate::types::Document;
 
 /// The `A\+(?!.*Pred)` alternative of the exclude pattern. The regex crate has
@@ -216,21 +217,9 @@ fn sweep_cases(
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer]
+#[derive(Default)]
 pub struct Vislcg3NounEnhancer {
-    /// colorize, click, mc or cloze - chosen by the user and sent to the
-    /// servlet as a request parameter. Captured at construction time and
-    /// shadowed by a request-time read inside `process`.
-    pub enhancement_type: String,
     pub n_tags: Option<Vec<String>>,
-}
-
-impl Default for Vislcg3NounEnhancer {
-    fn default() -> Self {
-        Vislcg3NounEnhancer {
-            enhancement_type: crate::server::exercise::selected(),
-            n_tags: None,
-        }
-    }
 }
 
 impl Vislcg3NounEnhancer {
@@ -251,12 +240,12 @@ impl Vislcg3NounEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3]
-    pub fn process(&self, doc: &mut Document) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4]
+    pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
-        cg_enhancer::run(doc, &TOPIC, &forms, &analyses)
+        cg_enhancer::run(doc, &TOPIC, mode, &forms, &analyses)
     }
 
     /// Create all relevant morphological forms of the current token. It is the

@@ -96,8 +96,8 @@ public class Vislcg3InfiniteVerbEnhancer extends JCasAnnotator_ImplBase {
 			infverbTags = Arrays.asList(((String)context.getConfigParameterValue("infiniteverbTags")).split(","));
 		}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		// stop processing if the client has requested it

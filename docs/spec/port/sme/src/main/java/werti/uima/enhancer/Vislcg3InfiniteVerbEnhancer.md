@@ -123,7 +123,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+4]
 > Consumes `CGToken` annotations (with their `CGReading` feature-structure array) and produces
 > `Enhancement` annotations wrapping every token whose morphological reading is an infinite verb form.
 >
@@ -195,6 +195,13 @@
 >
 > Only the inverted generator FST takes part; the analyser side of the bundle is not consulted
 > here.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> It is one of exactly four values, so there is no unset exercise to guard
+> against, and two requests asking for different exercises never observe each
+> other's. The mc and cloze branches are selected from it exactly as the
+> equality tests above select them.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

@@ -14,7 +14,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
 > public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
 > Plain field assignment: `processors = aProcessors`, `topic = aTopic`,
 > `text = aText`, `lang = aLang`, `url = aUrl`, `path = aPath`. Note the
 > parameter order is (processors, topic, url, path, text, lang) while the
@@ -28,11 +28,17 @@
 > context parameter. A disabled code path in the source would have forced
 > `lang` to `sme` when `topic` equals `Conjunctions`; it does not run, so `lang`
 > is whatever the caller supplied.
+>
+> Port divergence: the port takes a seventh argument, the exercise the request
+> asked for, and stores it in a field of its own. The postprocessing enhancers
+> read it from the flow rather than from a process-wide static, so it has to
+> reach them through the handler that runs the flow. It is stored exactly as
+> the other six are: no validation, no defaulting, no logging.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+3]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -77,6 +83,13 @@
 > serving the stale cached annotations. The cache is never invalidated or
 > evicted. Quirk: the class's static logger is obtained via
 > `LogManager.GetLogger` (capital `G`), which is not a real log4j2 method name.
+>
+> Port divergence: the stored exercise is handed to every engine run — the
+> preprocessor's and the postprocessor's alike — so the postprocessing
+> enhancers take it as an argument instead of reading a process-wide static.
+> It is not part of the cache key: the cached CAS holds the preprocessor's
+> output, which no exercise varies, and the postprocessor runs over it on
+> every request whichever branch produced it.
 >
 > Port divergence: the cache holds a JSON encoding of the document model rather
 > than XMI. XMI serialises a UIMA CAS and the port's document model is not one,

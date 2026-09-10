@@ -40,8 +40,8 @@ public class HTMLEnhancer {
 	 *
 	 * @return an HTML string containing enhancements
 	 */
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
     public String enhance(final String activity, final String baseurl,
     		HttpServletRequest req, ActivityConfiguration config, String servletContextName) throws UnsupportedEncodingException {
 	HashMap<String, String> dict = new HashMap<String, String>(); // translations of topics and activities to North Sámi

@@ -91,7 +91,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3]
 > Logs "Starting Adverbial enhancement" at info, then reads the process-wide
 > static field WERTiServlet.enhancement_type into a local. That field holds the
 > exercise type chosen by the user — one of "colorize", "click", "mc", "cloze"
@@ -143,4 +143,11 @@
 > has run throws NullPointerException. Quirk: a token matching two different
 > tags in advTags receives two overlapping Enhancement annotations, one per
 > outer-loop pass.
+>
+> Port divergence: the exercise is a parameter of the pass, handed down from
+> the request that asked for it, rather than a process-wide static read here.
+> There is therefore no unset exercise and no null to dereference — the quirk
+> above cannot arise — and two requests asking for different exercises never
+> observe each other's. Which tokens are reached is otherwise as above: `mc`
+> and `cloze` pass over an ambiguous token, `colorize` and `click` keep it.
 

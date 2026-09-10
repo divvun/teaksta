@@ -10,6 +10,7 @@ use anyhow::{Result, anyhow};
 use tracing::{debug, info};
 
 use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
+use crate::server::api::Mode;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
 use crate::util::enhancer_utils;
 
@@ -46,16 +47,10 @@ impl Vislcg3ConjunctionEnhancer {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2]
-    pub fn process(&self, doc: &mut Document) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3]
+    pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         info!("Starting conjunction enhancement");
-        // colorize, click, mc or cloze - chosen by the user and sent to the
-        // servlet as a request parameter
-        let enhancement_type = crate::server::exercise::SELECTED
-            .read()
-            .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))?
-            .clone();
 
         // keep track of ids for each annotation class
         let mut class_counts: HashMap<String, i32> = HashMap::new();
@@ -71,10 +66,7 @@ impl Vislcg3ConjunctionEnhancer {
         for con_t in &self.conjunction_tags {
             // go through tokens
             for token_index in 0..doc.cg_tokens.len() {
-                let enhancement_type = enhancement_type
-                    .as_deref()
-                    .ok_or_else(|| anyhow!("WERTiServlet.enhancement_type is unset"))?;
-                if enhancement_type == "cloze" || enhancement_type == "mc" {
+                if matches!(mode, Mode::Cloze | Mode::Mc) {
                     // more than one reading? don't mark up if the exercise type
                     // is mc or cloze
                     if !self.is_safe(&doc.cg_tokens[token_index]) {
@@ -151,8 +143,7 @@ mod tests {
     use super::*;
     use crate::test_support::{
         assert_process_ignores_token_without_tags, assert_process_keeps_existing_enhancements,
-        assert_process_requires_enhancement_type, assert_safe_only_single_reading,
-        assert_splits_tags, cg_token as token, reading,
+        assert_safe_only_single_reading, assert_splits_tags, cg_token as token, reading,
     };
 
     fn context(conjunction_tags: &str) -> HashMap<String, String> {
@@ -255,17 +246,19 @@ mod tests {
         assert!(!enhancer.contains_tag(&reading(&["\"ja\"", "CC"]), ""));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
     #[test]
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3ConjunctionEnhancer {
             conjunction_tags: vec!["CC".to_string(), "CS".to_string()],
         };
 
-        assert_process_keeps_existing_enhancements("Mun ja don.", |doc| enhancer.process(doc));
+        assert_process_keeps_existing_enhancements("Mun ja don.", |doc| {
+            enhancer.process(doc, Mode::Colorize)
+        });
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
         let enhancer = Vislcg3ConjunctionEnhancer::new();
@@ -273,20 +266,39 @@ mod tests {
         assert_process_ignores_token_without_tags(
             "Mun ja don.",
             token(4, 6, &[&["\"ja\"", "CC", "@CVP"]]),
-            |doc| enhancer.process(doc),
+            |doc| enhancer.process(doc, Mode::Colorize),
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+2/test]
+    /// The coordinator reading carries the configured tag, so the only thing
+    /// that can keep the token out of the output is the exercise: `mc` and
+    /// `cloze` pass over it for its second reading, `colorize` and `click`
+    /// take it.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+3/test]
     #[test]
-    fn process_requires_enhancement_type_for_first_token() {
+    fn an_ambiguous_token_reaches_the_marking_exercises_only() {
         let enhancer = Vislcg3ConjunctionEnhancer {
             conjunction_tags: vec!["CC".to_string()],
         };
-        let mut doc = Document::new("Mun ja don.", "sme");
-        doc.cg_tokens
-            .push(token(4, 6, &[&["\"ja\"", "CC", "@CVP"]]));
 
-        assert_process_requires_enhancement_type(&mut doc, |doc| enhancer.process(doc));
+        for (mode, expected) in [
+            (Mode::Mc, 0),
+            (Mode::Cloze, 0),
+            (Mode::Colorize, 1),
+            (Mode::Click, 1),
+        ] {
+            let mut doc = Document::new("Mun ja don.", "sme");
+            doc.cg_tokens.push(token(
+                4,
+                6,
+                &[&["\"ja\"", "CC", "@CVP"], &["\"ja\"", "Pcle", "@ADVL>"]],
+            ));
+
+            enhancer
+                .process(&mut doc, mode)
+                .expect("a token the exercise never reaches is not a failure");
+
+            assert_eq!(doc.enhancements.len(), expected, "{mode:?}");
+        }
     }
 }

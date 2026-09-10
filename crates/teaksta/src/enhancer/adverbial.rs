@@ -10,6 +10,7 @@ use anyhow::{Result, anyhow};
 use tracing::info;
 
 use crate::enhancer::syntactic;
+use crate::server::api::Mode;
 use crate::types::{CgReading, CgToken, Document};
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer]
@@ -45,9 +46,9 @@ impl Vislcg3AdverbialEnhancer {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
-    pub fn process(&self, doc: &mut Document) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3]
+    pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         syntactic::run(
             doc,
             &syntactic::FunctionSpec {
@@ -58,6 +59,7 @@ impl Vislcg3AdverbialEnhancer {
                 is_safe: &|t| self.is_safe(t),
                 contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),
             },
+            mode,
         )
     }
 
@@ -111,8 +113,7 @@ mod tests {
     use super::*;
     use crate::test_support::{
         assert_process_ignores_token_without_tags, assert_process_keeps_existing_enhancements,
-        assert_process_requires_enhancement_type, assert_safe_only_single_reading,
-        assert_splits_tags, cg_token as token, reading,
+        assert_safe_only_single_reading, assert_splits_tags, cg_token as token, reading,
     };
 
     fn context(adv_tags: &str) -> HashMap<String, String> {
@@ -245,7 +246,7 @@ mod tests {
         let _ = enhancer.get_lemma(&reading(&["\""]));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3/test]
     #[test]
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3AdverbialEnhancer {
@@ -254,11 +255,11 @@ mod tests {
         };
 
         assert_process_keeps_existing_enhancements("Mun oidnen viesus ikte.", |doc| {
-            enhancer.process(doc)
+            enhancer.process(doc, Mode::Colorize)
         });
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
         let enhancer = Vislcg3AdverbialEnhancer::new();
@@ -266,24 +267,7 @@ mod tests {
         assert_process_ignores_token_without_tags(
             "Mun oidnen viesus ikte.",
             token(11, 17, &[&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]]),
-            |doc| enhancer.process(doc),
+            |doc| enhancer.process(doc, Mode::Colorize),
         );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2/test]
-    #[test]
-    fn process_requires_enhancement_type_for_first_token() {
-        let enhancer = Vislcg3AdverbialEnhancer {
-            adv_tags: vec!["ADVL".to_string()],
-            ..Default::default()
-        };
-        let mut doc = Document::new("Mun oidnen viesus ikte.", "sme");
-        doc.cg_tokens.push(token(
-            11,
-            17,
-            &[&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]],
-        ));
-
-        assert_process_requires_enhancement_type(&mut doc, |doc| enhancer.process(doc));
     }
 }

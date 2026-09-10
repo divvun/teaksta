@@ -8,6 +8,7 @@
 
 use anyhow::Result;
 
+use crate::server::api::Mode;
 use crate::types::Document;
 use crate::util::html_utils;
 
@@ -69,9 +70,9 @@ impl<'a> HtmlEnhancer<'a> {
     /// Converts an HTML document with Enhancements to an HTML string. The
     /// topic reaches the page through the client rather than through the
     /// markup, so only the requested exercise is read here.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
-    pub fn enhance(&self, mode: Option<&str>, base_url: &str) -> Result<String> {
+    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4]
+    pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> Result<String> {
         html_utils::render_page(&self.cas.page, self.cas, mode, Some(base_url))
     }
 }
@@ -100,7 +101,7 @@ mod tests {
         cas
     }
 
-    fn enhance(cas: &Document, base_url: &str, mode: Option<&str>) -> String {
+    fn enhance(cas: &Document, base_url: &str, mode: Option<Mode>) -> String {
         HtmlEnhancer::new(cas).enhance(mode, base_url).unwrap()
     }
 
@@ -114,13 +115,13 @@ mod tests {
         assert!(std::ptr::eq(enhancer.cas, &cas));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
     #[test]
     fn head_gets_the_base_url_and_nothing_else() {
         let html = enhance(
             &analysed(true),
             "http://example.org/page.html",
-            Some("colorize"),
+            Some(Mode::Colorize),
         );
 
         assert!(
@@ -133,10 +134,10 @@ mod tests {
         assert!(html.contains("<title>Old</title>"), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
     #[test]
     fn the_enhanced_span_is_wrapped_around_its_text() {
-        let html = enhance(&analysed(true), "http://example.org/", Some("colorize"));
+        let html = enhance(&analysed(true), "http://example.org/", Some(Mode::Colorize));
 
         assert!(
             html.contains(
@@ -147,23 +148,25 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
     #[test]
     fn an_irrelevant_span_reaches_click_alone() {
         let cas = analysed(false);
 
-        assert!(!enhance(&cas, "http://example.org/", Some("colorize")).contains("teaksta-span-1"));
-        assert!(enhance(&cas, "http://example.org/", Some("click")).contains("teaksta-span-1"));
+        assert!(
+            !enhance(&cas, "http://example.org/", Some(Mode::Colorize)).contains("teaksta-span-1")
+        );
+        assert!(enhance(&cas, "http://example.org/", Some(Mode::Click)).contains("teaksta-span-1"));
         assert!(!enhance(&cas, "http://example.org/", None).contains("teaksta-span-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+4/test]
     #[test]
     fn the_base_url_is_escaped_as_an_attribute() {
         let html = enhance(
             &analysed(true),
             "http://example.org/?a=\"1\"&b=2",
-            Some("mc"),
+            Some(Mode::Mc),
         );
 
         assert!(
@@ -178,7 +181,7 @@ mod tests {
         assert_eq!(sami_label("Substantive"), Some("Substantiivvat"));
         assert_eq!(sami_label("Unknown"), None);
         assert_eq!(
-            topic_title("Substantive", Some("colorize")),
+            topic_title("Substantive", Some(Mode::Colorize.name())),
             "Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid."
         );
         assert_eq!(topic_title("Unknown", None), "Unknown");

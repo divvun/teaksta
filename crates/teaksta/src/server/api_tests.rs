@@ -46,7 +46,7 @@ fn modes_are_the_four_exercise_names() {
     assert_eq!(Mode::parse(""), None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2/test]
 #[test]
 fn a_bare_host_is_taken_as_http() {
     assert_eq!(
@@ -64,7 +64,7 @@ fn a_bare_host_is_taken_as_http() {
     assert!(page_url("http://").is_err());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4/test]
 #[test]
 fn each_page_source_gets_its_own_key() {
     let page = "<html><body><p>Mun oidnen viesu.</p></body></html>";
@@ -76,7 +76,7 @@ fn each_page_source_gets_its_own_key() {
     assert!(!cache_key("http://example.org/a/b").contains('/'));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
 #[test]
 fn the_registry_lists_each_activity_directory() {
@@ -149,7 +149,7 @@ async fn the_registry_answers_topics_and_modes() {
         .await;
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2/test]
 #[tokio::test]
 async fn the_page_endpoint_needs_all_three() {
     let root = webapp_with(&["Substantive"]);
@@ -171,7 +171,7 @@ async fn the_page_endpoint_needs_all_three() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4/test]
 #[tokio::test]
 async fn the_span_endpoint_needs_one_source() {
     let root = webapp_with(&["Substantive"]);
@@ -198,7 +198,7 @@ async fn the_span_endpoint_needs_one_source() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2/test]
 #[tokio::test]
 async fn the_retired_paths_answer_nothing() {
     let root = webapp_with(&["Substantive"]);
@@ -242,7 +242,7 @@ async fn an_upload_without_a_file_is_refused() {
         .await;
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2/test]
 #[test]
 fn a_missing_activity_tree_fails_the_boot() {
     let root = tempfile::tempdir().expect("temp dir");

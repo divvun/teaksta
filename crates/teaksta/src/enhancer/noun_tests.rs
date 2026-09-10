@@ -6,10 +6,7 @@ use super::*;
 use crate::types::CgToken;
 
 fn enhancer() -> Vislcg3NounEnhancer {
-    Vislcg3NounEnhancer {
-        enhancement_type: String::new(),
-        n_tags: None,
-    }
+    Vislcg3NounEnhancer { n_tags: None }
 }
 
 fn cg_token(begin: usize, end: usize, readings: &[&[&str]]) -> CgToken {
@@ -21,14 +18,6 @@ fn cg_token(begin: usize, end: usize, readings: &[&[&str]]) -> CgToken {
             .map(|reading| reading.iter().map(|tag| tag.to_string()).collect())
             .collect(),
     }
-}
-
-/// `process` only reaches the generator seam for `mc` and `cloze`; every
-/// other value of the shared activity field takes the in-process branch
-/// that the assertions below describe.
-fn activity_reaches_the_generator() -> bool {
-    let activity = crate::server::exercise::selected();
-    activity == "mc" || activity == "cloze"
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn/test]
@@ -61,19 +50,16 @@ fn a_missing_n_tags_parameter_fails_initialisation() {
     assert!(enh.n_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn a_singular_noun_span_carries_its_lemma() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("čáhci čáhci", "sme");
     let reading: &[&str] = &["\"čáhci\"", "N", "<sme>", "Sem/Plc", "Sg", "Nom"];
     doc.cg_tokens.push(cg_token(0, 7, &[reading]));
     doc.cg_tokens.push(cg_token(8, 15, &[reading]));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     assert_eq!(doc.enhancements.len(), 2);
     assert!(doc.enhancements[0].relevant);
@@ -91,19 +77,16 @@ fn a_singular_noun_span_carries_its_lemma() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn preposition_hint_is_linked_from_next_noun() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("maŋŋel beana", "sme");
     doc.cg_tokens.push(cg_token(0, 8, &[&["\"maŋŋel\"", "Pr"]]));
     doc.cg_tokens
         .push(cg_token(9, 14, &[&["\"beana\"", "N", "Sg", "Nom"]]));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     assert_eq!(doc.enhancements.len(), 2);
     assert_eq!(
@@ -119,12 +102,9 @@ fn preposition_hint_is_linked_from_next_noun() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn a_bare_number_tag_without_case_is_skipped() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("ruoktu ruovttut", "sme");
     doc.cg_tokens
@@ -132,17 +112,14 @@ fn a_bare_number_tag_without_case_is_skipped() {
     doc.cg_tokens
         .push(cg_token(7, 15, &[&["\"ruoktu\"", "N", "Pl"]]));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn every_named_number_and_case_pair_qualifies() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("beana", "sme");
     for number in ["Sg", "Pl"] {
@@ -154,17 +131,14 @@ fn every_named_number_and_case_pair_qualifies() {
     doc.cg_tokens
         .push(cg_token(0, 5, &[&["\"beana\"", "N", "Ess"]]));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     assert_eq!(doc.enhancements.len(), 13);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn one_excluded_reading_disqualifies_a_token() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("mun", "sme");
     doc.cg_tokens.push(cg_token(
@@ -176,17 +150,14 @@ fn one_excluded_reading_disqualifies_a_token() {
         ],
     ));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
 #[test]
 fn an_adjective_before_pred_stays_eligible() {
-    if activity_reaches_the_generator() {
-        return;
-    }
     let enh = enhancer();
     let mut doc = Document::new("stuoris beana", "sme");
     doc.cg_tokens.push(cg_token(
@@ -198,7 +169,7 @@ fn an_adjective_before_pred_stays_eligible() {
         ],
     ));
 
-    enh.process(&mut doc).unwrap();
+    enh.process(&mut doc, Mode::Colorize).unwrap();
 
     // `A+` is excluded only when no `Pred` follows it on the same line.
     assert_eq!(doc.enhancements.len(), 1);
@@ -213,7 +184,7 @@ fn an_adjective_before_pred_stays_eligible() {
         ],
     ));
 
-    enh.process(&mut without_pred).unwrap();
+    enh.process(&mut without_pred, Mode::Colorize).unwrap();
 
     assert!(without_pred.enhancements.is_empty());
 }
