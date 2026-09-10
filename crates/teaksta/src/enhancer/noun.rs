@@ -227,7 +227,7 @@ pub struct Vislcg3NounEnhancer {
 impl Default for Vislcg3NounEnhancer {
     fn default() -> Self {
         Vislcg3NounEnhancer {
-            enhancement_type: crate::server::servlet::enhancement_type(),
+            enhancement_type: crate::server::exercise::selected(),
             n_tags: None,
         }
     }

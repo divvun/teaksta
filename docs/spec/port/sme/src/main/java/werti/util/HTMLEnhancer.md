@@ -6,22 +6,24 @@
 >   private JCas cas;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn]
-> public String enhance(final String activity, final String baseurl, HttpServletRequest req, ActivityConfiguration config, String servletContextName) throws UnsupportedEncodingException
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
+> pub fn enhance(&self, mode: Option<&str>, base_url: &str) -> Result<String>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
 > Renders the stored document into a complete enhanced HTML page string.
-> The topic, the activity configuration and the servlet context name reach
-> the page through the client rather than through the markup, so `activity`,
-> `config` and `servletContextName` are accepted and never used.
 >
-> Reads the exercise type from the request parameter `client.enhancement`
-> and renders the page the document's own map holds, per
+> The exercise is taken as an argument rather than dug out of a request:
+> nothing about the caller's transport reaches here, so the topic, the
+> activity configuration and the deployment's display name — all of which
+> reach the page through the client rather than through the markup — are not
+> parameters at all.
+>
+> Renders the page the document's own map holds, per
 > `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]`,
-> passing that exercise type as the activity argument — which is what lets
-> the click exercise keep the candidates the other exercises drop — and
-> `baseurl` as the base URL, so the relative links of the fetched page
-> still resolve where it is served from.
+> passing `mode` as the activity argument — which is what lets the click
+> exercise keep the candidates the other exercises drop — and `base_url` as
+> the base URL, so the relative links of the fetched page still resolve where
+> it is served from.
 >
 > Nothing else is injected: no script or stylesheet links, no reminder
 > line, and the fetched page's own title is left as it stands. The North

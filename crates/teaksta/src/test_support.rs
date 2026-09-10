@@ -85,15 +85,15 @@ pub(crate) fn assert_process_ignores_token_without_tags(
     assert!(doc.enhancements.is_empty());
 }
 
-/// Reaching a token requires the servlet's enhancement type to be set. The
-/// type is process-global, so the assertion is written against whichever
+/// Reaching a token requires the selected exercise to be set. The
+/// selection is process-global, so the assertion is written against whichever
 /// state the rest of the run left it in: unset means `process` fails and
 /// enhances nothing, set means it is free to succeed.
 pub(crate) fn assert_process_requires_enhancement_type(
     doc: &mut Document,
     process: impl FnOnce(&mut Document) -> anyhow::Result<()>,
 ) {
-    let selected = crate::server::servlet::ENHANCEMENT_TYPE
+    let selected = crate::server::exercise::SELECTED
         .read()
         .expect("enhancement type lock")
         .clone();

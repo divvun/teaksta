@@ -1,9 +1,14 @@
 # sme/src/main/java/werti/util/HTMLUtils.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils]
-> public class HTMLUtils {
->   public static String className = "PCZRlWLK";
-> }
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils+1]
+> static SKIPPED_TAGS: &[&str];
+> static BLOCK_TAGS: &[&str];
+> const SEGMENT_JOIN: char = '\n';
+>
+> The vocabulary extraction and rendering are written against. There is no
+> sentinel class name and no marking pass: nothing is stamped on the page
+> before analysis, so no class has to be picked that the page could not
+> already be carrying.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn]
 > pub fn extract(html: &str) -> (Document, PageMap)

@@ -42,7 +42,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>) -> Result<()> {
     info!("{}", spec.start_log);
     // colorize, click, mc or cloze - chosen by the user and sent to the
     // servlet as a request parameter
-    let enhancement_type = crate::server::servlet::ENHANCEMENT_TYPE
+    let enhancement_type = crate::server::exercise::SELECTED
         .read()
         .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))?
         .clone();

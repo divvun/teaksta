@@ -4,7 +4,3 @@ pub mod html_enhancer;
 pub mod html_utils;
 pub mod json_enhancer;
 pub mod page_handler;
-pub mod post_request;
-pub mod practice_handler;
-pub mod resources;
-pub mod verify_recaptcha;

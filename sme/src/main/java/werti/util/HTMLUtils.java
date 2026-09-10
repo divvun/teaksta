@@ -12,7 +12,7 @@ import org.jsoup.nodes.TextNode;
  * @author Adriane Boyd
  *
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils]
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils+1]
 public class HTMLUtils {
 	// random temporary class name used to avoid Jsoup whitespace preservation
 	// problem with non-HTML <e> tag

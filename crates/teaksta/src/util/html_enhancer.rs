@@ -8,8 +8,6 @@
 
 use anyhow::Result;
 
-use crate::server::activity_configuration::ActivityConfiguration;
-use crate::server::servlet::HttpServletRequest;
 use crate::types::Document;
 use crate::util::html_utils;
 
@@ -69,56 +67,24 @@ impl<'a> HtmlEnhancer<'a> {
     }
 
     /// Converts an HTML document with Enhancements to an HTML string. The
-    /// topic, the activity configuration and the servlet context name reach
-    /// the page through the client rather than through the markup, so only
-    /// the requested exercise type is read here.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2]
-    pub fn enhance(
-        &self,
-        _activity: &str,
-        baseurl: &str,
-        req: &HttpServletRequest,
-        _config: &ActivityConfiguration,
-        _servlet_context_name: &str,
-    ) -> Result<String> {
-        let enhancement = req.get_parameter("client.enhancement");
-
-        html_utils::render_page(&self.cas.page, self.cas, enhancement, Some(baseurl))
+    /// topic reaches the page through the client rather than through the
+    /// markup, so only the requested exercise is read here.
+    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3]
+    pub fn enhance(&self, mode: Option<&str>, base_url: &str) -> Result<String> {
+        html_utils::render_page(&self.cas.page, self.cas, mode, Some(base_url))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
 
     use crate::types::Enhancement;
     use crate::util::html_utils;
 
     const PAGE: &str =
         "<html><head><title>Old</title></head><body><p>Mun oidnen viesu.</p></body></html>";
-
-    /// The smallest activity descriptor `ActivityConfiguration` will load. The
-    /// value is threaded through `enhance` untouched, so its contents are
-    /// irrelevant to what is under test.
-    fn activity_configuration(dir: &TempDir) -> ActivityConfiguration {
-        let path = dir.path().join("activity.xml");
-        std::fs::write(&path, "<activity><server-cfg></server-cfg></activity>").unwrap();
-        ActivityConfiguration::new(&path).unwrap()
-    }
-
-    fn request(enhancement: Option<&str>) -> HttpServletRequest {
-        let mut req = HttpServletRequest {
-            request_url: "http://example.org/teaksta".to_string(),
-            ..HttpServletRequest::default()
-        };
-        if let Some(enhancement) = enhancement {
-            req.parameters
-                .insert("client.enhancement".to_string(), enhancement.to_string());
-        }
-        req
-    }
 
     /// A document seeded from `PAGE`, carrying one enhancement over `viesu`.
     fn analysed(relevant: bool) -> Document {
@@ -134,18 +100,8 @@ mod tests {
         cas
     }
 
-    fn enhance(cas: &Document, baseurl: &str, enhancement: Option<&str>) -> String {
-        let dir = TempDir::new().unwrap();
-        let config = activity_configuration(&dir);
-        HtmlEnhancer::new(cas)
-            .enhance(
-                "Substantive",
-                baseurl,
-                &request(enhancement),
-                &config,
-                "teaksta",
-            )
-            .unwrap()
+    fn enhance(cas: &Document, base_url: &str, mode: Option<&str>) -> String {
+        HtmlEnhancer::new(cas).enhance(mode, base_url).unwrap()
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn/test]
@@ -158,7 +114,7 @@ mod tests {
         assert!(std::ptr::eq(enhancer.cas, &cas));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
     #[test]
     fn head_gets_the_base_url_and_nothing_else() {
         let html = enhance(
@@ -177,7 +133,7 @@ mod tests {
         assert!(html.contains("<title>Old</title>"), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
     #[test]
     fn the_enhanced_span_is_wrapped_around_its_text() {
         let html = enhance(&analysed(true), "http://example.org/", Some("colorize"));
@@ -191,7 +147,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
     #[test]
     fn an_irrelevant_span_reaches_click_alone() {
         let cas = analysed(false);
@@ -201,7 +157,7 @@ mod tests {
         assert!(!enhance(&cas, "http://example.org/", None).contains("teaksta-span-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+3/test]
     #[test]
     fn the_base_url_is_escaped_as_an_attribute() {
         let html = enhance(

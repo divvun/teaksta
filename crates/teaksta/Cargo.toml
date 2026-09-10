@@ -26,4 +26,5 @@ html-escape = "0.2"
 urlencoding = "2"
 
 [dev-dependencies]
+poem = { version = "3", features = ["multipart", "test"] }
 tempfile = "3"

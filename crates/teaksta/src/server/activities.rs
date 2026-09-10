@@ -1,32 +1,27 @@
-//! The activity registry (`Activities`) plus the session-scoped loader that
-//! installs it into an HTTP session (`ActivitiesSessionLoader`).
+//! The activity registry: one configuration per topic directory under the
+//! deployment's activity tree.
 //!
-//! The servlet-container types the loader depends on — request, session and
-//! servlet context — have no poem counterpart with the same shape, so the
-//! minimum surface each one is used through is modelled locally at the bottom
-//! of this module.
+//! The registry is built once at startup and shared by every request, so a
+//! topic added on disk is picked up when the server is restarted.
 
-use std::any::Any;
 use std::collections::btree_map::Keys;
-use std::collections::{BTreeMap, HashMap, HashSet};
-use std::path::{MAIN_SEPARATOR, Path, PathBuf};
+use std::collections::{BTreeMap, HashSet};
+use std::path::{MAIN_SEPARATOR, Path};
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 
 use crate::server::activity_configuration::ActivityConfiguration;
 
 /// Find activity specifications for all active activities.
 ///
 /// Authors: Niels Ott?, Adriane Boyd
-// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities]
+// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities+1]
 pub struct Activities {
     config_map: BTreeMap<String, ActivityConfiguration>,
     ignored_activities: HashSet<String>,
 }
 
 impl Activities {
-    pub const ATT_NAME: &'static str = "werti.activities";
-
     // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn]
     pub fn new(act_dir: &Path) -> Result<Self> {
@@ -92,124 +87,6 @@ impl<'a> IntoIterator for &'a Activities {
     }
 }
 
-/// Helper class for loading a fresh [`Activities`] registry into the web
-/// session.
-///
-/// Author: Niels Ott
-// [spec:teaksta:def:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader]
-pub struct ActivitiesSessionLoader;
-
-impl ActivitiesSessionLoader {
-    /// Despite the "create a fresh registry" framing, the result is cached per
-    /// session for the session's lifetime, so edits to activity XML on disk are
-    /// not picked up until the session ends.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn]
-    pub fn create_activities_in_session(req: &mut HttpServletRequest) -> Result<&mut Activities> {
-        // try to obtain the activities from the session
-        let session = req.get_session();
-
-        // if this doesn't work out, create the activities
-        if session.get_attribute(Activities::ATT_NAME).is_none() {
-            let real_path = session
-                .get_servlet_context()
-                .get_real_path("/activities")
-                .ok_or_else(|| anyhow!("NullPointerException: no real path for \"/activities\""))?;
-            let acts = Activities::new(&real_path)?;
-            session.set_attribute(Activities::ATT_NAME, Box::new(acts));
-        }
-
-        let attribute = session
-            .get_attribute_mut(Activities::ATT_NAME)
-            .ok_or_else(|| anyhow!("NullPointerException: session attribute vanished"))?;
-
-        attribute.downcast_mut::<Activities>().ok_or_else(|| {
-            anyhow!(
-                "ClassCastException: {} is not an Activities",
-                Activities::ATT_NAME
-            )
-        })
-    }
-}
-
-/// Minimal stand-in for `javax.servlet.ServletContext`. The only capability
-/// exercised from here is resolving a webapp-relative path against the
-/// deployed webapp root.
-#[derive(Debug, Clone, Default)]
-pub struct ServletContext {
-    real_path_root: Option<PathBuf>,
-}
-
-impl ServletContext {
-    pub fn new(real_path_root: Option<PathBuf>) -> Self {
-        ServletContext { real_path_root }
-    }
-
-    /// Returns `None` when the webapp is served unexpanded and the real path
-    /// therefore cannot be resolved.
-    pub fn get_real_path(&self, path: &str) -> Option<PathBuf> {
-        let root = self.real_path_root.as_ref()?;
-        Some(root.join(path.trim_start_matches('/')))
-    }
-}
-
-/// Minimal stand-in for `javax.servlet.http.HttpSession`. Attributes are held
-/// as type-erased values so that a mistyped attribute surfaces the same way the
-/// original's cast does.
-#[derive(Default)]
-pub struct HttpSession {
-    attributes: HashMap<String, Box<dyn Any + Send>>,
-    servlet_context: ServletContext,
-}
-
-impl HttpSession {
-    pub fn new(servlet_context: ServletContext) -> Self {
-        HttpSession {
-            attributes: HashMap::new(),
-            servlet_context,
-        }
-    }
-
-    pub fn get_servlet_context(&self) -> &ServletContext {
-        &self.servlet_context
-    }
-
-    pub fn get_attribute(&self, name: &str) -> Option<&(dyn Any + Send)> {
-        self.attributes.get(name).map(|value| &**value)
-    }
-
-    pub fn get_attribute_mut(&mut self, name: &str) -> Option<&mut (dyn Any + Send)> {
-        self.attributes.get_mut(name).map(|value| &mut **value)
-    }
-
-    pub fn set_attribute(&mut self, name: &str, value: Box<dyn Any + Send>) {
-        self.attributes.insert(name.to_string(), value);
-    }
-
-    pub fn remove_attribute(&mut self, name: &str) {
-        self.attributes.remove(name);
-    }
-}
-
-/// Minimal stand-in for `javax.servlet.http.HttpServletRequest`, carrying only
-/// what the session loader reaches through it.
-#[derive(Default)]
-pub struct HttpServletRequest {
-    session: HttpSession,
-}
-
-impl HttpServletRequest {
-    pub fn new(session: HttpSession) -> Self {
-        HttpServletRequest { session }
-    }
-
-    /// Mirrors `getSession()`: the session is created on demand, so it is
-    /// always present.
-    pub fn get_session(&mut self) -> &mut HttpSession {
-        &mut self.session
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -246,22 +123,6 @@ mod tests {
         let dir = root.join(dir_name);
         fs::create_dir_all(&dir).expect("create activity directory");
         fs::write(dir.join("activity.xml"), xml).expect("write activity.xml");
-    }
-
-    /// A webapp root whose `/activities` directory holds the named activities.
-    fn webapp_with(activity_names: &[&str]) -> TempDir {
-        let root = TempDir::new().expect("temp dir");
-        let acts = root.path().join("activities");
-        fs::create_dir_all(&acts).expect("create activities directory");
-        for name in activity_names {
-            write_activity(&acts, name);
-        }
-        root
-    }
-
-    fn request_for(root: Option<&Path>) -> HttpServletRequest {
-        let context = ServletContext::new(root.map(|p| p.to_path_buf()));
-        HttpServletRequest::new(HttpSession::new(context))
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn/test]
@@ -416,102 +277,6 @@ mod tests {
                 .get_server_pre_value("sme", "mode")
                 .as_deref(),
             Some("lenient")
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn/test]
-    #[test]
-    fn create_activities_in_session_scans_webapp_directory() {
-        let root = webapp_with(&["Articles", "Nouns"]);
-        let mut req = request_for(Some(root.path()));
-
-        let acts = ActivitiesSessionLoader::create_activities_in_session(&mut req)
-            .expect("registry loads");
-
-        assert_eq!(
-            acts.iterator().cloned().collect::<Vec<_>>(),
-            vec!["Articles".to_string(), "Nouns".to_string()]
-        );
-        assert!(
-            req.get_session()
-                .get_attribute(Activities::ATT_NAME)
-                .is_some()
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn/test]
-    #[test]
-    fn create_activities_in_session_caches_the_registry() {
-        let root = webapp_with(&["Nouns"]);
-        let mut req = request_for(Some(root.path()));
-
-        let first = ActivitiesSessionLoader::create_activities_in_session(&mut req)
-            .expect("registry loads")
-            .iterator()
-            .cloned()
-            .collect::<Vec<_>>();
-        assert_eq!(first, vec!["Nouns".to_string()]);
-
-        write_activity(&root.path().join("activities"), "Verbs");
-
-        let second = ActivitiesSessionLoader::create_activities_in_session(&mut req)
-            .expect("registry loads")
-            .iterator()
-            .cloned()
-            .collect::<Vec<_>>();
-        assert_eq!(second, vec!["Nouns".to_string()]);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn/test]
-    #[test]
-    fn create_activities_in_session_fails_without_real_path() {
-        let mut req = request_for(None);
-
-        let Err(err) = ActivitiesSessionLoader::create_activities_in_session(&mut req) else {
-            panic!("an unresolvable real path must abort the load");
-        };
-
-        assert_eq!(
-            err.to_string(),
-            "NullPointerException: no real path for \"/activities\""
-        );
-        assert!(
-            req.get_session()
-                .get_attribute(Activities::ATT_NAME)
-                .is_none()
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn/test]
-    #[test]
-    fn create_activities_in_session_rejects_mistyped_attribute() {
-        let root = webapp_with(&["Nouns"]);
-        let mut req = request_for(Some(root.path()));
-        req.get_session()
-            .set_attribute(Activities::ATT_NAME, Box::new(42i32));
-
-        let Err(err) = ActivitiesSessionLoader::create_activities_in_session(&mut req) else {
-            panic!("a mistyped session attribute must abort the load");
-        };
-
-        assert_eq!(
-            err.to_string(),
-            "ClassCastException: werti.activities is not an Activities"
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.activities-session-loader.activities-session-loader.create-activities-in-session-fn/test]
-    #[test]
-    fn create_activities_in_session_scan_failure_unsets_attribute() {
-        let root = TempDir::new().expect("temp dir");
-        let mut req = request_for(Some(root.path()));
-
-        assert!(ActivitiesSessionLoader::create_activities_in_session(&mut req).is_err());
-
-        assert!(
-            req.get_session()
-                .get_attribute(Activities::ATT_NAME)
-                .is_none()
         );
     }
 }

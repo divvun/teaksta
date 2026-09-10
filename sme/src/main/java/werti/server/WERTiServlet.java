@@ -88,7 +88,7 @@ import javax.servlet.http.HttpSession;
  * @author Aleksandar Dimitrov
  * @author Adriane Boyd
  */
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+1]
 public class WERTiServlet extends HttpServlet {
 	private static final Logger log =
 		LogManager.getLogger(WERTiServlet.class);
@@ -110,8 +110,8 @@ public class WERTiServlet extends HttpServlet {
 
 	public static String enhancement_type; // colorize, click, mc or cloze
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+1]
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 		log.warn("Initializing servlet.");
@@ -124,8 +124,6 @@ public class WERTiServlet extends HttpServlet {
 		}
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.destroy-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.destroy-fn]
 	public void destroy() {
 		// no-op
 	}
@@ -133,8 +131,8 @@ public class WERTiServlet extends HttpServlet {
 	/* (non-Javadoc)
      * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
      */
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+1]
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp)
 	throws ServletException, IOException {
@@ -275,8 +273,8 @@ public class WERTiServlet extends HttpServlet {
 	 * @param req the servlet request
 	 * @param resp the servlet response
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+3]
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
@@ -438,8 +436,6 @@ public class WERTiServlet extends HttpServlet {
 	 * @param topicName the topic chosen by the user
 	 * @return the configuration of the activity chosen by the user
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.load-activities-and-processors-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.load-activities-and-processors-fn]
 	private ActivityConfiguration loadActivitiesAndProcessors(HttpServletRequest req,
 			String topicName) throws IOException, ServletException {
 
@@ -462,8 +458,6 @@ public class WERTiServlet extends HttpServlet {
 	 * @param haveIds whether the wertiview spans have IDs in the wertiviewid attribute
 	 * @return the <html> node as a string
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.spans-to-e-tags-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.spans-to-e-tags-fn]
 	private String spansToETags(Document doc, String className, boolean haveIds) {
 		// find all added spans using the class name and replace everything inside
 		// the <e> tokens with unescaped unicode characters
@@ -485,8 +479,6 @@ public class WERTiServlet extends HttpServlet {
 		return htmlString;
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.merge-config-params-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.merge-config-params-fn]
 	@SuppressWarnings("unchecked")
 	private void mergeConfigParams(ActivityConfiguration config, HttpServletRequest req) {
 		Enumeration<String> paramNames = req.getParameterNames();
@@ -525,8 +517,6 @@ public class WERTiServlet extends HttpServlet {
 	 * @throws IOException
 	 * @throws ServletException
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.load-processors-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.load-processors-fn]
 	private void loadProcessors(Activities acts) throws IOException, ServletException {
 		if (processors == null) {
 			long startTime = System.currentTimeMillis();
@@ -535,15 +525,11 @@ public class WERTiServlet extends HttpServlet {
 		}
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.get-servlet-base-url-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.get-servlet-base-url-fn]
 	private static String getServletBaseUrl(HttpServletRequest req) {
 		String baseUrl = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort() + req.getContextPath();
 		return baseUrl;
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.get-open-id-return-to-url-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.get-open-id-return-to-url-fn]
 	private static String getOpenIDReturnToUrl(HttpServletRequest req) {
 		String baseUrl = getServletBaseUrl(req);
 		String openidReturnToUrl = baseUrl + "/VIEW?openid_return=true";

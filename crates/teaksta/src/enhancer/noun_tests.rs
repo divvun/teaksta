@@ -27,7 +27,7 @@ fn cg_token(begin: usize, end: usize, readings: &[&[&str]]) -> CgToken {
 /// other value of the shared activity field takes the in-process branch
 /// that the assertions below describe.
 fn activity_reaches_the_generator() -> bool {
-    let activity = crate::server::servlet::enhancement_type();
+    let activity = crate::server::exercise::selected();
     activity == "mc" || activity == "cloze"
 }
 

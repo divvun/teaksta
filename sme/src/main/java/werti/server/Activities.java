@@ -14,7 +14,7 @@ import java.util.TreeMap;
  * @author Adriane Boyd
  *
  */
-// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities]
+// [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities+1]
 public class Activities implements Iterable<String> {
 
 	public static final String ATT_NAME = "werti.activities";
