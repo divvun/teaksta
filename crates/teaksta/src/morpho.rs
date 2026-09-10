@@ -20,7 +20,7 @@
 //! section (e.g. `spawn_blocking`), never directly from a worker thread.
 
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
 use anyhow::{Context as _, Result, anyhow, bail};
 use divvun_runtime::ast::PipelineHandle;
@@ -37,10 +37,36 @@ pub const BUNDLE_ENV: &str = "TEAKSTA_BUNDLE";
 /// Environment variable naming the normative generator `.hfstol`.
 pub const GENERATOR_ENV: &str = "TEAKSTA_GENERATOR";
 
+/// Why the normative generator could not be used. Every variant describes a
+/// fault in the transducer or its configuration, never an input the
+/// generator simply has no form for: an unknown form is an empty result,
+/// not an error, which is what keeps the `input+?` echo meaning "no such
+/// word form" and nothing else.
+#[derive(Debug, thiserror::Error)]
+pub enum GeneratorError {
+    #[error("{GENERATOR_ENV} is not set; point it at generator-gt-norm.hfstol")]
+    Unset,
+    #[error("reading generator transducer {path}: {message}")]
+    Read { path: String, message: String },
+    #[error("opening generator transducer {path}: {message}")]
+    Open { path: String, message: String },
+    #[error("generator {path} is not an optimized-lookup transducer")]
+    NotOptimizedLookup { path: String },
+    #[error("generator lookup failed for {input:?}: {message}")]
+    Lookup { input: String, message: String },
+}
+
+/// One pipeline's execution slot: `None` until its handle has been built,
+/// and emptied again when a run panics (see [`lock_slot`]). Slots are handed
+/// out of the registry by clone, so running a pipeline holds no registry
+/// lock — `PipelineHandle` is neither cloneable nor safe to `forward`
+/// through concurrently, so each one keeps its own lock instead.
+type HandleSlot = Arc<Mutex<Option<PipelineHandle>>>;
+
 pub struct MorphoPipeline {
     runtime: tokio::runtime::Runtime,
-    handles: Mutex<HashMap<&'static str, PipelineHandle>>,
-    generator: OnceLock<Result<Mutex<AnyTransducer>, String>>,
+    handles: Mutex<HashMap<&'static str, HandleSlot>>,
+    generator: OnceLock<Mutex<AnyTransducer>>,
 }
 
 static SHARED: OnceLock<MorphoPipeline> = OnceLock::new();
@@ -68,12 +94,14 @@ impl MorphoPipeline {
     fn run(&self, pipeline: &'static str, input: String) -> Result<Vec<PipelineValue>> {
         let bundle_path = std::env::var(BUNDLE_ENV)
             .map_err(|_| anyhow!("{BUNDLE_ENV} is not set; point it at the sme .drb bundle"))?;
-        let mut handles = self
-            .handles
-            .lock()
-            .map_err(|_| anyhow!("morpho pipeline lock poisoned"))?;
+        let slot = self.slot(pipeline);
+        // The registry lock is already released here: creating and running a
+        // pipeline reaches into divvun-runtime, cg3 and hfst, and a panic
+        // down there must cost this pipeline alone rather than poisoning the
+        // registry every other pipeline is looked up through.
+        let mut slot = lock_slot(&slot);
         self.runtime.block_on(async {
-            if !handles.contains_key(pipeline) {
+            if slot.is_none() {
                 let bundle = Bundle::from_bundle_named(&bundle_path, pipeline)
                     .await
                     .with_context(|| {
@@ -83,11 +111,9 @@ impl MorphoPipeline {
                     .create(serde_json::json!({}))
                     .await
                     .with_context(|| format!("creating pipeline {pipeline:?}"))?;
-                handles.insert(pipeline, handle);
+                *slot = Some(handle);
             }
-            let handle = handles
-                .get_mut(pipeline)
-                .expect("pipeline handle inserted above");
+            let handle = slot.as_mut().expect("pipeline handle created above");
             let mut stream = handle.forward(PipelineValue::String(input)).await;
             let mut values = Vec::new();
             while let Some(item) = stream.next().await {
@@ -98,6 +124,18 @@ impl MorphoPipeline {
             }
             Ok(values)
         })
+    }
+
+    /// The execution slot for a pipeline, created empty on first mention.
+    /// The registry lock covers this lookup and nothing else; a poisoned
+    /// registry is recovered rather than treated as fatal, since the map
+    /// holds names and slot handles that no pipeline run can tear.
+    fn slot(&self, pipeline: &'static str) -> HandleSlot {
+        let mut registry = self
+            .handles
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        Arc::clone(registry.entry(pipeline).or_default())
     }
 
     /// Runs a pipeline whose result is a single value and renders it as a
@@ -154,7 +192,10 @@ impl MorphoPipeline {
     /// fails), then a blank line closing the block. Non-lexical marker
     /// lines (the `ñôŃßĘńŠē` sentinel, `Word <begin> <end>` records) fail
     /// generation and are therefore echoed in their failure line, which is
-    /// exactly the echo the legacy readers key on.
+    /// exactly the echo the legacy readers key on. A generator that cannot
+    /// be loaded or read is an error, never that echo: the `+?` line states
+    /// that the generator knows no form for the input, and a broken
+    /// generator knows nothing about any input.
     pub fn generate(&self, input: &str) -> Result<String> {
         let transducer = self.generator()?;
         let mut out = String::new();
@@ -163,7 +204,7 @@ impl MorphoPipeline {
                 out.push('\n');
                 continue;
             }
-            let surfaces = lookup_surfaces(transducer, line);
+            let surfaces = lookup_surfaces(transducer, line)?;
             if surfaces.is_empty() {
                 out.push_str(line);
                 out.push('\t');
@@ -224,52 +265,91 @@ impl MorphoPipeline {
         Ok(spans)
     }
 
-    fn generator(&self) -> Result<&Mutex<AnyTransducer>> {
-        let loaded = self.generator.get_or_init(|| {
-            let path = std::env::var(GENERATOR_ENV).map_err(|_| {
-                format!("{GENERATOR_ENV} is not set; point it at generator-gt-norm.hfstol")
-            })?;
-            let bytes = std::fs::read(&path)
-                .map_err(|e| format!("reading generator transducer {path}: {e}"))?;
-            let input = IStream::new_owned(std::io::Cursor::new(bytes));
-            let mut stream = HfstInputStream::new_istream(input)
-                .map_err(|e| format!("opening generator transducer {path}: {e}"))?;
-            let transducer = stream
-                .read()
-                .map_err(|e| format!("reading generator transducer {path}: {e}"))?;
-            match &transducer {
-                AnyTransducer::OlW(_) | AnyTransducer::OlU(_) => {}
-                _ => {
-                    return Err(format!(
-                        "generator {path} is not an optimized-lookup transducer"
-                    ));
-                }
-            }
-            Ok(Mutex::new(transducer))
-        });
-        match loaded {
-            Ok(t) => Ok(t),
-            Err(e) => Err(anyhow!("{e}")),
+    /// The generator transducer, read from `TEAKSTA_GENERATOR` on first use.
+    /// Only a load that succeeded is remembered: a variable that is unset,
+    /// or names a file that cannot be read, fails this call alone, so an
+    /// operator who repairs the environment gets generation back on the next
+    /// request instead of after a restart. Two callers racing the first load
+    /// may both read the file; the loser's transducer is dropped.
+    fn generator(&self) -> Result<&Mutex<AnyTransducer>, GeneratorError> {
+        if let Some(transducer) = self.generator.get() {
+            return Ok(transducer);
+        }
+        let _ = self.generator.set(Mutex::new(load_generator()?));
+        Ok(self.generator.get().expect("generator stored above"))
+    }
+}
+
+/// Locks a pipeline's slot, recovering from poisoning. The handle a panicked
+/// run left behind is dropped rather than reused: its stream was abandoned
+/// mid-flight, and output the abandoned run never consumed would otherwise
+/// surface as the next caller's result. The next run pays one bundle load to
+/// rebuild it. Clearing the poison keeps that cost to the one run that
+/// followed the panic.
+fn lock_slot(slot: &Mutex<Option<PipelineHandle>>) -> MutexGuard<'_, Option<PipelineHandle>> {
+    match slot.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            slot.clear_poison();
+            let mut guard = poisoned.into_inner();
+            *guard = None;
+            guard
         }
     }
 }
 
+/// Reads the normative generator named by `TEAKSTA_GENERATOR`.
+fn load_generator() -> Result<AnyTransducer, GeneratorError> {
+    let path = std::env::var(GENERATOR_ENV).map_err(|_| GeneratorError::Unset)?;
+    let bytes = std::fs::read(&path).map_err(|e| GeneratorError::Read {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
+    let input = IStream::new_owned(std::io::Cursor::new(bytes));
+    let mut stream = HfstInputStream::new_istream(input).map_err(|e| GeneratorError::Open {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
+    let transducer = stream.read().map_err(|e| GeneratorError::Read {
+        path: path.clone(),
+        message: e.to_string(),
+    })?;
+    match &transducer {
+        AnyTransducer::OlW(_) | AnyTransducer::OlU(_) => Ok(transducer),
+        _ => Err(GeneratorError::NotOptimizedLookup { path }),
+    }
+}
+
 /// Flag-diacritic-aware lookup returning the surface string of each result
-/// path (non-diacritic symbols only).
-fn lookup_surfaces(transducer: &Mutex<AnyTransducer>, input: &str) -> Vec<String> {
-    let mut guard = match transducer.lock() {
-        Ok(guard) => guard,
-        Err(_) => return Vec::new(),
-    };
+/// path (non-diacritic symbols only). No result means the generator has no
+/// form for `input`; every other outcome is an error, so a caller cannot
+/// read a broken transducer as a word the generator does not know.
+fn lookup_surfaces(
+    transducer: &Mutex<AnyTransducer>,
+    input: &str,
+) -> Result<Vec<String>, GeneratorError> {
+    // The transducer is only ever read through here, so a panic that
+    // poisoned it cannot have left it half-written.
+    let mut guard = transducer
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let paths = match &mut *guard {
         AnyTransducer::OlW(t) => t.lookup_fd_string(input, -1, 10.0),
         AnyTransducer::OlU(t) => t.lookup_fd_string(input, -1, 10.0),
-        _ => return Vec::new(),
+        // `load_generator` stores no other kind, so this arm only fires if
+        // the two ever disagree about what an optimized-lookup transducer is.
+        _ => {
+            return Err(GeneratorError::Lookup {
+                input: input.to_string(),
+                message: "generator is not an optimized-lookup transducer".to_string(),
+            });
+        }
     };
-    let Ok(paths) = paths else {
-        return Vec::new();
-    };
-    paths
+    let paths = paths.map_err(|e| GeneratorError::Lookup {
+        input: input.to_string(),
+        message: e.to_string(),
+    })?;
+    Ok(paths
         .into_iter()
         .map(|path| {
             path.second
@@ -278,7 +358,7 @@ fn lookup_surfaces(transducer: &Mutex<AnyTransducer>, input: &str) -> Vec<String
                 .map(|sym| sym.as_str())
                 .collect::<String>()
         })
-        .collect()
+        .collect())
 }
 
 fn find_from(text: &str, cursor: usize, needle: &str) -> Option<usize> {
