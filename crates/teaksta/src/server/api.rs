@@ -29,16 +29,10 @@ use crate::context::Config;
 use crate::server::activities::Activities;
 use crate::server::processors::Processors;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
-use crate::types::Document;
+use crate::types::{Document, PIPELINE_LANGUAGE};
 use crate::util::html_enhancer::{HtmlEnhancer, sami_label};
 use crate::util::json_enhancer::JsonEnhancer;
 use crate::util::page_handler::PageHandler;
-
-/// The pipeline language the shipped activity descriptors declare. Every
-/// topic registers its pre- and postprocessor under `en` because no analysis
-/// engine was ever registered under `sme`; the pipelines behind that key are
-/// the North Sámi ones.
-const PIPELINE_LANGUAGE: &str = "en";
 
 /// How long a page fetch may take.
 const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
@@ -99,12 +93,13 @@ impl AppState {
     // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
     pub fn new(config: Config) -> Result<Self> {
         let started = Instant::now();
-        let mut activities = Activities::new(&config.activities_dir).with_context(|| {
-            format!(
-                "scanning activities under {}",
-                config.activities_dir.display()
-            )
-        })?;
+        let mut activities = Activities::new(&config.activities_dir, &config.classpath_root)
+            .with_context(|| {
+                format!(
+                    "scanning activities under {}",
+                    config.activities_dir.display()
+                )
+            })?;
 
         let names: Vec<String> = activities.iterator().cloned().collect();
         let topics = names

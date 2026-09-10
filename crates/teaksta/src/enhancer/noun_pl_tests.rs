@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::types::CgToken;
+use crate::types::PIPELINE_LANGUAGE;
 use crate::util::cas_utils;
 
 fn plural_reading() -> Vec<String> {
@@ -70,7 +71,7 @@ fn initialize_without_parameter_fails_and_leaves_field_unset() {
 #[test]
 fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     let enhancer = Vislcg3NounPlEnhancer::default();
-    let mut doc = Document::new("beanat beanat", "sme");
+    let mut doc = Document::new("beanat beanat", PIPELINE_LANGUAGE);
     doc.cg_tokens = vec![
         cg_token(0, 6, plural_reading()),
         cg_token(7, 13, plural_reading()),
@@ -102,7 +103,7 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
 #[test]
 fn process_ignores_readings_without_a_plural_case_tag() {
     let enhancer = Vislcg3NounPlEnhancer::default();
-    let mut doc = Document::new("čáhci", "sme");
+    let mut doc = Document::new("čáhci", PIPELINE_LANGUAGE);
     doc.cg_tokens = vec![cg_token(0, 6, singular_reading())];
 
     enhancer.process(&mut doc, Mode::Colorize).expect("process");
@@ -114,7 +115,7 @@ fn process_ignores_readings_without_a_plural_case_tag() {
 #[test]
 fn process_returns_early_when_the_cas_was_cancelled() {
     let enhancer = Vislcg3NounPlEnhancer::default();
-    let mut doc = Document::new("beanat", "sme");
+    let mut doc = Document::new("beanat", PIPELINE_LANGUAGE);
     doc.cg_tokens = vec![cg_token(0, 6, plural_reading())];
     cas_utils::add_enh_id(&mut doc, -1);
 

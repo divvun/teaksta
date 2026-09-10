@@ -97,11 +97,26 @@ pub struct EnhancementId {
     pub enh_id: i64,
 }
 
+/// The key the shipped activity descriptors register their pipelines under,
+/// and so what [`Document::language`] carries in a running deployment.
+///
+/// It reads as a language code and is not one: every topic registers its pre-
+/// and postprocessor under `en` because no analysis engine was ever registered
+/// under `sme`, and the pipelines behind that key are the North Sámi ones. It
+/// sits beside the document rather than beside the handlers so that a test
+/// builds one the pipelines would actually accept.
+pub const PIPELINE_LANGUAGE: &str = "en";
+
 /// The analysis document: the text under analysis plus one store per
 /// annotation type. Pipeline stages consume and extend the stores.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Document {
     pub text: String,
+    /// The registry key the pipelines processing this document are looked up
+    /// under — [`PIPELINE_LANGUAGE`] in a running deployment — and not the
+    /// language the text is written in, which nothing here records. Empty
+    /// means the document was reset, which is what
+    /// [`crate::util::cas_utils::has_been_reset`] reads it for.
     pub language: String,
     pub page: PageMap,
     pub tokens: Vec<Token>,

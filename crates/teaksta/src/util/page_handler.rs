@@ -176,12 +176,15 @@ mod tests {
     use super::*;
 
     use crate::server::activities::Activities;
+    use crate::types::PIPELINE_LANGUAGE;
 
     /// A registry built over a directory holding no activities, so no engine
-    /// pair is registered for any (language, topic).
+    /// pair is registered for any (language, topic). Nothing resolves a
+    /// descriptor, so the root the registry is handed is never reached.
     fn empty_processors() -> Processors {
         let activity_dir = tempfile::tempdir().expect("temp dir");
-        let mut activities = Activities::new(activity_dir.path()).expect("activities");
+        let mut activities =
+            Activities::new(activity_dir.path(), activity_dir.path()).expect("activities");
         Processors::new(&mut activities).expect("processors")
     }
 
@@ -244,7 +247,8 @@ mod tests {
             "http:--example.org-page",
             cache_dir.to_str().expect("utf-8 path"),
             "Sámegiella",
-            "sme",
+            // The key a request really carries, so the miss is the topic's.
+            PIPELINE_LANGUAGE,
             Mode::Colorize,
         );
 

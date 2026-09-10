@@ -7,7 +7,9 @@
 //!
 //! The descriptor files as read in from the XML file are expected to be class
 //! path expressions. If they can be found in the classpath, proper URLs will
-//! be returned.
+//! be returned. There is no JVM classpath on this platform, so the directory
+//! those expressions resolve against is named by the deployment configuration
+//! and handed to each activity configuration as it is built.
 //!
 //! The setters might refuse operation on purpose since configuration entries
 //! may be not overridable (aka read-only).
@@ -17,7 +19,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::path::{Path, PathBuf};
-use std::sync::{LazyLock, OnceLock};
+use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
@@ -42,58 +44,13 @@ pub type Properties = HashMap<String, String>;
 static ACT_PLACEHOLDER_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(ACT_PLACEHOLDER).expect("ACT_PLACEHOLDER is a literal pattern"));
 
-/// The JVM classpath has no counterpart on this platform, so descriptor
-/// lookups resolve against this directory instead. Defaults to the
-/// `TEAKSTA_CLASSPATH` environment variable, or the working directory.
-static CLASSPATH_ROOT: OnceLock<PathBuf> = OnceLock::new();
-
-/// Pins the directory that classpath expressions such as
-/// `/operators/vislcg3Pipe.xml` resolve against. Returns false when the root
-/// was already resolved, in which case the earlier value stands.
-pub fn set_classpath_root(root: impl Into<PathBuf>) -> bool {
-    CLASSPATH_ROOT.set(root.into()).is_ok()
-}
-
-/// The directory classpath expressions resolve against.
-pub fn classpath_root() -> &'static PathBuf {
-    CLASSPATH_ROOT.get_or_init(|| {
-        std::env::var_os("TEAKSTA_CLASSPATH")
-            .map(PathBuf::from)
-            .unwrap_or_else(default_classpath_root)
-    })
-}
-
-/// The descriptor tree, looked for where each of the two deployments puts it:
-/// `WEB-INF/classes` under the expanded web application, which is where the
-/// build copies `desc`, and otherwise the `desc` directory itself, which is
-/// where it sits in a source checkout. Falls back to the working directory,
-/// under which no descriptor resolves and every pipeline lookup reports the
-/// activity as unavailable.
-fn default_classpath_root() -> PathBuf {
-    let webapp = std::env::var_os(crate::context::WEBAPP_ROOT_ENV)
-        .map(PathBuf::from)
-        .or_else(|| std::env::current_dir().ok())
-        .unwrap_or_else(|| PathBuf::from("."));
-    let webapp = std::path::absolute(&webapp).unwrap_or(webapp);
-
-    let deployed = webapp.join("WEB-INF").join("classes");
-    if deployed.join("operators").is_dir() {
-        return deployed;
-    }
-    for ancestor in webapp.ancestors() {
-        let desc = ancestor.join("desc");
-        if desc.join("operators").is_dir() {
-            return desc;
-        }
-    }
-
-    PathBuf::from(".")
-}
-
 /// `Class#getResource(String)`: resolves a classpath expression to a `file:`
-/// URL, or null when the resource is not on the classpath.
-fn get_class_resource(name: &str) -> Option<String> {
-    let resolved = classpath_root().join(name.trim_start_matches('/'));
+/// URL, or null when the resource is not on the classpath. The JVM classpath
+/// has no counterpart on this platform, so the deployment's descriptor root —
+/// [`crate::context::Config::classpath_root`], carried here by the
+/// configuration that resolved against it — stands in for one.
+fn get_class_resource(classpath_root: &Path, name: &str) -> Option<String> {
+    let resolved = classpath_root.join(name.trim_start_matches('/'));
     if !resolved.exists() {
         return None;
     }
@@ -257,9 +214,13 @@ fn render_desc_map(desc: &HashMap<String, Option<String>>) -> String {
     )
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration]
+// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration+1]
 pub struct ActivityConfiguration {
     actbase_dir: String,
+    /// What this activity's descriptor classpath expressions resolved
+    /// against. There is no ambient classpath to consult, so the deployment's
+    /// descriptor root travels with the configuration that used it.
+    classpath_root: PathBuf,
     pre_desc: HashMap<String, Option<String>>,
     post_desc: HashMap<String, Option<String>>,
     client_config: HashMap<String, HashMap<String, ConfigValue>>,
@@ -350,7 +311,8 @@ impl ActivityConfiguration {
                     .iter()
                     .find_map(|p| p.attribute("desc"))
                     .unwrap_or("");
-                self.pre_desc.insert(lcode.clone(), get_class_resource(d));
+                let resolved = get_class_resource(&self.classpath_root, d);
+                self.pre_desc.insert(lcode.clone(), resolved);
 
                 // see above for pre pipeline
                 let n = lang_branch_nodes(&doc, &lcode, &["post"]).first().copied();
@@ -360,7 +322,8 @@ impl ActivityConfiguration {
                     .iter()
                     .find_map(|p| p.attribute("desc"))
                     .unwrap_or("");
-                self.post_desc.insert(lcode.clone(), get_class_resource(d));
+                let resolved = get_class_resource(&self.classpath_root, d);
+                self.post_desc.insert(lcode.clone(), resolved);
             }
         }
 
@@ -380,10 +343,10 @@ impl ActivityConfiguration {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
-    pub fn new(xml_activity_config: &Path) -> Result<ActivityConfiguration> {
-        match ActivityConfiguration::build(xml_activity_config) {
+    // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+    pub fn new(xml_activity_config: &Path, classpath_root: &Path) -> Result<ActivityConfiguration> {
+        match ActivityConfiguration::build(xml_activity_config, classpath_root) {
             Ok(res) => Ok(res),
             Err(e) => {
                 println!("{}", xml_activity_config.display());
@@ -394,7 +357,7 @@ impl ActivityConfiguration {
 
     /// The body of the constructor's `try` block; every failure below is
     /// caught by `new` and rethrown wrapped.
-    fn build(xml_activity_config: &Path) -> Result<ActivityConfiguration> {
+    fn build(xml_activity_config: &Path, classpath_root: &Path) -> Result<ActivityConfiguration> {
         let actbase_dir = absolute_path(parent_file(xml_activity_config).ok_or_else(|| {
             anyhow!(
                 "NullPointerException: {} has no parent directory",
@@ -403,6 +366,7 @@ impl ActivityConfiguration {
         })?)?;
         let mut res = ActivityConfiguration {
             actbase_dir,
+            classpath_root: classpath_root.to_path_buf(),
             client_config: HashMap::new(),
             server_pre_config: HashMap::new(),
             server_post_config: HashMap::new(),
@@ -701,10 +665,10 @@ impl fmt::Display for ConfigValue {
     }
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
-pub fn main(args: &[String]) -> Result<()> {
-    let ac = ActivityConfiguration::new(Path::new(&args[0]))?;
+// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+pub fn main(args: &[String], classpath_root: &Path) -> Result<()> {
+    let ac = ActivityConfiguration::new(Path::new(&args[0]), classpath_root)?;
     println!("{ac}");
 
     Ok(())

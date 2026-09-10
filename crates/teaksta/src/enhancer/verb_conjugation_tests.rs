@@ -4,6 +4,7 @@
 
 use super::*;
 use crate::types::CgToken;
+use crate::types::PIPELINE_LANGUAGE;
 use crate::util::cas_utils;
 
 fn reading(tags: &[&str]) -> Vec<String> {
@@ -35,7 +36,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
-    let mut doc = Document::new("Mun boadán ruoktot. Mun boadán.", "sme");
+    let mut doc = Document::new("Mun boadán ruoktot. Mun boadán.", PIPELINE_LANGUAGE);
     doc.cg_tokens = vec![
         CgToken {
             begin: 4,
@@ -87,7 +88,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
-    let mut doc = Document::new("Mun in boade.", "sme");
+    let mut doc = Document::new("Mun in boade.", PIPELINE_LANGUAGE);
     doc.cg_tokens = vec![
         CgToken {
             begin: 0,
@@ -105,7 +106,7 @@ fn process_skips_readings_missing_verb_or_person_tag() {
     assert!(doc.enhancements.is_empty());
 
     // An invalidated CAS is left untouched even when a reading matches.
-    let mut cancelled = Document::new("Mun boadán.", "sme");
+    let mut cancelled = Document::new("Mun boadán.", PIPELINE_LANGUAGE);
     cancelled.cg_tokens = vec![CgToken {
         begin: 4,
         end: 10,

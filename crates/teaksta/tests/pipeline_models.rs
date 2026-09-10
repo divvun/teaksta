@@ -20,7 +20,6 @@ use tempfile::TempDir;
 
 use teaksta::context::Config;
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
-use teaksta::server::activity_configuration::set_classpath_root;
 use teaksta::server::api::{AppState, routes};
 
 /// The page every enhancement test is run over.
@@ -52,18 +51,18 @@ fn repository_root() -> PathBuf {
 }
 
 /// The deployment every test is served from: the shipped activity tree and
-/// descriptors, with the caches under a directory of their own. Both the
-/// classpath and the model handles are process-wide, so this is built once.
+/// descriptors, with the caches under a directory of their own. The model
+/// handles are process-wide, so this is built once.
 fn deployment() -> &'static (Arc<AppState>, TempDir) {
     static DEPLOYMENT: OnceLock<(Arc<AppState>, TempDir)> = OnceLock::new();
     DEPLOYMENT.get_or_init(|| {
         let root = repository_root();
-        set_classpath_root(root.join("sme/desc"));
         let data = TempDir::new().expect("a data directory");
         let webapp = root.join("sme/src/main/webapp");
         let config = Config {
             listen: "127.0.0.1:0".to_string(),
             activities_dir: webapp.join("activities"),
+            classpath_root: root.join("sme/desc"),
             webapp_root: webapp,
             webapp_dist: None,
             analysis_dir: data.path().join("analysed"),

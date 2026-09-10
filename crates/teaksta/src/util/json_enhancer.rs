@@ -40,6 +40,7 @@ impl<'a> JsonEnhancer<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
     use std::collections::HashMap;
 
     use crate::types::Enhancement;
@@ -75,7 +76,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.json-enhancer-fn+1/test]
     #[test]
     fn the_constructor_stores_the_cas_and_exercise_unchanged() {
-        let cas = Document::new("beana", "sme");
+        let cas = Document::new("beana", PIPELINE_LANGUAGE);
 
         let enhancer = JsonEnhancer::new(&cas, Mode::Click);
 

@@ -272,6 +272,13 @@ impl HtmlSentenceAnnotator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
+
+    /// A key no detector is ever registered under. `sme` is the case that
+    /// bites: the deployment processes North Sámi, and a document naming the
+    /// language of its text rather than the key its pipelines are registered
+    /// under finds nothing here.
+    const UNREGISTERED_LANGUAGE: &str = "sme";
 
     fn token(begin: usize, end: usize) -> Token {
         Token {
@@ -297,7 +304,7 @@ mod tests {
     /// sentence covering both. `block` says whether the second word opened a
     /// block box of its own in the page the text came from.
     fn two_spans(block: bool) -> (Document, Vec<PlainTextSentenceAnnotation>) {
-        let mut doc = Document::new("mun guolli", "sme");
+        let mut doc = Document::new("mun guolli", PIPELINE_LANGUAGE);
         doc.relevant_texts.push(relevant(0, 3));
         doc.relevant_texts.push(RelevantText {
             block_start: block,
@@ -329,7 +336,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
     #[test]
     fn process_refuses_a_language_that_has_no_detector() {
-        let mut doc = Document::new("Mun boran guoli.", "sme");
+        let mut doc = Document::new("Mun boran guoli.", UNREGISTERED_LANGUAGE);
         doc.tokens.push(token(0, 3));
 
         let err = OpenNlpSentenceDetector::new()
@@ -345,7 +352,8 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
     #[test]
     fn process_masks_tokens_before_detector_lookup() {
-        let mut doc = Document::new("Mun", "sme");
+        // The masking failure wins over the lookup that would have failed too.
+        let mut doc = Document::new("Mun", UNREGISTERED_LANGUAGE);
         doc.tokens.push(token(0, 99));
 
         let err = OpenNlpSentenceDetector::new()
@@ -357,11 +365,13 @@ mod tests {
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn/test]
     #[test]
-    fn process_over_english_yields_at_least_one_sentence() {
+    fn process_over_the_registered_key_yields_sentences() {
         let mut detector = OpenNlpSentenceDetector::new();
         detector.initialize().unwrap();
 
-        let mut doc = Document::new("Mun boran guoli.", "en");
+        // North Sámi text under the key the pipelines are registered under,
+        // which is the pair a running deployment hands the detector.
+        let mut doc = Document::new("Mun boran guoli.", PIPELINE_LANGUAGE);
         doc.tokens.push(token(0, 3));
         doc.tokens.push(token(4, 9));
         doc.tokens.push(token(10, 16));
@@ -387,7 +397,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_keeps_sentence_whole_without_relevant_text() {
-        let mut doc = Document::new("Mun boran guoli.", "sme");
+        let mut doc = Document::new("Mun boran guoli.", PIPELINE_LANGUAGE);
 
         HtmlSentenceAnnotator::new()
             .process(&mut doc, &[plain(0, 16)])
@@ -400,7 +410,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_keeps_sentence_whole_within_one_span() {
-        let mut doc = Document::new("Mun boran guoli.", "sme");
+        let mut doc = Document::new("Mun boran guoli.", PIPELINE_LANGUAGE);
         doc.relevant_texts.push(relevant(0, 16));
 
         HtmlSentenceAnnotator::new()
@@ -426,7 +436,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_never_breaks_before_the_first_span() {
-        let mut doc = Document::new("mun guolli", "sme");
+        let mut doc = Document::new("mun guolli", PIPELINE_LANGUAGE);
         doc.relevant_texts.push(RelevantText {
             block_start: true,
             ..relevant(0, 3)
@@ -443,7 +453,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2/test]
     #[test]
     fn html_process_appends_one_annotation_per_sentence() {
-        let mut doc = Document::new("Mun boran. Guolli lea buorre.", "sme");
+        let mut doc = Document::new("Mun boran. Guolli lea buorre.", PIPELINE_LANGUAGE);
         doc.sentences.push(SentenceAnnotation { begin: 0, end: 0 });
 
         HtmlSentenceAnnotator::new()

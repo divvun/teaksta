@@ -1023,7 +1023,8 @@ mod tests {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Articles", ACTIVITY_WITHOUT_LANGUAGES);
         write_activity(dir.path(), "Nouns", ACTIVITY_WITHOUT_LANGUAGES);
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = Activities::new(dir.path(), Path::new("./teaksta-absent-descriptors"))
+            .expect("registry builds");
 
         let processors = Processors::new(&mut activities).expect("construction succeeds");
 
@@ -1038,7 +1039,8 @@ mod tests {
     fn processors_aborts_when_a_descriptor_url_is_missing() {
         let dir = TempDir::new().expect("temp dir");
         write_activity(dir.path(), "Nouns", ACTIVITY_WITH_UNRESOLVABLE_DESCRIPTORS);
-        let mut activities = Activities::new(dir.path()).expect("registry builds");
+        let mut activities = Activities::new(dir.path(), Path::new("./teaksta-absent-descriptors"))
+            .expect("registry builds");
 
         let Err(err) = Processors::new(&mut activities) else {
             panic!("a missing descriptor URL must abort construction");

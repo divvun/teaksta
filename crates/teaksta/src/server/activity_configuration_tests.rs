@@ -22,9 +22,15 @@ const ACTIVITY_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 </activity>
 "#;
 
+/// The descriptor root every fixture here resolves against: a directory that
+/// holds no descriptors, so a pipeline expression resolves to nothing and each
+/// test is about the configuration rather than the tree behind it.
+const NO_DESCRIPTORS: &str = "./teaksta-absent-descriptors";
+
 fn blank_config(actbase_dir: &str) -> ActivityConfiguration {
     ActivityConfiguration {
         actbase_dir: actbase_dir.to_string(),
+        classpath_root: PathBuf::from(NO_DESCRIPTORS),
         pre_desc: HashMap::new(),
         post_desc: HashMap::new(),
         client_config: HashMap::new(),
@@ -280,13 +286,13 @@ fn load_xml_fails_on_lang_code_with_apostrophe() {
     assert!(err.to_string().contains("XPathExpressionException"));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
 #[test]
 fn constructor_records_parent_dir_as_activity_base() {
     let dir = tempfile::tempdir().unwrap();
     let path = write_activity(dir.path(), ACTIVITY_XML);
 
-    let cfg = ActivityConfiguration::new(&path).unwrap();
+    let cfg = ActivityConfiguration::new(&path, Path::new(NO_DESCRIPTORS)).unwrap();
 
     assert_eq!(cfg.actbase_dir, dir.path().to_str().unwrap());
     assert_eq!(
@@ -296,22 +302,47 @@ fn constructor_records_parent_dir_as_activity_base() {
     assert!(cfg.client_config.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
+#[test]
+fn constructor_resolves_descriptors_under_the_given_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = write_activity(dir.path(), ACTIVITY_XML);
+    let descriptors = dir.path().join("desc");
+    std::fs::create_dir_all(descriptors.join("operators")).unwrap();
+    let pre = descriptors.join("operators/teaksta-absent-pre.xml");
+    std::fs::write(&pre, "<analysisEngineDescription/>").unwrap();
+
+    let cfg = ActivityConfiguration::new(&path, &descriptors).unwrap();
+
+    // The expression resolves under the root it was handed, and the one with
+    // no file behind it stays unresolved rather than failing the build.
+    assert_eq!(
+        cfg.get_pre_desc("sme"),
+        Some(format!("file://{}", pre.display()))
+    );
+    assert_eq!(cfg.get_post_desc("sme"), None);
+    // A second configuration over the same activity resolves against its own
+    // root, so nothing about the first is remembered process-wide.
+    let elsewhere = ActivityConfiguration::new(&path, Path::new(NO_DESCRIPTORS)).unwrap();
+    assert_eq!(elsewhere.get_pre_desc("sme"), None);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
 #[test]
 fn constructor_wraps_missing_file_as_io_exception() {
     let dir = tempfile::tempdir().unwrap();
 
-    let err = ActivityConfiguration::new(&dir.path().join("absent.xml"))
+    let err = ActivityConfiguration::new(&dir.path().join("absent.xml"), Path::new(NO_DESCRIPTORS))
         .err()
         .unwrap();
 
     assert_eq!(err.to_string(), "IOException");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
 #[test]
 fn constructor_rejects_path_without_parent_directory() {
-    let err = ActivityConfiguration::new(Path::new("activity.xml"))
+    let err = ActivityConfiguration::new(Path::new("activity.xml"), Path::new(NO_DESCRIPTORS))
         .err()
         .unwrap();
 
@@ -375,7 +406,7 @@ fn get_value_returns_none_for_unknown_lang_key() {
 fn get_client_value_always_returns_none() {
     let dir = tempfile::tempdir().unwrap();
     let path = write_activity(dir.path(), ACTIVITY_XML);
-    let cfg = ActivityConfiguration::new(&path).unwrap();
+    let cfg = ActivityConfiguration::new(&path, Path::new(NO_DESCRIPTORS)).unwrap();
 
     assert_eq!(cfg.get_client_value("sme", "colorizeStyle"), None);
     assert_eq!(cfg.get_client_value("sme", "AdvTags"), None);
@@ -489,7 +520,7 @@ fn set_server_post_value_writes_post_branch_only() {
 fn set_client_value_silently_discards_every_write() {
     let dir = tempfile::tempdir().unwrap();
     let path = write_activity(dir.path(), ACTIVITY_XML);
-    let mut cfg = ActivityConfiguration::new(&path).unwrap();
+    let mut cfg = ActivityConfiguration::new(&path, Path::new(NO_DESCRIPTORS)).unwrap();
 
     assert!(!cfg.set_client_value("sme", "enhancement", "Adverbial"));
     assert!(!cfg.set_client_value("sme", "colorizeStyle", "blue"));
@@ -675,25 +706,30 @@ fn config_value_display_appends_flag_suffix() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1/test]
 #[test]
 fn main_loads_activity_named_by_first_argument() {
     let dir = tempfile::tempdir().unwrap();
     let path = write_activity(dir.path(), ACTIVITY_XML);
     let args = vec![path.to_str().unwrap().to_string()];
 
-    main(&args).unwrap();
+    main(&args, Path::new(NO_DESCRIPTORS)).unwrap();
 
     let absent = vec![dir.path().join("absent.xml").to_str().unwrap().to_string()];
-    assert_eq!(main(&absent).unwrap_err().to_string(), "IOException");
+    assert_eq!(
+        main(&absent, Path::new(NO_DESCRIPTORS))
+            .unwrap_err()
+            .to_string(),
+        "IOException"
+    );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1/test]
 #[test]
 fn main_panics_when_no_argument_is_given() {
     let outcome = std::panic::catch_unwind(|| {
         let no_args: Vec<String> = Vec::new();
-        main(&no_args)
+        main(&no_args, Path::new(NO_DESCRIPTORS))
     });
 
     assert!(outcome.is_err());

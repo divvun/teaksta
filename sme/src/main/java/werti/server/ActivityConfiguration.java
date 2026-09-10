@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
  * @author Niels Ott
  * @version $Id: ActivityConfiguration.java 1071 2011-06-01 15:39:42Z adriane@SFS.UNI-TUEBINGEN.DE $
  */
-// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration]
+// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration+1]
 public class ActivityConfiguration {
 	
 	/**
@@ -167,8 +167,8 @@ public class ActivityConfiguration {
 	
 	
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
 	public ActivityConfiguration(File xmlActivityConfig) throws IOException  {
 		try {
 			actbaseDir = xmlActivityConfig.getParentFile().getAbsolutePath();
@@ -487,8 +487,8 @@ public class ActivityConfiguration {
 		
 	}
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
 	public static void main(String[] args) throws IOException {
 		
 		ActivityConfiguration ac = new ActivityConfiguration(new File(args[0]));

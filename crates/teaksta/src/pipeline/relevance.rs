@@ -40,6 +40,7 @@ impl GenericRelevanceAnnotator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::PIPELINE_LANGUAGE;
     use crate::types::RelevantText;
 
     const PAGE: &str = concat!(
@@ -48,7 +49,7 @@ mod tests {
     );
 
     fn annotated(html: &str) -> Document {
-        let mut doc = Document::new(html, "sme");
+        let mut doc = Document::new(html, PIPELINE_LANGUAGE);
         GenericRelevanceAnnotator::new().process(&mut doc).unwrap();
         doc
     }
@@ -104,7 +105,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2/test]
     #[test]
     fn process_appends_to_the_existing_relevant_text_store() {
-        let mut doc = Document::new(PAGE, "sme");
+        let mut doc = Document::new(PAGE, PIPELINE_LANGUAGE);
         doc.relevant_texts.push(RelevantText {
             begin: 100,
             end: 200,

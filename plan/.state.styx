@@ -51,4 +51,5 @@ assertions (
     {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
+    {id hd-config, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T22:55:19.563549Z}
 )
