@@ -224,6 +224,15 @@ children (
                 id dj-server
                 title "Native poem server: no servlet cosplay, no wait page, analyzer language gate"
                 deps (dj-annotate)
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T20:05:46.81519Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
 
             {
