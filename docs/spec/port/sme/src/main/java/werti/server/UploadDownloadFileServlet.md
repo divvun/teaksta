@@ -31,15 +31,19 @@
 > Empty content detects as nothing and is not a page. The comparison is a
 > substring test, so a detected `text/html; charset=UTF-8` matches `text/html`.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
 > pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf>
+>
+> pub fn file_url(stored: &Path) -> Result<String>
 >
 > async fn upload_text(mut multipart: Multipart, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
 > `POST /api/upload` takes a teacher's text as `multipart/form-data` and, if
 > it passes every gate, stores it and answers the `file:` URL it is now
 > reachable at — which is what the enhancement endpoints take as their `url`.
+> The two upload directories are among the few a `file:` address may name
+> there, so an accepted text is reachable and a path outside them is not.
 >
 > The body is walked field by field. The first field carrying a filename is
 > the text, whatever its field name; a field named `keep` whose value is
@@ -63,8 +67,12 @@
 > `keep` was asked for and the temporary directory otherwise, under a
 > ten-character random alphanumeric name, and set owner-read-only so it can be
 > neither executed nor rewritten. The reply is a JSON object whose single
-> `url` member is the `file:` URL of the absolute stored path. Nothing is
-> redirected and no HTML is written: the caller decides what to do next.
+> `url` member is the `file:` URL of the absolute stored path, built from that
+> path rather than written around it: a deployment whose upload directory
+> carries a space or a non-ASCII character hands back an address that reads
+> back to the file it names, which is what the enhancement endpoints then do
+> with it. Nothing is redirected and no HTML is written: the caller decides
+> what to do next.
 >
 > A failure that is not a gate — the analyser being unavailable, the store
 > being unwritable — is a 500, because it is the deployment's fault rather

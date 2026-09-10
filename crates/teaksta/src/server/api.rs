@@ -8,10 +8,14 @@
 //! requests wanting different exercises do not contend. Requests are answered
 //! directly: analysing a page takes well under a second, so nothing is served
 //! while the caller waits.
+//!
+//! An address a request carries is vetted by [`crate::server::fetch`] before
+//! anything is opened, so what an endpoint here holds is already a target this
+//! deployment is willing to read.
 
 use std::any::Any;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use anyhow::{Context as _, Result};
 use poem::endpoint::StaticFilesEndpoint;
@@ -31,15 +35,13 @@ use tracing::{info, warn};
 
 use crate::context::Config;
 use crate::server::activities::Activities;
+use crate::server::fetch::{self, Overloaded, Refusal, Unreachable};
 use crate::server::processors::Processors;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::{Document, PIPELINE_LANGUAGE};
 use crate::util::html_enhancer::{HtmlEnhancer, sami_label};
 use crate::util::json_enhancer::JsonEnhancer;
 use crate::util::page_handler::PageHandler;
-
-/// How long a page fetch may take.
-const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// What the upload body may weigh, counting the multipart framing around the
 /// file the cap in [`MAX_UPLOAD_BYTES`] applies to.
@@ -253,8 +255,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -264,12 +266,14 @@ async fn enhance_page(
     let mode = parse_mode(&query.mode)?;
     let activity = known_topic(&state, query.activity)?;
     let url = page_url(&query.url)?;
-    let requested = url.to_string();
+    let target = fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
+    let requested = target.address().to_string();
+    let key = cache_key(url.as_str());
 
     let started = Instant::now();
+    let source = fetch::fetch(target).await.map_err(failure)?;
     let page = blocking(move || {
-        let source = fetch_page(&url)?;
-        let document = state.analyse(&activity, mode, &source, &cache_key(url.as_str()))?;
+        let document = state.analyse(&activity, mode, &source, &key)?;
         HtmlEnhancer::new(&document).enhance(Some(mode), url.as_str())
     })
     .await?;
@@ -348,15 +352,27 @@ async fn enhance_spans(
     let state = state.0.clone();
     let mode = parse_mode(&request.mode)?;
     let activity = known_topic(&state, request.activity)?;
-    let source = match (request.html, request.url) {
-        (Some(html), None) => Source::Inline(html),
-        (None, Some(url)) => Source::Fetched(page_url(&url)?),
+
+    let started = Instant::now();
+    // The page is keyed by its address when it is fetched and by its own
+    // content when it arrives inline, so neither is answered from the other's
+    // analysis.
+    let (page, key) = match (request.html, request.url) {
+        (Some(html), None) => {
+            let key = cache_key(&html);
+            (html, key)
+        }
+        (None, Some(raw)) => {
+            let url = page_url(&raw)?;
+            let target =
+                fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
+            let key = cache_key(url.as_str());
+            (fetch::fetch(target).await.map_err(failure)?, key)
+        }
         _ => return Err(bad_request("give exactly one of \"html\" and \"url\"")),
     };
 
-    let started = Instant::now();
     let spans = blocking(move || {
-        let (page, key) = source.read()?;
         let document = state.analyse(&activity, mode, &page, &key)?;
         JsonEnhancer::new(&document, mode).enhance()
     })
@@ -372,27 +388,8 @@ async fn enhance_spans(
         .body(spans))
 }
 
-/// Where the page under analysis comes from.
-enum Source {
-    Inline(String),
-    Fetched(Url),
-}
-
-impl Source {
-    /// The page, paired with the key its analysis is cached under.
-    fn read(self) -> Result<(String, String)> {
-        match self {
-            Source::Inline(html) => {
-                let key = cache_key(&html);
-                Ok((html, key))
-            }
-            Source::Fetched(url) => Ok((fetch_page(&url)?, cache_key(url.as_str()))),
-        }
-    }
-}
-
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
 #[handler]
 async fn upload_text(
     mut multipart: Multipart,
@@ -475,9 +472,19 @@ where
     }
 }
 
-/// A page that could not be fetched is the far end's failure; anything else
-/// is ours.
+/// An address this deployment will not fetch is the caller's mistake, and is
+/// named as such; a page that could not be fetched is the far end's failure;
+/// a fetch that found no slot is a load the deployment is asked to shed;
+/// anything else is ours.
 fn failure(error: anyhow::Error) -> poem::Error {
+    if let Some(refusal) = error.downcast_ref::<Refusal>() {
+        info!("Refused an address: {refusal}");
+        return bad_request(&refusal.to_string());
+    }
+    if error.downcast_ref::<Overloaded>().is_some() {
+        warn!("{error:#}");
+        return poem::Error::from_string(format!("{error:#}"), StatusCode::SERVICE_UNAVAILABLE);
+    }
     if error.downcast_ref::<Unreachable>().is_some() {
         info!("{error:#}");
         return poem::Error::from_string(format!("{error:#}"), StatusCode::BAD_GATEWAY);
@@ -485,11 +492,6 @@ fn failure(error: anyhow::Error) -> poem::Error {
     warn!("{error:?}");
     poem::Error::from_string(format!("{error:#}"), StatusCode::INTERNAL_SERVER_ERROR)
 }
-
-/// The page could not be read from where the request pointed.
-#[derive(Debug, thiserror::Error)]
-#[error("the page at {0} could not be fetched")]
-struct Unreachable(String);
 
 fn bad_request(message: &str) -> poem::Error {
     poem::Error::from_string(message.to_string(), StatusCode::BAD_REQUEST)
@@ -509,6 +511,10 @@ fn known_topic(state: &AppState, activity: String) -> poem::Result<String> {
 
 /// Reads the address a request points at. A bare host with no scheme is
 /// taken as `http`, which is what a learner types into an address field.
+///
+/// This only parses. Whether the address is one this deployment will fetch is
+/// [`fetch::target`]'s decision, and every caller makes it before reading
+/// anything.
 pub fn page_url(raw: &str) -> poem::Result<Url> {
     let raw = raw.trim();
     let absolute = if raw.contains("://") || raw.starts_with("file:") {
@@ -551,30 +557,6 @@ pub fn cache_key(subject: &str) -> String {
         "v{CACHE_FORMAT_VERSION}-{}",
         &digest.to_hex()[..CACHE_KEY_BYTES * 2]
     )
-}
-
-/// The page as fetched. A `file:` address is read from disk, which is how an
-/// accepted upload is reached.
-fn fetch_page(url: &Url) -> Result<String> {
-    let unreachable = || Unreachable(url.to_string());
-
-    if url.scheme() == "file" {
-        let path = url.to_file_path().map_err(|_| unreachable())?;
-        return std::fs::read_to_string(&path)
-            .map_err(|error| anyhow::Error::new(error).context(unreachable()));
-    }
-
-    let client = reqwest::blocking::Client::builder()
-        .timeout(FETCH_TIMEOUT)
-        .build()?;
-    let response = client
-        .get(url.clone())
-        .send()
-        .and_then(reqwest::blocking::Response::error_for_status)
-        .map_err(|error| anyhow::Error::new(error).context(unreachable()))?;
-    response
-        .text()
-        .map_err(|error| anyhow::Error::new(error).context(unreachable()))
 }
 
 #[cfg(test)]

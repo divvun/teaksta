@@ -21,8 +21,10 @@
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
+use std::path::PathBuf;
 
 use anyhow::{Result, anyhow};
+use reqwest::Url;
 use tracing::{debug, error, info};
 
 use crate::pipeline::flow::{Flow, Parameters};
@@ -213,29 +215,24 @@ fn produce_analysis_engine(
     })
 }
 
-/// The path component of a URL, as `java.net.URL#getPath` reports it. A bare
-/// filesystem path is returned unchanged.
-fn url_path(url: &str) -> &str {
-    if let Some(rest) = url.strip_prefix("file:") {
-        return match rest.strip_prefix("//") {
-            Some(authority_and_path) => match authority_and_path.find('/') {
-                Some(slash) => &authority_and_path[slash..],
-                None => "",
-            },
-            None => rest,
-        };
+/// The filesystem path a descriptor URL names, as `java.net.URL#getPath`
+/// reports it.
+///
+/// A `file:` URL is read back with `Url::to_file_path`, which is the encoding
+/// `get_class_resource` wrote it with read the other way, so a descriptor tree
+/// under a directory carrying a space is still found. A bare filesystem path,
+/// which is not a URL at all, is returned unchanged.
+fn url_path(url: &str) -> PathBuf {
+    let Ok(parsed) = Url::parse(url) else {
+        return PathBuf::from(url);
+    };
+    if parsed.scheme() == "file"
+        && let Ok(path) = parsed.to_file_path()
+    {
+        return path;
     }
 
-    match url.find("://") {
-        Some(scheme_end) => {
-            let authority_and_path = &url[scheme_end + 3..];
-            match authority_and_path.find('/') {
-                Some(slash) => &authority_and_path[slash..],
-                None => "",
-            }
-        }
-        None => url,
-    }
+    PathBuf::from(parsed.path())
 }
 
 fn element_child<'a, 'i>(
@@ -546,8 +543,9 @@ impl Processors {
             ));
         };
 
-        debug!("Loading AE descriptor from url:  {}", url_path(descriptor));
-        let xml_input = std::fs::read_to_string(url_path(descriptor))?;
+        let path = url_path(descriptor);
+        debug!("Loading AE descriptor from url:  {}", path.display());
+        let xml_input = std::fs::read_to_string(&path)?;
         let description = parse_analysis_engine_description(&xml_input, descriptor)?;
         Ok(description)
     }
@@ -663,7 +661,9 @@ mod tests {
     }
 
     fn file_url(path: &Path) -> String {
-        format!("file://{}", path.display())
+        Url::from_file_path(path)
+            .expect("an absolute path")
+            .to_string()
     }
 
     fn description_with(pairs: &[(&str, ParameterValue)]) -> AnalysisEngineDescription {

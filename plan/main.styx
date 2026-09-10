@@ -371,12 +371,20 @@ children (
                 id hd-fetch
                 title "Fetch hardening: shared client, file: confinement, SSRF policy, encoded file URLs"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:25.644788Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Security triad + idiom H9/H10, all on the page-fetch path. (1) api.rs:455-459: file: scheme reads any local path — GET /api/enhance?url=file:///etc/passwd works; confine to config.upload_keep_dir/upload_temp_dir after canonicalization. (2) SSRF: no scheme/host policy on http(s), and page_url (api.rs:431-439) prepends http:// to bare hosts; block link-local/metadata/private ranges (the service fetches arbitrary public pages by design, so the policy is deny-private, not allowlist). (3) Idiom H9 / panic 8: fresh reqwest::blocking::Client per fetch (api.rs:461-463) — each spawns a dedicated OS thread + runtime; ~512 tarpit URLs with FETCH_TIMEOUT=20s exhaust the blocking pool and starve /api/upload. One static LazyLock client with the timeout baked in, plus a concurrency cap on the fetch path. (4) Idiom H10: file: URLs built by format!(\"file://{path}\") with no percent-encoding (upload.rs:245, activity_configuration.rs:100-105) and round-tripped through Url::parse at api.rs:438 — a deployment path with a space breaks all uploads; use Url::from_file_path."
+                    }
+
+                    {
+                        at 2026-09-10T23:28:23.207286Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
