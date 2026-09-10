@@ -54,12 +54,40 @@ pub fn set_classpath_root(root: impl Into<PathBuf>) -> bool {
     CLASSPATH_ROOT.set(root.into()).is_ok()
 }
 
-fn classpath_root() -> &'static PathBuf {
+/// The directory classpath expressions resolve against.
+pub fn classpath_root() -> &'static PathBuf {
     CLASSPATH_ROOT.get_or_init(|| {
         std::env::var_os("TEAKSTA_CLASSPATH")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from("."))
+            .unwrap_or_else(default_classpath_root)
     })
+}
+
+/// The descriptor tree, looked for where each of the two deployments puts it:
+/// `WEB-INF/classes` under the expanded web application, which is where the
+/// build copies `desc`, and otherwise the `desc` directory itself, which is
+/// where it sits in a source checkout. Falls back to the working directory,
+/// under which no descriptor resolves and every pipeline lookup reports the
+/// activity as unavailable.
+fn default_classpath_root() -> PathBuf {
+    let webapp = std::env::var_os(crate::context::WEBAPP_ROOT_ENV)
+        .map(PathBuf::from)
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("."));
+    let webapp = std::path::absolute(&webapp).unwrap_or(webapp);
+
+    let deployed = webapp.join("WEB-INF").join("classes");
+    if deployed.join("operators").is_dir() {
+        return deployed;
+    }
+    for ancestor in webapp.ancestors() {
+        let desc = ancestor.join("desc");
+        if desc.join("operators").is_dir() {
+            return desc;
+        }
+    }
+
+    PathBuf::from(".")
 }
 
 /// `Class#getResource(String)`: resolves a classpath expression to a `file:`

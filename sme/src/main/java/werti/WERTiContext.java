@@ -82,8 +82,8 @@ public class WERTiContext {
 
 	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory]
 	private static abstract class InputStreamFactory {
-		// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
-		// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
+		// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2]
+		// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2]
 		public abstract InputStream requestInputStream(String model);
 	}
 
@@ -135,8 +135,8 @@ public class WERTiContext {
 		commoninit();
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2]
 	@SuppressWarnings("serial")
 	private static void commoninit() throws WERTiContextException {
 		assert(byteDispenser != null);

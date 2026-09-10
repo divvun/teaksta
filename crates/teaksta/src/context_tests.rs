@@ -246,7 +246,7 @@ fn make_path_for_model_concatenates_and_nulls_missing() {
     assert_eq!(make_path_for_model("onlptokenizer.en"), "nullnull");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2/test]
 #[test]
 fn request_input_stream_opens_resource_or_none() {
     let root = std::env::current_dir().expect("a working directory");
@@ -295,7 +295,7 @@ fn request_input_stream_opens_resource_or_none() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2/test]
 #[test]
 fn commoninit_loads_the_properties_once_through_the_dispenser() {
     let statics = Statics::take();
@@ -323,7 +323,26 @@ fn commoninit_loads_the_properties_once_through_the_dispenser() {
     assert_eq!(recorded(&requested).len(), 1);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2/test]
+#[test]
+fn commoninit_survives_an_absent_properties_resource() {
+    let _statics = Statics::take();
+    let requested = Arc::new(Mutex::new(Vec::new()));
+    *byte_dispenser_mut() = Some(Box::new(FakeStreams {
+        requested: Arc::clone(&requested),
+        contents: HashMap::new(),
+    }));
+
+    commoninit().expect("a deployment without WERTi.properties still initialises");
+
+    assert_eq!(recorded(&requested), vec![PROPERTIES_PATH.to_string()]);
+    assert!(get_property("models.base").is_none());
+    // The table is set, so the load is not retried on the next call.
+    assert!(properties().is_some());
+    assert!(models_mut().is_some());
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2/test]
 #[test]
 fn commoninit_registers_three_language_tables_of_failing_thunks() {
     let statics = Statics::take();

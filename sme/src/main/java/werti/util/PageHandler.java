@@ -56,8 +56,8 @@ public class PageHandler {
 	 * @return CAS containing annotation
 	 * @throws ServletException
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
 	public JCas process() throws ServletException {
 		AnalysisEngine preprocessor = processors.getPreprocessor(lang, topic);
 		AnalysisEngine postprocessor = processors.getPostprocessor(lang, topic);

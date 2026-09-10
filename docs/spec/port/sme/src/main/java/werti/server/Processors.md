@@ -97,7 +97,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn]
 > public Processors(Activities activities) throws IOException, ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
 > Eagerly builds every UIMA pipeline instance the server will ever use, so model
 > files are loaded once at startup rather than per request. Initialises `preMap`
 > and `postMap` to empty string-keyed sorted maps, then iterates the activity names
@@ -135,4 +135,17 @@
 > leaves the maps partially populated on the discarded instance. The declared I/O
 > exception is never actually thrown: I/O failures are converted to servlet
 > exceptions.
+>
+> Port divergence: producing an engine builds its fixed flow as concrete
+> annotator instances instead of resolving each delegate specifier to a further
+> descriptor and that descriptor to a reflectively loaded annotator class. Every
+> annotator the shipped `sme` descriptors name is a type in the port, so the
+> delegate key from `<fixedFlow>` selects it directly and the aggregate's
+> configuration-parameter settings — the descriptor defaults with the activity's
+> `server-cfg` entries laid over them — initialise it. The descriptor still
+> decides which stages run, in which order and with which parameters; the
+> `<import>` locations are parsed and never followed, and a parameter declared
+> only on a delegate falls back to that delegate's own default. A delegate key
+> naming an annotator the port does not carry fails as a resource-initialization
+> error, which is one of the four kinds caught and rethrown above.
 

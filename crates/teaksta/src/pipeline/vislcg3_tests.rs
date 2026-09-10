@@ -142,7 +142,7 @@ fn to_cg3_input_reports_span_outside_text() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_builds_token_and_drops_surface() {
     let annotator = Vislcg3Annotator::new();
@@ -164,7 +164,7 @@ fn parse_cg_output_builds_token_and_drops_surface() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_drops_indent_keeps_later_readings() {
     let annotator = Vislcg3Annotator::new();
@@ -182,7 +182,7 @@ fn parse_cg_output_drops_indent_keeps_later_readings() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_collapses_blanks_leaving_bare_cohorts() {
     let annotator = Vislcg3Annotator::new();
@@ -195,7 +195,7 @@ fn parse_cg_output_collapses_blanks_leaving_bare_cohorts() {
     assert!(tokens[1].readings.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_discards_readings_before_first_cohort() {
     let annotator = Vislcg3Annotator::new();
@@ -207,7 +207,7 @@ fn parse_cg_output_discards_readings_before_first_cohort() {
     assert_eq!(tokens[0].readings, vec![reading(&["\"mun\"", "Pron"])]);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_without_cohort_header_yields_nothing() {
     let annotator = Vislcg3Annotator::new();
@@ -221,7 +221,87 @@ fn parse_cg_output_without_cohort_header_yields_nothing() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
+#[test]
+fn parse_cg_output_skips_escaped_blank_markers() {
+    let annotator = Vislcg3Annotator::new();
+    let cg = "\"<Mun>\"\n\t\"mun\" Pron Pers Sg1 Nom @SUBJ>\n:\\n\n\"<.>\"\n\t\".\" CLB\n:\\n\n";
+
+    let tokens = annotator.parse_cg_output(cg).unwrap();
+
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(
+        tokens[0].readings,
+        vec![reading(&[
+            "\"mun\"", "Pron", "Pers", "Sg1", "Nom", "@SUBJ>"
+        ])]
+    );
+    assert_eq!(tokens[1].readings, vec![reading(&["\".\"", "CLB"])]);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
+#[test]
+fn parse_cg_output_drops_weight_and_tracking_tags() {
+    let annotator = Vislcg3Annotator::new();
+    let cg = concat!(
+        "\"<viesu>\"\n",
+        "\t\"viessu\" N Sem/Build Sg Acc <W:0.0> <firstCohortOfParagraph> ",
+        "<LastCohortOfParagraph> @<OBJ\n",
+        "\t\"viessu\" N <W:1.5> <firstCohort> <LastCohort> Sg Gen\n"
+    );
+
+    let tokens = annotator.parse_cg_output(cg).unwrap();
+
+    assert_eq!(
+        tokens[0].readings,
+        vec![
+            reading(&["\"viessu\"", "N", "Sem/Build", "Sg", "Acc", "@<OBJ"]),
+            reading(&["\"viessu\"", "N", "Sg", "Gen"]),
+        ]
+    );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
+#[test]
+fn parse_cg_output_keeps_semantic_angle_bracket_tags() {
+    let annotator = Vislcg3Annotator::new();
+    let cg = "\"<viesu>\"\n\t\"viessu\" N <sme> Sg Acc <W:0.0>\n";
+
+    let tokens = annotator.parse_cg_output(cg).unwrap();
+
+    assert_eq!(
+        tokens[0].readings,
+        vec![reading(&["\"viessu\"", "N", "<sme>", "Sg", "Acc"])]
+    );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
+#[test]
+fn parse_cg_output_folds_subreading_into_parent() {
+    let annotator = Vislcg3Annotator::new();
+    let cg = "\"<girjeráju>\"\n\t\"rádju\" N Sg Gen\n\t\t\"girji\" N Cmp/SgNom Cmp\n\t\"rádju\" N Sg Acc\n";
+
+    let tokens = annotator.parse_cg_output(cg).unwrap();
+
+    assert_eq!(
+        tokens[0].readings,
+        vec![
+            reading(&[
+                "\"rádju\"",
+                "N",
+                "Sg",
+                "Gen",
+                "\"girji\"",
+                "N",
+                "Cmp/SgNom",
+                "Cmp"
+            ]),
+            reading(&["\"rádju\"", "N", "Sg", "Acc"]),
+        ]
+    );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2/test]
 #[test]
 fn parse_cg_output_reports_index_error_on_whitespace() {
     let annotator = Vislcg3Annotator::new();

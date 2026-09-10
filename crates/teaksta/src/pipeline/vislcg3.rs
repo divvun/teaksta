@@ -109,6 +109,35 @@ static PUNCTUATION_PATTERN: LazyLock<Regex> =
 static SENTENCE_FINAL_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^[.!?()]+$").expect("sentence final pattern"));
 
+/// The cohort-tracking markers CG-3 attaches to a reading. They sit among
+/// the linguistic tags but describe the reading's place in the stream, not
+/// the word, and the enhancers match tag sequences literally — a tracking
+/// marker left in place ends up inside a span id and inside the analysis
+/// string handed to the generator.
+const TRACKING_TAGS: [&str; 4] = [
+    "firstCohort",
+    "LastCohort",
+    "firstCohortOfParagraph",
+    "LastCohortOfParagraph",
+];
+
+/// True for a reading weight (`<W:0.0>`) or a cohort-tracking marker.
+fn is_runtime_tag(tag: &str) -> bool {
+    let Some(inner) = tag
+        .strip_prefix('<')
+        .and_then(|inner| inner.strip_suffix('>'))
+    else {
+        return false;
+    };
+    inner.starts_with("W:") || TRACKING_TAGS.contains(&inner)
+}
+
+/// How many levels of indentation a reading line carries. CG-3 writes one
+/// level per subreading depth.
+fn indent_depth(line: &str) -> usize {
+    line.chars().take_while(|c| *c == ' ' || *c == '\t').count()
+}
+
 // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator]
 #[derive(Debug, Clone)]
 pub struct Vislcg3Annotator {
@@ -358,8 +387,8 @@ impl Vislcg3Annotator {
     /*
      * helper for parsing output from vislcg3 back into our CGTokens
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
     fn parse_cg_output(&self, cg_output: &str) -> Result<Vec<CgToken>> {
         let mut result: Vec<CgToken> = Vec::new();
 
@@ -379,8 +408,8 @@ impl Vislcg3Annotator {
                 // create new token; the surface form inside "<...>" is discarded
                 current = Some(CgToken::default());
                 current_readings = Vec::new();
-            // case 2: a reading in the current cohort
-            } else {
+            // case 2: a reading in the current cohort, which CG-3 indents
+            } else if line.starts_with([' ', '\t']) {
                 // split reading line into tags
                 let temp = java_split(&WHITESPACE_PATTERN, line);
                 if temp.is_empty() {
@@ -396,9 +425,18 @@ impl Vislcg3Annotator {
                     // tail and the new element as head
                     reading.insert(0, temp[i].to_string());
                 }
-                // add the reading
-                current_readings.push(reading);
+                reading.retain(|tag| !is_runtime_tag(tag));
+                // a subreading is indented one level deeper and qualifies the
+                // reading above it, so its tags extend that reading
+                match current_readings.last_mut() {
+                    Some(parent) if indent_depth(line) > 1 => parent.extend(reading),
+                    // add the reading
+                    _ => current_readings.push(reading),
+                }
             }
+            // Any other line is the stream's own punctuation rather than a
+            // reading: the escaped blank between two cohorts (`:` followed by
+            // the escaped text of the blank), or a trace line.
         }
         if let Some(mut last) = current.take() {
             // save last token

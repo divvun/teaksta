@@ -63,6 +63,14 @@ static MODELS: RwLock<Option<HashMap<String, HashMap<ModelClass, Model>>>> = RwL
 
 const PROPS: &str = "/WERTi.properties";
 
+/// Environment variable naming the properties file by filesystem path,
+/// bypassing the context-relative lookup entirely.
+pub const PROPERTIES_ENV: &str = "TEAKSTA_PROPERTIES";
+
+/// Environment variable naming the expanded web application root that
+/// context-relative locations resolve against.
+pub const WEBAPP_ROOT_ENV: &str = "TEAKSTA_WEBAPP_ROOT";
+
 /// `System.getProperty("werti.serverProperties", PROPS)`. There is no JVM
 /// system-property table here, so the override is read from the process
 /// environment under the same name.
@@ -210,8 +218,8 @@ impl Model {
 
 // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory]
 trait InputStreamFactory: Send + Sync {
-    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2]
     fn request_input_stream(&self, model: &str) -> Option<InputStream>;
 }
 
@@ -249,14 +257,21 @@ impl InputStreamFactory for ServletContextStreamFactory {
 }
 
 /// `ServletContext#getRealPath(String)`. The container stand-in carries no
-/// deployment directory of its own, so a context-relative location resolves
-/// against the process working directory — where the expanded webapp sits when
-/// the server is started from it.
+/// deployment directory of its own, so the expanded web application root is
+/// named by [`WEBAPP_ROOT_ENV`], falling back to the process working
+/// directory for a server started from the expanded webapp.
 fn real_path(location: &str) -> String {
-    let root = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    root.join(location.trim_start_matches('/'))
+    webapp_root()
+        .join(location.trim_start_matches('/'))
         .to_string_lossy()
         .into_owned()
+}
+
+fn webapp_root() -> PathBuf {
+    match std::env::var_os(WEBAPP_ROOT_ENV) {
+        Some(root) => PathBuf::from(root),
+        None => std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+    }
 }
 
 /// `ServletContext#getResourceAsStream(String)`: the resource read whole, or
@@ -316,6 +331,25 @@ fn init_props(is: Option<InputStream>) -> Result<Properties> {
     }
 }
 
+/// The properties resource, read from the path [`PROPERTIES_ENV`] names when
+/// it is set and through the installed dispenser otherwise.
+fn properties_stream() -> Option<InputStream> {
+    if let Some(path) = std::env::var_os(PROPERTIES_ENV) {
+        let path = PathBuf::from(path);
+        return match std::fs::read(&path) {
+            Ok(bytes) => Some(bytes),
+            Err(e) => {
+                warn!("Could not access {}: {}", path.display(), e);
+                None
+            }
+        };
+    }
+
+    byte_dispenser()
+        .as_ref()
+        .and_then(|dispenser| dispenser.request_input_stream(PROPERTIES_PATH.as_str()))
+}
+
 /// The private no-argument `init()`: installs a class-loader-backed dispenser
 /// and leaves [`CONTEXT`] unset, so every model thunk that needs the context
 /// real path fails afterwards.
@@ -345,16 +379,22 @@ fn no_loader(what: &str, detail: &str) -> Box<dyn StdError + Send + Sync> {
     ))
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2]
 fn commoninit() -> Result<()> {
     debug_assert!(byte_dispenser().is_some());
 
     if properties().is_none() {
-        let is = byte_dispenser()
-            .as_ref()
-            .and_then(|dispenser| dispenser.request_input_stream(PROPERTIES_PATH.as_str()));
-        let p = init_props(is)?;
+        let p = match init_props(properties_stream()) {
+            Ok(p) => p,
+            // The shipped file only names OpenNLP model paths, none of which
+            // the North Sámi pipeline reads, so a deployment without one is
+            // configured rather than broken.
+            Err(absent) => {
+                warn!("{}", absent);
+                Properties::new()
+            }
+        };
         *properties_mut() = Some(p);
     }
 

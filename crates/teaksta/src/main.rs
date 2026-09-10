@@ -7,12 +7,13 @@
 //! converts the response model back.
 //!
 //! The deployment paths `web.xml` hard-coded under `/home/teaksta` are read
-//! from the environment instead, defaulting under `./data/`. Two consumers
-//! resolve their own resources against the process working directory rather
-//! than through any of these settings: `crate::context` loads
-//! `WERTi.properties` from it, and `TEAKSTA_WEBAPP_ROOT` defaults to it for
-//! the `/activities` lookup — so the server expects to be started from the
-//! expanded web application root.
+//! from the environment instead, defaulting under `./data/`.
+//!
+//! `TEAKSTA_WEBAPP_ROOT` names the expanded web application: the `/activities`
+//! lookup, the `WERTi.properties` load and the descriptor classpath are all
+//! resolved from it, and it defaults to the working directory for a server
+//! started from the webapp root. `TEAKSTA_PROPERTIES` overrides the properties
+//! file by path and `TEAKSTA_CLASSPATH` the descriptor root.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
@@ -31,10 +32,11 @@ use rand::Rng;
 use rand::distr::Alphanumeric;
 use tracing::{error, info, warn};
 
-use teaksta::morpho::BUNDLE_ENV;
+use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
 use teaksta::server::activities::{
     HttpServletRequest as SessionRequest, HttpSession, ServletContext as SessionContext,
 };
+use teaksta::server::activity_configuration::classpath_root;
 use teaksta::server::servlet::{
     HttpServletRequest as WertiRequest, HttpServletResponse, ServletConfig,
     ServletContext as WertiContext, WertiServlet,
@@ -414,8 +416,20 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
     let config = config_from_env();
-    if std::env::var(BUNDLE_ENV).is_err() {
-        warn!("{BUNDLE_ENV} is not set; every analysis request will fail");
+    for name in [BUNDLE_ENV, GENERATOR_ENV] {
+        if std::env::var(name).is_err() {
+            warn!("{name} is not set; every analysis request will fail");
+        }
+    }
+    info!("Webapp root {}", config.webapp_root.display());
+    let classpath = classpath_root();
+    if classpath.join("operators").is_dir() {
+        info!("Descriptors under {}", classpath.display());
+    } else {
+        warn!(
+            "No descriptor tree under {}; every topic will report itself unavailable",
+            classpath.display()
+        );
     }
 
     let state = Arc::new(AppState {
