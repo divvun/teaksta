@@ -16,7 +16,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn]
 > private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2]
 > Parses the FST generator output file and attaches multiple-choice distractors to the span tags
 > collected during `process`, emitting one `Enhancement` per successfully enhanced token.
 >
@@ -43,7 +43,9 @@
 >    appended last. A new `Enhancement` is then created on `cas` with `relevant = true`,
 >    `begin`/`end` as parsed, `enhanceStart = spanTag.getSpanTagStart()` (start tag including the
 >    attributes just added), `enhanceEnd = spanTag.getSpanTagEnd()` (`</span>`), and added to the CAS
->    indexes with `cas.addFsToIndexes(e)`.
+>    indexes with `cas.addFsToIndexes(e)`. `distractforms` and `splitted_go` are then cleared: the
+>    block just consumed described this token and no other, so a second `Word` line arriving before
+>    the next marker is ignored exactly as an empty `distractforms` is.
 > 3. Line containing the marker string `ñôŃßĘńŠē`: closes the accumulated record. `splitted_go` is set
 >    to `generatorOutput.split("\\s")` and kept for the answer attribute; `generatorOutput` is reset to
 >    `""`; `distractforms` is reset to `""`; a fresh `HashSet<String>` is created for de-duplication.
@@ -67,7 +69,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn]
 > private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2]
 > Cloze-activity counterpart of `generateSpanTagWithDistractors`: parses the FST generator output file
 > and attaches the set of generated surface forms to the span tags collected during `process`.
 >
@@ -86,7 +88,9 @@
 >    possible_forms)` is applied to it — no `answer` attribute is added, unlike the distractor path. A
 >    new `Enhancement` is created on `cas` with `relevant = true`, the parsed `begin`/`end`,
 >    `enhanceStart = spanTag.getSpanTagStart()`, `enhanceEnd = spanTag.getSpanTagEnd()` (`</span>`),
->    and added with `cas.addFsToIndexes(e)`.
+>    and added with `cas.addFsToIndexes(e)`. `possible_forms` is then cleared: the block just
+>    consumed described this token and no other, so a second `Word` line arriving before the next
+>    marker is ignored exactly as an empty `possible_forms` is.
 > 3. Line containing the marker string `ñôŃßĘńŠē`: closes the accumulated record. `generatorOutput` is
 >    reset to `""`, `possible_forms` is reset to `""`, and a fresh `HashSet<String>` is created. The
 >    accumulated text is tokenised on whitespace and every token containing neither `+` nor `-` that is
@@ -142,7 +146,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2]
 > Consumes `CGToken` annotations (with their `CGReading` feature-structure array) and produces
 > `Enhancement` annotations wrapping every token whose morphological reading is an infinite verb form.
 >
@@ -189,10 +193,10 @@
 >     insert, so the first occurrence stays at 1 and there is no `-0` suffix.
 >   - Creates `word = new Word(cgt.getBegin(), cgt.getEnd())`.
 >   - Builds the start tag as `<span id="` + `EnhancerUtils.get_id("WERTi-span-" + spanReadingString,
->     classCounts.get(spanReadingString).value)` + `" class="wertiviewtoken  wertiviewInfiniteVerb">`.
+>     classCounts.get(spanReadingString).value)` + `" class="wertiviewtoken wertiviewInfiniteVerb">`.
 >     `get_id` appends `-` and the count, so the id has the shape
->     `WERTi-span-<reading-with-dashes>-<n>`; the class attribute contains two spaces between
->     `wertiviewtoken` and `wertiviewInfiniteVerb`.
+>     `WERTi-span-<reading-with-dashes>-<n>`; the class attribute holds `wertiviewtoken` and
+>     `wertiviewInfiniteVerb` separated by a single space.
 >   - Wraps it in a `SpanTag`, calls `addAttribute("lemma", lemma)` on it, and stores it in
 >     `wordToSpanMap` keyed by `word`.
 >   - When `isMcActivity`: computes `writeMorphologicalForms(reading_str)` and writes it to
@@ -204,6 +208,10 @@
 >   - Else (`colorize`, `click`, or any other value): creates an `Enhancement` on the CAS immediately,
 >     with `relevant = true`, `begin`/`end` from `word`, `enhanceStart = spanTag.getSpanTagStart()`,
 >     `enhanceEnd = spanTag.getSpanTagEnd()` (`</span>`), and adds it with `cas.addFsToIndexes(e)`.
+>
+> In the two generator branches, a reading the topic cannot turn into a generator input — one with
+> no `+` for the lemma cut to land on — is reported at debug level and contributes no record. Only
+> that reading is dropped; the token walk carries on and every other token is still enhanced.
 >
 > After the token loop both writers are closed. When `isMcActivity`, builds the argv
 > `{"/bin/sh", "-c", "/bin/cat <input> | " + lookupLoc + " " + lookupFlags + " " + invertedFST + " > "
@@ -235,7 +243,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2]
 > Strips analysis tags that the normative generator FST does not accept from `input_str` and returns
 > the result; the argument is not mutated (the local reference is rebound).
 >
@@ -244,18 +252,15 @@
 > `+Err/MissingSpace`, `+Err/MissingHyph`, `+Err/Hyph`, `+Err/SpaceCmp`, `+Err/Spellrelax`,
 > `+Allegro`, and finally the regex `\+<([a-zA-Z]*+_*+)*+>`.
 >
-> For every element except the last: if the string contains that literal, every occurrence of it is
-> replaced with the empty string (a plain literal `String.replace`, not a regex).
+> For every element except the last: every occurrence of that literal is replaced with the empty
+> string (a plain literal `String.replace`, not a regex). The literals are applied longest first
+> rather than in declaration order, because `+Err/Orth` is a prefix of `+Err/Orth-a-á`,
+> `+Err/Orth-nom-gen` and `+Err/Orth-nom-acc`: removing the prefix first would leave the orphan
+> suffixes `-a-á`, `-nom-gen` and `-nom-acc` behind, where the longer literals no longer match.
+> Longest first, each of the four comes out whole.
 >
-> For the last element only: it is compiled as a `java.util.regex.Pattern` and matched against the
-> string. If a match is found, the matched text (`group(0)`) is taken and every literal occurrence of
-> exactly that text is replaced with the empty string.
->
-> Quirk: because `+Err/Orth` is processed before `+Err/Orth-a-á`, `+Err/Orth-nom-gen` and
-> `+Err/Orth-nom-acc`, those three literals can never match — the shared prefix has already been
-> removed, leaving the orphan suffixes `-a-á`, `-nom-gen` and `-nom-acc` in the string. Quirk: only the
-> first regex match is used, so a string carrying two differently-spelled `<xxx_xxx>` tags keeps the
-> second one.
+> For the last element only: it is compiled as a `java.util.regex.Pattern` and every match is removed,
+> so a string carrying two differently-spelled `<xxx_xxx>` tags loses both.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag]
 > public class SpanTag {
@@ -266,18 +271,17 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn]
-> Splices an attribute into the stored start tag: replaces every occurrence of the literal `>` in
-> `spanTagStart` with `attributeName + "=\"" + attributeValue + "\">"`, assigning the result back to
-> `spanTagStart`. The effect on a well-formed start tag is that the attribute is inserted immediately
-> before the tag's closing angle bracket.
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn+2]
+> Splices exactly one attribute into the stored start tag, immediately before the last `>` in
+> `spanTagStart` and separated from whatever precedes it by a space, assigning the result back to
+> `spanTagStart`.
 >
-> No space is emitted before the attribute name, so the result runs the new attribute straight onto the
-> preceding one, e.g. `class="wertiviewtoken  wertiviewInfiniteVerb"lemma="boahtit">`. The attribute
-> value is not HTML-escaped or quote-escaped.
->
-> Quirk: the replacement is a plain literal `String.replace`, which rewrites *every* `>` in the current
-> start tag, so an attribute value that itself contains `>` corrupts all later `addAttribute` calls.
+> The separating space keeps the new attribute off the preceding one, e.g.
+> `class="wertiviewtoken wertiviewInfiniteVerb" lemma="boahtit">`. The value is HTML-escaped for a
+> double-quoted attribute — `&`, `<`, `>` and `"` become `&amp;`, `&lt;`, `&gt;` and `&quot;` — so no
+> value can close the attribute or the tag. Only the last `>` is spliced before, so a `>` already
+> inside the start tag stays where it is, and a `spanTagStart` holding no `>` is left exactly as it
+> was.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.equals-fn]
 > @Override public boolean equals(Object obj)
@@ -449,7 +453,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn]
 > private String writeLemmaAndAnalyses(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn+2]
 > Builds the single generator-input line for the cloze activity from a `+`-joined reading string, and
 > returns it. Writes nothing itself despite the name.
 >
@@ -466,14 +470,15 @@
 > 6. That line is passed through `removeTags` to strip the error and allegro tags the normative
 >    generator does not accept, and the stripped line is returned.
 >
-> A `reading_str` with no `+` makes step 1 throw `StringIndexOutOfBoundsException` (`indexOf` returns
-> -1). Quirk: step 2's `length() - 1` truncation is not guarded by any check for what the last
+> A `reading_str` with no `+` makes step 1 report a failure (`indexOf` returns -1); `process` logs
+> that at debug level and drops the one reading, leaving every other token of the document enhanced.
+> Quirk: step 2's `length() - 1` truncation is not guarded by any check for what the last
 > character actually is, so the last analysis tag always loses its final character.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn]
 > private String writeMorphologicalForms(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn+2]
 > Builds the block of generator-input lines for the multiple-choice activity from a `+`-joined reading
 > string, and returns it. Writes nothing itself despite the name.
 >
@@ -484,8 +489,8 @@
 >
 > Steps:
 >
-> 1. `lemma` is the substring of `reading_str` before its first `+`; a `reading_str` with no `+` throws
->    `StringIndexOutOfBoundsException`.
+> 1. `lemma` is the substring of `reading_str` before its first `+`; a `reading_str` with no `+`
+>    reports a failure, which `process` logs at debug level before dropping that one reading.
 > 2. For each of the twelve analyses in order, appends `lemma + "+" + analysis + "\n"` to the
 >    accumulated `generationInput`.
 > 3. Appends the correct answer as the thirteenth and last line: if `reading_str.indexOf("@")` is

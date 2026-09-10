@@ -15,7 +15,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn]
 > private void generateSpanTagWithDistractors(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2]
 > Reads the generator output file at `cg3GeneratorOutputFileLoc` and attaches the
 > generated distractor forms to the `SpanTag` objects previously registered in
 > `wordToSpanMap`, then emits one `Enhancement` annotation per enhanced token.
@@ -39,9 +39,12 @@
 >    tag. Then construct a new `Enhancement` on the CAS with `relevant = true`,
 >    `begin`, `end`, `enhanceStart = spanTag.getSpanTagStart()` and
 >    `enhanceEnd = spanTag.getSpanTagEnd()` (`"</span>"`), and add it to the CAS
->    indexes via `cas.addFsToIndexes(e)`; log the enhancement at info level. If
->    `distractforms` is empty the whole `Word` line is ignored, so that token
->    receives no enhancement at all.
+>    indexes via `cas.addFsToIndexes(e)`; log the enhancement at info level.
+>    Finally clear `distractforms` and `splitted_go`: the block just consumed
+>    described this token and no other. If `distractforms` is empty the whole
+>    `Word` line is ignored, so that token receives no enhancement at all —
+>    which is also what a second `Word` line arriving before the next marker
+>    gets.
 > 3. The trimmed line contains the marker string `ñôŃßĘńŠē`: this closes the
 >    generator output block for one token. Build a `StringTokenizer` over the
 >    accumulated `generatorOutput` (default whitespace delimiters), set
@@ -66,14 +69,12 @@
 > whose offsets were never registered raises a `NullPointerException` that escapes
 > as an unchecked exception. Quirk: `splitted_go` is captured at marker time and
 > its last element is used verbatim as the `answer` attribute — this relies on the
-> correct form being the final line written into the generator input. Quirk:
-> `distractforms` is not cleared after a `Word` line is consumed, so a second
-> `Word` line arriving before the next marker reuses the same distractors.
+> correct form being the final line written into the generator input.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn]
 > private void generateSpanTagWithPossibleForms(JCas cas, String cg3GeneratorOutputFileLoc, Map<Word, SpanTag> wordToSpanMap)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2]
 > The cloze-activity counterpart of `generateSpanTagWithDistractors`. Reads the
 > generator output file at `cg3GeneratorOutputFileLoc` and attaches the set of
 > generated surface forms to the `SpanTag` objects in `wordToSpanMap`, emitting
@@ -95,7 +96,9 @@
 >    `Enhancement` on the CAS with `relevant = true`, `begin`, `end`,
 >    `enhanceStart = spanTag.getSpanTagStart()` and
 >    `enhanceEnd = spanTag.getSpanTagEnd()` (`"</span>"`), and register it with
->    `cas.addFsToIndexes(e)`.
+>    `cas.addFsToIndexes(e)`. Finally clear `possible_forms`: the block just
+>    consumed described this token and no other, so a second `Word` line
+>    before the next marker is ignored like an empty one.
 > 3. Line contains the marker `ñôŃßĘńŠē`: tokenize the accumulated
 >    `generatorOutput` with a `StringTokenizer` (default whitespace delimiters),
 >    reset `generatorOutput` and `possible_forms` to `""`, and create a fresh
@@ -111,9 +114,7 @@
 > `printStackTrace()`d, so read failures silently produce no enhancements.
 >
 > Quirk: `wordToSpanMap.get(currentWord)` is not null-checked and a
-> `NullPointerException` escapes when the offsets were never registered. Quirk:
-> `possible_forms` is not cleared after a `Word` line is consumed, so a second
-> `Word` line before the next marker reuses the same form list.
+> `NullPointerException` escapes when the offsets were never registered.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.initialize-fn]
 > @Override public void initialize(UimaContext context) throws ResourceInitializationException
@@ -161,7 +162,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2]
 > The annotator entry point. Consumes `CGToken` annotations (each carrying an
 > `FSArray` of `CGReading`, where a `CGReading` is a `NonEmptyStringList` of
 > morphological tags) and produces `Enhancement` annotations wrapping the matched
@@ -180,19 +181,24 @@
 > - `posPattern` = `N\+`
 > - `numberPattern` = the concatenation, in order, of these eight strings (the
 >   first seven each end with a trailing `|`, forming one alternation):
->   `([a-zA-Z]*+[0-9]*+\+)?(Sem/([a-zA-Z]*+_*+)*+\+)?Sg|Pl\+Nom(\+<([a-zA-Z]*+_*+)*+>)?(\+[a-zA-Z]*+[0-9])?(\+[a-zA-Z]*+)?(\+Foc/[a-zA-Z]*+)?(\+[a-zA-Z]*+)?|`
->   then the same shape with `Acc`, `Gen`, `Ill`, `Loc`, `Com`, `Ess` substituted
->   for `Nom`, and finally
+>   `([a-zA-Z]*+[0-9]*+\+)?(Sem/([a-zA-Z]*+_*+)*+\+)?(Sg|Pl)\+Nom(\+<([a-zA-Z]*+_*+)*+>)?(\+[a-zA-Z]*+[0-9])?(\+[a-zA-Z]*+)?(\+Foc/[a-zA-Z]*+)?(\+[a-zA-Z]*+)?|`
+>   then the same shape with `Acc`, `Gen`, `Ill`, `Loc` and `Com` substituted for
+>   `Nom`, then the number-less essive
+>   `([a-zA-Z]*+[0-9]*+\+)?(Sem/([a-zA-Z]*+_*+)*+\+)?\+Ess(\+<([a-zA-Z]*+_*+)*+>)?(\+[a-zA-Z]*+[0-9])?(\+[a-zA-Z]*+)?(\+Foc/[a-zA-Z]*+)?(\+[a-zA-Z]*+)?|`
+>   and finally
 >   `([a-zA-Z]*+[0-9]*+\+)?(Sem/([a-zA-Z]*+_*+)*+\+)?\+Attr(\+<([a-zA-Z]*+_*+)*+>)?(\+[a-zA-Z]*+[0-9])?(\+[a-zA-Z]*+)?(\+Foc/[a-zA-Z]*+)?(\+[a-zA-Z]*+)?`
 >   with no trailing `|`.
 > - `excludePattern` = `V\+|A\+(?!.*Pred)|Det|Pr$|Pron\+|Pcle|Adv|Interj|CC|CS|ACR\+Dyn`
 > - `hintPattern` = `Pr$`
 > - `validHintPattern` = `A\+|Det|Adv`
 >
-> Quirk: because `|` binds looser than concatenation, each `…Sg|Pl\+Nom…`
-> alternative actually decomposes into a branch ending in bare `Sg` and a branch
-> starting at `Pl\+Nom`, so `numberPattern` matches any reading string merely
-> containing `Sg` (or `Pl`), not only the intended number+case combinations.
+> The number alternation is grouped, so a branch is one number followed by one
+> case: `numberPattern` accepts exactly the thirteen number-and-case
+> combinations the `NTags` parameter names — `Sg`/`Pl` against each of `Nom`,
+> `Acc`, `Gen`, `Ill`, `Loc` and `Com` — plus the essive, which that list names
+> without a number and which the analyser emits without one, and the
+> attributive. A reading carrying a bare `Sg` or `Pl` and no case tag is not on
+> topic and is not selected.
 >
 > Creates `classCounts`, a `HashMap<String, MutableInt>` used to number span ids,
 > and an `FSIterator` over `cas.getAnnotationIndex(CGToken.type)`. Computes a
@@ -250,10 +256,11 @@
 >   new `MutableInt` (value 1), present means `increment()`.
 > - Builds `word = new Word(cgt.getBegin(), cgt.getEnd())`.
 > - Builds the span start tag as
->   `"<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count) + "\" class=\"wertiviewtoken  wertiviewSubstantive\">"`,
+>   `"<span id=\"" + EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count) + "\" class=\"wertiviewtoken wertiviewSubstantive\">"`,
 >   where `get_id` returns `spanClass + "-" + id` and `count` is the current
->   counter value. Note the two spaces between the class names
->   `wertiviewtoken` and `wertiviewSubstantive`.
+>   counter value. The two class names are separated by a single space; the
+>   front end selects on class-list membership, so the id and the two names
+>   are otherwise exactly as before.
 > - Wraps it in a `SpanTag` and calls `addAttribute("lemma", lemma)`.
 > - If `hintID` is non-empty AND `hintDistance < 4` AND `isValidHint`, also calls
 >   `addAttribute("hintid", hintID)`.
@@ -266,6 +273,12 @@
 > - Else if the activity is `cloze`: calls `writeLemmaAndAnalyses(reading_str)`
 >   and writes to `cg3GeneratorInputWriterCloze` the returned block, then
 >   `"ñôŃßĘńŠē\n"`, then `word.toString()`.
+> - In either of those two branches, a reading the topic cannot turn into a
+>   generator input — one whose case marker carries no number to cut at, one
+>   with no `+` at all — is reported at debug level and contributes no record.
+>   Only that reading is dropped: the token walk continues and every other
+>   token is still enhanced. The span stays in `wordToSpanMap`, where nothing
+>   looks it up because no `Word` record names its offsets.
 > - Otherwise (`colorize`, `click`, anything else): immediately builds an
 >   `Enhancement` on the CAS with `relevant = true`, `begin` and `end` from
 >   `word`, `enhanceStart = spanTag.getSpanTagStart()` and
@@ -314,32 +327,31 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2]
 > Strips from `input_str` the analysis tags that the normative generator FST does
-> not accept, returning the cleaned string. Iterates the `tags_tbr` field array in
-> declaration order:
+> not accept, returning the cleaned string. The `tags_tbr` field array declares
+> them in this order:
 >
 > `"+Err/Orth"`, `"+Err/Orth-a-á"`, `"+Err/Orth-nom-gen"`, `"+Err/Orth-nom-acc"`,
 > `"+Err/CmpSub"`, `"+Err/MissingSpace"`, `"+Err/MissingHyph"`, `"+Err/Hyph"`,
 > `"+Err/SpaceCmp"`, `"+Err/Spellrelax"`, `"+Allegro"`, and finally the regex
 > `"\\+<([a-zA-Z]*+_*+)*+>"`.
 >
-> For every element except the last, the element is treated as a literal: if
-> `input_str` contains it, every occurrence is replaced with the empty string.
+> Every element except the last is a literal, and the literals are applied
+> longest first rather than in declaration order: every occurrence of each is
+> replaced with the empty string. The order is what makes the four
+> `+Err/Orth-*` variants come out whole — `+Err/Orth` is a prefix of all four,
+> and stripping it first would leave `-a-á`, `-nom-gen` or `-nom-acc` behind
+> where the longer literal no longer matches. Applying the longer entries
+> first leaves the shorter one to match only where it genuinely stands alone,
+> so no residue survives whichever variants a reading carries.
 >
-> For the last element only, the string is compiled as a regular expression and
-> matched against `input_str`. If a match is found, the matched text
-> (`group(0)`, e.g. `+<sme>` or `+<compl_subj>`) is captured and then removed by a
-> literal replace of every occurrence of that exact text.
+> The last element is compiled as a regular expression and every match is
+> removed, so a string carrying two differently spelled `<…>` tags — `+<sme>`
+> and `+<compl_subj>`, say — loses both.
 >
-> Returns the resulting string. No side effects, no exceptions thrown for normal
-> input.
->
-> Quirk: because `+Err/Orth` is tested first and is a prefix of the four
-> `+Err/Orth-*` entries, a string containing `+Err/Orth-a-á` is first reduced to
-> `-a-á`, which the later, longer literals then no longer match — leaving the
-> stray suffix behind. Quirk: the trailing regex is applied for a single match
-> only, so a string carrying two different `<…>` tags keeps the second one.
+> Returns the resulting string. The argument is not mutated, there are no side
+> effects, and no exception is thrown for any input.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag]
 > public class SpanTag {
@@ -350,22 +362,26 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn]
 > public void addAttribute(String attributeName, String attributeValue)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn]
-> Splices an HTML attribute into the stored `spanTagStart` by replacing every
-> occurrence of `">"` with `attributeName + "=\"" + attributeValue + "\">"`, and
-> assigns the result back to `spanTagStart`. Returns nothing.
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn+2]
+> Splices exactly one HTML attribute into the stored `spanTagStart`,
+> immediately before the tag's last `>` and separated from whatever precedes it
+> by a space, and assigns the result back to `spanTagStart`. Returns nothing.
 >
-> No separating space is inserted, so starting from
-> `<span id="X" class="wertiviewtoken  wertiviewSubstantive">` a call with
-> `("lemma", "beana")` yields
-> `<span id="X" class="wertiviewtoken  wertiviewSubstantive"lemma="beana">`.
-> Repeated calls therefore stack attributes in reverse call order, each
-> immediately before the closing `>`.
+> Starting from `<span id="X" class="wertiviewtoken wertiviewSubstantive">` a
+> call with `("lemma", "beana")` yields
+> `<span id="X" class="wertiviewtoken wertiviewSubstantive" lemma="beana">`.
+> Repeated calls stack attributes in call order, each one landing before the
+> closing `>` and after the attribute added before it.
 >
-> Quirk: the replace is unanchored and applies to all `>` characters, so any `>`
-> already present in the tag or introduced by a previously added attribute value
-> also gets an attribute spliced in front of it. `process` works around this by
-> mapping `<` to `x` and `>` to `y` inside the span id before construction.
+> The value is HTML-escaped for a double-quoted attribute — `&`, `<`, `>` and
+> `"` become `&amp;`, `&lt;`, `&gt;` and `&quot;` — so a base form or a
+> generated form carrying any of them cannot close the attribute or the tag.
+> Only the last `>` is spliced before, so a `>` already inside the tag is left
+> where it is. `process` still maps `<` to `x` and `>` to `y` inside the span
+> id, which keeps the ids it emits stable.
+>
+> A `spanTagStart` holding no `>` at all has nowhere to splice, and is left
+> exactly as it was.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.equals-fn]
 > @Override public boolean equals(Object obj)
@@ -552,7 +568,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn]
 > private String writeLemmaAndAnalyses(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2]
 > Builds the generator input block for the `cloze` activity from a single reading
 > string (shape `lemma+N+<sme>+Sem/…+Sg+Nom+@SUBJ>`). Returns a newline-terminated
 > multi-line string: the token's own lemma+analysis line followed by the
@@ -585,16 +601,17 @@
 >
 > Nominative and essive readings get no counterpart, so they yield a single line.
 >
-> Quirk: `reading_str.indexOf("+")` is not checked, so a reading with no `+` makes
-> `substring(0, -1)` throw `StringIndexOutOfBoundsException`, which propagates out
-> of `process` as an unchecked exception. Quirk: the `substring(0, indexOf(...))`
-> prefix is recomputed against the growing `lem_and_an`, which is safe only
-> because every appended line shares the same lemma-and-analysis prefix.
+> Quirk: `reading_str.indexOf("+")` is not checked, so a reading with no `+` asks
+> for `substring(0, -1)` and the call fails. The failure is reported to `process`,
+> which logs it at debug level and drops that one reading; the rest of the
+> document is enhanced as usual. Quirk: the `substring(0, indexOf(...))` prefix is
+> recomputed against the growing `lem_and_an`, which is safe only because every
+> appended line shares the same lemma-and-analysis prefix.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn]
 > private String writeMorphologicalForms(String reading_str)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2]
 > Builds the generator input block for the `mc` activity from a single reading
 > string (shape `lemma+N+Sem/…+Sg+Nom+@SUBJ>`, with `+<sme>` already stripped by
 > the caller). Returns a newline-terminated multi-line string of analysis lines:
@@ -650,9 +667,10 @@
 > `generationInput2` is returned. Quirk: the singular and plural blocks test for
 > the bare case marker (`"+Acc"`, `"+Gen"`, `"+Ill"`, `"+Loc"`, `"+Com"`) but cut
 > at the number-qualified marker (`"+Sg+Acc"` / `"+Pl+Acc"`); when the bare marker
-> is present without the qualified one, `indexOf` returns -1 and
-> `substring(0, -1)` throws `StringIndexOutOfBoundsException`, which propagates out
-> of `process`. Quirk: the tests are sequential and mutate the same
+> is present without the qualified one, `indexOf` returns -1 and the
+> `substring(0, -1)` fails. The failure is reported to `process`, which logs it at
+> debug level and drops that one reading rather than abandoning the enhancement of
+> the whole document. Quirk: the tests are sequential and mutate the same
 > `reading_str2`, so a reading that matches more than one probe generates further
 > lines from the already-truncated string. Quirk: for the `Sg`/`Pl` path the first
 > truncation removes the case tag but no explicit `+Sg`/`+Pl` marker check is done

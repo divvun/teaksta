@@ -38,11 +38,53 @@ fn one_block() -> String {
     format!("a+V+Ind+Prs+Sg1\tform1\na+V+Inf\tformA\n{}\n", MARKER)
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn/test]
+/// A topic with nothing of its own: the shared pass is what is under test,
+/// and the two generator inputs are supplied per case.
+const PLAIN: TopicSpec = TopicSpec {
+    label: "Plain",
+    span_class: "wertiviewPlain",
+    pos: r"N\+",
+    selector: r"(Sg|Pl)\+Nom",
+    hints: None,
+    strip_lang_tag: false,
+    log_chosen_reading: false,
+    unchecked: Unchecked::Propagate,
+    trace: QUIET,
+};
+
+/// The reading `select` would have accepted for the token below.
+fn accepted() -> Selection {
+    Selection {
+        valid: true,
+        reading: "beana+N+Sg+Nom".to_string(),
+        lemma: "beana".to_string(),
+        hint_tag: String::new(),
+    }
+}
+
+/// One `Run` over [`PLAIN`] for the activity the flags name.
+fn pass<'a>(
+    mc: bool,
+    cloze: bool,
+    forms: &'a dyn Fn(&str) -> Result<String>,
+    analyses: &'a dyn Fn(&str) -> Result<String>,
+) -> Run<'a> {
+    Run {
+        outer: 0,
+        spec: &PLAIN,
+        matcher: Matcher::new(&PLAIN).expect("the topic patterns compile"),
+        mc,
+        cloze,
+        forms,
+        analyses,
+    }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2/test]
 #[test]
 fn literal_tags_are_deleted_wherever_they_occur() {
     assert_eq!(
@@ -64,47 +106,48 @@ fn literal_tags_are_deleted_wherever_they_occur() {
     assert_eq!(remove_tags(""), "");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2/test]
 #[test]
-fn err_orth_prefix_leaves_hyphenated_suffix() {
-    assert_eq!(
-        remove_tags("beana+N+Err/Orth-a-á+Sg+Nom"),
-        "beana+N-a-á+Sg+Nom"
-    );
+fn err_orth_variants_go_whole_leaving_no_suffix() {
+    assert_eq!(remove_tags("beana+N+Err/Orth-a-á+Sg+Nom"), "beana+N+Sg+Nom");
     assert_eq!(
         remove_tags("beana+N+Err/Orth-nom-gen+Sg+Gen"),
-        "beana+N-nom-gen+Sg+Gen"
+        "beana+N+Sg+Gen"
     );
     assert_eq!(
         remove_tags("beana+N+Err/Orth-nom-acc+Sg+Acc"),
-        "beana+N-nom-acc+Sg+Acc"
+        "beana+N+Sg+Acc"
     );
-
-    // The bare prefix is the only one of the four that leaves nothing.
     assert_eq!(remove_tags("beana+N+Err/Orth+Sg+Nom"), "beana+N+Sg+Nom");
+
+    // The bare prefix still goes on its own when a longer sibling shares
+    // the line.
+    assert_eq!(
+        remove_tags("beana+N+Err/Orth+Err/Orth-a-á+Sg+Nom"),
+        "beana+N+Sg+Nom"
+    );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn+2/test]
 #[test]
-fn only_the_first_angle_bracket_tag_matches() {
-    // Every occurrence of the matched text goes ...
+fn every_angle_bracket_tag_is_removed() {
     assert_eq!(remove_tags("beana+N+<sme>+Sg+Nom+<sme>"), "beana+N+Sg+Nom");
     assert_eq!(
         remove_tags("boahtit+<sme>+V+Ind\nmannat+<sme>+V+Ind\n"),
         "boahtit+V+Ind\nmannat+V+Ind\n"
     );
-    // ... but a differently spelled second tag survives.
+    // A differently spelled second tag goes with the first.
     assert_eq!(
         remove_tags("beana+N+<sme>+Sg+Nom+<compl_subj>"),
-        "beana+N+Sg+Nom+<compl_subj>"
+        "beana+N+Sg+Nom"
     );
     assert_eq!(remove_tags("a+<a_b>c"), "ac");
 
@@ -114,11 +157,11 @@ fn only_the_first_angle_bracket_tag_matches() {
     assert_eq!(input, "boahtit+V+Allegro+Inf");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2/test]
 #[test]
 fn distinct_forms_become_distractors_last_is_answer() {
     let mut map = span_map(0, &[(0, 5, "<span id=\"s1\" class=\"c\">")]);
@@ -137,8 +180,8 @@ fn distinct_forms_become_distractors_last_is_answer() {
 
     attach_distractors(&mut doc, 0, LOUD, output, &mut map).unwrap();
 
-    let expected = "<span id=\"s1\" class=\"c\"\
-                    distractors=\"beana beatnagii beatnagis beatnagiin\"answer=\"beana\">";
+    let expected = "<span id=\"s1\" class=\"c\" \
+                    distractors=\"beana beatnagii beatnagis beatnagiin\" answer=\"beana\">";
     assert_eq!(doc.enhancements.len(), 1);
     assert!(doc.enhancements[0].relevant);
     assert_eq!((doc.enhancements[0].begin, doc.enhancements[0].end), (0, 5));
@@ -148,11 +191,11 @@ fn distinct_forms_become_distractors_last_is_answer() {
     assert_eq!(map[&Word::new(0, 0, 5)].get_span_tag_start(), expected);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2/test]
 #[test]
 fn a_single_surviving_form_leaves_a_token_alone() {
     let start = "<span id=\"s1\" class=\"c\">";
@@ -180,13 +223,13 @@ fn a_single_surviving_form_leaves_a_token_alone() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2/test]
 #[test]
-fn every_word_line_reuses_the_open_block() {
+fn a_block_is_consumed_by_one_word_record() {
     let mut map = span_map(
         0,
         &[
@@ -205,26 +248,25 @@ fn every_word_line_reuses_the_open_block() {
 
     attach_distractors(&mut doc, 0, QUIET, output, &mut map).unwrap();
 
-    assert_eq!(doc.enhancements.len(), 2);
+    // The second record has no block of its own, so it is not enhanced
+    // with the first token's distractors.
+    assert_eq!(doc.enhancements.len(), 1);
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<span id=\"s1\" class=\"c\"distractors=\"beana beatnagii\"answer=\"beatnagii\">"
+        "<span id=\"s1\" class=\"c\" distractors=\"beana beatnagii\" answer=\"beatnagii\">"
     );
+    assert_eq!((doc.enhancements[0].begin, doc.enhancements[0].end), (0, 5));
     assert_eq!(
-        doc.enhancements[1].enhance_start,
-        "<span id=\"s2\" class=\"c\"distractors=\"beana beatnagii\"answer=\"beatnagii\">"
-    );
-    assert_eq!(
-        (doc.enhancements[1].begin, doc.enhancements[1].end),
-        (6, 11)
+        map[&Word::new(0, 6, 11)].get_span_tag_start(),
+        "<span id=\"s2\" class=\"c\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2/test]
 #[test]
 fn a_later_marker_replaces_the_earlier_block() {
     let mut map = span_map(0, &[(0, 1, "<s>"), (2, 3, "<s>")]);
@@ -252,22 +294,22 @@ fn a_later_marker_replaces_the_earlier_block() {
     assert!(
         doc.enhancements[0]
             .enhance_start
-            .contains("distractors=\"form1 formA\"answer=\"formA\"")
+            .contains("distractors=\"form1 formA\" answer=\"formA\"")
     );
     assert_eq!((doc.enhancements[0].begin, doc.enhancements[0].end), (0, 1));
     assert!(
         doc.enhancements[1]
             .enhance_start
-            .contains("distractors=\"form3 form4\"answer=\"form4\"")
+            .contains("distractors=\"form3 form4\" answer=\"form4\"")
     );
     assert_eq!((doc.enhancements[1].begin, doc.enhancements[1].end), (2, 3));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-distractors-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-distractors-fn+2/test]
 #[test]
 fn malformed_word_records_abort_the_run() {
     let block = one_block();
@@ -290,11 +332,11 @@ fn malformed_word_records_abort_the_run() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
 #[test]
 fn a_single_form_enhances_a_cloze_token() {
     let mut map = span_map(0, &[(0, 5, "<span id=\"s1\" class=\"c\">")]);
@@ -315,17 +357,17 @@ fn a_single_form_enhances_a_cloze_token() {
     assert_eq!(doc.enhancements[0].enhance_end, "</span>");
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<span id=\"s1\" class=\"c\"possibleforms=\"beana\">"
+        "<span id=\"s1\" class=\"c\" possibleforms=\"beana\">"
     );
     // No answer attribute is added on this path, and one form is enough.
     assert!(!doc.enhancements[0].enhance_start.contains("answer="));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
 #[test]
 fn duplicate_forms_collapse_and_empty_blocks_skip() {
     let mut map = span_map(0, &[(0, 1, "<s1>"), (2, 3, "<s2>")]);
@@ -348,16 +390,44 @@ fn duplicate_forms_collapse_and_empty_blocks_skip() {
     assert_eq!(doc.enhancements.len(), 1);
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<s1possibleforms=\"boahtit\">"
+        "<s1 possibleforms=\"boahtit\">"
     );
     assert_eq!(map[&Word::new(0, 2, 3)].get_span_tag_start(), "<s2>");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+#[test]
+fn a_cloze_block_is_consumed_by_one_record() {
+    let mut map = span_map(0, &[(0, 1, "<s1>"), (2, 3, "<s2>")]);
+    let mut doc = Document::new("a b", "sme");
+    let output = concat!(
+        "a+V+Inf\tboahtit\n",
+        "ñôŃßĘńŠē\n",
+        "Word 0 1\n",
+        "Word 2 3\n",
+    );
+
+    attach_possible_forms(&mut doc, 0, QUIET, output, &mut map).unwrap();
+
+    // The second record has no block of its own, so it does not inherit
+    // the first token's forms.
+    assert_eq!(doc.enhancements.len(), 1);
+    assert_eq!(
+        doc.enhancements[0].enhance_start,
+        "<s1 possibleforms=\"boahtit\">"
+    );
+    assert_eq!(map[&Word::new(0, 2, 3)].get_span_tag_start(), "<s2>");
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.generate-span-tag-with-possible-forms-fn+2/test]
 #[test]
 fn the_cloze_reader_shares_the_record_failures() {
     let block = "a+V+Inf\tboahtit\nñôŃßĘńŠē\n";
@@ -377,4 +447,48 @@ fn the_cloze_reader_shares_the_record_failures() {
         assert!(err.to_string().starts_with(message), "{err}");
         assert!(doc.enhancements.is_empty());
     }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
+#[test]
+fn an_unusable_reading_is_dropped_on_its_own() {
+    let refuse = |reading: &str| -> Result<String> {
+        bail!("begin 0, end -1, length {}", reading.chars().count())
+    };
+    let block = |_: &str| -> Result<String> { Ok("beana+N+Sg+Acc\n".to_string()) };
+    let token = CgToken {
+        begin: 0,
+        end: 5,
+        readings: Vec::new(),
+    };
+
+    for (mc, cloze) in [(true, false), (false, true)] {
+        let mut doc = Document::new("beana", "sme");
+        let mut scan = Scan::default();
+
+        pass(mc, cloze, &refuse, &refuse).enhance_token(&mut doc, &token, &accepted(), &mut scan);
+
+        // The reading contributes no generator record and no enhancement,
+        // and the pass carries on rather than reporting a failure.
+        assert!(scan.generator_input.is_empty());
+        assert!(scan.generator_input_cloze.is_empty());
+        assert!(doc.enhancements.is_empty());
+        // The span is still registered; nothing looks it up without a
+        // record naming its offsets.
+        assert!(scan.word_to_span_map.contains_key(&Word::new(0, 0, 5)));
+    }
+
+    let mut doc = Document::new("beana", "sme");
+    let mut scan = Scan::default();
+
+    pass(true, false, &block, &refuse).enhance_token(&mut doc, &token, &accepted(), &mut scan);
+
+    assert_eq!(
+        scan.generator_input,
+        format!("beana+N+Sg+Acc\n{}\nWord 0 5\n", MARKER)
+    );
 }

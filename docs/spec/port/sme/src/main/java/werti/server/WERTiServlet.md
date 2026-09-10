@@ -121,7 +121,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn]
 > @Override protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2]
 > Three-way dispatch on which request parameters are present. The first two
 > branches are exercise-logging endpoints used by the browser-side JavaScript; the
 > third is the JSON add-on protocol.
@@ -174,7 +174,14 @@
 > arguments, and return.
 >
 > Call `config.setClientValue(lang, "enhancement", requestInfo.activity)`, ignoring
-> the boolean result. Parse `requestInfo.document` with Jsoup and run
+> the boolean result, and publish that same `requestInfo.activity` to the shared
+> `enhancement_type` field. The add-on protocol carries the requested exercise in
+> `activity`, exactly as the web form carries it in `client.enhancement`, and the
+> postprocessing enhancers decide between colorize, click, mc and cloze by reading
+> that field alone — so without this write they would run whatever a previous
+> request left behind and `mc` and `cloze` could never be reached over this
+> protocol. Both writes sit after the 491 and 492 gates, so a rejected request
+> leaves the field as it was. Parse `requestInfo.document` with Jsoup and run
 > `spansToETags(doc, "wertiview", true)` to rewrite the add-on's existing
 > `<span class="... wertiview ...">` markers — carrying their `wertiviewid`
 > attributes — into `<e id="...">` tags with entities unescaped.

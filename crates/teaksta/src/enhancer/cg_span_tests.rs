@@ -213,7 +213,7 @@ fn start_tag_shows_every_attribute_added() {
 
     tag.add_attribute("lemma", "beana");
 
-    assert_eq!(tag.get_span_tag_start(), "<span id=\"x\"lemma=\"beana\">");
+    assert_eq!(tag.get_span_tag_start(), "<span id=\"x\" lemma=\"beana\">");
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.set-span-tag-start-fn/test]
@@ -235,55 +235,61 @@ fn overwriting_the_start_tag_discards_earlier_attributes() {
     assert_eq!(tag.get_span_tag_start(), "");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn+2/test]
 #[test]
-fn attributes_are_spliced_in_without_a_separating_space() {
+fn attributes_are_spliced_with_a_separating_space() {
     let mut tag = SpanTag::new(
         0,
-        "<span id=\"X\" class=\"wertiviewtoken  wertiviewSubstantive\">".to_string(),
+        "<span id=\"X\" class=\"wertiviewtoken wertiviewSubstantive\">".to_string(),
     );
 
     tag.add_attribute("lemma", "beana");
 
     assert_eq!(
         tag.get_span_tag_start(),
-        "<span id=\"X\" class=\"wertiviewtoken  wertiviewSubstantive\"lemma=\"beana\">"
+        "<span id=\"X\" class=\"wertiviewtoken wertiviewSubstantive\" lemma=\"beana\">"
     );
 
     tag.add_attribute("hintid", "h-1");
 
     assert_eq!(
         tag.get_span_tag_start(),
-        "<span id=\"X\" class=\"wertiviewtoken  wertiviewSubstantive\"\
-         lemma=\"beana\"hintid=\"h-1\">"
+        "<span id=\"X\" class=\"wertiviewtoken wertiviewSubstantive\" \
+         lemma=\"beana\" hintid=\"h-1\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.span-tag.add-attribute-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.span-tag.add-attribute-fn+2/test]
 #[test]
-fn every_closing_bracket_gets_an_attribute_spliced() {
+fn only_the_final_bracket_gets_the_attribute() {
     let mut tag = SpanTag::new(0, "<a><b>".to_string());
 
     tag.add_attribute("k", "v");
 
-    assert_eq!(tag.get_span_tag_start(), "<ak=\"v\"><bk=\"v\">");
+    assert_eq!(tag.get_span_tag_start(), "<a><b k=\"v\">");
 
-    let mut with_bracket_in_value = SpanTag::new(0, "<s>".to_string());
-    with_bracket_in_value.add_attribute("a", "x>y");
-    with_bracket_in_value.add_attribute("b", "z");
+    let mut with_markup_in_value = SpanTag::new(0, "<s>".to_string());
+    with_markup_in_value.add_attribute("a", "x>y & \"z\"");
+    with_markup_in_value.add_attribute("b", "z");
 
     assert_eq!(
-        with_bracket_in_value.get_span_tag_start(),
-        "<sa=\"xb=\"z\">y\"b=\"z\">"
+        with_markup_in_value.get_span_tag_start(),
+        "<s a=\"x&gt;y &amp; &quot;z&quot;\" b=\"z\">"
     );
+
+    // A start tag with no bracket to splice before is left alone.
+    let mut bracketless = SpanTag::new(0, String::new());
+    bracketless.add_attribute("k", "v");
+
+    assert_eq!(bracketless.get_span_tag_start(), "");
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.span-tag.get-span-tag-end-fn/test]

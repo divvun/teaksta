@@ -61,7 +61,7 @@ fn a_missing_n_tags_parameter_fails_initialisation() {
     assert!(enh.n_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
 #[test]
 fn a_singular_noun_span_carries_its_lemma() {
     if activity_reaches_the_generator() {
@@ -82,16 +82,16 @@ fn a_singular_noun_span_carries_its_lemma() {
     assert_eq!(
         doc.enhancements[0].enhance_start,
         "<span id=\"WERTi-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-1\" \
-         class=\"wertiviewtoken  wertiviewSubstantive\"lemma=\"čáhci\">"
+         class=\"wertiviewtoken wertiviewSubstantive\" lemma=\"čáhci\">"
     );
     assert_eq!(
         doc.enhancements[1].enhance_start,
         "<span id=\"WERTi-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-2\" \
-         class=\"wertiviewtoken  wertiviewSubstantive\"lemma=\"čáhci\">"
+         class=\"wertiviewtoken wertiviewSubstantive\" lemma=\"čáhci\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
 #[test]
 fn preposition_hint_is_linked_from_next_noun() {
     if activity_reaches_the_generator() {
@@ -114,33 +114,52 @@ fn preposition_hint_is_linked_from_next_noun() {
     assert_eq!(
         doc.enhancements[1].enhance_start,
         "<span id=\"WERTi-span-beana-N-Sg-Nom-1\" \
-         class=\"wertiviewtoken  wertiviewSubstantive\"lemma=\"beana\"\
+         class=\"wertiviewtoken wertiviewSubstantive\" lemma=\"beana\" \
          hintid=\"WERTi-span-maŋŋel-Pr-1\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
 #[test]
-fn a_bare_sg_tag_without_case_still_qualifies() {
+fn a_bare_number_tag_without_case_is_skipped() {
     if activity_reaches_the_generator() {
         return;
     }
     let enh = enhancer();
-    let mut doc = Document::new("ruoktu", "sme");
+    let mut doc = Document::new("ruoktu ruovttut", "sme");
     doc.cg_tokens
         .push(cg_token(0, 6, &[&["\"ruoktu\"", "N", "Sg"]]));
+    doc.cg_tokens
+        .push(cg_token(7, 15, &[&["\"ruoktu\"", "N", "Pl"]]));
 
     enh.process(&mut doc).unwrap();
 
-    assert_eq!(doc.enhancements.len(), 1);
-    assert_eq!(
-        doc.enhancements[0].enhance_start,
-        "<span id=\"WERTi-span-ruoktu-N-Sg-1\" \
-         class=\"wertiviewtoken  wertiviewSubstantive\"lemma=\"ruoktu\">"
-    );
+    assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
+#[test]
+fn every_named_number_and_case_pair_qualifies() {
+    if activity_reaches_the_generator() {
+        return;
+    }
+    let enh = enhancer();
+    let mut doc = Document::new("beana", "sme");
+    for number in ["Sg", "Pl"] {
+        for case in ["Nom", "Acc", "Gen", "Ill", "Loc", "Com"] {
+            doc.cg_tokens
+                .push(cg_token(0, 5, &[&["\"beana\"", "N", number, case]]));
+        }
+    }
+    doc.cg_tokens
+        .push(cg_token(0, 5, &[&["\"beana\"", "N", "Ess"]]));
+
+    enh.process(&mut doc).unwrap();
+
+    assert_eq!(doc.enhancements.len(), 13);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
 #[test]
 fn one_excluded_reading_disqualifies_a_token() {
     if activity_reaches_the_generator() {
@@ -162,7 +181,7 @@ fn one_excluded_reading_disqualifies_a_token() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+2/test]
 #[test]
 fn an_adjective_before_pred_stays_eligible() {
     if activity_reaches_the_generator() {
@@ -199,7 +218,7 @@ fn an_adjective_before_pred_stays_eligible() {
     assert!(without_pred.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn four_distractor_analyses_precede_the_correct_one() {
     let enh = enhancer();
@@ -212,7 +231,7 @@ fn four_distractor_analyses_precede_the_correct_one() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn syntactic_tag_dropped_from_correct_answer_line() {
     let enh = enhancer();
@@ -225,7 +244,7 @@ fn syntactic_tag_dropped_from_correct_answer_line() {
     assert!(!block.contains('@'), "{block}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn plural_readings_draw_from_the_plural_distractor_table() {
     let enh = enhancer();
@@ -238,7 +257,7 @@ fn plural_readings_draw_from_the_plural_distractor_table() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn generator_rejected_tags_are_stripped() {
     let enh = enhancer();
@@ -253,7 +272,7 @@ fn generator_rejected_tags_are_stripped() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn an_essive_reading_sweeps_its_own_table() {
     let enh = enhancer();
@@ -266,7 +285,7 @@ fn an_essive_reading_sweeps_its_own_table() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn a_bare_case_marker_without_number_fails() {
     let enh = enhancer();
@@ -278,7 +297,7 @@ fn a_bare_case_marker_without_number_fails() {
     assert!(err.to_string().contains("end -1"), "{err}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn a_singular_genitive_gains_its_plural_counterpart() {
     let enh = enhancer();
@@ -290,7 +309,7 @@ fn a_singular_genitive_gains_its_plural_counterpart() {
     assert_eq!(block, "beana+N+Sem/Ani+Sg+Gen\nbeana+N+Sem/Ani+Pl+Gen\n");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn a_plural_locative_gains_its_singular_counterpart() {
     let enh = enhancer();
@@ -302,7 +321,7 @@ fn a_plural_locative_gains_its_singular_counterpart() {
     assert_eq!(block, "beana+N+Pl+Loc\nbeana+N+Sg+Loc\n");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn nominative_readings_yield_a_single_line() {
     let enh = enhancer();
@@ -314,7 +333,7 @@ fn nominative_readings_yield_a_single_line() {
     assert_eq!(block, "beana+N+Sg+Nom\n");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn a_reading_without_a_plus_fails() {
     let enh = enhancer();

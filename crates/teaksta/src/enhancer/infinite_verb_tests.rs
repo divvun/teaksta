@@ -66,7 +66,7 @@ fn initialize_splits_the_value_on_commas_without_trimming() {
     assert!(unset.infverb_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
 #[test]
 fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -80,11 +80,11 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
 
     let first = concat!(
         "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-1\" ",
-        "class=\"wertiviewtoken  wertiviewInfiniteVerb\"lemma=\"boahtit\">"
+        "class=\"wertiviewtoken wertiviewInfiniteVerb\" lemma=\"boahtit\">"
     );
     let second = concat!(
         "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-2\" ",
-        "class=\"wertiviewtoken  wertiviewInfiniteVerb\"lemma=\"boahtit\">"
+        "class=\"wertiviewtoken wertiviewInfiniteVerb\" lemma=\"boahtit\">"
     );
 
     assert_eq!(doc.enhancements.len(), 2);
@@ -98,7 +98,7 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     assert_eq!(doc.enhancements[1].enhance_start, second);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
 #[test]
 fn process_selects_the_first_reading_matching_both_patterns() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -116,12 +116,12 @@ fn process_selects_the_first_reading_matching_both_patterns() {
         doc.enhancements[0].enhance_start,
         concat!(
             "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-1\" ",
-            "class=\"wertiviewtoken  wertiviewInfiniteVerb\"lemma=\"boahtit\">"
+            "class=\"wertiviewtoken wertiviewInfiniteVerb\" lemma=\"boahtit\">"
         )
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
 #[test]
 fn process_ignores_tokens_without_infinite_verb_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -137,7 +137,7 @@ fn process_ignores_tokens_without_infinite_verb_readings() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
 #[test]
 fn process_returns_early_when_the_cas_was_cancelled() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -150,7 +150,7 @@ fn process_returns_early_when_the_cas_was_cancelled() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+2/test]
 #[test]
 fn process_selection_ignores_the_configured_tags() {
     let configured =
@@ -171,7 +171,7 @@ fn process_selection_ignores_the_configured_tags() {
     assert!(nouns.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_emits_twelve_then_the_answer() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -205,7 +205,7 @@ fn write_morphological_forms_emits_twelve_then_the_answer() {
     assert!(block.ends_with("boahtit+V+Ind+Prt+Du3\nboahtit+V+Inf\n"));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_cuts_the_function_tag() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -225,7 +225,7 @@ fn write_morphological_forms_cuts_the_function_tag() {
     assert_eq!(lines[12], "@boahtit+V+Inf");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-morphological-forms-fn+2/test]
 #[test]
 fn write_morphological_forms_fails_without_a_plus() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -236,7 +236,7 @@ fn write_morphological_forms_fails_without_a_plus() {
     assert_eq!(err.to_string(), "begin 0, end -1, length 7");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_chops_the_final_character() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -263,7 +263,7 @@ fn write_lemma_and_analyses_chops_the_final_character() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_truncates_at_function_tag() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -285,7 +285,7 @@ fn write_lemma_and_analyses_truncates_at_function_tag() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.write-lemma-and-analyses-fn+2/test]
 #[test]
 fn write_lemma_and_analyses_fails_on_unsliceable_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();

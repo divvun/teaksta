@@ -8,14 +8,20 @@
 //! directly on an HTML string, which is the same entry point both the web
 //! form and the add-on protocol reach once their document is in hand.
 
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Mutex, MutexGuard, OnceLock};
 
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
 use teaksta::server::activities::Activities;
+use teaksta::server::activities::HttpServletRequest as SessionRequest;
+use teaksta::server::activities::{HttpSession, ServletContext as SessionServletContext};
 use teaksta::server::activity_configuration::set_classpath_root;
 use teaksta::server::processors::Processors;
-use teaksta::server::servlet::ENHANCEMENT_TYPE;
+use teaksta::server::servlet::{
+    ENHANCEMENT_TYPE, HttpServletRequest, HttpServletResponse, ServletConfig, ServletContext,
+    WertiServlet,
+};
 use teaksta::types::Document;
 use teaksta::util::json_enhancer::JsonEnhancer;
 use teaksta::util::page_handler::PageHandler;
@@ -26,6 +32,15 @@ const DOCUMENT: &str = concat!(
     "<html><head><title>t</title></head><body>",
     "<p><e id=\"1\">Mun oidnen viesu ikte.</e></p>",
     "<p><e id=\"2\">Viesut leat stuorr\u{e1}t.</e></p>",
+    "</body></html>"
+);
+
+/// The same page as the add-on posts it: its own `wertiview` markers, which
+/// the servlet rewrites into the `<e>` tags the pipeline reads.
+const POSTED_DOCUMENT: &str = concat!(
+    "<html><head><title>t</title></head><body>",
+    "<p><span class=\"wertiview\" wertiviewid=\"1\">Mun oidnen viesu ikte.</span></p>",
+    "<p><span class=\"wertiview\" wertiviewid=\"2\">Viesut leat stuorr\u{e1}t.</span></p>",
     "</body></html>"
 );
 
@@ -60,9 +75,20 @@ fn set_enhancement(enhancement: &str) {
         .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(enhancement.to_string());
 }
 
+/// The activity the enhancers read is one process-wide field, so the runs
+/// that set it take turns rather than clobbering each other.
+static ACTIVITY: Mutex<()> = Mutex::new(());
+
+fn activity_lock() -> MutexGuard<'static, ()> {
+    ACTIVITY
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
 /// One page-handler run over [`DOCUMENT`], against a cache directory of its
 /// own so the run is not answered from an earlier one.
 fn analysed(topic: &str, enhancement: &str) -> Document {
+    let _activity = activity_lock();
     set_enhancement(enhancement);
     let cache = tempfile::tempdir().expect("a cache directory");
     let handler = PageHandler::new(
@@ -77,6 +103,54 @@ fn analysed(topic: &str, enhancement: &str) -> Document {
         .process()
         .expect("the topic pipeline runs")
         .expect("the topic is registered for the language")
+}
+
+/// One add-on request, driven through the servlet the browser extension
+/// posts to. Returns the JSON span map from the response body.
+fn posted(topic: &str, activity: &str) -> HashMap<String, String> {
+    // The registry pins the descriptor tree the servlet's own load reads.
+    shipped_processors();
+    let _activity = activity_lock();
+    // Whatever an earlier request left behind is what the add-on protocol
+    // used to be stuck with.
+    set_enhancement("colorize");
+    let webapp = repository_root().join("sme/src/main/webapp");
+    let cache = tempfile::tempdir().expect("a cache directory");
+    let mut servlet = WertiServlet::new();
+    servlet
+        .init(ServletConfig {
+            servlet_context: ServletContext {
+                init_parameters: BTreeMap::from([(
+                    "files_anl_dir".to_string(),
+                    cache.path().to_string_lossy().into_owned(),
+                )]),
+                servlet_context_name: Some("VIEW".to_string()),
+            },
+        })
+        .expect("the servlet initialises");
+    let req = HttpServletRequest {
+        body: serde_json::json!({
+            "type": "page",
+            "version": "0.10",
+            "topic": topic,
+            "activity": activity,
+            "language": "en",
+            "url": format!("http://example.org/{topic}-{activity}"),
+            "document": POSTED_DOCUMENT,
+        })
+        .to_string(),
+        ..HttpServletRequest::default()
+    };
+    let mut session_request =
+        SessionRequest::new(HttpSession::new(SessionServletContext::new(Some(webapp))));
+    let mut resp = HttpServletResponse::default();
+
+    servlet
+        .handle_post(&req, &mut session_request, &mut resp)
+        .expect("the add-on request is answered");
+
+    assert_eq!(resp.content_type.as_deref(), Some("text/plain"));
+    serde_json::from_str(&resp.body).expect("a JSON object")
 }
 
 fn span_starts(cas: &Document) -> Vec<String> {
@@ -164,8 +238,8 @@ fn colorize_wraps_the_nouns_in_topic_spans() {
     let starts = span_starts(&cas);
     assert_eq!(starts.len(), 2, "{starts:#?}");
     for start in &starts {
-        assert!(start.contains("class=\"wertiviewtoken  wertiviewSubstantive\""));
-        assert!(start.contains("lemma=\"viessu\""));
+        assert!(start.contains("class=\"wertiviewtoken wertiviewSubstantive\""));
+        assert!(start.contains(" lemma=\"viessu\""));
     }
     assert_eq!(
         cas.covered_text(cas.enhancements[0].begin, cas.enhancements[0].end),
@@ -253,6 +327,7 @@ fn a_second_run_is_answered_from_the_cache() {
     if !models_available() {
         return;
     }
+    let _activity = activity_lock();
     set_enhancement("colorize");
     let cache = tempfile::tempdir().expect("a cache directory");
     let handler = PageHandler::new(
@@ -275,4 +350,33 @@ fn a_second_run_is_answered_from_the_cache() {
     );
     assert_eq!(span_starts(&first), span_starts(&second));
     assert_eq!(first.text, second.text);
+}
+
+#[test]
+fn the_json_protocol_serves_the_requested_activity() {
+    if !models_available() {
+        return;
+    }
+    let colorize = posted("Substantive", "colorize");
+    let mc = posted("Substantive", "mc");
+    let cloze = posted("Substantive", "cloze");
+
+    for spans in [&colorize, &mc, &cloze] {
+        assert_eq!(spans.len(), 2, "{spans:#?}");
+    }
+    // colorize only marks the token up; mc and cloze reach the generator
+    // over the same protocol.
+    assert!(!colorize["1"].contains("distractors="), "{}", colorize["1"]);
+    assert!(
+        !colorize["1"].contains("possibleforms="),
+        "{}",
+        colorize["1"]
+    );
+    assert!(mc["1"].contains("distractors="), "{}", mc["1"]);
+    assert!(mc["1"].contains("answer=\"viesu\""), "{}", mc["1"]);
+    assert!(
+        cloze["1"].contains("possibleforms=\"viesu"),
+        "{}",
+        cloze["1"]
+    );
 }

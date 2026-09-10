@@ -72,6 +72,18 @@ pub static OPENID_CONSUMER: RwLock<Option<OpenIdConsumer>> = RwLock::new(None);
 /// see each other's value.
 pub static ENHANCEMENT_TYPE: RwLock<Option<String>> = RwLock::new(None);
 
+/// Hand the exercise the client asked for to [`ENHANCEMENT_TYPE`], which the
+/// postprocessing enhancers read to decide between colorize, click, mc and
+/// cloze. Both entry points publish it: the web form carries the choice in
+/// `client.enhancement`, the add-on protocol in the request's `activity`.
+fn publish_enhancement_type(enhancement: Option<&str>) -> Result<()> {
+    *ENHANCEMENT_TYPE
+        .write()
+        .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))? =
+        enhancement.map(str::to_string);
+    Ok(())
+}
+
 /// Reader for [`ENHANCEMENT_TYPE`] that mirrors a plain static-field read:
 /// the unset field reads as the empty string rather than propagating a
 /// failure.
@@ -240,10 +252,7 @@ impl WertiServlet {
 
         let activity = req.get_parameter("activity").map(str::to_string);
         let enhancement = req.get_parameter("client.enhancement").map(str::to_string);
-        *ENHANCEMENT_TYPE
-            .write()
-            .map_err(|_| anyhow!("WERTiServlet.enhancement_type lock poisoned"))? =
-            enhancement.clone();
+        publish_enhancement_type(enhancement.as_deref())?;
         let lang = req.get_parameter("language").map(str::to_string);
         let lang = match lang {
             Some(lang) => lang,
@@ -386,8 +395,8 @@ impl WertiServlet {
 
     /// Annotate according to the topic/activity/text provided in a JSON
     /// PostRequestObject.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+2]
     pub fn handle_post(
         &mut self,
         req: &HttpServletRequest,
@@ -578,6 +587,7 @@ impl WertiServlet {
                 "enhancement",
                 request_info.activity.as_deref().unwrap_or(""),
             );
+            publish_enhancement_type(request_info.activity.as_deref())?;
 
             // extract the wertiview spans from the document
             let doc = Html::parse_document(request_info.document.as_deref().ok_or_else(|| {
