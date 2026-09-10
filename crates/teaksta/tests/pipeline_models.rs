@@ -16,6 +16,7 @@ use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
 use teaksta::server::activities::Activities;
 use teaksta::server::activities::HttpServletRequest as SessionRequest;
 use teaksta::server::activities::{HttpSession, ServletContext as SessionServletContext};
+use teaksta::server::activity_configuration::ActivityConfiguration;
 use teaksta::server::activity_configuration::set_classpath_root;
 use teaksta::server::processors::Processors;
 use teaksta::server::servlet::{
@@ -23,20 +24,20 @@ use teaksta::server::servlet::{
     WertiServlet,
 };
 use teaksta::types::Document;
+use teaksta::util::html_enhancer::HtmlEnhancer;
 use teaksta::util::json_enhancer::JsonEnhancer;
 use teaksta::util::page_handler::PageHandler;
 
-/// The `<e>`-tagged document the servlet hands the page handler, with the
-/// span ids the add-on protocol carries.
+/// The page the servlet hands the page handler, as it was fetched.
 const DOCUMENT: &str = concat!(
     "<html><head><title>t</title></head><body>",
-    "<p><e id=\"1\">Mun oidnen viesu ikte.</e></p>",
-    "<p><e id=\"2\">Viesut leat stuorr\u{e1}t.</e></p>",
+    "<p>Mun oidnen viesu ikte.</p>",
+    "<p>Viesut leat stuorr\u{e1}t.</p>",
     "</body></html>"
 );
 
 /// The same page as the add-on posts it: its own `wertiview` markers, which
-/// the servlet rewrites into the `<e>` tags the pipeline reads.
+/// the servlet still rewrites into `<e>` elements before analysis.
 const POSTED_DOCUMENT: &str = concat!(
     "<html><head><title>t</title></head><body>",
     "<p><span class=\"wertiview\" wertiviewid=\"1\">Mun oidnen viesu ikte.</span></p>",
@@ -160,6 +161,17 @@ fn span_starts(cas: &Document) -> Vec<String> {
         .collect()
 }
 
+/// The span map's entries in document order, which is the order of their
+/// keys read as positions rather than as strings.
+fn ordered(spans: &HashMap<String, String>) -> Vec<String> {
+    let mut entries: Vec<(usize, String)> = spans
+        .iter()
+        .map(|(at, span)| (at.parse().expect("a document position"), span.clone()))
+        .collect();
+    entries.sort();
+    entries.into_iter().map(|(_, span)| span).collect()
+}
+
 #[test]
 fn every_shipped_topic_builds_both_pipelines() {
     if !models_available() {
@@ -252,7 +264,48 @@ fn colorize_wraps_the_nouns_in_topic_spans() {
 }
 
 #[test]
-fn the_json_protocol_keys_spans_by_id() {
+fn the_page_flow_wraps_tokens_in_the_page() {
+    if !models_available() {
+        return;
+    }
+    let cas = analysed("Substantive", "colorize");
+    let dir = tempfile::tempdir().expect("a config directory");
+    let path = dir.path().join("activity.xml");
+    std::fs::write(&path, "<activity><server-cfg></server-cfg></activity>").expect("a descriptor");
+    let config = ActivityConfiguration::new(&path).expect("the descriptor loads");
+    let mut req = HttpServletRequest {
+        request_url: "http://example.org/teaksta".to_string(),
+        ..HttpServletRequest::default()
+    };
+    req.parameters
+        .insert("client.enhancement".to_string(), "colorize".to_string());
+
+    let page = HtmlEnhancer::new(&cas)
+        .enhance(
+            "Substantive",
+            "http://example.org/page.html",
+            &req,
+            &config,
+            "teaksta",
+        )
+        .expect("an enhanced page");
+
+    // The page comes back whole, with the enhancements wrapped around the
+    // words they cover and nothing else added but the base URL.
+    assert!(
+        page.contains("<base href=\"http://example.org/page.html\">"),
+        "{page}"
+    );
+    assert!(!page.contains("<script"), "{page}");
+    assert!(page.contains("<title>t</title>"), "{page}");
+    assert!(page.contains("Mun oidnen "), "{page}");
+    assert!(page.contains(">viesu</span> ikte."), "{page}");
+    assert!(page.contains(">Viesut</span> leat"), "{page}");
+    assert_eq!(page.matches("token").count(), 2, "{page}");
+}
+
+#[test]
+fn the_json_protocol_keys_spans_by_position() {
     if !models_available() {
         return;
     }
@@ -261,23 +314,31 @@ fn the_json_protocol_keys_spans_by_id() {
     let json = JsonEnhancer::new(&cas, "colorize")
         .enhance()
         .expect("a span map");
-    let spans: std::collections::HashMap<String, String> =
-        serde_json::from_str(&json).expect("a JSON object");
+    let spans: HashMap<String, String> = serde_json::from_str(&json).expect("a JSON object");
 
     assert_eq!(spans.len(), 2);
-    assert!(
-        spans["1"].contains("wertiviewSubstantive"),
-        "{}",
-        spans["1"]
-    );
-    assert!(spans["1"].contains(">viesu</span>"), "{}", spans["1"]);
-    assert!(spans["2"].contains(">Viesut</span>"), "{}", spans["2"]);
-    for span in spans.values() {
+    // Each key is the position in the document text the enhancement covers.
+    for (at, span) in &spans {
+        let at: usize = at.parse().expect("a document position");
+        let covered = cas
+            .enhancements
+            .iter()
+            .find(|e| e.begin == at)
+            .expect("an enhancement at that position");
         assert!(
-            span.starts_with("<span class=\"wertiview\" style="),
+            span.contains(&format!(">{}</span>", cas.covered_text(at, covered.end))),
+            "{span}"
+        );
+        assert!(span.contains("token"), "{span}");
+        assert!(
+            span.starts_with("<span class=\"teaksta-page\" style="),
             "{span}"
         );
     }
+
+    let ordered = ordered(&spans);
+    assert!(ordered[0].contains(">viesu</span>"), "{}", ordered[0]);
+    assert!(ordered[1].contains(">Viesut</span>"), "{}", ordered[1]);
 }
 
 #[test]
@@ -364,19 +425,15 @@ fn the_json_protocol_serves_the_requested_activity() {
     for spans in [&colorize, &mc, &cloze] {
         assert_eq!(spans.len(), 2, "{spans:#?}");
     }
+    let colorize = ordered(&colorize);
+    let mc = ordered(&mc);
+    let cloze = ordered(&cloze);
     // colorize only marks the token up; mc and cloze reach the generator
     // over the same protocol.
-    assert!(!colorize["1"].contains("distractors="), "{}", colorize["1"]);
-    assert!(
-        !colorize["1"].contains("possibleforms="),
-        "{}",
-        colorize["1"]
-    );
-    assert!(mc["1"].contains("distractors="), "{}", mc["1"]);
-    assert!(mc["1"].contains("answer=\"viesu\""), "{}", mc["1"]);
-    assert!(
-        cloze["1"].contains("possibleforms=\"viesu"),
-        "{}",
-        cloze["1"]
-    );
+    assert!(!colorize[0].contains("distractors="), "{}", colorize[0]);
+    assert!(!colorize[0].contains("possibleforms="), "{}", colorize[0]);
+    assert!(colorize[0].contains(">viesu</span>"), "{}", colorize[0]);
+    assert!(mc[0].contains("distractors="), "{}", mc[0]);
+    assert!(mc[0].contains("answer=\"viesu\""), "{}", mc[0]);
+    assert!(cloze[0].contains("possibleforms=\"viesu"), "{}", cloze[0]);
 }

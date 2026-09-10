@@ -1,262 +1,734 @@
-//! Methods needed for processing HTML input.
+//! The page-annotation surface: a fetched page in, analysable text plus a
+//! map back to its DOM out; enhancements plus that map in, an enhanced page
+//! or a set of enhanced fragments out.
 //!
 //! Author: Adriane Boyd
 //!
-//! jsoup's mutable node tree maps onto `scraper::Html`, whose `ego_tree`
-//! backing store is where the edits happen; a node is addressed by its
-//! `NodeId` where jsoup addressed it by reference. Creating an element and
-//! filling it with text is expressed as a fragment parse plus a graft,
-//! because html5ever's node constructors are not reachable without a direct
-//! dependency on that crate.
+//! The page is parsed once. Text reaching the pipeline is what the DOM's
+//! text nodes hold, so nothing has to be unescaped on the way in or escaped
+//! on the way out, and an enhancement is placed by splitting the text node
+//! it covers and wrapping the covered part in an element built from the
+//! enhancer's own start tag — attributes are set on nodes, never spliced
+//! into a string. Serialisation happens once, at the end.
 
-use anyhow::{Result, bail};
+use std::collections::BTreeMap;
+
+use anyhow::Result;
 use ego_tree::NodeId;
-use scraper::{Html, Node};
+use scraper::node::Text;
+use scraper::{ElementRef, Html, Node, StrTendril};
+
+use crate::types::{Document, Enhancement, PageMap, RelevantText, TextSegment};
+use crate::util::enhancer_utils::{ADDED_SPAN_STYLE, PAGE_SPAN_CLASS};
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils]
 /// random temporary class name used to avoid Jsoup whitespace preservation
 /// problem with non-HTML <e> tag
 pub static CLASS_NAME: &str = "PCZRlWLK";
 
-/// Traverses the HTML document tree adding <e> spans around all text nodes
-/// and converting HTML entities to unicode characters.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn]
-pub fn mark_text_nodes(doc: &mut Html, node: NodeId) -> Result<()> {
-    let whole_text = match doc.tree.get(node) {
-        Some(node_ref) => match node_ref.value() {
-            Node::Text(text) => Some(text.to_string()),
-            _ => None,
-        },
-        None => return Ok(()),
-    };
+/// Subtrees whose text is markup, code or chrome rather than prose. `head`
+/// is among them, so a page's title and metadata are never analysed.
+static SKIPPED_TAGS: &[&str] = &[
+    "script", "noscript", "style", "form", "object", "embed", "head", "template",
+];
 
-    // if this is a non-empty text node, add an <e> tag
-    if let Some(whole_text) = whole_text {
-        if !is_blank(&whole_text) {
-            let text =
-                html_escape::decode_html_entities(&normalise_whitespace(&whole_text)).into_owned();
-            let Some(e_elem) = create_marker_span(doc, &text) else {
-                return Ok(());
-            };
-            if doc
-                .tree
-                .get(node)
-                .and_then(|node_ref| node_ref.parent())
-                .is_none()
-            {
-                bail!("NullPointerException: text node has no parent");
-            }
-            if let Some(mut node_mut) = doc.tree.get_mut(node) {
-                node_mut.insert_id_before(e_elem);
-                node_mut.detach();
-            }
-        }
-    } else {
-        // look at almost all the child nodes
-        let child_nodes: Vec<NodeId> = match doc.tree.get(node) {
-            Some(node_ref) => node_ref.children().map(|child| child.id()).collect(),
-            None => return Ok(()),
-        };
-        for child in child_nodes {
-            let node_name = match doc.tree.get(child) {
-                Some(child_ref) => node_name(child_ref.value()).to_string(),
-                None => continue,
-            };
-            // the Java tests each name with a full-match regex over a literal
-            if node_name != "script"
-                && node_name != "noscript"
-                && node_name != "form"
-                && node_name != "object"
-                && node_name != "embed"
-                && node_name != "head"
-            {
-                mark_text_nodes(doc, child)?;
-            }
-        }
-    }
+/// Elements that open a block box. Text either side of one of these
+/// boundaries cannot belong to the same sentence.
+static BLOCK_TAGS: &[&str] = &[
+    "address",
+    "article",
+    "aside",
+    "blockquote",
+    "dd",
+    "div",
+    "dl",
+    "dt",
+    "figcaption",
+    "figure",
+    "footer",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "header",
+    "li",
+    "main",
+    "nav",
+    "ol",
+    "p",
+    "pre",
+    "section",
+    "table",
+    "td",
+    "th",
+    "tr",
+    "ul",
+];
 
+/// The text of two adjacent segments is joined by this, so a token can never
+/// run across a boundary between two DOM text nodes.
+const SEGMENT_JOIN: char = '\n';
+
+/// The servlet marks the page's text nodes before serialising it for
+/// analysis. [`extract`] reads the DOM the serialised page parses back to,
+/// so there is nothing to mark and the subtree is handed on as fetched.
+pub fn mark_text_nodes(_doc: &mut Html, _node: NodeId) -> Result<()> {
     Ok(())
 }
 
-/// `doc.createElement("span")` + `addClass(className)` + `text(...)`, as one
-/// orphan subtree grafted into `doc`. Escaping the text before the parse and
-/// letting the parser decode it back reproduces the jsoup call, which stores
-/// the string as a raw text node and escapes it again on serialisation.
-fn create_marker_span(doc: &mut Html, text: &str) -> Option<NodeId> {
-    let markup = format!(
-        "<span class=\"{}\">{}</span>",
-        CLASS_NAME,
-        html_escape::encode_text(text)
-    );
-    let fragment = Html::parse_fragment(&markup);
-    let fragment_root = doc.tree.extend_tree(fragment.tree).id();
+/// Seeds an analysis document from a page: its analysable text, one relevant
+/// stretch per text node that text came from, and the map back to the page.
+///
+/// The document's `page` is left empty; the caller decides where the map
+/// lives, because the pipeline stores it on the document it is annotating
+/// while a one-shot render keeps it beside one.
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn]
+pub fn extract(html: &str) -> (Document, PageMap) {
+    let page = Html::parse_document(html);
+    let mut doc = Document::default();
+    let mut map = PageMap {
+        html: html.to_string(),
+        segments: Vec::new(),
+    };
+    let mut previous_block: Option<Option<NodeId>> = None;
 
-    doc.tree
-        .get(fragment_root)?
-        .descendants()
+    for (index, node) in text_nodes(&page).into_iter().enumerate() {
+        let Some(Node::Text(text)) = page.tree.get(node).map(|node| node.value()) else {
+            continue;
+        };
+        if is_blank(text) || in_skipped_subtree(&page, node) {
+            continue;
+        }
+
+        if !doc.text.is_empty() {
+            doc.text.push(SEGMENT_JOIN);
+        }
+        let begin = doc.text.len();
+        doc.text.push_str(text);
+        let end = doc.text.len();
+
+        let block = block_ancestor(&page, node);
+        let block_start = previous_block != Some(block);
+        previous_block = Some(block);
+
+        map.segments.push(TextSegment {
+            begin,
+            end,
+            node: index,
+            block_start,
+        });
+        doc.relevant_texts.push(RelevantText {
+            begin,
+            end,
+            relevant: true,
+            html_content_type: None,
+            enclosing_tag: parent_tag(&page, node),
+            block_start,
+        });
+    }
+
+    (doc, map)
+}
+
+/// The whole page as HTML, with every enhancement wrapped around the text it
+/// covers. `base_url`, when given, is recorded in the page's `head` so the
+/// relative links of the page as fetched still resolve where it is served.
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn]
+pub fn render_page(
+    map: &PageMap,
+    doc: &Document,
+    activity: Option<&str>,
+    base_url: Option<&str>,
+) -> Result<String> {
+    let mut page = Html::parse_document(&map.html);
+    place_enhancements(&mut page, map, doc, activity);
+    if let Some(base_url) = base_url {
+        set_base_url(&mut page, base_url);
+    }
+
+    Ok(page.html())
+}
+
+/// One entry per enhancement that reached the page, keyed by its position in
+/// the document text, holding the enhanced fragment wrapped in a span that
+/// preserves the layout of wherever the client puts it.
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn]
+pub fn render_spans(
+    map: &PageMap,
+    doc: &Document,
+    activity: Option<&str>,
+) -> Result<BTreeMap<String, String>> {
+    let mut page = Html::parse_document(&map.html);
+    let placed = place_enhancements(&mut page, map, doc, activity);
+    let mut spans: BTreeMap<String, String> = BTreeMap::new();
+
+    for (begin, nodes) in placed {
+        if nodes.is_empty() {
+            continue;
+        }
+        let mut fragment = String::new();
+        for node in nodes {
+            if let Some(element) = page.tree.get(node).and_then(ElementRef::wrap) {
+                fragment.push_str(&element.html());
+            }
+        }
+        spans.insert(
+            begin.to_string(),
+            format!(
+                "<span class=\"{}\" style=\"{}\">{}</span>",
+                PAGE_SPAN_CLASS, ADDED_SPAN_STYLE, fragment
+            ),
+        );
+    }
+
+    Ok(spans)
+}
+
+/// One stretch of a single text node an enhancement covers.
+struct Piece {
+    begin: usize,
+    end: usize,
+    slot: usize,
+}
+
+/// Places every selected enhancement into the parsed page, and reports where
+/// each one landed: its document position paired with the wrapper elements
+/// built for it, in document order.
+fn place_enhancements(
+    page: &mut Html,
+    map: &PageMap,
+    doc: &Document,
+    activity: Option<&str>,
+) -> Vec<(usize, Vec<NodeId>)> {
+    let order = text_nodes(page);
+    let selected = selected_enhancements(doc, activity);
+
+    let mut by_node: BTreeMap<usize, Vec<Piece>> = BTreeMap::new();
+    for (slot, enhancement) in selected.iter().enumerate() {
+        for segment in &map.segments {
+            let begin = enhancement.begin.max(segment.begin);
+            let end = enhancement.end.min(segment.end);
+            if begin >= end {
+                continue;
+            }
+            by_node.entry(segment.node).or_default().push(Piece {
+                begin: begin - segment.begin,
+                end: end - segment.begin,
+                slot,
+            });
+        }
+    }
+
+    let mut placed: Vec<(usize, Vec<NodeId>)> = selected
+        .iter()
+        .map(|enhancement| (enhancement.begin, Vec::new()))
+        .collect();
+
+    for (index, mut pieces) in by_node {
+        let Some(&node) = order.get(index) else {
+            continue;
+        };
+        pieces.sort_by_key(|piece| (piece.begin, piece.end));
+        split_text_node(page, node, &pieces, &selected, &mut placed);
+    }
+
+    placed
+}
+
+/// Records `base_url` as the page's base href, so a page served from
+/// somewhere other than where it was fetched still resolves its own relative
+/// links. A page with no `head` gets no base element.
+fn set_base_url(page: &mut Html, base_url: &str) {
+    let head = page
+        .tree
+        .nodes()
         .find(|node| {
             node.value()
                 .as_element()
-                .is_some_and(|element| element.name() == "span")
+                .is_some_and(|element| element.name() == "head")
         })
-        .map(|span| span.id())
+        .map(|node| node.id());
+    let Some(head) = head else {
+        return;
+    };
+
+    let markup = format!(
+        "<base href=\"{}\">",
+        html_escape::encode_double_quoted_attribute(base_url)
+    );
+    let fragment = Html::parse_fragment(&markup);
+    let root = page.tree.extend_tree(fragment.tree).id();
+    let grafted: Vec<NodeId> = match container_children(page, root) {
+        Some(children) => children,
+        None => return,
+    };
+
+    if let Some(mut head) = page.tree.get_mut(head) {
+        for child in grafted {
+            head.append_id(child);
+        }
+    }
 }
 
-/// jsoup's `Node.nodeName()`: the tag name for an element, and a `#`-prefixed
-/// pseudo-name for everything else.
-fn node_name(node: &Node) -> &str {
-    match node {
-        Node::Document => "#document",
-        Node::Fragment => "#fragment",
-        Node::Doctype(_) => "#doctype",
-        Node::Comment(_) => "#comment",
-        Node::Text(_) => "#text",
-        Node::Element(element) => element.name(),
-        Node::ProcessingInstruction(_) => "#instruction",
+/// The children of the `html` element the fragment parser wraps what it
+/// parsed in, as ids into `page`'s own tree.
+fn container_children(page: &Html, root: NodeId) -> Option<Vec<NodeId>> {
+    let container = page
+        .tree
+        .get(root)?
+        .children()
+        .find(|child| child.value().is_element())?
+        .id();
+
+    Some(
+        page.tree
+            .get(container)?
+            .children()
+            .map(|child| child.id())
+            .collect(),
+    )
+}
+
+/// Replaces one text node by its unenhanced stretches interleaved with a
+/// wrapper element per enhanced stretch. Pieces arrive sorted; one starting
+/// inside its predecessor is dropped, because a wrapper cannot be built for
+/// text another wrapper already took.
+fn split_text_node(
+    page: &mut Html,
+    node: NodeId,
+    pieces: &[Piece],
+    selected: &[&Enhancement],
+    placed: &mut [(usize, Vec<NodeId>)],
+) {
+    let Some(Node::Text(text)) = page.tree.get(node).map(|node| node.value()) else {
+        return;
+    };
+    let text = text.to_string();
+    let mut replacements: Vec<NodeId> = Vec::new();
+    let mut cursor = 0usize;
+
+    for piece in pieces {
+        if piece.begin < cursor
+            || piece.end > text.len()
+            || !text.is_char_boundary(piece.begin)
+            || !text.is_char_boundary(piece.end)
+        {
+            continue;
+        }
+        if piece.begin > cursor {
+            replacements.push(new_text_node(page, &text[cursor..piece.begin]));
+        }
+
+        let covered = new_text_node(page, &text[piece.begin..piece.end]);
+        match new_wrapper_element(page, selected[piece.slot]) {
+            Some(wrapper) => {
+                if let Some(mut wrapper_mut) = page.tree.get_mut(wrapper) {
+                    wrapper_mut.append_id(covered);
+                }
+                replacements.push(wrapper);
+                placed[piece.slot].1.push(wrapper);
+            }
+            None => replacements.push(covered),
+        }
+        cursor = piece.end;
     }
+
+    if replacements.is_empty() {
+        return;
+    }
+    if cursor < text.len() {
+        replacements.push(new_text_node(page, &text[cursor..]));
+    }
+    if page.tree.get(node).and_then(|node| node.parent()).is_none() {
+        return;
+    }
+    if let Some(mut node_mut) = page.tree.get_mut(node) {
+        for replacement in replacements {
+            node_mut.insert_id_before(replacement);
+        }
+        node_mut.detach();
+    }
+}
+
+/// The enhancements that reach the output, in annotation-index order. One
+/// marked irrelevant is carried only by the click activity, which asks the
+/// learner to pick the right words out of every candidate.
+fn selected_enhancements<'a>(doc: &'a Document, activity: Option<&str>) -> Vec<&'a Enhancement> {
+    let click = activity == Some("click");
+    let mut selected: Vec<&Enhancement> = doc
+        .enhancements
+        .iter()
+        .filter(|enhancement| enhancement.relevant || click)
+        .collect();
+    selected.sort_by(|left, right| left.begin.cmp(&right.begin).then(right.end.cmp(&left.end)));
+    selected
+}
+
+/// Every text node of the page in document order. The position of a node in
+/// this list is how [`TextSegment`] names it, so extraction and rendering
+/// agree across a reparse without carrying node identity through the cache.
+fn text_nodes(page: &Html) -> Vec<NodeId> {
+    page.tree
+        .root()
+        .descendants()
+        .filter(|node| node.value().is_text())
+        .map(|node| node.id())
+        .collect()
+}
+
+/// An empty text node, held apart from the page until it is linked in.
+fn new_text_node(page: &mut Html, text: &str) -> NodeId {
+    page.tree
+        .orphan(Node::Text(Text {
+            text: StrTendril::from(text),
+        }))
+        .id()
+}
+
+/// The element an enhancement's start tag names, with the attributes the
+/// enhancer put on it, parsed rather than pasted so nothing inside it can be
+/// read as markup. `None` when the start tag opens no element.
+fn new_wrapper_element(page: &mut Html, enhancement: &Enhancement) -> Option<NodeId> {
+    let markup = format!("{}{}", enhancement.enhance_start, enhancement.enhance_end);
+    let fragment = Html::parse_fragment(&markup);
+    let root = page.tree.extend_tree(fragment.tree).id();
+
+    container_children(page, root)?.into_iter().find(|child| {
+        page.tree
+            .get(*child)
+            .is_some_and(|child| child.value().is_element())
+    })
+}
+
+/// Whether the node sits inside a subtree whose text is not prose.
+fn in_skipped_subtree(page: &Html, node: NodeId) -> bool {
+    let Some(node) = page.tree.get(node) else {
+        return true;
+    };
+    node.ancestors().any(|ancestor| {
+        ancestor
+            .value()
+            .as_element()
+            .is_some_and(|element| SKIPPED_TAGS.contains(&element.name()))
+    })
+}
+
+/// The nearest ancestor opening a block box, which is what tells two
+/// stretches of text apart as belonging to different sentences.
+fn block_ancestor(page: &Html, node: NodeId) -> Option<NodeId> {
+    page.tree
+        .get(node)?
+        .ancestors()
+        .find(|ancestor| {
+            ancestor
+                .value()
+                .as_element()
+                .is_some_and(|element| BLOCK_TAGS.contains(&element.name()))
+        })
+        .map(|ancestor| ancestor.id())
+}
+
+/// The name of the element holding this text node.
+fn parent_tag(page: &Html, node: NodeId) -> Option<String> {
+    page.tree
+        .get(node)?
+        .parent()?
+        .value()
+        .as_element()
+        .map(|element| element.name().to_string())
 }
 
 /// jsoup's `TextNode.isBlank()`: empty, or made up entirely of the five
 /// characters jsoup counts as whitespace. A non-breaking space is not one of
 /// them, so a text node holding only `&nbsp;` is not blank.
 fn is_blank(text: &str) -> bool {
-    text.chars().all(is_whitespace)
-}
-
-/// jsoup's `StringUtil.normaliseWhitespace()`: every run of whitespace,
-/// leading and trailing runs included, collapses to a single space.
-fn normalise_whitespace(text: &str) -> String {
-    let mut normalised = String::with_capacity(text.len());
-    let mut last_was_white = false;
-
-    for c in text.chars() {
-        if is_whitespace(c) {
-            if last_was_white {
-                continue;
-            }
-            normalised.push(' ');
-            last_was_white = true;
-        } else {
-            normalised.push(c);
-            last_was_white = false;
-        }
-    }
-
-    normalised
-}
-
-fn is_whitespace(c: char) -> bool {
-    c == ' ' || c == '\t' || c == '\n' || c == '\u{000C}' || c == '\r'
+    text.chars()
+        .all(|c| c == ' ' || c == '\t' || c == '\n' || c == '\u{000C}' || c == '\r')
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn element_id(doc: &Html, name: &str) -> NodeId {
-        doc.tree
-            .nodes()
-            .find(|node| {
-                node.value()
-                    .as_element()
-                    .is_some_and(|element| element.name() == name)
-            })
-            .map(|node| node.id())
-            .unwrap_or_else(|| panic!("no <{}> in document", name))
+    const PAGE: &str = concat!(
+        "<html><head><title>t</title><script>var a = \"skip\";</script></head>",
+        "<body><p>Mun oidnen viesu.</p><p>Viesut leat stuorr\u{e1}t.</p></body></html>"
+    );
+
+    fn enhancement(begin: usize, end: usize, start: &str) -> Enhancement {
+        Enhancement {
+            begin,
+            end,
+            enhance_start: start.to_string(),
+            enhance_end: "</span>".to_string(),
+            relevant: true,
+        }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
-    #[test]
-    fn wraps_text_nodes_in_a_marker_class_span() {
-        let mut doc = Html::parse_document("<html><body><p>Hei</p></body></html>");
-        let body = element_id(&doc, "body");
+    /// A document seeded from `html`, carrying the given enhancements.
+    fn enhanced(html: &str, enhancements: Vec<Enhancement>) -> (Document, PageMap) {
+        let (mut doc, map) = extract(html);
+        doc.enhancements = enhancements;
+        (doc, map)
+    }
 
-        mark_text_nodes(&mut doc, body).unwrap();
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_joins_text_of_relevant_elements() {
+        let (doc, map) = extract(PAGE);
+
+        assert_eq!(doc.text, "Mun oidnen viesu.\nViesut leat stuorr\u{e1}t.");
+        assert_eq!(map.segments.len(), 2);
+        assert_eq!((map.segments[0].begin, map.segments[0].end), (0, 17));
+        assert_eq!((map.segments[1].begin, map.segments[1].end), (18, 40));
+        assert_eq!(&doc.text[18..40], "Viesut leat stuorr\u{e1}t.");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_skips_script_and_head_subtrees() {
+        let (doc, map) = extract(PAGE);
+
+        assert!(!doc.text.contains("skip"), "{}", doc.text);
+        assert!(!doc.text.contains("var a"), "{}", doc.text);
+        assert_eq!(doc.relevant_texts.len(), 2);
+        // The title's text node is walked, so the indices the map records
+        // still name nodes in a document-order walk of the whole page.
+        assert_eq!(map.segments[0].node, 2);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_marks_every_stretch_relevant_with_tag() {
+        let (doc, _) = extract(PAGE);
+
+        for relevant in &doc.relevant_texts {
+            assert!(relevant.relevant);
+            assert_eq!(relevant.enclosing_tag.as_deref(), Some("p"));
+            assert!(relevant.block_start);
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_keeps_one_block_together() {
+        let (doc, _) = extract("<html><body><p>Mun <b>oidnen</b> viesu.</p></body></html>");
+
+        assert_eq!(doc.text, "Mun \noidnen\n viesu.");
+        assert!(doc.relevant_texts[0].block_start);
+        assert!(!doc.relevant_texts[1].block_start);
+        assert!(!doc.relevant_texts[2].block_start);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_drops_whitespace_only_text_nodes() {
+        let (doc, map) = extract("<html><body>\n  <p>Mun</p>\n  <p>  </p>\n</body></html>");
+
+        assert_eq!(doc.text, "Mun");
+        assert_eq!(map.segments.len(), 1);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.extract-fn/test]
+    #[test]
+    fn extract_reads_entities_as_the_characters() {
+        let (doc, _) = extract("<html><body><p>Tom &amp; caf&eacute;</p></body></html>");
+
+        assert_eq!(doc.text, "Tom & caf\u{e9}");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_wraps_the_covered_text_only() {
+        let (doc, map) = enhanced(PAGE, vec![enhancement(11, 16, "<span class=\"t\">")]);
+
+        let html = render_page(&map, &doc, Some("colorize"), None).unwrap();
 
         assert!(
-            doc.html()
-                .contains("<p><span class=\"PCZRlWLK\">Hei</span></p>"),
-            "{}",
-            doc.html()
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
-    #[test]
-    fn leaves_whitespace_only_text_nodes_alone() {
-        let mut doc = Html::parse_document("<html><body><p>   \n\t</p></body></html>");
-        let body = element_id(&doc, "body");
-
-        mark_text_nodes(&mut doc, body).unwrap();
-
-        let html = doc.html();
-        assert!(!html.contains(CLASS_NAME), "{}", html);
-        assert!(html.contains("<p>   \n\t</p>"), "{}", html);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
-    #[test]
-    fn decodes_html_entities_left_in_the_text_node() {
-        let mut doc = Html::parse_document("<html><body><p>caf&amp;eacute;</p></body></html>");
-        let body = element_id(&doc, "body");
-
-        mark_text_nodes(&mut doc, body).unwrap();
-
-        assert!(
-            doc.html()
-                .contains("<span class=\"PCZRlWLK\">caf\u{e9}</span>"),
-            "{}",
-            doc.html()
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
-    #[test]
-    fn collapses_whitespace_runs_inside_the_replacement_span() {
-        let mut doc = Html::parse_document("<html><body><p>a\n   b</p></body></html>");
-        let body = element_id(&doc, "body");
-
-        mark_text_nodes(&mut doc, body).unwrap();
-
-        assert!(
-            doc.html().contains("<span class=\"PCZRlWLK\">a b</span>"),
-            "{}",
-            doc.html()
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
-    #[test]
-    fn skips_script_and_head_subtrees() {
-        let mut doc = Html::parse_document(
-            "<html><head><title>T</title></head><body><p>Hi</p><script>var i = 1;</script></body></html>",
-        );
-        let html_element = element_id(&doc, "html");
-
-        mark_text_nodes(&mut doc, html_element).unwrap();
-
-        let html = doc.html();
-        assert_eq!(html.matches(CLASS_NAME).count(), 1, "{}", html);
-        assert!(
-            html.contains("<span class=\"PCZRlWLK\">Hi</span>"),
+            html.contains("<p>Mun oidnen <span class=\"t\">viesu</span>.</p>"),
             "{}",
             html
         );
-        assert!(html.contains("<script>var i = 1;</script>"), "{}", html);
-        assert!(html.contains("<title>T</title>"), "{}", html);
+        assert!(
+            html.contains("<p>Viesut leat stuorr\u{e1}t.</p>"),
+            "{}",
+            html
+        );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.mark-text-nodes-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
     #[test]
-    fn marks_the_given_node_even_if_head() {
-        let mut doc =
-            Html::parse_document("<html><head><title>T</title></head><body></body></html>");
-        let head = element_id(&doc, "head");
+    fn render_escapes_text_it_moves_around() {
+        let source = "<html><body><p>Tom &amp; Jerry</p></body></html>";
+        let (doc, map) = enhanced(source, vec![enhancement(0, 3, "<span id=\"a\">")]);
 
-        mark_text_nodes(&mut doc, head).unwrap();
+        let html = render_page(&map, &doc, None, None).unwrap();
 
-        assert!(doc.html().contains(CLASS_NAME), "{}", doc.html());
+        assert!(
+            html.contains("<p><span id=\"a\">Tom</span> &amp; Jerry</p>"),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_keeps_irrelevant_spans_for_click() {
+        let mut irrelevant = enhancement(0, 3, "<span id=\"a\">");
+        irrelevant.relevant = false;
+        let (doc, map) = enhanced(PAGE, vec![irrelevant]);
+
+        assert!(
+            !render_page(&map, &doc, Some("colorize"), None)
+                .unwrap()
+                .contains("id=\"a\"")
+        );
+        assert!(
+            render_page(&map, &doc, Some("click"), None)
+                .unwrap()
+                .contains("<span id=\"a\">Mun</span>")
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_hands_back_the_whole_page() {
+        let (doc, map) = enhanced(PAGE, vec![enhancement(0, 3, "<span id=\"a\">")]);
+
+        let html = render_page(&map, &doc, None, Some("http://example.org/p?a=\"1\"&b=2")).unwrap();
+
+        assert!(html.starts_with("<html>"), "{}", html);
+        assert!(
+            html.contains("<script>var a = \"skip\";</script>"),
+            "{}",
+            html
+        );
+        assert!(html.contains("<title>t</title>"), "{}", html);
+        // The base href is set as an attribute, so it is escaped once.
+        assert!(
+            html.contains("<base href=\"http://example.org/p?a=&quot;1&quot;&amp;b=2\">"),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_adds_no_base_without_a_url() {
+        let (doc, map) = enhanced(PAGE, Vec::new());
+
+        assert!(
+            !render_page(&map, &doc, None, None)
+                .unwrap()
+                .contains("<base")
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_splits_a_span_crossing_two_nodes() {
+        let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
+        let (doc, map) = enhanced(source, vec![enhancement(0, 11, "<span id=\"a\">")]);
+
+        let html = render_page(&map, &doc, None, None).unwrap();
+
+        assert!(
+            html.contains("<p><span id=\"a\">Mun </span><b><span id=\"a\">oidnen</span></b></p>"),
+            "{}",
+            html
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn/test]
+    #[test]
+    fn render_drops_an_overlapping_second_span() {
+        let (doc, map) = enhanced(
+            PAGE,
+            vec![
+                enhancement(0, 10, "<span id=\"a\">"),
+                enhancement(4, 16, "<span id=\"b\">"),
+            ],
+        );
+
+        let html = render_page(&map, &doc, None, None).unwrap();
+
+        assert!(
+            html.contains("<span id=\"a\">Mun oidnen</span>"),
+            "{}",
+            html
+        );
+        assert!(!html.contains("id=\"b\""), "{}", html);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn/test]
+    #[test]
+    fn spans_are_keyed_by_document_position() {
+        let (doc, map) = enhanced(
+            PAGE,
+            vec![
+                enhancement(11, 16, "<span id=\"a\">"),
+                enhancement(18, 24, "<span id=\"b\">"),
+            ],
+        );
+
+        let spans = render_spans(&map, &doc, Some("colorize")).unwrap();
+
+        assert_eq!(
+            spans.keys().cloned().collect::<Vec<String>>(),
+            vec!["11".to_string(), "18".to_string()]
+        );
+        assert_eq!(
+            spans["11"],
+            format!(
+                "<span class=\"{}\" style=\"{}\"><span id=\"a\">viesu</span></span>",
+                PAGE_SPAN_CLASS, ADDED_SPAN_STYLE
+            )
+        );
+        assert!(
+            spans["18"].contains("<span id=\"b\">Viesut</span>"),
+            "{}",
+            spans["18"]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn/test]
+    #[test]
+    fn spans_join_the_pieces_of_one_enhancement() {
+        let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
+        let (doc, map) = enhanced(source, vec![enhancement(0, 11, "<span id=\"a\">")]);
+
+        let spans = render_spans(&map, &doc, None).unwrap();
+
+        assert_eq!(spans.len(), 1);
+        assert!(
+            spans["0"].contains("<span id=\"a\">Mun </span><span id=\"a\">oidnen</span>"),
+            "{}",
+            spans["0"]
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn/test]
+    #[test]
+    fn spans_are_empty_without_enhancements() {
+        let (doc, map) = enhanced(PAGE, Vec::new());
+
+        assert!(render_spans(&map, &doc, Some("click")).unwrap().is_empty());
+    }
+
+    #[test]
+    fn marking_text_nodes_leaves_the_page_alone() {
+        let mut page = Html::parse_document(PAGE);
+        let before = page.html();
+        let root = page.tree.root().id();
+
+        mark_text_nodes(&mut page, root).unwrap();
+
+        assert_eq!(page.html(), before);
     }
 
     #[test]
@@ -265,11 +737,5 @@ mod tests {
         assert!(is_blank(" \t\n\r\u{000C}"));
         assert!(!is_blank("\u{a0}"));
         assert!(!is_blank(" a "));
-    }
-
-    #[test]
-    fn whitespace_normalisation_collapses_edge_runs_too() {
-        assert_eq!(normalise_whitespace("  a \n\t b  "), " a b ");
-        assert_eq!(normalise_whitespace(""), "");
     }
 }

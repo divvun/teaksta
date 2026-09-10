@@ -1,30 +1,60 @@
-//! Produces an HTML document with enhancements from a CAS containing
-//! Enhancements.
+//! Produces an HTML document with enhancements from a document carrying
+//! Enhancements and the page they were found in.
 //!
 //! Author: Adriane Boyd
 //!
-//! jsoup's document mutations map onto `scraper::Html` plus its `ego_tree`
-//! backing store: an element is addressed by `NodeId`, and the
-//! parse-a-fragment-and-graft-it helpers below stand in for jsoup's
-//! `Element.append(String)` / `prependElement(String)` / `text(String)`.
+//! The page is rendered from the document's own map of it, so the only thing
+//! left to add here is the base URL the fetched page's relative links need.
 
-use std::collections::HashMap;
-use std::sync::LazyLock;
-
-use anyhow::{Result, anyhow};
-use ego_tree::NodeId;
-use regex::Regex;
-use scraper::node::Text;
-use scraper::{ElementRef, Html, Node, Selector, StrTendril};
-use tracing::info;
+use anyhow::Result;
 
 use crate::server::activity_configuration::ActivityConfiguration;
 use crate::server::servlet::HttpServletRequest;
 use crate::types::Document;
-use crate::util::enhancer_utils;
+use crate::util::html_utils;
 
-static WERTI_SERVLET: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new("/WERTiServlet").expect("WERTiServlet pattern"));
+/// North Sámi names for the topics and the exercise types, for a caller
+/// putting a reminder of the chosen exercise on the page.
+#[rustfmt::skip]
+static SAMI_LABELS: &[(&str, &str)] = &[
+    ("SubstantiveSingular", "Substantiivvat ovttaidlogus"),
+    ("SubstantivePlural", "Substantiivvat m\u{e1}\u{14b}ggaidlogus"),
+    ("VerbConjugation", "Finihtta vearbbat"),
+    ("NegVerbs", "Biehttalanvearbbat"),
+    ("InfiniteVerbs", "Infinihtta vearbbat"),
+    ("Conjunctions", "Konjunk\u{161}uvnnat"),
+    ("Substantive", "Substantiivvat"),
+    ("Subject", "Subjeakta"),
+    ("Object", "Objeakta"),
+    ("Adverbial", "Adverbi\u{e1}la"),
+    ("colorize", "Geah\u{10d}a ivdnejuvvon s\u{e1}niid."),
+    ("click", "Coahkkal rivttes s\u{e1}niid!"),
+    ("mc", "V\u{e1}llje rivttes s\u{e1}niid!"),
+    ("cloze", "\u{10c}\u{e1}le rivttes s\u{e1}niid!"),
+];
+
+/// The North Sámi name of a topic or exercise type, if it has one.
+pub fn sami_label(name: &str) -> Option<&'static str> {
+    SAMI_LABELS
+        .iter()
+        .find(|(key, _)| *key == name)
+        .map(|(_, label)| *label)
+}
+
+/// The chosen topic and exercise type in North Sámi, as a short reminder of
+/// what the learner is looking at. A name with no North Sámi label is used
+/// as it stands.
+pub fn topic_title(activity: &str, enhancement: Option<&str>) -> String {
+    let topic = sami_label(activity).unwrap_or(activity);
+    match enhancement {
+        Some(enhancement) => format!(
+            "{}: {}",
+            topic,
+            sami_label(enhancement).unwrap_or(enhancement)
+        ),
+        None => topic.to_string(),
+    }
+}
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer]
 pub struct HtmlEnhancer<'a> {
@@ -38,274 +68,23 @@ impl<'a> HtmlEnhancer<'a> {
         HtmlEnhancer { cas: c_cas }
     }
 
-    /// Converts an HTML CAS document with Enhancements to an HTML string.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn]
+    /// Converts an HTML document with Enhancements to an HTML string. The
+    /// topic, the activity configuration and the servlet context name reach
+    /// the page through the client rather than through the markup, so only
+    /// the requested exercise type is read here.
+    // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2]
     pub fn enhance(
         &self,
-        activity: &str,
+        _activity: &str,
         baseurl: &str,
         req: &HttpServletRequest,
         _config: &ActivityConfiguration,
         _servlet_context_name: &str,
     ) -> Result<String> {
-        // translations of topics and activities to North Sámi
-        let mut dict: HashMap<&str, &str> = HashMap::new();
-        dict.insert("SubstantiveSingular", "Substantiivvat ovttaidlogus");
-        dict.insert("SubstantivePlural", "Substantiivvat máŋggaidlogus");
-        dict.insert("VerbConjugation", "Finihtta vearbbat");
-        dict.insert("NegVerbs", "Biehttalanvearbbat");
-        dict.insert("InfiniteVerbs", "Infinihtta vearbbat");
-        dict.insert("Conjunctions", "Konjunkšuvnnat");
-        dict.insert("Substantive", "Substantiivvat");
-        dict.insert("Subject", "Subjeakta");
-        dict.insert("Object", "Objeakta");
-        dict.insert("Adverbial", "Adverbiála");
-        dict.insert("colorize", "Geahča ivdnejuvvon sániid.");
-        dict.insert("click", "Coahkkal rivttes sániid!");
-        dict.insert("mc", "Vállje rivttes sániid!");
-        dict.insert("cloze", "Čále rivttes sániid!");
-
         let enhancement = req.get_parameter("client.enhancement");
-        let mut activity_cat = activity.to_lowercase();
 
-        // get the translations of the topic and the exercise type to sme from the small dictionary
-        let activity_sme = dict.get(activity).copied();
-        let enhancement_sme = enhancement.and_then(|enhancement| dict.get(enhancement).copied());
-
-        let mut html_string = enhancer_utils::cas_to_enhanced(self.cas, enhancement)?;
-
-        // replace <e> tags with wertiview spans
-        // (this should probably be done with a real tree traversal, but it was causing me headaches
-        // and a search and replace is probably sufficient and quicker)
-        html_string = html_string.replace("<e>", "<span class=\"wertiview\">");
-        html_string = html_string.replace("</e>", "</span>");
-
-        let mut html_doc = Html::parse_document(&html_string);
-
-        // add base url
-        let head = element_by_name(&html_doc, "head")
-            .ok_or_else(|| anyhow!("NullPointerException: document has no <head>"))?;
-        let base = format!(
-            "<base href=\"{}\">",
-            html_escape::encode_double_quoted_attribute(baseurl)
-        );
-        append_html(&mut html_doc, head, &base);
-
-        // Write the chosen topic and activity in North Sámi into the page title. So the user has a
-        // short reminder about the exercise.
-        let topic_activity = format!("{}: {}", null_str(activity_sme), null_str(enhancement_sme));
-        // encode the title string as utf8: the Java round-trips the string
-        // through the platform default charset, which is already UTF-8
-        let customised_title = topic_activity;
-        let title = element_by_name(&html_doc, "title");
-        match title {
-            None => info!("title null"),
-            Some(title) => set_element_text(&mut html_doc, title, &customised_title),
-        }
-
-        // add js libraries
-        let mut this_url = req.get_request_url().to_string();
-        this_url = this_url.replace("http", "https");
-        this_url = WERTI_SERVLET.replace(&this_url, "").into_owned();
-        info!("URL to js-lib:{}", this_url);
-        // the lookahead-anchored truncation to the servlet context name is left
-        // out: something went wrong with the url on gtlab, so that js libraries
-        // and .css files had wrong paths
-        if activity == "Arts" || activity == "Dets" {
-            activity_cat = "pos".to_string();
-        }
-
-        let jquery_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/jquery-1.4.2.min.js"
-        );
-
-        let wertiview_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/wertiview.js"
-        );
-
-        let blur_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/blur.js"
-        );
-
-        let notification_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/notification.js"
-        );
-
-        // was: view.css
-        let wertiview_css = format!(
-            "<link type=\"text/css\" rel=\"stylesheet\" href=\"{}{}\"></link>",
-            this_url, "/js-lib/wertiview.css"
-        );
-
-        let lib_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/lib.js"
-        );
-
-        let activity_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}{}\"></script>",
-            this_url, "/js-lib/activity.js"
-        );
-
-        let topic_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"{}/js-lib/{}.js\"></script>",
-            this_url, activity_cat
-        );
-
-        // none of the interpolated values are escaped for JavaScript or HTML
-        let enhancement_js = null_str(enhancement);
-        let load_js = format!(
-            "<script type=\"text/javascript\" language=\"javascript\">\n\
-             wertiview.jQuery(document).ready(function() {{ wertiview.jQuery('body').data('wertiview-topic', '{activity}');\n\
-             var topic = \"{activity_cat}\";\n\
-             var activity = \"{enhancement_js}\";\n\
-             if (!window['wertiview'][topic] || !window['wertiview'][topic][activity]) {{\n    \
-             alert(\"topic \"+topic+\" activity \"+ activity + \"The selected activity is not available for this topic.  Please choose a different activity.\");\n\
-             }} else {{\n    \
-             wertiview.{activity_cat}.{enhancement_js}();\n\
-             }}\n\
-             }});\n\
-             </script>\n"
-        );
-
-        append_html(&mut html_doc, head, &jquery_js);
-        append_html(&mut html_doc, head, &wertiview_js);
-        append_html(&mut html_doc, head, &blur_js);
-        append_html(&mut html_doc, head, &notification_js);
-        append_html(&mut html_doc, head, &wertiview_css);
-        append_html(&mut html_doc, head, &lib_js);
-        append_html(&mut html_doc, head, &activity_js);
-        append_html(&mut html_doc, head, &topic_js);
-        append_html(&mut html_doc, head, &load_js);
-
-        let body = element_by_name(&html_doc, "body")
-            .ok_or_else(|| anyhow!("NullPointerException: document has no <body>"))?;
-        prepend_html(&mut html_doc, body, "<p class=\"p_reminder\"></p>");
-
-        let p_reminder = Selector::parse("p.p_reminder").expect("p.p_reminder selector");
-        let reminder_span = format!(
-            "<span class='span_reminder'>{}: {}</span>",
-            null_str(activity_sme),
-            null_str(enhancement_sme)
-        );
-        for reminder in select_within(&html_doc, body, &p_reminder) {
-            append_html(&mut html_doc, reminder, &reminder_span);
-        }
-
-        // jsoup's Elements.select keeps the roots that match the query, so the
-        // wertiview spans themselves are styled along with the spans inside them
-        let wertiview = Selector::parse("span.wertiview").expect("span.wertiview selector");
-        let span = Selector::parse("span").expect("span selector");
-        let mut spans: Vec<NodeId> = Vec::new();
-        for element in html_doc.select(&wertiview) {
-            spans.push(element.id());
-            spans.extend(element.select(&span).map(|nested| nested.id()));
-        }
-        enhancer_utils::set_style_attribute(
-            &mut html_doc,
-            &spans,
-            enhancer_utils::ADDED_SPAN_STYLE,
-        );
-
-        Ok(html_doc.html())
-    }
-}
-
-/// Java renders a null reference as the four characters `null` when it is
-/// concatenated into a string; a dictionary miss and a missing request
-/// parameter both reach the page that way.
-fn null_str(value: Option<&str>) -> &str {
-    value.unwrap_or("null")
-}
-
-/// The first element with this tag name, in document order.
-fn element_by_name(doc: &Html, name: &str) -> Option<NodeId> {
-    doc.tree
-        .nodes()
-        .find(|node| {
-            node.value()
-                .as_element()
-                .is_some_and(|element| element.name() == name)
-        })
-        .map(|node| node.id())
-}
-
-/// jsoup's `Element.select(query)` scoped to one element's descendants.
-fn select_within(doc: &Html, root: NodeId, selector: &Selector) -> Vec<NodeId> {
-    let Some(root) = doc.tree.get(root).and_then(ElementRef::wrap) else {
-        return Vec::new();
-    };
-    root.select(selector).map(|element| element.id()).collect()
-}
-
-/// jsoup's `Element.append(String html)`: parse the fragment and add its nodes
-/// as the last children of the element.
-fn append_html(doc: &mut Html, parent: NodeId, html: &str) {
-    let children = graft_fragment(doc, html);
-    let Some(mut parent) = doc.tree.get_mut(parent) else {
-        return;
-    };
-    for child in children {
-        parent.append_id(child);
-    }
-}
-
-/// jsoup's `Element.prependElement(...)`: the parsed nodes become the first
-/// children of the element, keeping their relative order.
-fn prepend_html(doc: &mut Html, parent: NodeId, html: &str) {
-    let children = graft_fragment(doc, html);
-    let Some(mut parent) = doc.tree.get_mut(parent) else {
-        return;
-    };
-    for child in children.into_iter().rev() {
-        parent.prepend_id(child);
-    }
-}
-
-/// Parses `html` as a fragment, moves the parsed nodes into `doc`'s tree and
-/// returns them as orphans ready to be linked under an element. The fragment
-/// parser wraps what it parsed in an `html` container element, which is left
-/// behind.
-fn graft_fragment(doc: &mut Html, html: &str) -> Vec<NodeId> {
-    let fragment = Html::parse_fragment(html);
-    let fragment_root = doc.tree.extend_tree(fragment.tree).id();
-
-    let container = doc
-        .tree
-        .get(fragment_root)
-        .and_then(|root| root.children().find(|child| child.value().is_element()))
-        .map(|container| container.id());
-    let Some(container) = container else {
-        return Vec::new();
-    };
-
-    match doc.tree.get(container) {
-        Some(container) => container.children().map(|child| child.id()).collect(),
-        None => Vec::new(),
-    }
-}
-
-/// jsoup's `Element.text(String)`: existing contents are cleared and the
-/// string becomes the element's single text node, re-escaped on serialisation.
-fn set_element_text(doc: &mut Html, element: NodeId, text: &str) {
-    let children: Vec<NodeId> = match doc.tree.get(element) {
-        Some(element) => element.children().map(|child| child.id()).collect(),
-        None => return,
-    };
-    for child in children {
-        if let Some(mut child) = doc.tree.get_mut(child) {
-            child.detach();
-        }
-    }
-    if let Some(mut element) = doc.tree.get_mut(element) {
-        element.append(Node::Text(Text {
-            text: StrTendril::from(text),
-        }));
+        html_utils::render_page(&self.cas.page, self.cas, enhancement, Some(baseurl))
     }
 }
 
@@ -314,7 +93,11 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
-    const PAGE: &str = "<html><head><title>Old</title></head><body><p>abc</p></body></html>";
+    use crate::types::Enhancement;
+    use crate::util::html_utils;
+
+    const PAGE: &str =
+        "<html><head><title>Old</title></head><body><p>Mun oidnen viesu.</p></body></html>";
 
     /// The smallest activity descriptor `ActivityConfiguration` will load. The
     /// value is threaded through `enhance` untouched, so its contents are
@@ -325,9 +108,9 @@ mod tests {
         ActivityConfiguration::new(&path).unwrap()
     }
 
-    fn request(request_url: &str, enhancement: Option<&str>) -> HttpServletRequest {
+    fn request(enhancement: Option<&str>) -> HttpServletRequest {
         let mut req = HttpServletRequest {
-            request_url: request_url.to_string(),
+            request_url: "http://example.org/teaksta".to_string(),
             ..HttpServletRequest::default()
         };
         if let Some(enhancement) = enhancement {
@@ -337,20 +120,28 @@ mod tests {
         req
     }
 
-    fn enhance(
-        cas: &Document,
-        activity: &str,
-        baseurl: &str,
-        request_url: &str,
-        enhancement: Option<&str>,
-    ) -> String {
+    /// A document seeded from `PAGE`, carrying one enhancement over `viesu`.
+    fn analysed(relevant: bool) -> Document {
+        let (mut cas, map) = html_utils::extract(PAGE);
+        cas.page = map;
+        cas.enhancements.push(Enhancement {
+            begin: 11,
+            end: 16,
+            enhance_start: "<span id=\"teaksta-span-1\" class=\"teaksta-token\">".to_string(),
+            enhance_end: "</span>".to_string(),
+            relevant,
+        });
+        cas
+    }
+
+    fn enhance(cas: &Document, baseurl: &str, enhancement: Option<&str>) -> String {
         let dir = TempDir::new().unwrap();
         let config = activity_configuration(&dir);
         HtmlEnhancer::new(cas)
             .enhance(
-                activity,
+                "Substantive",
                 baseurl,
-                &request(request_url, enhancement),
+                &request(enhancement),
                 &config,
                 "teaksta",
             )
@@ -367,16 +158,12 @@ mod tests {
         assert!(std::ptr::eq(enhancer.cas, &cas));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
     #[test]
-    fn head_gets_the_base_url_and_asset_list() {
-        let cas = Document::new(PAGE, "sme");
-
+    fn head_gets_the_base_url_and_nothing_else() {
         let html = enhance(
-            &cas,
-            "Substantive",
+            &analysed(true),
             "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
             Some("colorize"),
         );
 
@@ -385,214 +172,59 @@ mod tests {
             "{}",
             html
         );
-        let (head, _) = html.split_once("</head>").expect("a closed head");
-        let mut cursor = 0;
-        for asset in [
-            "js-lib/jquery-1.4.2.min.js",
-            "js-lib/wertiview.js",
-            "js-lib/blur.js",
-            "js-lib/notification.js",
-            "js-lib/wertiview.css",
-            "js-lib/lib.js",
-            "js-lib/activity.js",
-            "js-lib/substantive.js",
-        ] {
-            let expected = if asset.ends_with(".css") {
-                format!(
-                    "<link href=\"https://example.org/teaksta/{}\" rel=\"stylesheet\" type=\"text/css\">",
-                    asset
-                )
-            } else {
-                format!(
-                    "<script language=\"javascript\" src=\"https://example.org/teaksta/{}\" type=\"text/javascript\"></script>",
-                    asset
-                )
-            };
-            let at = head[cursor..]
-                .find(&expected)
-                .unwrap_or_else(|| panic!("missing {}\nin {}", expected, head));
-            cursor += at + expected.len();
-        }
+        assert!(!html.contains("<script"), "{}", html);
+        assert!(!html.contains("js-lib"), "{}", html);
+        assert!(html.contains("<title>Old</title>"), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
     #[test]
-    fn title_and_reminder_carry_north_sami_labels() {
-        let cas = Document::new(PAGE, "sme");
+    fn the_enhanced_span_is_wrapped_around_its_text() {
+        let html = enhance(&analysed(true), "http://example.org/", Some("colorize"));
 
-        let html = enhance(
-            &cas,
-            "Substantive",
-            "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
-            Some("colorize"),
-        );
-
-        assert!(
-            html.contains("<title>Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</title>"),
-            "{}",
-            html
-        );
         assert!(
             html.contains(
-                "<p class=\"p_reminder\"><span class=\"span_reminder\">Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</span></p><p>abc</p>"
+                "<p>Mun oidnen <span class=\"teaksta-token\" id=\"teaksta-span-1\">viesu</span>.</p>"
             ),
             "{}",
             html
         );
-        assert!(!html.contains("Old"), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
     #[test]
-    fn the_inline_loader_interpolates_topic_and_activity_unescaped() {
-        let cas = Document::new(PAGE, "sme");
+    fn an_irrelevant_span_reaches_click_alone() {
+        let cas = analysed(false);
 
-        let html = enhance(
-            &cas,
-            "Substantive",
-            "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
-            Some("colorize"),
-        );
-
-        assert!(
-            html.contains("wertiview.jQuery('body').data('wertiview-topic', 'Substantive');"),
-            "{}",
-            html
-        );
-        assert!(html.contains("var topic = \"substantive\";"), "{}", html);
-        assert!(html.contains("var activity = \"colorize\";"), "{}", html);
-        assert!(
-            html.contains("wertiview.substantive.colorize();"),
-            "{}",
-            html
-        );
+        assert!(!enhance(&cas, "http://example.org/", Some("colorize")).contains("teaksta-span-1"));
+        assert!(enhance(&cas, "http://example.org/", Some("click")).contains("teaksta-span-1"));
+        assert!(!enhance(&cas, "http://example.org/", None).contains("teaksta-span-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+2/test]
     #[test]
-    fn an_https_request_url_is_mangled_into_httpss() {
-        let cas = Document::new(PAGE, "sme");
-
+    fn the_base_url_is_escaped_as_an_attribute() {
         let html = enhance(
-            &cas,
-            "Substantive",
-            "https://example.org/page.html",
-            "https://example.org/WERTiServlet",
-            Some("colorize"),
+            &analysed(true),
+            "http://example.org/?a=\"1\"&b=2",
+            Some("mc"),
         );
 
         assert!(
-            html.contains("src=\"httpss://example.org/js-lib/lib.js\""),
+            html.contains("<base href=\"http://example.org/?a=&quot;1&quot;&amp;b=2\">"),
             "{}",
             html
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
     #[test]
-    fn unknown_topic_and_missing_enhancement_render_as_null() {
-        let cas = Document::new(PAGE, "sme");
-
-        let html = enhance(
-            &cas,
-            "Unknown",
-            "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
-            None,
-        );
-
-        assert!(html.contains("<title>null: null</title>"), "{}", html);
-        assert!(
-            html.contains("<span class=\"span_reminder\">null: null</span>"),
-            "{}",
-            html
-        );
-        assert!(html.contains("var activity = \"null\";"), "{}", html);
-        assert!(html.contains("wertiview.unknown.null();"), "{}", html);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
-    #[test]
-    fn arts_and_dets_are_rewritten_to_pos() {
-        let cas = Document::new(PAGE, "sme");
-
-        for activity in ["Arts", "Dets"] {
-            let html = enhance(
-                &cas,
-                activity,
-                "http://example.org/page.html",
-                "http://example.org/teaksta/WERTiServlet",
-                Some("click"),
-            );
-
-            assert!(
-                html.contains("src=\"https://example.org/teaksta/js-lib/pos.js\""),
-                "{}",
-                html
-            );
-            assert!(html.contains("var topic = \"pos\";"), "{}", html);
-            assert!(
-                html.contains(&format!("data('wertiview-topic', '{}');", activity)),
-                "{}",
-                html
-            );
-        }
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
-    #[test]
-    fn bare_enhance_tags_and_children_become_styled_spans() {
-        let cas = Document::new(
-            "<html><head><title>Old</title></head><body><p><e>boaris <b>beana</b><span>!</span></e></p></body></html>",
-            "sme",
-        );
-
-        let html = enhance(
-            &cas,
-            "Substantive",
-            "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
-            Some("colorize"),
-        );
-
-        assert!(!html.contains("<e>"), "{}", html);
+    fn north_sami_labels_are_available_to_callers() {
+        assert_eq!(sami_label("Substantive"), Some("Substantiivvat"));
+        assert_eq!(sami_label("Unknown"), None);
         assert_eq!(
-            html.matches(enhancer_utils::ADDED_SPAN_STYLE).count(),
-            2,
-            "{}",
-            html
+            topic_title("Substantive", Some("colorize")),
+            "Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid."
         );
-        assert!(
-            html.contains(&format!(
-                "<span class=\"wertiview\" style=\"{}\">boaris <b>beana</b><span style=\"{}\">!</span></span>",
-                enhancer_utils::ADDED_SPAN_STYLE,
-                enhancer_utils::ADDED_SPAN_STYLE
-            )),
-            "{}",
-            html
-        );
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn/test]
-    #[test]
-    fn a_document_without_a_title_skips_that_step() {
-        let cas = Document::new("<html><head></head><body><p>abc</p></body></html>", "sme");
-
-        let html = enhance(
-            &cas,
-            "Substantive",
-            "http://example.org/page.html",
-            "http://example.org/teaksta/WERTiServlet",
-            Some("colorize"),
-        );
-
-        assert!(!html.contains("<title>"), "{}", html);
-        assert!(
-            html.contains("<span class=\"span_reminder\">Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid.</span>"),
-            "{}",
-            html
-        );
+        assert_eq!(topic_title("Unknown", None), "Unknown");
     }
 }

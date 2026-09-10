@@ -28,8 +28,8 @@ public class GenericRelevanceAnnotator extends JCasAnnotator_ImplBase {
 	 * 
 	 * @param cas The document's cas.
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2]
 	@SuppressWarnings("unchecked")
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.debug("Starting relevance annotation");
