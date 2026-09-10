@@ -303,12 +303,20 @@ children (
                 id hd-request-limits
                 title "Request hardening: body size limits and CatchPanic across all routes"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:07.389231Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Panic-audit CRITICAL 1: /api/enhance has no SizeLimit (api.rs:168-177 — only /api/upload does); poem's Json extractor buffers unbounded, then serde + Html::parse_document copy it twice more, so one chunked POST streaming an endless html field OOMs the process. Add SizeLimit to the enhance routes (and a sane cap on SpanRequest.html). Panic 9: no CatchPanic middleware — an async-side panic resets the connection with no 500 and no structured log; add poem's CatchPanic at the router root (main.rs:42). Cheap, purely additive node — good first pick."
+                    }
+
+                    {
+                        at 2026-09-10T23:10:58.397604Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
@@ -426,6 +434,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "The mechanical sweep, scoped to what survives hd-mode/hd-enhancers/hd-error-paths. Full catalog in the idiomaticness review (session 903ca870, agent a6ff7a1af07a44192 output). Headlines: H5 i64 -1 sentinels -> Option<usize> (tokenizer.rs:37,73, sentences.rs:217, deletes the :230 guard and every cast); H6 per-sentence re-sort -> sort once + partition_point (sentences.rs:211); M2 thirteen new()+initialize() UIMA lifecycles -> fallible new(tags) (callers in flow.rs:69-119 already pair them); M7/M34 five encodings of annotation index order + two Spanned traits -> one trait+helper in types.rs; M8 contains_key-then-index chains -> get()?/entry() (activity_configuration.rs:453,493,543, processors.rs:385); M29 x = x + y string concat in loops, eight sites -> push_str; M40 CgReading = Vec<String> -> struct{lemma,tags} (kills three re-derivations); M35 infallible Result on render_page/render_spans; M37 handled in hd-cache; M44+coherence-LOW dead-code deletion: ExtCommandConsume2Logger/2String, TOKENIZERS/DETECTORS registries, /tmp/konteakstaInput.txt + /opt/smi shell strings, CHUNK_*_SUFFIX x6, cas_utils cancellation machinery (is_valid always true), activity_configuration client_config accessors + pub fn main (args[0] panic), object.rs/adverbial.rs dead get_lemma with #[should_panic] pins, unread AnalysisEngine fields, unread Token.detailedtag/.chunk/.mltag, html_enhancer::topic_title, M13 lib main. Plus panic 11: cg_enhancer.rs:317,332 current[1..] on a reading emptied by retain — move the is_empty check after retain (vislcg3.rs:329-333)."
+                    }
+
+                    {
+                        at 2026-09-10T22:54:59.99431Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Follow-up from the hd-mode delivery: Mode now lives in server::api and is imported by enhancer/* and pipeline/flow.rs — worse layering than intended (pipeline/enhancer depending on the HTTP module). Rehome Mode to crate::types alongside Document during this sweep."
                     }
                 )
             }
