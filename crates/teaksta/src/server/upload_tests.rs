@@ -20,7 +20,7 @@ fn rejection(error: anyhow::Error) -> Rejection {
         .unwrap_or_else(|| panic!("a gate rejection, not {error:#}"))
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
 #[test]
 fn a_body_without_a_file_part_is_refused() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -32,7 +32,7 @@ fn a_body_without_a_file_part_is_refused() {
     assert_eq!(rejection(empty), Rejection::NoFile);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
 #[test]
 fn the_cap_is_five_megabytes() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -46,7 +46,7 @@ fn the_cap_is_five_megabytes() {
     assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
 #[test]
 fn a_non_page_upload_is_refused() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -117,7 +117,7 @@ fn a_page_without_prose_reads_as_nothing() {
     assert_eq!(SME_READING_SHARE, 0.6);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
 #[test]
 fn a_stored_upload_is_addressed_by_file_url() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -128,4 +128,25 @@ fn a_stored_upload_is_addressed_by_file_url() {
 
     assert!(url.starts_with("file:///"), "{url}");
     assert!(url.ends_with("/abc"), "{url}");
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+#[test]
+fn an_upload_directory_with_a_space_still_addresses() {
+    let root = tempfile::tempdir().expect("temp dir");
+    // Both hazards a deployment path can carry: a space, which would end the
+    // address early, and a non-ASCII character, which has no place in one.
+    let directory = root.path().join("upload sadji").join("s\u{e1}mi");
+    std::fs::create_dir_all(&directory).expect("the upload directory");
+    let stored = directory.join("abc");
+    std::fs::write(&stored, PAGE).expect("write");
+
+    let url = file_url(&stored).expect("a file url");
+
+    assert!(!url.contains(' '), "{url}");
+    assert!(url.contains("upload%20sadji"), "{url}");
+    // The address reads back to the file it names, which is what the
+    // enhancement endpoints do with it.
+    let parsed = Url::parse(&url).expect("the address parses");
+    assert_eq!(parsed.to_file_path().expect("a path"), stored);
 }

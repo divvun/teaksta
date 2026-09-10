@@ -21,6 +21,7 @@ use std::sync::{LazyLock, OnceLock};
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
+use reqwest::Url;
 
 /// The configuration prefix for client settings
 pub const CLIENT_PREFIX: &str = "client";
@@ -92,17 +93,20 @@ fn default_classpath_root() -> PathBuf {
 
 /// `Class#getResource(String)`: resolves a classpath expression to a `file:`
 /// URL, or null when the resource is not on the classpath.
+///
+/// The URL is built from the path rather than written around it, so a
+/// descriptor tree under a directory carrying a space or a non-ASCII
+/// character still yields an address that parses back to the file it names.
+/// A classpath root that is relative — which is the fallback when no
+/// descriptor tree is found — is made absolute first, since a `file:` URL has
+/// nothing to be relative to.
 fn get_class_resource(name: &str) -> Option<String> {
     let resolved = classpath_root().join(name.trim_start_matches('/'));
     if !resolved.exists() {
         return None;
     }
-    let resolved = resolved.to_str()?;
-    if resolved.starts_with('/') {
-        Some(format!("file://{resolved}"))
-    } else {
-        Some(format!("file:///{resolved}"))
-    }
+    let absolute = std::path::absolute(&resolved).ok()?;
+    Some(Url::from_file_path(&absolute).ok()?.to_string())
 }
 
 /// `System.getProperty("line.separator")`.

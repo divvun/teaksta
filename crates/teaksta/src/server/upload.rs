@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Result, anyhow};
 use rand::Rng;
 use rand::distr::Alphanumeric;
+use reqwest::Url;
 use tracing::info;
 
 use crate::morpho::MorphoPipeline;
@@ -77,8 +78,8 @@ pub struct Upload {
 /// Runs the three gates over an upload and stores what passes them, handing
 /// back the path it was stored at. A closed gate is a [`Rejection`] carried
 /// by the error; anything else is a deployment failure.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
 pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
     let Some(file_name) = upload.file_name.as_deref() else {
         return Err(Rejection::NoFile.into());
@@ -237,12 +238,17 @@ fn set_read_only(file: &Path) {
 }
 
 /// The `file:` URL an accepted upload is reachable at.
+///
+/// Built from the path rather than written around it, so a deployment whose
+/// upload directory carries a space or a non-ASCII character hands back an
+/// address that parses back to the path it names. The enhancement endpoints
+/// read it with `Url::to_file_path`, which is the same encoding read the
+/// other way.
 pub fn file_url(stored: &Path) -> Result<String> {
     let absolute = std::path::absolute(stored)?;
-    let path = absolute
-        .to_str()
-        .ok_or_else(|| anyhow!("stored upload path is not valid UTF-8"))?;
-    Ok(format!("file://{path}"))
+    let url = Url::from_file_path(&absolute)
+        .map_err(|()| anyhow!("{} is not an absolute path", absolute.display()))?;
+    Ok(url.to_string())
 }
 
 #[cfg(test)]

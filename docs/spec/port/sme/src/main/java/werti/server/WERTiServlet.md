@@ -75,10 +75,16 @@
 > no filesystem work and a topic added on disk appears when the server is
 > restarted.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
+>
+> pub fn target(url: &Url, config: &Config) -> Result<Target, Refusal>
+>
+> pub async fn fetch(target: Target) -> Result<String>
+>
+> pub enum Refusal { Scheme, Private, Confined }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -95,10 +101,47 @@
 >
 > `url` is read as an absolute address; one carrying no scheme is taken as
 > `http`, so a learner may type a bare host. An address that will not parse is
-> a 400. A `file:` address is read from the filesystem, which is how an
-> accepted upload is reached; anything else is fetched over HTTP with a 20
-> second timeout, and a fetch that fails or answers an error status is a 502 —
-> the far end's failure, not the caller's.
+> a 400. What the address is allowed to reach is decided in full before
+> anything is opened, and only `http`, `https` and `file` addresses may reach
+> anything at all; a refused address is a 400 naming what was refused, exactly
+> as a mode or an activity that does not exist is.
+>
+> A `file:` address is read from the filesystem, which is how an accepted
+> upload is reached, and only from inside the directories this deployment
+> itself mints such addresses under: the two upload directories, the activity
+> tree and the web application root. The path is resolved through every symlink
+> on it before it is judged, so a link planted inside one of those directories
+> pointing outside does not escape, and a path is judged whether or not it
+> exists yet, so a stored text that has since been swept is unreadable rather
+> than refused. A path anywhere else on the disk — the analysis cache, a
+> deployment's own configuration, anything under a home directory — is refused.
+> A deployment where none of those directories resolves serves no file at all.
+>
+> An `http` or `https` address must land on the public network; there is no
+> host allowlist, because fetching pages nobody listed is the point. An
+> address naming an IP directly is judged before a socket is opened, and one
+> naming a loopback, unspecified, private, link-local — which is where a
+> cloud's instance metadata answers — carrier-grade NAT, benchmarking,
+> reserved, documentation or multicast address is a 400. Both address families
+> are judged, an IPv6 address carrying an IPv4 one inside it is judged by the
+> address it would deliver to, and the legacy integer and octal spellings are
+> judged too, since the address parser normalises them first. `localhost` and
+> anything under it are refused without a lookup. An address naming a host is
+> judged once it resolves: every private address is dropped from the answer and
+> the connection lands on an address that was judged, so a name resolving to
+> both a public and a private address reaches the public one only, and one
+> resolving to no public address is a 502 rather than a 400 because nothing
+> about it was knowable until it resolved. Each redirect is judged the same
+> way, and at most five are followed.
+>
+> A permitted page is fetched through one client shared by every request,
+> carrying a 20 second budget that covers the connection and the body. A fetch
+> that fails, is refused a redirect or answers an error status is a 502 — the
+> far end's failure, not the caller's. At most sixteen fetches are in flight at
+> once; a request arriving over that waits for a slot rather than occupying a
+> thread, and is a 503 if none comes free within the same 20 seconds, so pages
+> that answer slowly and forever cannot starve the upload endpoint or the
+> analysis behind this one.
 >
 > The fetched page is analysed by the topic's pipeline pair for the requested
 > exercise, which is handed to the pipeline along with the page, and the
@@ -112,10 +155,10 @@
 > answered request carrying the address, the exercise and the elapsed time;
 > nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 > async fn enhance_spans(Json(request): Json<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -123,8 +166,13 @@
 > (the page itself) and `url` (where to fetch it). A body that will not parse,
 > one missing `activity` or `mode`, one carrying neither `html` nor `url`, and
 > one carrying both are each a 400. `mode` and `activity` are validated as for
-> the whole-page endpoint, and `url` is read the same way, with the same 502
-> for a page that cannot be fetched.
+> the whole-page endpoint, and `url` is read, judged and fetched exactly as
+> that endpoint reads, judges and fetches one: the same three schemes, the same
+> confinement of a `file:` address to the directories this deployment serves,
+> the same refusal of the private network, and the same 400 for an address that
+> is refused, 502 for a page that cannot be fetched and 503 for a fetch that
+> found no slot. An inline `html` body reaches no address and is judged against
+> none.
 >
 > There is no protocol version member and no version gate: the 490, 491 and
 > 492 status codes the browser add-on was answered with are gone along with

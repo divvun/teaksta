@@ -15,6 +15,7 @@ use poem::Endpoint;
 use poem::EndpointExt;
 use poem::http::StatusCode;
 use poem::test::TestClient;
+use reqwest::Url;
 use serde_json::Value;
 use tempfile::TempDir;
 
@@ -61,14 +62,18 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
         set_classpath_root(root.join("sme/desc"));
         let data = TempDir::new().expect("a data directory");
         let webapp = root.join("sme/src/main/webapp");
+        // A directory carrying a space and a non-ASCII character, because a
+        // deployment may sit under one and every stored upload is addressed
+        // through it.
+        let data_root = data.path().join("teaksta v\u{e1}rri");
         let config = Config {
             listen: "127.0.0.1:0".to_string(),
             activities_dir: webapp.join("activities"),
             webapp_root: webapp,
             webapp_dist: None,
-            analysis_dir: data.path().join("analysed"),
-            upload_keep_dir: data.path().join("keep"),
-            upload_temp_dir: data.path().join("temp"),
+            analysis_dir: data_root.join("analysed"),
+            upload_keep_dir: data_root.join("keep"),
+            upload_temp_dir: data_root.join("temp"),
         };
         for directory in [
             &config.analysis_dir,
@@ -87,12 +92,15 @@ fn client() -> TestClient<impl Endpoint> {
     TestClient::new(routes(&state.config).data(state))
 }
 
-/// The page as a `file:` URL, so the whole-page endpoint fetches it without
-/// a network.
-fn page_url(directory: &TempDir, name: &str, page: &str) -> String {
-    let path = directory.path().join(name);
+/// The page as a `file:` URL, so the whole-page endpoint reads it without a
+/// network. It is written where a stored upload is stored, because that is
+/// one of the few directories a `file:` address may name.
+fn page_url(name: &str, page: &str) -> String {
+    let path = deployment().0.config.upload_temp_dir.join(name);
     std::fs::write(&path, page).expect("the page is written");
-    format!("file://{}", path.display())
+    Url::from_file_path(&path)
+        .expect("an absolute path")
+        .to_string()
 }
 
 /// One multipart body carrying a single file part, with its content type.
@@ -187,8 +195,7 @@ async fn the_page_endpoint_answers_one_request() {
     if !models_available() {
         return;
     }
-    let directory = TempDir::new().expect("a page directory");
-    let url = page_url(&directory, "artihkal.html", DOCUMENT);
+    let url = page_url("artihkal.html", DOCUMENT);
 
     let response = client()
         .get("/api/enhance")
@@ -331,6 +338,9 @@ async fn the_upload_gate_reads_the_uploaded_text() {
     let stored: Value = serde_json::from_str(&body).expect("a JSON object");
     let url = stored["url"].as_str().expect("a file url").to_string();
     assert!(url.starts_with("file:///"), "{url}");
+    // The deployment's upload directory carries a space and a non-ASCII
+    // character, so the address it hands back has to be encoded to survive.
+    assert!(url.contains("teaksta%20v%C3%A1rri"), "{url}");
 
     let (content_type, body) = multipart("english.html", ENGLISH_DOCUMENT);
     let refused = client
