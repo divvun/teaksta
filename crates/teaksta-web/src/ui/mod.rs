@@ -1,7 +1,7 @@
 //! The app's views: the site chrome, the entry form and the exercise view.
 
 mod chrome;
-mod exercise;
+pub mod exercise;
 mod home;
 
 pub use chrome::Chrome;

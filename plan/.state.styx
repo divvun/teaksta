@@ -6,4 +6,7 @@ assertions (
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
     {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
+    {id exercise-colorize-click, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:48:23.496494Z}
+    {id exercise-mc, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:49:32.523683Z}
+    {id exercise-cloze, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T14:49:41.029218Z}
 )

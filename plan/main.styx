@@ -99,12 +99,28 @@ children (
                 id exercise-mc
                 title "Multiple-choice exercise mode (distractor selects)"
                 deps (dioxus-shell json-api)
+                log (
+                    {
+                        at 2026-09-10T14:49:32.523683Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Doing (nplan start)"
+                    }
+                )
             }
 
             {
                 id exercise-cloze
                 title "Cloze exercise mode (hints, parallel-form answers)"
                 deps (dioxus-shell json-api)
+                log (
+                    {
+                        at 2026-09-10T14:49:41.029218Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Doing (nplan start)"
+                    }
+                )
             }
         )
     }

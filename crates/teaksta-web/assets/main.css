@@ -248,3 +248,132 @@ legend {
 .back:hover {
     text-decoration: underline;
 }
+
+/* The enhanced page and the four exercises woven into it. The colours are the
+   ones each activity.xml declares under client-cfg, so a learner who knows the
+   legacy pages reads these the same way. */
+
+.score {
+    margin: 0 0 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--line);
+    font-weight: 600;
+}
+
+.enhanced {
+    font-size: 1.05rem;
+    line-height: 1.9;
+}
+
+.enhanced-line,
+.enhanced-head,
+.enhanced-item,
+.enhanced-quote {
+    margin: 0 0 0.9rem;
+}
+
+.enhanced-head {
+    font-size: 1.15rem;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.enhanced-quote {
+    padding-left: 1rem;
+    border-left: 3px solid var(--line);
+    color: var(--ink-soft);
+}
+
+.enhanced-item {
+    margin-left: 1.5rem;
+}
+
+.enhanced img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* colorizeStyle */
+.token-hit {
+    color: #22f;
+    font-weight: bold;
+}
+
+/* The clickable words carry no styling of their own until they are picked,
+   so the exercise gives nothing away before the learner answers. */
+.token-pick {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+}
+
+.token-pick:hover:enabled {
+    background: var(--accent-soft);
+}
+
+.token-pick:disabled {
+    cursor: text;
+}
+
+.pick-right {
+    color: green;
+    font-weight: bold;
+}
+
+.pick-wrong {
+    color: red;
+    font-weight: bold;
+}
+
+.mc-pick {
+    width: auto;
+    font: inherit;
+    vertical-align: baseline;
+}
+
+.mc-wrong {
+    color: red;
+    font-weight: bold;
+}
+
+/* clozeDefaultStyle */
+.cloze-box {
+    width: 35px;
+    border: 1px solid black;
+    background: white;
+    font: inherit;
+    font-weight: bold;
+}
+
+/* clozeWrongStyle */
+.cloze-miss {
+    color: red;
+}
+
+/* clozeHintStyle */
+.cloze-hint {
+    width: 15px;
+    margin-left: 2px;
+    padding: 0;
+    border: 1px solid #a0a0a0;
+    background: #e9e9e9;
+    color: #a0a0a0;
+    font: inherit;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* clozeHintSolvedStyle */
+.cloze-shown {
+    color: #22f;
+    font-weight: bold;
+}
+
+.cloze-lemma {
+    color: var(--ink-soft);
+    font-size: 0.85em;
+}

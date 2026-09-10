@@ -1,12 +1,25 @@
 //! The exercise view: the chosen parameters, the backend request they map to,
-//! and the state of that request, rendered in the panel that holds the
-//! enhanced page.
+//! and the enhanced page itself, woven into whichever exercise was asked for.
+
+pub mod click;
+pub mod cloze;
+pub mod colorize;
+pub mod markup;
+pub mod mc;
+
+use std::rc::Rc;
 
 use dioxus::prelude::*;
 
 use crate::activities::{exercise_type, topic};
 use crate::api::{ApiError, Backend, EnhanceRequest, fetch_enhanced};
 use crate::route::{ExerciseQuery, Route};
+
+use click::ClickMode;
+use cloze::ClozeMode;
+use colorize::ColorizeMode;
+use markup::{Block, BlockKind, Markup, Piece, TokenSpan};
+use mc::McMode;
 
 #[component]
 pub fn Exercise(params: ExerciseQuery) -> Element {
@@ -54,9 +67,10 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                         }
                     },
                     Some(Ok(html)) => rsx! {
-                        p { class: "state state-ready",
-                            "Gárvvis"
-                            span { class: "gloss", "{html.len()} bytes of enhanced page received" }
+                        EnhancedPage {
+                            html: html.clone(),
+                            topic: params.topic.clone(),
+                            exercise: params.exercise.clone(),
                         }
                     },
                     Some(Err(error)) => rsx! {
@@ -70,5 +84,72 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                 span { class: "gloss", "Back to the form" }
             }
         }
+    }
+}
+
+/// One enhanced page, read once and handed to the exercise that was asked
+/// for. An unknown exercise type reads as colorize, which every topic offers.
+#[component]
+pub fn EnhancedPage(html: String, topic: String, exercise: String) -> Element {
+    let parsed = use_memo(use_reactive!(|html| Rc::new(markup::parse(&html))));
+    let markup = parsed();
+
+    match exercise.as_str() {
+        "click" => rsx! {
+            ClickMode { markup, topic }
+        },
+        "mc" => rsx! {
+            McMode { markup, topic }
+        },
+        "cloze" => rsx! {
+            ClozeMode { markup, topic }
+        },
+        _ => rsx! {
+            ColorizeMode { markup, topic }
+        },
+    }
+}
+
+/// Render the enhanced page, letting the caller put its own control where each
+/// token stands. The page's own markup around the tokens is kept as the
+/// enhancer wrote it.
+pub fn enhanced_text(markup: &Markup, control: impl Fn(&TokenSpan) -> Element) -> Element {
+    rsx! {
+        div { class: "enhanced",
+            for block in markup.blocks().iter() {
+                {block_view(markup, block, &control)}
+            }
+        }
+    }
+}
+
+fn block_view(markup: &Markup, block: &Block, control: &impl Fn(&TokenSpan) -> Element) -> Element {
+    let body = rsx! {
+        for piece in block.pieces.iter() {
+            match piece {
+                Piece::Html(html) => rsx! {
+                    span { class: "flow", dangerous_inner_html: "{html}" }
+                },
+                Piece::Token(at) => match markup.token(*at) {
+                    Some(token) => control(token),
+                    None => rsx! {},
+                },
+            }
+        }
+    };
+
+    match block.kind {
+        BlockKind::Heading => rsx! {
+            h3 { class: "enhanced-head", {body} }
+        },
+        BlockKind::Item => rsx! {
+            li { class: "enhanced-item", {body} }
+        },
+        BlockKind::Quote => rsx! {
+            blockquote { class: "enhanced-quote", {body} }
+        },
+        BlockKind::Paragraph => rsx! {
+            p { class: "enhanced-line", {body} }
+        },
     }
 }
