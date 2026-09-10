@@ -317,12 +317,20 @@ children (
                 id hd-morpho
                 title "Un-wedge morpho: lock scope, poison recovery, retryable generator init, typed errors"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:16.562308Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Panic-audit HIGH 2+3, idiom M41/M42, all in morpho.rs. (1) :71-101 holds the handles mutex across the whole block_on and converts poisoning into a permanent error — one panic inside divvun-runtime/cg3/hfst wedges every enhance+upload until restart. Recover with into_inner() (AppState::analysis_lock at api.rs:138 already does) and drop/narrow the guard so a pipeline panic can't poison the registry. (2) :227-254 OnceLock<Result<...>> caches a failed generator load as the initialized value — first mc/cloze request with a bad TEAKSTA_GENERATOR bricks generation for the process even after the operator fixes it; only store on success (Mutex<Option<...>> or equivalent retry). (3) M41 :259-271 lookup_surfaces returns empty Vec for both transducer failure and unknown word, so generate emits input+? for real errors — return Result. (4) M42: the String error in the OnceLock is stringly typed and rebuilt context-free per call — thiserror enum or Arc<anyhow::Error>. Corrupt-file parsing runs inside hfst-rs which has unreachable!/expect sites — contained by spawn_blocking, but the retry fix is what makes it survivable."
+                    }
+
+                    {
+                        at 2026-09-10T22:39:07.831779Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

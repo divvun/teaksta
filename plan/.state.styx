@@ -1,5 +1,38 @@
 schema_version 7
 
+last_sync_at 2026-09-10T22:39:01.740172Z
+
+derived_priorities (
+    {id dioxus-shell, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id dj-annotate, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id dj-core, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id dj-frontend, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id dj-server, priority 1, derived_at 2026-09-10T22:39:01.740172Z}
+    {id exercise-cloze, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id exercise-colorize-click, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id exercise-mc, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id fix-legacy-quirks, priority 1, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-cache, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-click-decoys, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-config, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-enhancers, priority 1, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-error-paths, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-fetch, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-hints, priority 2, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-idioms, priority 3, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-mode, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-morpho, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-request-limits, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-serve, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-span-ui, priority 1, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-topic-classes, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id hd-upload-ui, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id idiomatize-enhancers, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id json-api, priority 1, derived_at 2026-09-10T22:39:01.740172Z}
+    {id router-binary, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+    {id sme-bundle, priority 0, derived_at 2026-09-10T22:39:01.740172Z}
+)
+
 assertions (
     {id dioxus-shell, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:33.856902Z}
     {id dj-annotate, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T18:49:42.418061Z}
@@ -14,5 +47,5 @@ assertions (
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
     {id dj-server, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:05:46.81519Z}
     {id dj-frontend, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:27:20.444325Z}
-    {id hd-morpho, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T22:23:09.693273Z}
+    {id hd-morpho, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:39:07.831779Z}
 )
