@@ -10,13 +10,24 @@
 //! are modelled here at the surface `Processors` actually uses: a descriptor is
 //! parsed from XML, its parameter settings are overwritten from a property bag,
 //! and the result is handed out per (language, activity).
+//!
+//! What a produced engine holds is the difference from the original. UIMA
+//! resolved the descriptor's delegate imports to further descriptors and those
+//! to annotator class names it loaded reflectively; here every annotator is a
+//! type in this crate, so the engine carries a [`crate::pipeline::flow::Flow`]
+//! built directly from the descriptor's `fixedFlow` and its injected settings.
+//! The descriptor still decides which stages run, in which order, with which
+//! parameters — only the class-loading indirection is gone.
 
 use std::collections::{BTreeMap, HashMap};
+use std::fmt;
 
 use anyhow::{Result, anyhow};
 use tracing::{debug, error, info};
 
+use crate::pipeline::flow::{Flow, Parameters};
 use crate::server::activities::Activities;
+use crate::types::Document;
 
 /// The failure kinds the original distinguishes by catch clause. Keeping them
 /// apart matters: the constructor logs a different message per kind, and a
@@ -116,12 +127,14 @@ impl AnalysisEngineDescription {
 }
 
 /// Stand-in for a produced `AnalysisEngine`: the descriptor frozen after its
-/// parameters were injected.
+/// parameters were injected, paired with the flow it runs.
 ///
-/// Running a document through the engine is not part of this class in the
-/// original either — the flow is executed by the UIMA framework from
-/// `fixed_flow` plus the delegate specifiers, both of which are carried here.
-#[derive(Debug, Clone, Default)]
+/// The UIMA framework executed the flow by resolving each delegate specifier
+/// to another descriptor and that descriptor to an annotator class. Every
+/// annotator is a concrete type here, so the flow is built straight from
+/// `fixed_flow` and the injected settings, and the delegate specifiers are
+/// parsed but never followed.
+#[derive(Default)]
 pub struct AnalysisEngine {
     pub name: String,
     pub source_url: String,
@@ -130,23 +143,72 @@ pub struct AnalysisEngine {
     pub delegate_analysis_engine_specifiers: Vec<(String, String)>,
     pub fixed_flow: Vec<String>,
     pub settings: ConfigurationParameterSettings,
+    pub flow: Flow,
+}
+
+impl fmt::Debug for AnalysisEngine {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AnalysisEngine")
+            .field("name", &self.name)
+            .field("source_url", &self.source_url)
+            .field("fixed_flow", &self.fixed_flow)
+            .field("settings", &self.settings)
+            .finish()
+    }
+}
+
+impl AnalysisEngine {
+    /// Runs the engine's flow over `cas`.
+    pub fn process(&self, cas: &mut Document) -> Result<()> {
+        self.flow.run(cas)
+    }
+}
+
+/// The settings rendered as the string table each stage is initialised from.
+fn parameters_of(settings: &ConfigurationParameterSettings) -> Parameters {
+    settings
+        .pairs()
+        .iter()
+        .map(|(name, value)| (name.clone(), render_parameter(value)))
+        .collect()
+}
+
+fn render_parameter(value: &ParameterValue) -> String {
+    match value {
+        ParameterValue::Boolean(v) => v.to_string(),
+        ParameterValue::Integer(v) => v.to_string(),
+        ParameterValue::Float(v) => v.to_string(),
+        ParameterValue::Str(v) => v.clone(),
+        ParameterValue::Array(items) => items
+            .iter()
+            .map(render_parameter)
+            .collect::<Vec<String>>()
+            .join(","),
+    }
 }
 
 /// Stand-in for `UIMAFramework.produceAnalysisEngine`: instantiates the engine
-/// from the (already parameterised) description.
+/// from the (already parameterised) description, which is where the flow's
+/// stages are constructed and initialised.
 fn produce_analysis_engine(
     description: AnalysisEngineDescription,
 ) -> std::result::Result<AnalysisEngine, UimaError> {
+    let settings = description
+        .analysis_engine_meta_data
+        .configuration_parameter_settings;
+    let fixed_flow = description.analysis_engine_meta_data.fixed_flow;
+    let flow = Flow::new(&fixed_flow, &parameters_of(&settings))
+        .map_err(|e| UimaError::ResourceInitialization(e.to_string()))?;
+
     Ok(AnalysisEngine {
         name: description.analysis_engine_meta_data.name,
         source_url: description.source_url,
         primitive: description.primitive,
         annotator_implementation_name: description.annotator_implementation_name,
         delegate_analysis_engine_specifiers: description.delegate_analysis_engine_specifiers,
-        fixed_flow: description.analysis_engine_meta_data.fixed_flow,
-        settings: description
-            .analysis_engine_meta_data
-            .configuration_parameter_settings,
+        fixed_flow,
+        settings,
+        flow,
     })
 }
 
@@ -296,8 +358,8 @@ pub struct Processors {
 }
 
 impl Processors {
-    // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
     pub fn new(activities: &mut Activities) -> Result<Self> {
         let mut pre_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
         let mut post_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
@@ -505,11 +567,11 @@ mod tests {
   <frameworkImplementation>org.apache.uima.java</frameworkImplementation>
   <primitive>false</primitive>
   <delegateAnalysisEngineSpecifiers>
-    <delegateAnalysisEngine key="Tokenizer">
-      <import location="/operators/tokenizer.xml"/>
+    <delegateAnalysisEngine key="EnhanceXMLAnnotator">
+      <import location="../annotators/EnhanceXMLAnnotator.xml"/>
     </delegateAnalysisEngine>
-    <delegateAnalysisEngine key="Tagger">
-      <import location="/operators/tagger.xml"/>
+    <delegateAnalysisEngine key="GenericRelevanceAnnotator">
+      <import location="../annotators/GenericRelevanceAnnotator.xml"/>
     </delegateAnalysisEngine>
   </delegateAnalysisEngineSpecifiers>
   <analysisEngineMetaData>
@@ -535,8 +597,8 @@ mod tests {
     </configurationParameterSettings>
     <flowConstraints>
       <fixedFlow>
-        <node>Tokenizer</node>
-        <node>Tagger</node>
+        <node>EnhanceXMLAnnotator</node>
+        <node>GenericRelevanceAnnotator</node>
       </fixedFlow>
     </flowConstraints>
   </analysisEngineMetaData>
@@ -594,7 +656,10 @@ mod tests {
                 name: "Vislcg3 Pipe".to_string(),
                 version: "1.0".to_string(),
                 configuration_parameter_settings: settings,
-                fixed_flow: vec!["Tokenizer".to_string(), "Tagger".to_string()],
+                fixed_flow: vec![
+                    "EnhanceXMLAnnotator".to_string(),
+                    "GenericRelevanceAnnotator".to_string(),
+                ],
             },
         }
     }
@@ -708,16 +773,22 @@ mod tests {
         assert_eq!(description.analysis_engine_meta_data.version, "1.0");
         assert_eq!(
             description.analysis_engine_meta_data.fixed_flow,
-            vec!["Tokenizer".to_string(), "Tagger".to_string()]
+            vec![
+                "EnhanceXMLAnnotator".to_string(),
+                "GenericRelevanceAnnotator".to_string()
+            ]
         );
         assert_eq!(
             description.delegate_analysis_engine_specifiers,
             vec![
                 (
-                    "Tokenizer".to_string(),
-                    "/operators/tokenizer.xml".to_string()
+                    "EnhanceXMLAnnotator".to_string(),
+                    "../annotators/EnhanceXMLAnnotator.xml".to_string()
                 ),
-                ("Tagger".to_string(), "/operators/tagger.xml".to_string()),
+                (
+                    "GenericRelevanceAnnotator".to_string(),
+                    "../annotators/GenericRelevanceAnnotator.xml".to_string()
+                ),
             ]
         );
 
@@ -846,8 +917,12 @@ mod tests {
         assert_eq!(engine.name, "Vislcg3 Pipe");
         assert_eq!(
             engine.fixed_flow,
-            vec!["Tokenizer".to_string(), "Tagger".to_string()]
+            vec![
+                "EnhanceXMLAnnotator".to_string(),
+                "GenericRelevanceAnnotator".to_string()
+            ]
         );
+        assert_eq!(engine.flow.len(), 2);
         assert_eq!(
             engine.annotator_implementation_name.as_deref(),
             Some("werti.uima.ae.Vislcg3Annotator")
@@ -941,7 +1016,7 @@ mod tests {
         assert!(processors.get_postprocessor("fin", "Nouns").is_none());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2/test]
     #[test]
     fn processors_registers_nothing_without_languages() {
         let dir = TempDir::new().expect("temp dir");
@@ -957,7 +1032,7 @@ mod tests {
         assert!(processors.get_postprocessor("sme", "Nouns").is_none());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2/test]
     #[test]
     fn processors_aborts_when_a_descriptor_url_is_missing() {
         let dir = TempDir::new().expect("temp dir");

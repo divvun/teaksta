@@ -3,10 +3,12 @@
 //!
 //! Author: Adriane Boyd
 //!
-//! The UIMA CAS is [`crate::types::Document`]. Two framework services the
-//! original reaches for have no counterpart yet and are modelled as the local
-//! seams at the bottom of this module: running an analysis engine's flow over
-//! a CAS, and the XMI serialisation behind the on-disk CAS cache.
+//! The UIMA CAS is [`crate::types::Document`]. Running an engine's flow over
+//! a CAS is [`crate::pipeline::flow::Flow`]. The on-disk CAS cache is kept,
+//! but XMI — the CAS's own serialisation format, which only exists inside
+//! UIMA — is replaced by a JSON encoding of the document model; the cache
+//! file keeps its `.xmi` name so a deployment's cache directory is still
+//! recognisable.
 
 use std::path::{Path, PathBuf};
 
@@ -33,35 +35,32 @@ fn new_jcas(_engine: &AnalysisEngine) -> std::result::Result<Document, EngineErr
     Ok(Document::default())
 }
 
-/// `AnalysisEngine#process(JCas)`: the UIMA framework runs the engine's fixed
-/// flow, whose delegates are the annotator modules, over the CAS. Executing a
-/// descriptor's flow is a framework service that the analysis-engine model
-/// does not yet provide.
+/// `AnalysisEngine#process(JCas)`: runs the engine's fixed flow over the CAS.
 fn analysis_engine_process(
-    _engine: &AnalysisEngine,
-    _cas: &mut Document,
+    engine: &AnalysisEngine,
+    cas: &mut Document,
 ) -> std::result::Result<(), EngineError> {
-    Err(EngineError::AnalysisEngineProcess(
-        "analysis-engine flow execution is not available".to_string(),
-    ))
+    engine
+        .process(cas)
+        .map_err(|e| EngineError::AnalysisEngineProcess(format!("{e:#}")))
 }
 
-/// `CasIOUtil.readXmi(cas, file)`. XMI is the CAS's own serialisation format;
-/// the document model has no reader for it, so the cache read reports the
-/// `IOException` the caller already handles.
-fn read_xmi(_cas: &mut Document, _casfile: &Path) -> std::io::Result<()> {
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Unsupported,
-        "XMI deserialisation of the CAS is not available",
-    ))
+/// `CasIOUtil.readXmi(cas, file)`: replaces the CAS contents with the cached
+/// document. The encoding is JSON rather than XMI — the document model is not
+/// a UIMA type system and has no XMI representation — so a cache file written
+/// by another build is rejected as unreadable, which is the case the caller
+/// already handles.
+fn read_xmi(cas: &mut Document, casfile: &Path) -> std::io::Result<()> {
+    let encoded = std::fs::read_to_string(casfile)?;
+    *cas = serde_json::from_str(&encoded)
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+    Ok(())
 }
 
 /// `CasIOUtil.writeXmi(cas, file)`. The counterpart of [`read_xmi`].
-fn write_xmi(_cas: &Document, _casfile: &Path) -> std::io::Result<()> {
-    Err(std::io::Error::new(
-        std::io::ErrorKind::Unsupported,
-        "XMI serialisation of the CAS is not available",
-    ))
+fn write_xmi(cas: &Document, casfile: &Path) -> std::io::Result<()> {
+    let encoded = serde_json::to_string(cas)?;
+    std::fs::write(casfile, encoded)
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler]
@@ -102,8 +101,8 @@ impl<'a> PageHandler<'a> {
 
     /// Creates a CAS from the text and runs the pre- and postprocessors for the
     /// topic.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
     pub fn process(&self) -> Result<Option<Document>> {
         let preprocessor = self.processors.get_preprocessor(&self.lang, &self.topic);
         let postprocessor = self.processors.get_postprocessor(&self.lang, &self.topic);
@@ -214,7 +213,7 @@ mod tests {
         assert_eq!(handler.lang, "eng");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2/test]
     #[test]
     fn process_returns_nothing_when_topic_lacks_engines() {
         let processors = empty_processors();
@@ -236,7 +235,7 @@ mod tests {
         assert!(!cache_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2/test]
     #[test]
     fn process_returns_nothing_when_the_language_is_unknown() {
         let processors = empty_processors();

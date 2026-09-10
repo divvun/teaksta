@@ -32,7 +32,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+2]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -77,4 +77,12 @@
 > serving the stale cached annotations. The cache is never invalidated or
 > evicted. Quirk: the class's static logger is obtained via
 > `LogManager.GetLogger` (capital `G`), which is not a real log4j2 method name.
+>
+> Port divergence: the cache holds a JSON encoding of the document model rather
+> than XMI. XMI serialises a UIMA CAS and the port's document model is not one,
+> so there is nothing to write it as. The cache file keeps its `cas_<url>.xmi`
+> name, so an existing cache directory stays recognisable, and a file written by
+> a build whose document model differs fails to decode and lands in the same
+> info-logged handler as an unreadable file. Both the read and the write succeed
+> on a working deployment, so neither branch skips the postprocessor.
 

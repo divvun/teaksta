@@ -1,13 +1,18 @@
 //! Span-annotation document model replacing the UIMA CAS and the JCasGen
 //! type system (WERTiTypeSystem.xml + vislcg3TypeSystem.xml). Every
 //! annotation is a half-open byte span `[begin, end)` into `Document::text`.
+//!
+//! The document is serialisable so the page handler can cache an analysed
+//! document between requests, which is what the UIMA XMI cache did.
+
+use serde::{Deserialize, Serialize};
 
 /// One morphological reading of a token, as produced by the analyser +
 /// CG3 disambiguation. The first element is the lemma line content; the
 /// remaining elements are the tag strings of the reading.
 pub type CgReading = Vec<String>;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Token {
     pub begin: usize,
     pub end: usize,
@@ -19,7 +24,7 @@ pub struct Token {
 }
 
 /// Token bearing the full set of CG3 readings that survived disambiguation.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct CgToken {
     pub begin: usize,
     pub end: usize,
@@ -28,7 +33,7 @@ pub struct CgToken {
 
 /// A stretch of document text classified as relevant (or not) for
 /// enhancement, with the HTML context it was found in.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RelevantText {
     pub begin: usize,
     pub end: usize,
@@ -38,7 +43,7 @@ pub struct RelevantText {
 }
 
 /// One `<e>`-protocol XML tag occurrence in the document text.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct EnhanceXml {
     pub begin: usize,
     pub end: usize,
@@ -48,7 +53,7 @@ pub struct EnhanceXml {
 }
 
 /// The HTML fragments to splice around a span in the final output.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Enhancement {
     pub begin: usize,
     pub end: usize,
@@ -57,7 +62,7 @@ pub struct Enhancement {
     pub relevant: bool,
 }
 
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct SentenceAnnotation {
     pub begin: usize,
     pub end: usize,
@@ -67,7 +72,7 @@ pub struct SentenceAnnotation {
 /// EnhancementId`): a `DocumentAnnotation` subtype carrying one long-valued
 /// `enhId` feature, used as a whole-document validity marker rather than a
 /// span, so `begin` and `end` stay 0.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EnhancementId {
     pub begin: usize,
     pub end: usize,
@@ -76,7 +81,7 @@ pub struct EnhancementId {
 
 /// The analysis document: the text under analysis plus one store per
 /// annotation type. Pipeline stages consume and extend the stores.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Document {
     pub text: String,
     pub language: String,

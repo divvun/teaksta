@@ -128,7 +128,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
 > private List<CGToken> parseCGOutput(String cgOutput, JCas jcas)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+2]
 > Parses VISL CG-3 cohort output into a fresh list of `CGToken` feature structures.
 > Splits `cgOutput` on the regex `\n+`, so runs of blank lines collapse into a
 > single separator and the blank line between cohorts disappears. Walks the
@@ -166,6 +166,29 @@
 > including the empty leading element that `split` produces when `cgOutput` starts
 > with a newline. Quirk: a cohort with no reading lines yields a `CGToken` with a
 > zero-length `readings` array, which the caller then indexes at 0.
+>
+> Port divergence: the stream parsed is the one a current VISL CG-3 emits, not
+> the 2013 `lookup2cg` output this walk was written against, and it carries
+> three things that one did not.
+>
+> A line that is neither a cohort header nor an indented reading is skipped
+> rather than parsed as a reading. The stream separates cohorts with an escaped
+> blank — `:` followed by the blank's text with its newlines written `\n` —
+> which the original walk would have collected as a second reading of the
+> preceding cohort.
+>
+> Reading weights (`<W:0.0>`) and the cohort-tracking markers `<firstCohort>`,
+> `<LastCohort>`, `<firstCohortOfParagraph>` and `<LastCohortOfParagraph>` are
+> dropped from a reading's tag list. They describe the reading's place in the
+> stream rather than the word, and the enhancers match tag sequences literally,
+> so a marker left in place would reach a span id and the analysis string handed
+> to the form generator. Every other angle-bracketed tag, `<sme>` among them, is
+> linguistic and is kept.
+>
+> A reading line indented one level deeper than the line before it is a
+> subreading: its tags extend the reading above rather than opening a new one,
+> which keeps a compound's whole tag sequence in one flat reading, as the
+> `lookup2cg` stream delivered it.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
 > @Override public void process(JCas jcas) throws AnalysisEngineProcessException

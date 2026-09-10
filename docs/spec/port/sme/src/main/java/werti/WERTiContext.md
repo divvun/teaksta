@@ -14,7 +14,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
 > @SuppressWarnings("serial") private static void commoninit() throws WERTiContextException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.commoninit-fn+2]
 > Shared tail of both `init` overloads. Asserts `byteDispenser` is non-null
 > (a Java `assert`, so a no-op unless assertions are enabled). If the static
 > field `p` is still null, sets it to `initProps(byteDispenser.requestInputStream(propertiesPath))`,
@@ -62,6 +62,15 @@
 > so these thunks throw `NullPointerException` when the context was built by the
 > no-argument `init()` (which leaves `context` null). Quirk: the English
 > TreeTagger entry and a German RFTagger entry are commented out in the source.
+>
+> Port divergence: the properties resource is located from the environment
+> before the dispenser is consulted — `TEAKSTA_PROPERTIES` names the file by
+> filesystem path, bypassing the context-relative lookup — and a resource that
+> cannot be found leaves `p` an empty table with a warning instead of aborting
+> initialisation. The shipped `WERTi.properties` names only OpenNLP model paths
+> and a descriptor path, none of which the North Sami pipeline reads, so a
+> deployment without one is configured rather than broken; every `getProperty`
+> call then reads null, exactly as it already did for any key the file omits.
 
 > [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.conditional-cast-fn]
 > private static <T> T conditionalCast(Class<T> c, Object o) throws WERTiContextException
@@ -165,7 +174,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
 > public abstract InputStream requestInputStream(String model)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.input-stream-factory.request-input-stream-fn+2]
 > Abstract resource opener. Takes a context-relative location string (the
 > parameter is named `model` in the declaration and `location` in both
 > implementations) and returns an `InputStream` positioned at the start of that
@@ -176,6 +185,12 @@
 > Two implementations are installed by the two `init` overloads: one resolving
 > through `ServletContext.getResourceAsStream` (logging a fatal line on null),
 > and one resolving through the class loader's `getResourceAsStream`.
+>
+> Port divergence: there is no servlet container to hand out a deployment
+> directory and no JVM classpath, so both implementations resolve a
+> context-relative location against the expanded web application root named by
+> `TEAKSTA_WEBAPP_ROOT`, falling back to the process working directory. The
+> `getRealPath` base is therefore configuration rather than container state.
 
 > [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.make-path-for-model-fn]
 > private static String makePathForModel(String t)
