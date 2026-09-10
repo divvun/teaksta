@@ -186,4 +186,33 @@ children (
             }
         )
     }
+
+    {
+        id dejavaize
+        title "De-Javaization: idiomatic Rust throughout"
+        kind @refactor
+        children (
+            {
+                id dj-core
+                title "Idiomatic enhancer core: burn jstring, Java types, and the wertiview vocabulary"
+            }
+
+            {
+                id dj-annotate
+                title "DOM-native annotation mapping replacing the e-tag/sentinel protocol"
+            }
+
+            {
+                id dj-server
+                title "Native poem server: no servlet cosplay, no wait page, analyzer language gate"
+                deps (dj-annotate)
+            }
+
+            {
+                id dj-frontend
+                title "Frontend on the teaksta vocabulary and /api endpoints"
+                deps (dj-core dj-server)
+            }
+        )
+    }
 )
