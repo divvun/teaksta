@@ -5,7 +5,7 @@ use std::fmt;
 use dioxus::prelude::*;
 
 use crate::api::DEFAULT_MODE;
-use crate::ui::{Chrome, Exercise, Home};
+use crate::ui::{Chrome, Exercise, Home, Upload};
 
 #[derive(Routable, Clone, Debug, PartialEq)]
 #[rustfmt::skip]
@@ -13,6 +13,9 @@ pub enum Route {
     #[layout(Chrome)]
     #[route("/")]
     Home {},
+
+    #[route("/upload")]
+    Upload {},
 
     #[route("/exercise?:..params")]
     Exercise { params: ExerciseQuery },

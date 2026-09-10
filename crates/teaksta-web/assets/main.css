@@ -199,6 +199,61 @@ legend {
     font-size: 0.9rem;
 }
 
+/* The upload form: the same entry form, sourced from a file of the teacher's
+   own rather than from an address. */
+
+.file-input {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.7rem;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.file-input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.file-input:disabled {
+    color: var(--ink-soft);
+    cursor: progress;
+}
+
+.file-note {
+    margin: 0.5rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.keeping {
+    margin: 1.5rem 0 0;
+    padding: 0.75rem 1rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+.keep-lead {
+    margin: 0 0 0.5rem;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+/* The way across to the other entry form, on both of them. */
+.swap {
+    display: inline-block;
+    margin-top: 1.5rem;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.swap:hover {
+    text-decoration: underline;
+}
+
 .instruction {
     margin: 0 0 1.5rem;
     font-size: 1.15rem;

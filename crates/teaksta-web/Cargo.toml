@@ -14,6 +14,9 @@ urlencoding = "2"
 # is a type/logic check, so the dependency stays off the host target.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 gloo-net = { version = "0.6", default-features = false, features = ["http"] }
+# An upload's multipart body is framed as bytes and a fetch body is a JS value,
+# so the two need one array type between them.
+js-sys = "0.3"
 
 [dev-dependencies]
 dioxus-ssr = "0.7.10"

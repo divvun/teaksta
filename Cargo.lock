@@ -5416,6 +5416,7 @@ dependencies = [
  "dioxus",
  "dioxus-ssr",
  "gloo-net",
+ "js-sys",
  "serde",
  "serde_json",
  "urlencoding",
