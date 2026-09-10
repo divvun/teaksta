@@ -456,12 +456,20 @@ children (
                 id hd-serve
                 title "Serve the built web app from the poem server"
                 kind @feat
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:51:39.536351Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Coherence M2: the frontend defaults to same-origin (\"\" base, teaksta-web api.rs:26-29, installed at lib.rs:18) but nothing serves it — the backend registers four API routes and GET / is a text/plain route listing (api.rs:181-194). No in-tree deployment works with the default config. Serve the dx-built web app from the poem server: static files + index fallback for client routes, GET / becomes the app. Build integration note: dioxus-cli is ~/.cargo/bin/dx (Homebrew Deno shadows the name); dx bundle --platform web produces the static bundle. Decide whether the server embeds the bundle (include_dir) or serves a directory given by config — a TEAKSTA_WEBAPP_DIST config field fits the existing Config shape."
+                    }
+
+                    {
+                        at 2026-09-10T22:41:56.622582Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
