@@ -251,4 +251,226 @@ children (
             }
         )
     }
+
+    {
+        id hardening
+        title "Post-review hardening: fix what the adversarial reviews found"
+        kind @fix
+        children (
+            {
+                id hd-topic-classes
+                title "One topic-class scheme: registry-served span classes; revive the three inert topics"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:49:43.434494Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence H1: frontend derives hit class as \"teaksta-\"+registry name (teaksta-web markup.rs:115), but Conjunctions/NegVerbs/InfiniteVerbs emit teaksta-conjunction (+teaksta-CC/CS), teaksta-ConNeg, teaksta-InfiniteVerb (conjunction.rs:104, con_neg.rs:22, infinite_verb.rs:21) — those three topics are inert in every mode. Fix: make the registry the single source (serve span_class per activity in /api/activities; frontend uses the served class), or rename the three enhancer constants to match directory names. Also: regenerate live fixtures (they still carry WERTi-span ids), fix the residue guards (ui/mod.rs:90 greps WERTiServlet, exercise_modes.rs:131 greps wertiview — neither matches actual residue), and add at least one non-Substantive fixture family so the seam is tested. Related M12: SPAN_ID_PREFIX const exists unused while five sites hand-roll the literal."
+                    }
+                )
+            }
+
+            {
+                id hd-click-decoys
+                title "Click-mode decoys: settle the dead TokenEnhancer path against the Java reference"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:49:53.144664Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence H2: TokenEnhancer (first stage of every shipped postprocessor) is dead two ways — Vislcg3Annotator empties cas.tokens (vislcg3.rs:210-226) before it runs, and nothing writes Token.tag/.lemma (tokenizer.rs:235 sets only begin/end). So teaksta-hit and relevant:false are never produced, the frontend GENERIC_HIT_CLASS fallback (markup.rs:121) never fires, and click mode has zero decoys — every clickable word is correct; exercise_modes.rs:120 asserts the degenerate state. Check sme/ Java reference: did legacy click actually have decoys (did anything populate tag/lemma there)? If yes, resurrect the pass over cg_tokens; if legacy was equally broken, excise TokenEnhancer + the relevant flag + html_utils.rs:349-358's stated intent honestly and give click real decoys from the cg data by design. Also panic-audit finding 4: token.rs:87 calls the unchecked Document::covered_text (types.rs:124) — kept safe only by the accidental emptiness; whatever resurrection happens must use the checked form."
+                    }
+                )
+            }
+
+            {
+                id hd-cache
+                title "Analysis-cache safety: recover from bad cache files, validate offsets, keyed stable cache key"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:50:01.332393Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence H3 + panic 4/7 + cache-poisoning. (1) page_handler.rs:123-133: cache read failure logs, skips both pipelines, serves the empty PageMap as 200, and never rewrites the file — fall through to re-analysis and overwrite on parse failure. (2) read_xmi (page_handler.rs:53) deserializes offsets with no validation; make Document::covered_text (types.rs:124) checked (the safe helper already exists at vislcg3.rs:58) and validate spans against text at the deserialization edge — any types.rs change or offset-semantics drift currently becomes a repeatable per-page failure. (3) api.rs:444-448 cache key: DefaultHasher (unstable across releases, unkeyed SipHash — offline-collidable, attacker controls both sides via POST html) over URL only — ignores activity and mode, so an analysis for one topic is reused for another. Use a keyed/stable hash and include activity+mode in the key. Also panic 13: write_xmi failure silently skips the postprocessor (page_handler.rs:136-144) — surface it."
+                    }
+                )
+            }
+
+            {
+                id hd-request-limits
+                title "Request hardening: body size limits and CatchPanic across all routes"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:50:07.389231Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Panic-audit CRITICAL 1: /api/enhance has no SizeLimit (api.rs:168-177 — only /api/upload does); poem's Json extractor buffers unbounded, then serde + Html::parse_document copy it twice more, so one chunked POST streaming an endless html field OOMs the process. Add SizeLimit to the enhance routes (and a sane cap on SpanRequest.html). Panic 9: no CatchPanic middleware — an async-side panic resets the connection with no 500 and no structured log; add poem's CatchPanic at the router root (main.rs:42). Cheap, purely additive node — good first pick."
+                    }
+                )
+            }
+
+            {
+                id hd-morpho
+                title "Un-wedge morpho: lock scope, poison recovery, retryable generator init, typed errors"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:50:16.562308Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Panic-audit HIGH 2+3, idiom M41/M42, all in morpho.rs. (1) :71-101 holds the handles mutex across the whole block_on and converts poisoning into a permanent error — one panic inside divvun-runtime/cg3/hfst wedges every enhance+upload until restart. Recover with into_inner() (AppState::analysis_lock at api.rs:138 already does) and drop/narrow the guard so a pipeline panic can't poison the registry. (2) :227-254 OnceLock<Result<...>> caches a failed generator load as the initialized value — first mc/cloze request with a bad TEAKSTA_GENERATOR bricks generation for the process even after the operator fixes it; only store on success (Mutex<Option<...>> or equivalent retry). (3) M41 :259-271 lookup_surfaces returns empty Vec for both transducer failure and unknown word, so generate emits input+? for real errors — return Result. (4) M42: the String error in the OnceLock is stringly typed and rebuilt context-free per call — thiserror enum or Arc<anyhow::Error>. Corrupt-file parsing runs inside hfst-rs which has unreachable!/expect sites — contained by spawn_blocking, but the retry fix is what makes it survivable."
+                    }
+                )
+            }
+
+            {
+                id hd-fetch
+                title "Fetch hardening: shared client, file: confinement, SSRF policy, encoded file URLs"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:50:25.644788Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Security triad + idiom H9/H10, all on the page-fetch path. (1) api.rs:455-459: file: scheme reads any local path — GET /api/enhance?url=file:///etc/passwd works; confine to config.upload_keep_dir/upload_temp_dir after canonicalization. (2) SSRF: no scheme/host policy on http(s), and page_url (api.rs:431-439) prepends http:// to bare hosts; block link-local/metadata/private ranges (the service fetches arbitrary public pages by design, so the policy is deny-private, not allowlist). (3) Idiom H9 / panic 8: fresh reqwest::blocking::Client per fetch (api.rs:461-463) — each spawns a dedicated OS thread + runtime; ~512 tarpit URLs with FETCH_TIMEOUT=20s exhaust the blocking pool and starve /api/upload. One static LazyLock client with the timeout baked in, plus a concurrency cap on the fetch path. (4) Idiom H10: file: URLs built by format!(\"file://{path}\") with no percent-encoding (upload.rs:245, activity_configuration.rs:100-105) and round-tripped through Url::parse at api.rs:438 — a deployment path with a space breaks all uploads; use Url::from_file_path."
+                    }
+                )
+            }
+
+            {
+                id hd-config
+                title "Config coherence: TEAKSTA_CLASSPATH into Config, complete startup warnings"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-10T21:50:32.872414Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence M4: TEAKSTA_CLASSPATH is a bare literal in activity_configuration.rs:60 — not a Config field (context.rs owns the other six *_ENV consts), absent from context.rs:113-120's env save/restore and from main.rs:24-28's startup warnings. It resolves into a OnceLock on first read, so set_classpath_root (:53, sole caller pipeline_models.rs:61) silently loses to whoever read first and returns a bool nobody checks. Move it into Config, make the classpath root flow from Config instead of a process global, and make the startup warnings cover the full env surface. Also coherence M9 while in here: Document.language is a pipeline registry key always \"en\" in production (api.rs:39) while every unit test says \"sme\" — either rename the field for what it is or make runtime and tests agree."
+                    }
+                )
+            }
+
+            {
+                id hd-mode
+                title "Thread the Mode enum end to end; delete the SELECTED global and the single-flight mutex"
+                kind @refactor
+                log (
+                    {
+                        at 2026-09-10T21:50:42.130915Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Idiom H1 / coherence M5+M8 / panic 14 — the highest-leverage refactor. exercise.rs:18 pub static SELECTED: RwLock<Option<String>> is per-request state in a process global, and because of it AppState.analysis: Mutex<()> (api.rs:149) serializes the server's main endpoint to one request at a time. The Mode enum already exists (api.rs:50) and is downgraded to a string at the boundary. Thread Mode through PageHandler::new -> Flow::run -> each stage's process(), then delete SELECTED/publish/selected and AppState.analysis. Consumers become enum matches at cg_enhancer.rs:509, syntactic.rs:66, conjunction.rs:77, noun_sg.rs:149 (currently == \"cloze\" string compares). Also fixes M5's split-brain: selected() maps unset to \"\" while syntactic.rs:45/conjunction.rs:55 read the global raw and bail with error text still naming WERTiServlet.enhancement_type — the last runtime residual vocabulary. M8: html_utils render_page/render_spans take activity: Option<&str> that actually carries mode.name() and compare == Some(\"click\") — give the render layer the enum too. Mode ownership consolidates from six sites to one."
+                    }
+                )
+            }
+
+            {
+                id hd-enhancers
+                title "Fold conjunction and noun_sg into the shared enhancer cores"
+                kind @refactor
+                deps (hd-mode)
+                log (
+                    {
+                        at 2026-09-10T21:50:52.877236Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Idiom M19/M6, plus the H2/H3/H8 hotspots that live in the two unfolded files. conjunction.rs:51-127 is a verbatim copy of syntactic::run differing only in span classes — parameterize FunctionSpec (per-tag extra class) and route conjunction through it. noun_sg.rs is the one topic enhancer never folded into the cg_enhancer TopicSpec core and kept the full unreformed Java: H2 quadratic buffer (self.buffer = self.buffer.clone() + &line + \"\\n\" at :78), H3 String->Cursor->String no-op through dead ExtCommandConsume2String subprocess plumbing (:359-365, :419-425; second dead copy at vislcg3.rs:401), H8 readings re-flattened by + concat inside the tags*tokens*readings triple loop (:243-247, :272-277; same four-line flatten cloned at subject.rs:77/object.rs:77/adverbial.rs:77/cg_enhancer.rs:298 — one flatten helper, or fold into an M40 CgReading{lemma,tags} struct), dead FST shell-command constants (:30-33), labelled-block try/catch, bool params. Folding deletes most of the file. Also H7: cg_enhancer.rs:373 clones the whole cg_tokens store per topic pass to appease borrowck — mem::take or accumulate-then-extend. Depends on hd-mode so the string-compare sites are already enum matches when folding."
+                    }
+                )
+            }
+
+            {
+                id hd-error-paths
+                title "Errors propagate: no stdout swallows, checked IO, tolerant CG stream parsing"
+                kind @fix
+                deps (hd-enhancers)
+                log (
+                    {
+                        at 2026-09-10T21:51:02.267989Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Idiom H4 + M43 + panic 5/6. (1) tokenizer.rs:179: a failed tokenize prints to stdout and substitutes String::new() — the request returns 200 with an exercise containing no exercises; propagate with ?. Same printStackTrace-as-println at noun_sg.rs:355,415 (dies in hd-enhancers fold), cg_enhancer.rs:523, activity_configuration.rs:389 — tracing::error! or propagation. (2) M43: page_handler.rs:120 let _ = create_dir_all; upload.rs:232-236 set_read_only discards metadata and set_permissions results, silently defeating STORED_MODE = 0o400 — check both. (3) Panic 5: vislcg3.rs:67-73 a readingless CG cohort (two adjacent \"<\" header lines) aborts the whole request via ?; skip the cohort. (4) Panic 6: vislcg3.rs:315 filters !line.is_empty() but a whitespace-only line passes starts_with([' ','\\t']) with empty split_whitespace and bails — filter on trim().is_empty(). run_fst_cg rebuilds the stream line-by-line so one stray \" \\n\" from the bundle is currently fatal. (5) M30: vislcg3.rs:67-73 first_reading formats {:?} of the reading and :193 substring-tests for \"CLB\" — a lemma containing CLB matches; use iter().any(|t| t == \"CLB\")."
+                    }
+                )
+            }
+
+            {
+                id hd-idioms
+                title "Mechanical Javaism sweep: sentinels, lifecycles, allocation churn, dead code"
+                kind @refactor
+                deps (hd-error-paths)
+                log (
+                    {
+                        at 2026-09-10T21:51:16.042753Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "The mechanical sweep, scoped to what survives hd-mode/hd-enhancers/hd-error-paths. Full catalog in the idiomaticness review (session 903ca870, agent a6ff7a1af07a44192 output). Headlines: H5 i64 -1 sentinels -> Option<usize> (tokenizer.rs:37,73, sentences.rs:217, deletes the :230 guard and every cast); H6 per-sentence re-sort -> sort once + partition_point (sentences.rs:211); M2 thirteen new()+initialize() UIMA lifecycles -> fallible new(tags) (callers in flow.rs:69-119 already pair them); M7/M34 five encodings of annotation index order + two Spanned traits -> one trait+helper in types.rs; M8 contains_key-then-index chains -> get()?/entry() (activity_configuration.rs:453,493,543, processors.rs:385); M29 x = x + y string concat in loops, eight sites -> push_str; M40 CgReading = Vec<String> -> struct{lemma,tags} (kills three re-derivations); M35 infallible Result on render_page/render_spans; M37 handled in hd-cache; M44+coherence-LOW dead-code deletion: ExtCommandConsume2Logger/2String, TOKENIZERS/DETECTORS registries, /tmp/konteakstaInput.txt + /opt/smi shell strings, CHUNK_*_SUFFIX x6, cas_utils cancellation machinery (is_valid always true), activity_configuration client_config accessors + pub fn main (args[0] panic), object.rs/adverbial.rs dead get_lemma with #[should_panic] pins, unread AnalysisEngine fields, unread Token.detailedtag/.chunk/.mltag, html_enhancer::topic_title, M13 lib main. Plus panic 11: cg_enhancer.rs:317,332 current[1..] on a reading emptied by retain — move the is_empty check after retain (vislcg3.rs:329-333)."
+                    }
+                )
+            }
+
+            {
+                id hd-span-ui
+                title "Wire the UI to the span endpoint: page plus span map spliced client-side"
+                kind @feat
+                deps (hd-topic-classes hd-click-decoys)
+                log (
+                    {
+                        at 2026-09-10T21:51:25.306634Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator decision (2026-09-10): wire the UI to the span endpoint rather than contract-only or deletion. Today fetch_spans/SpanRequest/parse_spans/EnhancedSpans (teaksta-web api.rs:99-133) have zero production callers (coherence M1, idiom M45); the UI fetches the whole enhanced page and re-parses with the 816-line markup.rs lexer. Target shape: exercise modes fetch the raw page plus POST /api/enhance span map and splice client-side, shrinking the lexer's role to the raw page. Both sides' types already match exactly (verified in review — SpanRequest one-of html/url invariant, attribute vocabulary character-for-character). Note the span map alone can't render a page: keep the page fetch for document context, the span map keys by position. PAGE_SPAN_CLASS \"teaksta-page\" (enhancer_utils.rs:12) currently has no consumer anywhere and no CSS — the wiring should either consume or drop it. Depends on hd-topic-classes (class vocabulary single-sourced first) and hd-click-decoys (relevant/hit semantics settled first so the span map carries them)."
+                    }
+                )
+            }
+
+            {
+                id hd-hints
+                title "Consume the preposition-hint pass in the UI or retire it"
+                kind @feat
+                deps (hd-span-ui)
+                log (
+                    {
+                        at 2026-09-10T21:51:32.284956Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence M11: the preposition-hint pass reaches the wire and stops — cg_enhancer.rs:438 writes a hintid attribute and :757 emits HINT_CLASS \"teaksta-hinttag\" spans (cg_span.rs:20), but TokenSpan::read (markup.rs:166-188) reads id/class/lemma/distractors/answer/possibleforms only, teaksta-hinttag never carries teaksta-token so it's never a token, and no CSS selector styles it. After hd-span-ui settles how the UI consumes spans: either surface hints in cloze/mc (the pedagogical intent — the hint links a preposition to its governed word via hintid) or retire the pass and its wire vocabulary honestly. Check the Java reference/legacy JS for what the hint UX actually was before deciding."
+                    }
+                )
+            }
+
+            {
+                id hd-serve
+                title "Serve the built web app from the poem server"
+                kind @feat
+                log (
+                    {
+                        at 2026-09-10T21:51:39.536351Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence M2: the frontend defaults to same-origin (\"\" base, teaksta-web api.rs:26-29, installed at lib.rs:18) but nothing serves it — the backend registers four API routes and GET / is a text/plain route listing (api.rs:181-194). No in-tree deployment works with the default config. Serve the dx-built web app from the poem server: static files + index fallback for client routes, GET / becomes the app. Build integration note: dioxus-cli is ~/.cargo/bin/dx (Homebrew Deno shadows the name); dx bundle --platform web produces the static bundle. Decide whether the server embeds the bundle (include_dir) or serves a directory given by config — a TEAKSTA_WEBAPP_DIST config field fits the existing Config shape."
+                    }
+                )
+            }
+
+            {
+                id hd-upload-ui
+                title "Frontend upload flow over /api/upload"
+                kind @feat
+                log (
+                    {
+                        at 2026-09-10T21:51:45.762931Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Coherence M3: POST /api/upload has no client — Rejection's four wire codes (no-file/too-large/not-a-page/not-north-sami, upload.rs:56-65) and the {\"url\": ...} success shape (api.rs:349) have no counterpart in teaksta-web. Build the frontend flow: file picker, multipart POST, per-code user-facing messages (North Sámi labels, matching the registry's label conventions), and on success route into the exercise flow with the returned file URL as the page source. The 5MB cap and the analyzer gate (0.6 recognized-token share) are server-side; the client just renders the rejections."
+                    }
+                )
+            }
+        )
+    }
 )
