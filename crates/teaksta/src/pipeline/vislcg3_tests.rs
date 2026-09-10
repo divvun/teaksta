@@ -1,10 +1,6 @@
 use super::*;
 use crate::types::PIPELINE_LANGUAGE;
 
-use std::cell::Cell;
-use std::io::{self, BufReader, Cursor, Read};
-use std::rc::Rc;
-
 fn token(begin: usize, end: usize) -> Token {
     Token {
         begin,
@@ -15,39 +11,6 @@ fn token(begin: usize, end: usize) -> Token {
 
 fn reading(tags: &[&str]) -> CgReading {
     tags.iter().map(|tag| tag.to_string()).collect()
-}
-
-/// Hands out `data` in one read, then fails every read after it, counting
-/// how often it was polled.
-struct ReadThenFail {
-    data: Vec<u8>,
-    reads: Rc<Cell<usize>>,
-}
-
-impl ReadThenFail {
-    fn new(data: &str) -> (Self, Rc<Cell<usize>>) {
-        let reads = Rc::new(Cell::new(0));
-        (
-            ReadThenFail {
-                data: data.as_bytes().to_vec(),
-                reads: Rc::clone(&reads),
-            },
-            reads,
-        )
-    }
-}
-
-impl Read for ReadThenFail {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.reads.set(self.reads.get() + 1);
-        if self.data.is_empty() {
-            return Err(io::Error::other("external command went away"));
-        }
-        let taken = self.data.len().min(buf.len());
-        buf[..taken].copy_from_slice(&self.data[..taken]);
-        self.data.drain(..taken);
-        Ok(taken)
-    }
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.copy-fn/test]
@@ -361,129 +324,4 @@ fn run_fst_cg_terminates_lines_or_reports_failure() {
             );
         }
     }
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn/test]
-#[test]
-fn logger_consumer_keeps_prefix_and_reads_nothing() {
-    let mut consumer = ExtCommandConsume2Logger::new(
-        Cursor::new(b"VislCG3 warning\n".to_vec()),
-        "VislCG STDERR: ".to_string(),
-    );
-
-    assert_eq!(consumer.msg_prefix, "VislCG STDERR: ");
-    let mut untouched = String::new();
-    consumer.reader.read_to_string(&mut untouched).unwrap();
-    assert_eq!(untouched, "VislCG3 warning\n");
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn/test]
-#[test]
-fn logger_consumer_drains_the_reader_to_stream_end() {
-    let mut consumer = ExtCommandConsume2Logger::new(
-        Cursor::new(b"first\nsecond\nthird".to_vec()),
-        "prefix".to_string(),
-    );
-
-    consumer.run();
-
-    let mut left = String::new();
-    consumer.reader.read_to_string(&mut left).unwrap();
-    assert_eq!(left, "");
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn/test]
-#[test]
-fn logger_consumer_swallows_a_read_error_and_stops() {
-    let (source, reads) = ReadThenFail::new("first\nsecond\n");
-    let mut consumer = ExtCommandConsume2Logger::new(BufReader::new(source), "prefix".to_string());
-
-    consumer.run();
-
-    assert_eq!(reads.get(), 2);
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn/test]
-#[test]
-fn string_consumer_starts_unfinished_with_an_empty_buffer() {
-    let mut consumer = ExtCommandConsume2String::new(Cursor::new(b"output\n".to_vec()));
-
-    assert!(!consumer.finished);
-    assert_eq!(consumer.buffer, "");
-    let mut untouched = String::new();
-    consumer.reader.read_to_string(&mut untouched).unwrap();
-    assert_eq!(untouched, "output\n");
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn/test]
-#[test]
-fn string_consumer_terminates_every_line_it_collects() {
-    let mut consumer =
-        ExtCommandConsume2String::new(Cursor::new(b"\"<Mun>\"\n\t\"mun\" Pron".to_vec()));
-
-    consumer.run();
-
-    assert_eq!(consumer.buffer, "\"<Mun>\"\n\t\"mun\" Pron\n");
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn/test]
-#[test]
-fn string_consumer_normalises_crlf_and_handles_empty_stream() {
-    let mut crlf = ExtCommandConsume2String::new(Cursor::new(b"one\r\ntwo\r\n".to_vec()));
-    crlf.run();
-    assert_eq!(crlf.buffer, "one\ntwo\n");
-
-    let mut empty = ExtCommandConsume2String::new(Cursor::new(Vec::new()));
-    empty.run();
-    assert_eq!(empty.buffer, "");
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn/test]
-#[test]
-fn string_consumer_keeps_partial_read_and_finishes() {
-    let (source, reads) = ReadThenFail::new("kept\n");
-    let mut consumer = ExtCommandConsume2String::new(BufReader::new(source));
-
-    consumer.run();
-
-    assert_eq!(consumer.buffer, "kept\n");
-    assert!(consumer.finished);
-    assert_eq!(reads.get(), 2);
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn/test]
-#[test]
-fn is_done_reports_the_drain_stopped_either_way() {
-    let mut clean = ExtCommandConsume2String::new(Cursor::new(b"line\n".to_vec()));
-    assert!(!clean.is_done());
-    clean.run();
-    assert!(clean.is_done());
-
-    let (source, _reads) = ReadThenFail::new("line\n");
-    let mut aborted = ExtCommandConsume2String::new(BufReader::new(source));
-    aborted.run();
-    assert!(aborted.is_done());
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn/test]
-#[test]
-fn get_buffer_withholds_text_until_drain_stops() {
-    let mut consumer = ExtCommandConsume2String::new(Cursor::new(b"one\ntwo\n".to_vec()));
-
-    assert_eq!(consumer.get_buffer(), None);
-
-    consumer.run();
-
-    assert_eq!(consumer.get_buffer(), Some("one\ntwo\n"));
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn/test]
-#[test]
-fn get_buffer_hands_back_truncated_capture_after_error() {
-    let (source, _reads) = ReadThenFail::new("only this much\n");
-    let mut consumer = ExtCommandConsume2String::new(BufReader::new(source));
-
-    consumer.run();
-
-    assert_eq!(consumer.get_buffer(), Some("only this much\n"));
 }

@@ -13,6 +13,47 @@ use serde::{Deserialize, Serialize};
 /// remaining elements are the tag strings of the reading.
 pub type CgReading = Vec<String>;
 
+/// How a topic reads a reading's tags as one string. Every enhancer matches
+/// its tag patterns against a flattened reading rather than against the tags
+/// themselves, and the two shapes below are the ones the Java classes built
+/// inline — kept apart because the patterns are matched literally, so the
+/// separator is part of what a pattern can see.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ReadingJoin {
+    /// Each tag followed by one space, so the result ends in a space:
+    /// `"gietta" N Sg Nom `.
+    TrailingSpace,
+    /// Each tag preceded by a `+`, so the result opens with one:
+    /// `+"gietta"+N+Sg+Nom`.
+    LeadingPlus,
+}
+
+/// Append a reading's tags to `out` as one string. The buffer belongs to the
+/// caller so a loop over the readings of a token flattens into one
+/// allocation; an empty reading appends nothing.
+pub fn flatten_reading_into(out: &mut String, cgr: &CgReading, join: ReadingJoin) {
+    for rtag in cgr {
+        match join {
+            ReadingJoin::TrailingSpace => {
+                out.push_str(rtag);
+                out.push(' ');
+            }
+            ReadingJoin::LeadingPlus => {
+                out.push('+');
+                out.push_str(rtag);
+            }
+        }
+    }
+}
+
+/// [`flatten_reading_into`] onto a string of its own, for the callers that
+/// read one reading and have no buffer to reuse.
+pub fn flatten_reading(cgr: &CgReading, join: ReadingJoin) -> String {
+    let mut out = String::new();
+    flatten_reading_into(&mut out, cgr, join);
+    out
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Token {
     pub begin: usize,
@@ -216,6 +257,35 @@ mod tests {
     /// A word whose second character is two bytes wide, so an offset one byte
     /// past its start is inside a character rather than between two.
     const TEXT: &str = "Sámegiella";
+
+    #[test]
+    fn a_reading_flattens_both_ways_topics_read_it() {
+        let reading: CgReading = ["\"gietta\"", "N", "Sg", "Nom"]
+            .iter()
+            .map(|tag| (*tag).to_string())
+            .collect();
+
+        assert_eq!(
+            flatten_reading(&reading, ReadingJoin::TrailingSpace),
+            "\"gietta\" N Sg Nom "
+        );
+        assert_eq!(
+            flatten_reading(&reading, ReadingJoin::LeadingPlus),
+            "+\"gietta\"+N+Sg+Nom"
+        );
+
+        let empty: CgReading = Vec::new();
+        assert_eq!(flatten_reading(&empty, ReadingJoin::TrailingSpace), "");
+        assert_eq!(flatten_reading(&empty, ReadingJoin::LeadingPlus), "");
+
+        // the buffer a loop reuses keeps what is already in it
+        let mut buffer = String::from("kept");
+        flatten_reading_into(&mut buffer, &empty, ReadingJoin::LeadingPlus);
+        assert_eq!(buffer, "kept");
+        buffer.clear();
+        flatten_reading_into(&mut buffer, &reading, ReadingJoin::LeadingPlus);
+        assert_eq!(buffer, "+\"gietta\"+N+Sg+Nom");
+    }
 
     fn covered(begin: usize, end: usize) -> Option<String> {
         covered_text(TEXT, begin, end).ok().map(str::to_string)

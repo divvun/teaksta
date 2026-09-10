@@ -2,19 +2,26 @@
 //! [`crate::pipeline::vislcg3`] to enhance spans corresponding to the tags
 //! specified by the activity as tags of singular forms of substantives.
 //!
+//! The pass itself is the one the other tag-driven topics run, in
+//! [`crate::enhancer::syntactic`]; what is this topic's own is the tag test,
+//! and the base form and distractor forms the questioning exercises hang on
+//! the span.
+//!
 //! Authors: Niels Ott, Adriane Boyd, Heli Uibo.
 
-use std::collections::HashMap;
-use std::io::{BufRead, BufReader, Cursor};
-
 use anyhow::{Result, bail};
-use tracing::{debug, error, info};
+use tracing::info;
 
-use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
+use crate::enhancer::syntactic;
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
-use crate::types::{CgReading, CgToken, Document, Enhancement};
-use crate::util::enhancer_utils;
+use crate::types::{CgReading, CgToken, Document, ReadingJoin, flatten_reading};
+
+/// The seven case slots a distractor set is generated over, in the order the
+/// generator is asked for them.
+const DISTRACT_FORMS: [&str; 7] = [
+    "Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess",
+];
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer]
 #[derive(Default)]
@@ -29,79 +36,9 @@ impl Vislcg3NounSgEnhancer {
     pub const SPAN_CLASS: &'static str = "teaksta-SubstantiveSingular";
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
-    const LOOKUP_LOC: &'static str = "/usr/local/bin/lookup";
-    const LOOKUP_FLAGS: &'static str = "-flags mbTT -utf8";
-    const INVERTED_FST: &'static str = " /opt/smi/sme/bin/isme-GG.restr.fst";
-    const FST: &'static str = " /opt/smi/sme/bin/sme.fst";
-}
 
-/// A helper that reads from a reader linewise and puts stuff read into a
-/// variable.
-// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string]
-pub struct ExtCommandConsume2String<R: BufRead> {
-    reader: R,
-    finished: bool,
-    buffer: String,
-}
-
-impl<R: BufRead> ExtCommandConsume2String<R> {
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
-    pub fn new(reader: R) -> Self {
-        ExtCommandConsume2String {
-            reader,
-            finished: false,
-            buffer: String::new(),
-        }
-    }
-
-    /// Reads from the reader linewise and puts the result to the buffer.
-    /// See also `get_buffer` and `is_done`.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn]
-    pub fn run(&mut self) {
-        loop {
-            let mut line = String::new();
-            match self.reader.read_line(&mut line) {
-                Ok(0) => break,
-                Ok(_) => {
-                    while line.ends_with('\n') || line.ends_with('\r') {
-                        line.pop();
-                    }
-                    self.buffer = self.buffer.clone() + &line + "\n";
-                }
-                Err(e) => {
-                    error!("Error in reading from external command. {}", e);
-                    break;
-                }
-            }
-        }
-        self.finished = true;
-    }
-
-    /// True if the reader read by this class has reached its end.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn]
-    pub fn is_done(&self) -> bool {
-        self.finished
-    }
-
-    /// The string collected by this class, or none if the stream has not
-    /// reached its end yet.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn]
-    pub fn get_buffer(&self) -> Option<&str> {
-        if !self.finished {
-            return None;
-        }
-
-        Some(&self.buffer)
-    }
-}
-
-impl Vislcg3NounSgEnhancer {
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1]
     pub fn initialize(&mut self, n_sg_tags: Option<&str>) -> Result<()> {
         info!("Noun Sg tags {:?}", self.n_sg_tags);
         let param = match n_sg_tags {
@@ -121,72 +58,25 @@ impl Vislcg3NounSgEnhancer {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
-        info!("Starting Noun Sg enhancement");
-        // keep track of ids for each annotation class
-        let mut class_counts: HashMap<String, i32> = HashMap::new();
-        for con_t in &self.n_sg_tags {
-            class_counts.insert(con_t.clone(), 0);
-            info!("Tag: {}", con_t);
-        }
-
-        // iterating over chunkTags instead of classCounts.keySet() because it
-        // is important to control the order in which spans are enhanced
-
-        for con_t in &self.n_sg_tags {
-            let mut new_id: i32;
-            // go through tokens
-            for cgt in &doc.cg_tokens {
-                if matches!(mode, Mode::Cloze | Mode::Mc) {
-                    // more than one reading? don't mark up for exercise types
-                    // mc and cloze
-                    if !self.is_safe(cgt) {
-                        continue;
-                    }
-                }
-
-                // analyze reading(s)
-                // Loop over all the readings. If there is one analysis that
-                // matches the tag pattern then the token will be selected for
-                // the exercise.
-                for i in 0..cgt.readings.len() {
-                    let reading = &cgt.readings[i];
-
-                    if self.contains_tag(reading, con_t, mode) {
-                        let fields = self.reading_fields(reading, mode);
-                        let (lemma, distractors) = match fields {
-                            Ok(fields) => fields,
-                            // a reading whose base form or generator input
-                            // cannot be built is dropped on its own, not
-                            // together with the rest of the document
-                            Err(e) => {
-                                debug!("no exercise fields for {:?}: {}", reading, e);
-                                continue;
-                            }
-                        };
-                        // make new enhancement
-                        let mut e = Enhancement::default();
-                        e.relevant = true;
-                        e.begin = cgt.begin;
-                        e.end = cgt.end;
-
-                        // increment id
-                        new_id = class_counts[con_t.as_str()] + 1;
-                        let id = enhancer_utils::get_id(&format!("teaksta-span-{}", con_t), new_id);
-                        let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, Self::SPAN_CLASS]);
-                        span_tag.add_attribute("lemma", &lemma);
-                        span_tag.add_attribute("distractors", &distractors);
-                        e.enhance_start = span_tag.start_tag();
-                        e.enhance_end = span_tag.end_tag().to_string();
-                        class_counts.insert(con_t.clone(), new_id);
-                        doc.enhancements.push(e);
-                        break;
-                    } // if
-                } // for
-            }
-        }
-
-        info!("Finished N Sg enhancement");
-        Ok(())
+        syntactic::run(
+            doc,
+            &syntactic::FunctionSpec {
+                start_log: "Starting Noun Sg enhancement",
+                finish_log: "Finished N Sg enhancement",
+                span_class: Self::SPAN_CLASS,
+                tag_class: None,
+                tags: &self.n_sg_tags,
+                is_safe: &|t| self.is_safe(t),
+                contains_tag: &|cgr, tag| self.contains_tag(cgr, tag, mode),
+                // this is the one tag-driven topic whose spans carry the
+                // fields a question is built from
+                attributes: Some(&|cgr| {
+                    let (lemma, distractors) = self.reading_fields(cgr, mode)?;
+                    Ok(vec![("lemma", lemma), ("distractors", distractors)])
+                }),
+            },
+            mode,
+        )
     }
 
     /// The base form and the distractor forms an exercise type needs. The
@@ -201,18 +91,17 @@ impl Vislcg3NounSgEnhancer {
             lemma = self.get_lemma(cgr)?;
         }
         if mode == Mode::Mc {
-            let mut prop = false;
+            // the reading is read twice more below, so it is flattened once
+            let reading_str = flatten_reading(cgr, ReadingJoin::TrailingSpace);
             // Proper nouns have the tag "Prop" in the morphological
             // information. This is needed when generating distractors.
-            if self.contains_tag(cgr, "Prop", mode) {
-                prop = true;
-            }
+            let prop = tag_in_reading(cgr, &reading_str, "Prop", mode);
             // get stemtype from the CG reading, if any of these: G3, G7,
             // NomAg
-            let stemtype = self.get_stem_type(cgr);
+            let stemtype = stem_type_of(&reading_str);
             // generate the distractors, based on the lemma, stemtype and if
             // it is a proper noun or not
-            distractors = self.get_distractors(&lemma, &stemtype, prop)?;
+            distractors = self.get_distractors(&lemma, stemtype, prop)?;
         }
 
         // Delete # from the lemma of compound words if any
@@ -230,48 +119,8 @@ impl Vislcg3NounSgEnhancer {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.contains-tag-fn]
     fn contains_tag(&self, cgr: &CgReading, tag: &str, mode: Mode) -> bool {
-        let mut reading_str = String::new();
-        for rtag in cgr {
-            reading_str = reading_str + rtag + " ";
-        }
-
-        // If the exercise type is "practice" (cloze) then the derived forms,
-        // forms with clitics and proper nouns are excluded from the selection.
-        if (reading_str.contains("Der/") || reading_str.contains("Qst"))
-            && matches!(mode, Mode::Cloze | Mode::Mc)
-        {
-            info!("derived form or form with clitics");
-            return false;
-        }
-
-        // Tag string contains the given tag sequence as a substring, plus the
-        // POS tag 'N'.
-        if reading_str.contains(tag) && reading_str.contains(" N ") {
-            info!("{:?} contains {}", cgr, tag);
-            return true;
-        }
-
-        false
-    }
-
-    /// Obtains the stem type from the morphological analysis if any
-    /// (G3, G7, NomAg).
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn]
-    fn get_stem_type(&self, cgr: &CgReading) -> String {
-        let mut stemtype = String::new();
-        let mut reading_str = String::new();
-        for rtag in cgr {
-            reading_str = reading_str + rtag + " ";
-        }
-        if reading_str.contains("G3") {
-            stemtype = "G3".to_string();
-        } else if reading_str.contains("G7") {
-            stemtype = "G7".to_string();
-        } else if reading_str.contains("NomAg") {
-            stemtype = "NomAg".to_string();
-        }
-        stemtype
+        let reading_str = flatten_reading(cgr, ReadingJoin::TrailingSpace);
+        tag_in_reading(cgr, &reading_str, tag, mode)
     }
 
     /// Obtains the lemma from the CG reading.
@@ -305,129 +154,150 @@ impl Vislcg3NounSgEnhancer {
     }
 
     /// Generates distractors for the multiple choice exercise.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
+    ///
+    /// The stdout-draining plumbing the two external `lookup` processes
+    /// needed — the consumer, its buffer and the shell pipelines the class
+    /// assembled to spawn them — is subsumed by the morphological pipeline
+    /// seam, which hands the transducer output back directly.
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn]
     fn get_distractors(&self, lemma: &str, stemtype: &str, propernoun: bool) -> Result<String> {
-        let distract_forms = [
-            "Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess",
-        ];
+        let result = self.generated_forms(lemma, stemtype, propernoun)?;
+        info!("Generated forms read from the outputfile: {}", result);
+        Ok(result)
+    }
 
+    /// The surface forms the generator returns for one base form, each
+    /// followed by a space. A transducer step that fails is reported on
+    /// standard output — as the Java reported its `IOException` — and stops
+    /// the run with nothing generated rather than raising.
+    fn generated_forms(&self, lemma: &str, stemtype: &str, propernoun: bool) -> Result<String> {
         let mut lemma = lemma.to_string();
-        let mut result = String::new();
         let mut generation_input = String::new();
-        let mut prop_n = "";
-        if propernoun {
-            prop_n = "+Prop";
-        }
+        let prop_n = match propernoun {
+            true => "+Prop",
+            false => "",
+        };
 
         let morpho = MorphoPipeline::shared();
 
-        // The Java body wraps everything below in a try/catch for IOException
-        // whose handler prints the message and falls through to the final log
-        // and return; `break 'io` is that jump.
-        'io: {
-            if lemma.contains('#') {
-                // correct lemma for compound words = morf analysis - N+Sg+Nom
-                lemma = lemma.replace("#", "");
-                let analysis_pipeline = format!(
-                    "/bin/echo \"{}\" | {} {} {}",
-                    lemma,
-                    Self::LOOKUP_LOC,
-                    Self::LOOKUP_FLAGS,
-                    Self::FST
-                );
-                info!("Morph analysis pipeline: {}", analysis_pipeline);
-
-                let from_fst = match morpho.analyze_disambiguate(&[lemma.clone()]) {
-                    Ok(s) => s,
-                    Err(e) => {
-                        println!("{}", e);
-                        break 'io;
-                    }
-                };
-                let mut stdout_consumer =
-                    ExtCommandConsume2String::new(BufReader::new(Cursor::new(from_fst)));
-                stdout_consumer.run();
-                let morfanal = match stdout_consumer.get_buffer() {
-                    Some(b) => b,
-                    None => "",
-                };
-                // the word may be morphologically ambiguous
-                let analysis: Vec<&str> = morfanal.split('\n').collect();
-                // take the first analysis
-                let token: Vec<&str> = analysis[0].split('\t').collect();
-                // the first token is the word to be analysed and the second
-                // token is the morph analysis
-                if token.len() < 2 {
-                    bail!("Index 1 out of bounds for length {}", token.len());
-                }
-                lemma = token[1].to_string();
-                lemma = lemma.replace("Sg+Nom", "");
-                info!("lemma of the compound word: {}", lemma);
-
-                for form in distract_forms {
-                    generation_input = generation_input + &lemma + form + "\n";
-                }
-            } else {
-                for form in distract_forms {
-                    if !stemtype.is_empty() {
-                        generation_input = format!(
-                            "{}{}{}+N+{}+{}\n",
-                            generation_input, lemma, prop_n, stemtype, form
-                        );
-                        generation_input = format!(
-                            "{}{}{}+v1+N+{}+{}\n",
-                            generation_input, lemma, prop_n, stemtype, form
-                        );
-                    } else {
-                        generation_input =
-                            format!("{}{}{}+N+{}\n", generation_input, lemma, prop_n, form);
-                        generation_input =
-                            format!("{}{}{}+v1+N+{}\n", generation_input, lemma, prop_n, form);
-                    }
-                }
-            }
-
-            let generation_pipeline = format!(
-                "/bin/echo \"{}\" | {} {} {}",
-                generation_input,
-                Self::LOOKUP_LOC,
-                Self::LOOKUP_FLAGS,
-                Self::INVERTED_FST
-            );
-
-            info!("Form generation pipeline: {}", generation_pipeline);
-
-            let from_ifst = match morpho.generate(&generation_input) {
+        if lemma.contains('#') {
+            // correct lemma for compound words = morf analysis - N+Sg+Nom
+            lemma = lemma.replace("#", "");
+            let from_fst = match morpho.analyze_disambiguate(&[lemma.clone()]) {
                 Ok(s) => s,
                 Err(e) => {
                     println!("{}", e);
-                    break 'io;
+                    return Ok(String::new());
                 }
             };
-            let mut stdout_consumer2 =
-                ExtCommandConsume2String::new(BufReader::new(Cursor::new(from_ifst)));
-            stdout_consumer2.run();
-            let ifst_output = match stdout_consumer2.get_buffer() {
-                Some(b) => b.to_string(),
-                None => String::new(),
-            };
-            // StringTokenizer's default delimiter set
-            for word in ifst_output
-                .split(|c| matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0C'))
-                .filter(|w| !w.is_empty())
-            {
-                info!("ifst output:{}", word);
-                // forms that could not be generated are excluded, as well as
-                // input strings of the iFST
-                if !word.contains('+') && !word.contains('-') {
-                    result = result + word + " ";
+            // the word may be morphologically ambiguous; take the first
+            // analysis
+            let analysis = from_fst.lines().next().unwrap_or_default();
+            // the first field is the word to be analysed and the second field
+            // is the morph analysis
+            let fields: Vec<&str> = analysis.split('\t').collect();
+            if fields.len() < 2 {
+                bail!("Index 1 out of bounds for length {}", fields.len());
+            }
+            lemma = fields[1].replace("Sg+Nom", "");
+            info!("lemma of the compound word: {}", lemma);
+
+            for form in DISTRACT_FORMS {
+                generation_input = generation_input + &lemma + form + "\n";
+            }
+        } else {
+            for form in DISTRACT_FORMS {
+                if !stemtype.is_empty() {
+                    generation_input = format!(
+                        "{}{}{}+N+{}+{}\n",
+                        generation_input, lemma, prop_n, stemtype, form
+                    );
+                    generation_input = format!(
+                        "{}{}{}+v1+N+{}+{}\n",
+                        generation_input, lemma, prop_n, stemtype, form
+                    );
+                } else {
+                    generation_input =
+                        format!("{}{}{}+N+{}\n", generation_input, lemma, prop_n, form);
+                    generation_input =
+                        format!("{}{}{}+v1+N+{}\n", generation_input, lemma, prop_n, form);
                 }
             }
         }
 
-        info!("Generated forms read from the outputfile: {}", result);
+        let from_ifst = match morpho.generate(&generation_input) {
+            Ok(s) => s,
+            Err(e) => {
+                println!("{}", e);
+                return Ok(String::new());
+            }
+        };
+
+        let mut result = String::new();
+        // StringTokenizer's default delimiter set
+        for word in from_ifst
+            .split(|c| matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0C'))
+            .filter(|w| !w.is_empty())
+        {
+            info!("ifst output:{}", word);
+            // forms that could not be generated are excluded, as well as
+            // input strings of the iFST
+            if !word.contains('+') && !word.contains('-') {
+                result = result + word + " ";
+            }
+        }
+
         Ok(result)
+    }
+}
+
+/// Whether a flattened reading carries the tag, over the exercise's own
+/// exclusions. Both [`Vislcg3NounSgEnhancer::contains_tag`] and the
+/// proper-noun probe read the same flattened reading through here.
+fn tag_in_reading(cgr: &CgReading, reading_str: &str, tag: &str, mode: Mode) -> bool {
+    // If the exercise type is "practice" (cloze) then the derived forms,
+    // forms with clitics and proper nouns are excluded from the selection.
+    if (reading_str.contains("Der/") || reading_str.contains("Qst"))
+        && matches!(mode, Mode::Cloze | Mode::Mc)
+    {
+        info!("derived form or form with clitics");
+        return false;
+    }
+
+    // Tag string contains the given tag sequence as a substring, plus the
+    // POS tag 'N'.
+    if reading_str.contains(tag) && reading_str.contains(" N ") {
+        info!("{:?} contains {}", cgr, tag);
+        return true;
+    }
+
+    false
+}
+
+/// Obtains the stem type from the morphological analysis if any (G3, G7,
+/// NomAg), off the reading flattened the way the tag test reads it — the one
+/// caller holds that string already.
+// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn]
+fn stem_type_of(reading_str: &str) -> &'static str {
+    if reading_str.contains("G3") {
+        "G3"
+    } else if reading_str.contains("G7") {
+        "G7"
+    } else if reading_str.contains("NomAg") {
+        "NomAg"
+    } else {
+        ""
     }
 }
 
@@ -435,7 +305,6 @@ impl Vislcg3NounSgEnhancer {
 mod tests {
     use super::*;
     use crate::types::PIPELINE_LANGUAGE;
-    use std::io::Read;
 
     fn reading(tags: &[&str]) -> CgReading {
         tags.iter().map(|tag| (*tag).to_string()).collect()
@@ -453,6 +322,12 @@ mod tests {
         Vislcg3NounSgEnhancer::default()
     }
 
+    /// The stem type read off a reading, flattened the way the pass flattens
+    /// it before handing the string on.
+    fn stem_type(tags: &[&str]) -> &'static str {
+        stem_type_of(&flatten_reading(&reading(tags), ReadingJoin::TrailingSpace))
+    }
+
     fn span_start(id: &str) -> String {
         format!(
             "<span id=\"{}\" class=\"teaksta-token teaksta-SubstantiveSingular\" lemma=\"\" distractors=\"\">",
@@ -460,98 +335,7 @@ mod tests {
         )
     }
 
-    /// Serves `data` and then fails, standing in for the stdout of a child
-    /// process that goes away mid-stream.
-    struct FailingSource {
-        data: Vec<u8>,
-        pos: usize,
-    }
-
-    impl Read for FailingSource {
-        fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-            if self.pos >= self.data.len() {
-                return Err(std::io::Error::other("stdout closed unexpectedly"));
-            }
-            let n = std::cmp::min(buf.len(), self.data.len() - self.pos);
-            buf[..n].copy_from_slice(&self.data[self.pos..self.pos + n]);
-            self.pos += n;
-            Ok(n)
-        }
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn/test]
-    #[test]
-    fn new_consumer_starts_unfinished_and_does_no_reading() {
-        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("one\ntwo\n")));
-
-        assert!(!consumer.finished);
-        assert_eq!(consumer.buffer, "");
-
-        let mut untouched = String::new();
-        consumer.reader.read_to_string(&mut untouched).unwrap();
-        assert_eq!(untouched, "one\ntwo\n");
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn/test]
-    #[test]
-    fn run_normalises_terminators_and_terminates_the_last_line() {
-        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new(
-            "first\r\n\r\nlast without terminator",
-        )));
-
-        consumer.run();
-
-        assert_eq!(consumer.buffer, "first\n\nlast without terminator\n");
-        assert!(consumer.finished);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.run-fn/test]
-    #[test]
-    fn run_keeps_read_text_when_stream_breaks() {
-        let source = FailingSource {
-            data: b"kept\n".to_vec(),
-            pos: 0,
-        };
-        let mut consumer = ExtCommandConsume2String::new(BufReader::new(source));
-
-        consumer.run();
-
-        assert_eq!(consumer.buffer, "kept\n");
-        assert!(consumer.finished);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.is-done-fn/test]
-    #[test]
-    fn is_done_flips_once_the_stream_is_drained() {
-        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("line\n")));
-
-        assert!(!consumer.is_done());
-        consumer.run();
-        assert!(consumer.is_done());
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn/test]
-    #[test]
-    fn get_buffer_withholds_text_until_drain_finishes() {
-        let mut consumer =
-            ExtCommandConsume2String::new(BufReader::new(Cursor::new("alfa\nbeta\n")));
-
-        assert_eq!(consumer.get_buffer(), None);
-        consumer.run();
-        assert_eq!(consumer.get_buffer(), Some("alfa\nbeta\n"));
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn/test]
-    #[test]
-    fn get_buffer_is_empty_for_stream_without_lines() {
-        let mut consumer = ExtCommandConsume2String::new(BufReader::new(Cursor::new("")));
-
-        consumer.run();
-
-        assert_eq!(consumer.get_buffer(), Some(""));
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1/test]
     #[test]
     fn initialize_splits_tag_list_on_commas_without_trimming() {
         let mut enhancer = Vislcg3NounSgEnhancer::default();
@@ -568,7 +352,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1/test]
     #[test]
     fn initialize_fails_when_the_tag_parameter_is_missing() {
         let mut enhancer = Vislcg3NounSgEnhancer::default();
@@ -633,35 +417,16 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn/test]
     #[test]
     fn stem_type_reports_first_of_g3_g7_nomag() {
-        let enhancer = enhancer();
-
-        assert_eq!(
-            enhancer.get_stem_type(&reading(&["\"bassi\"", "N", "G3", "G7", "NomAg"])),
-            "G3"
-        );
-        assert_eq!(
-            enhancer.get_stem_type(&reading(&["\"bassi\"", "N", "G7", "NomAg"])),
-            "G7"
-        );
-        assert_eq!(
-            enhancer.get_stem_type(&reading(&["\"lohkki\"", "N", "NomAg"])),
-            "NomAg"
-        );
-        assert_eq!(
-            enhancer.get_stem_type(&reading(&["\"gietta\"", "N", "Sg", "Nom"])),
-            ""
-        );
+        assert_eq!(stem_type(&["\"bassi\"", "N", "G3", "G7", "NomAg"]), "G3");
+        assert_eq!(stem_type(&["\"bassi\"", "N", "G7", "NomAg"]), "G7");
+        assert_eq!(stem_type(&["\"lohkki\"", "N", "NomAg"]), "NomAg");
+        assert_eq!(stem_type(&["\"gietta\"", "N", "Sg", "Nom"]), "");
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-stem-type-fn/test]
     #[test]
     fn stem_type_matches_inside_the_quoted_base_form() {
-        let enhancer = enhancer();
-
-        assert_eq!(
-            enhancer.get_stem_type(&reading(&["\"G7-gáhkku\"", "N", "Sg", "Nom"])),
-            "G7"
-        );
+        assert_eq!(stem_type(&["\"G7-gáhkku\"", "N", "Sg", "Nom"]), "G7");
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn+2/test]
@@ -804,7 +569,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3/test]
     #[test]
     fn distractors_hold_only_generated_surface_forms() {
         let enhancer = enhancer();
@@ -830,7 +595,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3/test]
     #[test]
     fn a_compound_lemma_takes_the_analyser_branch() {
         let enhancer = enhancer();

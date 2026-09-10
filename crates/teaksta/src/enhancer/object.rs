@@ -11,7 +11,7 @@ use tracing::info;
 
 use crate::enhancer::syntactic;
 use crate::server::api::Mode;
-use crate::types::{CgReading, CgToken, Document};
+use crate::types::{CgReading, CgToken, Document, ReadingJoin, flatten_reading};
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer]
 #[derive(Debug, Clone, Default)]
@@ -55,14 +55,14 @@ impl Vislcg3ObjectEnhancer {
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         syntactic::run(
             doc,
-            &syntactic::FunctionSpec {
-                start_log: "Starting Object enhancement",
-                finish_log: "Finished Object enhancement",
-                span_class: Self::SPAN_CLASS,
-                tags: &self.object_tags,
-                is_safe: &|t| self.is_safe(t),
-                contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),
-            },
+            &syntactic::FunctionSpec::plain(
+                "Starting Object enhancement",
+                "Finished Object enhancement",
+                Self::SPAN_CLASS,
+                &self.object_tags,
+                &|t| self.is_safe(t),
+                &|cgr, tag| self.contains_tag(cgr, tag),
+            ),
             mode,
         )
     }
@@ -78,10 +78,7 @@ impl Vislcg3ObjectEnhancer {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn]
     fn contains_tag(&self, cgr: &CgReading, tag: &str) -> bool {
-        let mut reading_str = String::new();
-        for rtag in cgr {
-            reading_str = reading_str + rtag.as_str() + " ";
-        }
+        let reading_str = flatten_reading(cgr, ReadingJoin::TrailingSpace);
 
         // Tag string contains the given tag sequence as a substring, plus it is
         // in the accusative case if it is the phrase nucleus.
