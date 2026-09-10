@@ -1,1 +1,10 @@
 /target
+
+# Server runtime artifacts: the upload/analysis directories the binary
+# defaults to, and the interaction log the servlet appends to in its
+# working directory.
+/data/
+/InputLog.txt
+
+# Per-worktree claim state.
+.nplan/
