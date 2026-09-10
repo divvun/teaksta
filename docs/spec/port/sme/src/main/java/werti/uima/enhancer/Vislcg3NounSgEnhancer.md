@@ -291,14 +291,14 @@
 > true, `begin` set to the token's begin offset and `end` set to the token's end offset.
 > The per-tag counter is incremented (new value = old + 1) and the new value becomes the
 > span number. `enhanceStart` is set to exactly
-> `<span id="WERTi-span-<conT>-<newId>" class="teaksta-token teaksta-SubstantiveSingular" lemma="<lemma>" distractors="<distractors>">`
+> `<span id="teaksta-span-<conT>-<newId>" class="teaksta-token teaksta-SubstantiveSingular" lemma="<lemma>" distractors="<distractors>">`
 >
 > The markup is rendered from a structured span tag rather than assembled as
 > text: the id, the class list and both attribute values are escaped for a
 > double-quoted attribute, so a base form or a generated form carrying `&`,
 > `<`, `>` or `"` cannot close the attribute or the tag, and the two classes are
 > joined by exactly one space with none trailing.
-> — the id is the string `WERTi-span-` concatenated with the tag, a hyphen and the number;
+> — the id is the string `teaksta-span-` concatenated with the tag, a hyphen and the number;
 > the class attribute has two spaces between the two class names and a trailing space.
 > `enhanceEnd` is set to `</span>`. The counter map is updated with the new value and the
 > `Enhancement` is added to the CAS indexes. The reading loop then breaks, so at most one
@@ -310,7 +310,7 @@
 > reading matches several configured tags receives one `Enhancement` per matching tag, all
 > covering the same offsets. Quirk: `conT` values other than the first carry a leading
 > space from the un-trimmed `NSgTags` split, so the emitted ids contain literal spaces
-> (e.g. `WERTi-span- Sg Acc-3`), which are not valid HTML id values. Quirk: `lemma` and
+> (e.g. `teaksta-span- Sg Acc-3`), which are not valid HTML id values. Quirk: `lemma` and
 > `distractors` are interpolated into the attribute values without HTML escaping, so a
 > double quote in a lemma breaks the tag. Quirk: activity state is read from a static
 > servlet field, so concurrent requests with different activities interfere.

@@ -22,5 +22,5 @@ commit {
 }
 
 adoption {
-    scope "porting"
+    scope "maintenance"
 }

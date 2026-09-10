@@ -171,8 +171,8 @@
 > in `classCounts`: the counter starts at zero and is incremented and read back,
 > so the first occurrence is 1. Builds `Word(cgt.getBegin(), cgt.getEnd())` and a
 > `SpanTag` over the id
-> `EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count)` — i.e.
-> `WERTi-span-<spanReadingString>-<count>` — and the two classes
+> `EnhancerUtils.get_id("teaksta-span-" + spanReadingString, count)` — i.e.
+> `teaksta-span-<spanReadingString>-<count>` — and the two classes
 > `teaksta-token` and `teaksta-SubstantivePlural`, which render separated by a
 > single space. Adds attribute `lemma` with the lemma, then stores
 > `word -> spanTag` in `wordToSpanMap`.

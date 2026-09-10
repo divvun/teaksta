@@ -160,10 +160,10 @@
 >   - Updates `classCounts`: the counter for `spanReadingString` starts at zero and is incremented
 >     and read back, so the first occurrence stays at 1 and there is no `-0` suffix.
 >   - Creates `word = new Word(cgt.getBegin(), cgt.getEnd())`.
->   - Builds a `SpanTag` over the id `EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count)`
+>   - Builds a `SpanTag` over the id `EnhancerUtils.get_id("teaksta-span-" + spanReadingString, count)`
 >     and the two classes `teaksta-token` and `teaksta-InfiniteVerb`, which render separated by a
 >     single space. `get_id` appends `-` and the count, so the id has the shape
->     `WERTi-span-<reading-with-dashes>-<n>`.
+>     `teaksta-span-<reading-with-dashes>-<n>`.
 >   - Calls `addAttribute("lemma", lemma)` on it and stores it in `wordToSpanMap` keyed by `word`.
 >   - When `isMcActivity`: computes `writeMorphologicalForms(reading_str)` and appends it to the mc
 >     buffer, followed by the separator line `ñôŃßĘńŠē\n`, followed by `word.toString()` and a

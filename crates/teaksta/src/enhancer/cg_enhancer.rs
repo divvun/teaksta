@@ -428,7 +428,7 @@ impl Run<'_> {
         // create a word with begin and end of the current CGToken
         let word = Word::new(cgt.begin, cgt.end);
 
-        let id = enhancer_utils::get_id(&format!("WERTi-span-{}", span_reading_string), count);
+        let id = enhancer_utils::get_id(&format!("teaksta-span-{}", span_reading_string), count);
         let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, self.spec.span_class]);
         span_tag.add_attribute("lemma", &found.lemma);
 
@@ -753,7 +753,7 @@ fn emit_hint_span(doc: &mut Document, cgt: &CgToken, hint_tag: &str, scan: &mut 
     // create a word with begin and end of the current CGToken
     let word = Word::new(cgt.begin, cgt.end);
     let count = bump(&mut scan.class_counts, hint_tag);
-    scan.hint_id = enhancer_utils::get_id(&format!("WERTi-span-{}", hint_tag), count);
+    scan.hint_id = enhancer_utils::get_id(&format!("teaksta-span-{}", hint_tag), count);
     let span_tag = SpanTag::new(scan.hint_id.clone(), &[HINT_CLASS]);
     push_enhancement(doc, word.begin, word.end, &span_tag);
 }

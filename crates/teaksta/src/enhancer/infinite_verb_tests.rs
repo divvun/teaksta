@@ -79,11 +79,11 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     enhancer.process(&mut doc).expect("process");
 
     let first = concat!(
-        "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-1\" ",
+        "<span id=\"teaksta-span-boahtit-V-xsmey-Inf-1\" ",
         "class=\"teaksta-token teaksta-InfiniteVerb\" lemma=\"boahtit\">"
     );
     let second = concat!(
-        "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-2\" ",
+        "<span id=\"teaksta-span-boahtit-V-xsmey-Inf-2\" ",
         "class=\"teaksta-token teaksta-InfiniteVerb\" lemma=\"boahtit\">"
     );
 
@@ -115,7 +115,7 @@ fn process_selects_the_first_reading_matching_both_patterns() {
     assert_eq!(
         doc.enhancements[0].enhance_start,
         concat!(
-            "<span id=\"WERTi-span-boahtit-V-xsmey-Inf-1\" ",
+            "<span id=\"teaksta-span-boahtit-V-xsmey-Inf-1\" ",
             "class=\"teaksta-token teaksta-InfiniteVerb\" lemma=\"boahtit\">"
         )
     );

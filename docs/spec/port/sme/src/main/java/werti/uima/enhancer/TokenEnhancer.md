@@ -69,8 +69,8 @@
 > Sets `enhanceStart` to `<span id="{spanId}" class="teaksta-token">` or
 > `<span id="{spanId}" class="teaksta-token teaksta-hit">`, the classes
 > separated by a single space, where `{spanId}` is the id built by the
-> shared id helper from the span class `WERTi-span` and the counter, i.e.
-> `WERTi-span-{id}`, and sets `enhanceEnd` to `</span>`. Logs the covered text, tag and id at trace
+> shared id helper from the span class `teaksta-span` and the counter, i.e.
+> `teaksta-span-{id}`, and sets `enhanceEnd` to `</span>`. Logs the covered text, tag and id at trace
 > when trace is enabled, then adds the enhancement to the CAS indexes.
 >
 > After the loop, logs at debug that enhancement is finished. Declares

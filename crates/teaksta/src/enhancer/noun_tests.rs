@@ -81,12 +81,12 @@ fn a_singular_noun_span_carries_its_lemma() {
     assert_eq!(doc.enhancements[0].enhance_end, "</span>");
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<span id=\"WERTi-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-1\" \
+        "<span id=\"teaksta-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-1\" \
          class=\"teaksta-token teaksta-Substantive\" lemma=\"čáhci\">"
     );
     assert_eq!(
         doc.enhancements[1].enhance_start,
-        "<span id=\"WERTi-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-2\" \
+        "<span id=\"teaksta-span-čáhci-N-xsmey-Sem/Plc-Sg-Nom-2\" \
          class=\"teaksta-token teaksta-Substantive\" lemma=\"čáhci\">"
     );
 }
@@ -108,14 +108,14 @@ fn preposition_hint_is_linked_from_next_noun() {
     assert_eq!(doc.enhancements.len(), 2);
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<span id=\"WERTi-span-maŋŋel-Pr-1\" class=\"teaksta-hinttag\">"
+        "<span id=\"teaksta-span-maŋŋel-Pr-1\" class=\"teaksta-hinttag\">"
     );
     assert_eq!((doc.enhancements[0].begin, doc.enhancements[0].end), (0, 8));
     assert_eq!(
         doc.enhancements[1].enhance_start,
-        "<span id=\"WERTi-span-beana-N-Sg-Nom-1\" \
+        "<span id=\"teaksta-span-beana-N-Sg-Nom-1\" \
          class=\"teaksta-token teaksta-Substantive\" lemma=\"beana\" \
-         hintid=\"WERTi-span-maŋŋel-Pr-1\">"
+         hintid=\"teaksta-span-maŋŋel-Pr-1\">"
     );
 }
 

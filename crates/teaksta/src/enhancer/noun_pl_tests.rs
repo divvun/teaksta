@@ -79,11 +79,11 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     enhancer.process(&mut doc).expect("process");
 
     let first = concat!(
-        "<span id=\"WERTi-span-beana-N-xsmey-Pl-Nom-@SUBJ-1\" ",
+        "<span id=\"teaksta-span-beana-N-xsmey-Pl-Nom-@SUBJ-1\" ",
         "class=\"teaksta-token teaksta-SubstantivePlural\" lemma=\"beana\">"
     );
     let second = concat!(
-        "<span id=\"WERTi-span-beana-N-xsmey-Pl-Nom-@SUBJ-2\" ",
+        "<span id=\"teaksta-span-beana-N-xsmey-Pl-Nom-@SUBJ-2\" ",
         "class=\"teaksta-token teaksta-SubstantivePlural\" lemma=\"beana\">"
     );
 

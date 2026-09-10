@@ -181,7 +181,7 @@ impl Vislcg3NounSgEnhancer {
 
                         // increment id
                         new_id = class_counts[con_t.as_str()] + 1;
-                        let id = enhancer_utils::get_id(&format!("WERTi-span-{}", con_t), new_id);
+                        let id = enhancer_utils::get_id(&format!("teaksta-span-{}", con_t), new_id);
                         let mut span_tag =
                             SpanTag::new(id, &[TOKEN_CLASS, "teaksta-SubstantiveSingular"]);
                         span_tag.add_attribute("lemma", &lemma);
@@ -738,12 +738,12 @@ mod tests {
         let first = &doc.enhancements[0];
         assert!(first.relevant);
         assert_eq!((first.begin, first.end), (0, 6));
-        assert_eq!(first.enhance_start, span_start("WERTi-span-Sg Nom-1"));
+        assert_eq!(first.enhance_start, span_start("teaksta-span-Sg Nom-1"));
         assert_eq!(first.enhance_end, "</span>");
 
         let second = &doc.enhancements[1];
         assert_eq!((second.begin, second.end), (7, 12));
-        assert_eq!(second.enhance_start, span_start("WERTi-span- Sg Acc-1"));
+        assert_eq!(second.enhance_start, span_start("teaksta-span- Sg Acc-1"));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+3/test]
@@ -773,10 +773,10 @@ mod tests {
         assert_eq!(
             emitted,
             vec![
-                (0, 6, span_start("WERTi-span-Sg-1").as_str()),
-                (7, 12, span_start("WERTi-span-Sg-2").as_str()),
-                (0, 6, span_start("WERTi-span-Nom-1").as_str()),
-                (7, 12, span_start("WERTi-span-Nom-2").as_str()),
+                (0, 6, span_start("teaksta-span-Sg-1").as_str()),
+                (7, 12, span_start("teaksta-span-Sg-2").as_str()),
+                (0, 6, span_start("teaksta-span-Nom-1").as_str()),
+                (7, 12, span_start("teaksta-span-Nom-2").as_str()),
             ]
         );
     }

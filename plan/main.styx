@@ -239,6 +239,15 @@ children (
                 id dj-frontend
                 title "Frontend on the teaksta vocabulary and /api endpoints"
                 deps (dj-core dj-server)
+                sealed true
+                log (
+                    {
+                        at 2026-09-10T20:27:20.444325Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
             }
         )
     }

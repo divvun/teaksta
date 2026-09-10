@@ -172,7 +172,7 @@
 > `word = new Word(cgt.getBegin(), cgt.getEnd())`.
 >
 > Builds a `SpanTag` over the id
-> `EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count)`, where `count`
+> `EnhancerUtils.get_id("teaksta-span-" + spanReadingString, count)`, where `count`
 > is the current counter value and `get_id` yields `spanClass + "-" + id`, and
 > the two classes `teaksta-token` and `teaksta-VerbConjugation`, which render
 > separated by a single space. Calls `addAttribute("lemma", lemma)` on it and

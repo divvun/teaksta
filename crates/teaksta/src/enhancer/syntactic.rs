@@ -90,7 +90,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>) -> Result<()> {
 
                 // increment id
                 let new_id = class_counts[con_t] + 1;
-                let id = enhancer_utils::get_id(&format!("WERTi-span-{con_t}"), new_id);
+                let id = enhancer_utils::get_id(&format!("teaksta-span-{con_t}"), new_id);
                 let span_tag = SpanTag::new(id, &[TOKEN_CLASS, spec.span_class]);
                 // make new enhancement
                 let e = Enhancement {

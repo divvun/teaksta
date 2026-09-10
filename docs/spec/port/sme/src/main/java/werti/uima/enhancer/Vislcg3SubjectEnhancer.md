@@ -93,8 +93,8 @@
 >   in the CAS; sets its relevant feature to true; sets begin to cgt.getBegin()
 >   and end to cgt.getEnd(); computes newId = classCounts.get(conT) + 1; sets
 >   enhanceStart to the string
->   `<span id="WERTi-span-<conT>-<newId>" class="teaksta-token teaksta-Subject">`
->   — the id is produced by EnhancerUtils.get_id("WERTi-span-" + conT, newId),
+>   `<span id="teaksta-span-<conT>-<newId>" class="teaksta-token teaksta-Subject">`
+>   — the id is produced by EnhancerUtils.get_id("teaksta-span-" + conT, newId),
 >   which joins with a single "-", and the class attribute holds
 >   "teaksta-token" and "teaksta-Subject" separated by a single
 >   space; sets enhanceEnd to

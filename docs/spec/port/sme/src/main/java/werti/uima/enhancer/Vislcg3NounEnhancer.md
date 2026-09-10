@@ -200,7 +200,7 @@
 >   and is incremented and read back, so the first occurrence is 1.
 > - Builds `word = new Word(cgt.getBegin(), cgt.getEnd())`.
 > - Builds a `SpanTag` over the id
->   `EnhancerUtils.get_id("WERTi-span-" + spanReadingString, count)` and the two
+>   `EnhancerUtils.get_id("teaksta-span-" + spanReadingString, count)` and the two
 >   classes `teaksta-token` and `teaksta-Substantive`, which render separated by
 >   a single space; `get_id` returns `spanClass + "-" + id` and `count` is the
 >   current counter value.
@@ -230,7 +230,7 @@
 > If instead `isValidReading` is false but `hintTag` is non-empty, the token is
 > emitted as a hint: `hintDistance` is reset to 0, a `Word` is built from the
 > token offsets, `classCounts` is bumped for `hintTag`, `hintID` is set to
-> `EnhancerUtils.get_id("WERTi-span-" + hintTag, count)`, and an `Enhancement`
+> `EnhancerUtils.get_id("teaksta-span-" + hintTag, count)`, and an `Enhancement`
 > is added to the CAS with `relevant = true`, the token offsets,
 > `enhanceStart` the markup of a span tag carrying that id and the single class
 > `teaksta-hinttag`, and `enhanceEnd = "</span>"`.

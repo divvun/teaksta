@@ -91,7 +91,7 @@ fn process_wraps_each_conneg_token_in_numbered_span() {
     assert_eq!((first.begin, first.end), (3, 10));
     assert_eq!(
         first.enhance_start,
-        "<span id=\"WERTi-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-1\" \
+        "<span id=\"teaksta-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-1\" \
          class=\"teaksta-token teaksta-ConNeg\" lemma=\"boahtit\">"
     );
     assert_eq!(first.enhance_end, "</span>");
@@ -100,7 +100,7 @@ fn process_wraps_each_conneg_token_in_numbered_span() {
     assert_eq!((second.begin, second.end), (15, 22));
     assert_eq!(
         second.enhance_start,
-        "<span id=\"WERTi-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-2\" \
+        "<span id=\"teaksta-span-boahtit-xsmey-V-Ind-Prs-ConNeg-@-FMAINV-2\" \
          class=\"teaksta-token teaksta-ConNeg\" lemma=\"boahtit\">"
     );
 }

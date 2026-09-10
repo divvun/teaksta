@@ -122,7 +122,7 @@ impl TokenEnhancer {
                     true => &[TOKEN_CLASS, HIT_CLASS],
                     false => &[TOKEN_CLASS],
                 };
-                let span_tag = SpanTag::new(enhancer_utils::get_id("WERTi-span", id), classes);
+                let span_tag = SpanTag::new(enhancer_utils::get_id("teaksta-span", id), classes);
                 e.enhance_start = span_tag.start_tag();
                 e.enhance_end = span_tag.end_tag().to_string();
 
@@ -251,7 +251,7 @@ mod tests {
         assert_eq!((cas.enhancements[0].begin, cas.enhancements[0].end), (2, 5));
         assert_eq!(
             cas.enhancements[0].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"teaksta-token\">"
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token\">"
         );
         assert!(!cas.enhancements[0].relevant);
         assert_eq!(
@@ -260,7 +260,7 @@ mod tests {
         );
         assert_eq!(
             cas.enhancements[1].enhance_start,
-            "<span id=\"WERTi-span-2\" class=\"teaksta-token teaksta-hit\">"
+            "<span id=\"teaksta-span-2\" class=\"teaksta-token teaksta-hit\">"
         );
         assert!(cas.enhancements[1].relevant);
         assert_eq!(cas.enhancements[1].enhance_end, "</span>");
@@ -327,7 +327,7 @@ mod tests {
         assert!(!cas.enhancements[0].relevant);
         assert_eq!(
             cas.enhancements[0].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"teaksta-token\">"
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token\">"
         );
     }
 
@@ -372,7 +372,7 @@ mod tests {
         assert_eq!(cas.enhancements[0].enhance_start, "<e>");
         assert_eq!(
             cas.enhancements[1].enhance_start,
-            "<span id=\"WERTi-span-1\" class=\"teaksta-token teaksta-hit\">"
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token teaksta-hit\">"
         );
         assert_eq!(cas.tokens.len(), 1);
     }

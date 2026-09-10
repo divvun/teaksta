@@ -170,7 +170,7 @@
 >  - classCounts: the counter for spanReadingString starts at zero and is
 >    incremented and read back, so the first occurrence is 1.
 >  - word = Word(cgt.getBegin(), cgt.getEnd()).
->  - A SpanTag is built over the id EnhancerUtils.get_id("WERTi-span-" +
+>  - A SpanTag is built over the id EnhancerUtils.get_id("teaksta-span-" +
 >    spanReadingString, counter), where get_id joins its two arguments with "-",
 >    and the two classes "teaksta-token" and "teaksta-ConNeg", which render
 >    separated by a single space. It is given the attribute lemma="<lemma>", and

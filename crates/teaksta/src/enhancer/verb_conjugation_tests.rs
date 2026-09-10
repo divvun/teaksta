@@ -67,7 +67,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!((first.begin, first.end), (4, 10));
     assert_eq!(
         first.enhance_start,
-        "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-1\" \
+        "<span id=\"teaksta-span-boahtit-V-IV-Ind-Prs-Sg1-1\" \
          class=\"teaksta-token teaksta-VerbConjugation\" lemma=\"boahtit\">"
     );
     assert_eq!(first.enhance_end, "</span>");
@@ -78,7 +78,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     assert_eq!((second.begin, second.end), (24, 30));
     assert_eq!(
         second.enhance_start,
-        "<span id=\"WERTi-span-boahtit-V-IV-Ind-Prs-Sg1-2\" \
+        "<span id=\"teaksta-span-boahtit-V-IV-Ind-Prs-Sg1-2\" \
          class=\"teaksta-token teaksta-VerbConjugation\" lemma=\"boahtit\">"
     );
 }
