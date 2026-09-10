@@ -1,5 +1,6 @@
 //! The HTTP surface: a topic registry, two enhancement endpoints and an
-//! upload endpoint, over one shared analysis state.
+//! upload endpoint, over one shared analysis state, with the built web client
+//! under them when the deployment carries one.
 //!
 //! Analysis is synchronous and blocking — the morpho seam owns a runtime of
 //! its own, and the exercise the enhancers read is process-wide — so every
@@ -12,6 +13,7 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 use anyhow::{Context as _, Result};
+use poem::endpoint::StaticFilesEndpoint;
 use poem::http::StatusCode;
 use poem::http::header::CONTENT_TYPE;
 use poem::middleware::SizeLimit;
@@ -81,7 +83,7 @@ pub struct Topic {
 
 /// Everything a request is served from: the deployment configuration, the
 /// per-topic pipelines, and the topic list they were built from.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+2]
 pub struct AppState {
     pub config: Config,
     pub processors: Processors,
@@ -165,19 +167,35 @@ impl AppState {
 }
 
 /// The URL map. Every path a client may reach is here; nothing else answers.
-pub fn routes() -> Route {
-    Route::new()
-        .at("/", get(index))
+///
+/// A deployment carrying a built web client serves it from the root, with any
+/// path the bundle has no file for answered by `index.html` so the client's
+/// own router owns it. The `/api` paths are static routes and the client's is
+/// a catch-all, so the API answers first whatever the client routes.
+pub fn routes(config: &Config) -> Route {
+    let api = Route::new()
         .at("/api/activities", get(registry))
         .at("/api/enhance", get(enhance_page).post(enhance_spans))
         .at(
             "/api/upload",
             post(upload_text).with(SizeLimit::new(MAX_UPLOAD_BODY)),
-        )
+        );
+
+    match &config.webapp_dist {
+        Some(dist) => api.nest(
+            "/",
+            StaticFilesEndpoint::new(dist)
+                .index_file("index.html")
+                .fallback_to_index(),
+        ),
+        None => api.at("/", get(index)),
+    }
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn]
+/// The root of a deployment with no web client: the endpoint listing, so an
+/// API-only deployment can be probed without one.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
 #[handler]
 async fn index() -> Response {
     let body = concat!(

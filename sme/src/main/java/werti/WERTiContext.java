@@ -55,7 +55,7 @@ import org.annolab.tt4j.TreeTaggerWrapper;
  * @author Aleksandar Dimitrov
  * @version 0.2
  */
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+1]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+2]
 public class WERTiContext {
 
 	public static Properties p;
@@ -106,8 +106,8 @@ public class WERTiContext {
 		commoninit();
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1]
-	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1]
+	// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2]
 	public static void init(final ServletConfig newsc) throws WERTiContextException {
 		context = newsc.getServletContext();
 		byteDispenser = new InputStreamFactory() {

@@ -65,6 +65,7 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
             listen: "127.0.0.1:0".to_string(),
             activities_dir: webapp.join("activities"),
             webapp_root: webapp,
+            webapp_dist: None,
             analysis_dir: data.path().join("analysed"),
             upload_keep_dir: data.path().join("keep"),
             upload_temp_dir: data.path().join("temp"),
@@ -82,7 +83,8 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
 }
 
 fn client() -> TestClient<impl Endpoint> {
-    TestClient::new(routes().data(deployment().0.clone()))
+    let state = deployment().0.clone();
+    TestClient::new(routes(&state.config).data(state))
 }
 
 /// The page as a `file:` URL, so the whole-page endpoint fetches it without

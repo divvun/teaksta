@@ -1,9 +1,9 @@
 //! Server binary.
 //!
 //! Everything the deployment needs is read from the environment: where the
-//! expanded web application lives, where uploads and analysed documents are
-//! kept, and what address to listen on. The models are named by the two
-//! variables the morpho seam reads.
+//! expanded web application lives, where the built web client lives, where
+//! uploads and analysed documents are kept, and what address to listen on.
+//! The models are named by the two variables the morpho seam reads.
 
 use anyhow::Result;
 use poem::listener::TcpListener;
@@ -11,7 +11,7 @@ use poem::{EndpointExt, Server};
 use std::sync::Arc;
 use tracing::{info, warn};
 
-use teaksta::context::Config;
+use teaksta::context::{Config, WEBAPP_DIST_ENV};
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
 use teaksta::server::activity_configuration::classpath_root;
 use teaksta::server::api::{AppState, routes};
@@ -27,6 +27,10 @@ async fn main() -> Result<()> {
         }
     }
     info!("Webapp root {}", config.webapp_root.display());
+    match &config.webapp_dist {
+        Some(dist) => info!("Web client under {}", dist.display()),
+        None => warn!("{WEBAPP_DIST_ENV} is not set; only the API is served"),
+    }
     let classpath = classpath_root();
     if classpath.join("operators").is_dir() {
         info!("Descriptors under {}", classpath.display());
@@ -39,7 +43,7 @@ async fn main() -> Result<()> {
 
     let listen = config.listen.clone();
     let state = Arc::new(AppState::new(config)?);
-    let app = routes().data(state);
+    let app = routes(&state.config).data(state);
 
     info!("Listening on {listen}");
     Server::new(TcpListener::bind(listen)).run(app).await?;

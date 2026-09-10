@@ -37,15 +37,16 @@ assertions (
     {id dioxus-shell, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:33.856902Z}
     {id dj-annotate, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T18:49:42.418061Z}
     {id dj-core, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T18:49:41.023667Z}
+    {id dj-frontend, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:27:20.444325Z}
+    {id dj-server, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:05:46.81519Z}
     {id exercise-cloze, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T15:40:26.642358Z}
     {id exercise-colorize-click, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T15:36:45.851652Z}
     {id exercise-mc, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T15:36:49.024328Z}
     {id fix-legacy-quirks, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T15:40:35.910771Z}
+    {id hd-morpho, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:39:07.831779Z}
+    {id hd-serve, kind @doing, author "brendan@bbqsrc.net", at 2026-09-10T22:23:17.708468Z}
     {id idiomatize-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:39.246331Z}
     {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
-    {id dj-server, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:05:46.81519Z}
-    {id dj-frontend, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T20:27:20.444325Z}
-    {id hd-morpho, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:39:07.831779Z}
 )

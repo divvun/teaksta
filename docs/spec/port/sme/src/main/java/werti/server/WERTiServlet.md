@@ -1,6 +1,6 @@
 # sme/src/main/java/werti/server/WERTiServlet.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+2]
 > pub struct AppState {
 >   pub config: Config,
 >   pub processors: Processors,
@@ -12,7 +12,7 @@
 >
 > pub enum Mode { Colorize, Click, Mc, Cloze }
 >
-> pub fn routes() -> Route
+> pub fn routes(config: &Config) -> Route
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type]
 > pub static SELECTED: RwLock<Option<String>>;
@@ -34,13 +34,24 @@
 > holds a lock across publication and analysis together: exactly one analysis
 > is in flight at a time.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
 > async fn index() -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn]
-> `GET /` answers a plain-text listing of the endpoints the server offers, as
-> `text/plain;charset=UTF-8`, so a deployment can be probed without a client.
-> It takes no parameters and reads no state.
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1]
+> What the root answers depends on whether the deployment carries a built web
+> client, which is what `TEAKSTA_WEBAPP_DIST` names.
+>
+> Without one, `GET /` answers a plain-text listing of the endpoints the
+> server offers, as `text/plain;charset=UTF-8`, so an API-only deployment can
+> be probed without a client. It takes no parameters and reads no state.
+>
+> With one, the client's directory is served from the root instead, and `GET
+> /` answers its `index.html`. Any path the directory has no file for is
+> answered by that same `index.html` rather than a 404, because the paths the
+> client routes on are the client's own and only its router knows them. The
+> `/api` paths are registered as themselves and the client's as a catch-all,
+> so an API request is never answered by the client whatever the client would
+> route that address to.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>

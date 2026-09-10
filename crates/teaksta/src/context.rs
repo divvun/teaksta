@@ -13,6 +13,10 @@ use anyhow::{Context as _, Result};
 /// Names the expanded web application. The activity tree and the descriptor
 /// classpath both resolve against it.
 pub const WEBAPP_ROOT_ENV: &str = "TEAKSTA_WEBAPP_ROOT";
+/// Names the built web client the browser is served. `dx bundle --platform
+/// web` leaves it at `target/dx/teaksta-web/<profile>/web/public`, where the
+/// profile is `debug` unless the bundle was built with `--release`.
+pub const WEBAPP_DIST_ENV: &str = "TEAKSTA_WEBAPP_DIST";
 /// Names the socket address the server binds.
 pub const LISTEN_ENV: &str = "TEAKSTA_LISTEN";
 /// Names the directory holding one subdirectory per activity.
@@ -32,11 +36,18 @@ const DEFAULT_UPLOAD_TEMP_DIR: &str = "./data/fileUpload/tmp";
 /// The subdirectory of the web application root holding the activities.
 const ACTIVITIES_SUBDIR: &str = "activities";
 
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+1]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+2]
 #[derive(Debug, Clone)]
 pub struct Config {
     pub listen: String,
+    /// The expanded web application the activity tree and the descriptor
+    /// classpath resolve against. It holds the activity descriptors, not
+    /// anything a browser is served.
     pub webapp_root: PathBuf,
+    /// The built web client, when the deployment carries one. It holds the
+    /// bundle a browser is served, and a deployment without it answers the
+    /// API alone.
+    pub webapp_dist: Option<PathBuf>,
     pub activities_dir: PathBuf,
     pub analysis_dir: PathBuf,
     pub upload_keep_dir: PathBuf,
@@ -44,8 +55,8 @@ pub struct Config {
 }
 
 impl Config {
-    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1]
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1]
+    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2]
     pub fn from_env() -> Result<Self> {
         let webapp_root = path_or(WEBAPP_ROOT_ENV, ".");
         let config = Config {
@@ -54,6 +65,7 @@ impl Config {
                 webapp_root.join(ACTIVITIES_SUBDIR)
             }),
             webapp_root,
+            webapp_dist: optional_path(WEBAPP_DIST_ENV),
             analysis_dir: path_or(ANALYSIS_DIR_ENV, DEFAULT_ANALYSIS_DIR),
             upload_keep_dir: path_or(UPLOAD_KEEP_DIR_ENV, DEFAULT_UPLOAD_KEEP_DIR),
             upload_temp_dir: path_or(UPLOAD_TEMP_DIR_ENV, DEFAULT_UPLOAD_TEMP_DIR),
@@ -96,6 +108,12 @@ fn path_or_else(name: &str, fallback: impl FnOnce() -> PathBuf) -> PathBuf {
     }
 }
 
+/// A path with no fallback: unset is a deployment that does without whatever
+/// the variable names, not one that gets a default.
+fn optional_path(name: &str) -> Option<PathBuf> {
+    std::env::var_os(name).map(PathBuf::from)
+}
+
 fn create_directory(directory: &Path) -> Result<()> {
     std::fs::create_dir_all(directory).with_context(|| format!("creating {}", directory.display()))
 }
@@ -112,6 +130,7 @@ mod tests {
     /// The variables restored when a test that set them finishes.
     const VARIABLES: &[&str] = &[
         WEBAPP_ROOT_ENV,
+        WEBAPP_DIST_ENV,
         LISTEN_ENV,
         ACTIVITIES_DIR_ENV,
         ANALYSIS_DIR_ENV,
@@ -158,7 +177,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn activities_resolve_under_the_webapp_root() {
         let environment = Environment::take();
@@ -174,7 +193,7 @@ mod tests {
         assert_eq!(config.listen, DEFAULT_LISTEN);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn every_directory_exists_once_built() {
         let environment = Environment::take();
@@ -193,7 +212,7 @@ mod tests {
         assert_eq!(config.upload_dir(false), config.upload_temp_dir);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn an_explicit_activities_directory_wins() {
         let environment = Environment::take();
@@ -211,7 +230,7 @@ mod tests {
         assert!(!config.activities_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn an_unset_variable_falls_back() {
         let environment = Environment::take();
@@ -227,9 +246,31 @@ mod tests {
         assert_eq!(config.listen, "127.0.0.1:8080");
         assert_eq!(config.webapp_root, PathBuf::from("."));
         assert_eq!(config.activities_dir, PathBuf::from("./activities"));
+        // The web client has no fallback: a deployment without one serves
+        // the API alone rather than an empty directory.
+        assert_eq!(config.webapp_dist, None);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
+    #[test]
+    fn the_web_client_is_read_as_named() {
+        let environment = Environment::take();
+        let root = tempfile::tempdir().expect("temp dir");
+        let dist = root.path().join("public");
+        environment.set(WEBAPP_ROOT_ENV, root.path());
+        environment.set(WEBAPP_DIST_ENV, &dist);
+        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
+            environment.set(name, &root.path().join(name));
+        }
+
+        let config = Config::from_env().expect("the configuration builds");
+
+        assert_eq!(config.webapp_dist.as_deref(), Some(dist.as_path()));
+        // The bundle is the deployment's own; it is not created.
+        assert!(!dist.exists());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn a_directory_that_cannot_exist_fails() {
         let environment = Environment::take();
@@ -254,7 +295,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+2/test]
     #[test]
     fn an_existing_directory_is_left_alone() {
         let environment = Environment::take();

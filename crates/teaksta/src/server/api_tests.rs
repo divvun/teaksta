@@ -4,7 +4,7 @@
 
 use super::*;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use poem::Endpoint;
 use poem::test::TestClient;
@@ -12,6 +12,13 @@ use poem::test::TestClient;
 /// The smallest activity descriptor the registry loads. It declares no
 /// language, so no pipeline is built for it.
 const DESCRIPTOR: &str = "<activity enabled=\"yes\"><server-cfg></server-cfg></activity>";
+
+/// The two files a built web client is recognised by: the document every
+/// client route is answered with, and one asset it loads. The real bundle is
+/// what `dx bundle --platform web` leaves behind; nothing here builds it.
+const CLIENT_INDEX: &str =
+    "<!DOCTYPE html><html><head><title>Teaksta</title></head><body></body></html>";
+const CLIENT_ASSET: &str = ".teaksta-page { color: rebeccapurple; }";
 
 fn webapp_with(names: &[&str]) -> tempfile::TempDir {
     let root = tempfile::tempdir().expect("temp dir");
@@ -27,11 +34,22 @@ fn config_for(root: &Path) -> Config {
     Config {
         listen: "127.0.0.1:0".to_string(),
         webapp_root: root.to_path_buf(),
+        webapp_dist: None,
         activities_dir: root.join("activities"),
         analysis_dir: root.join("analysed"),
         upload_keep_dir: root.join("keep"),
         upload_temp_dir: root.join("temp"),
     }
+}
+
+/// A built web client under the deployment root, as a bundle would be laid
+/// out: one document and one asset beside it.
+fn client_bundle_under(root: &Path) -> PathBuf {
+    let dist = root.join("public");
+    std::fs::create_dir_all(dist.join("assets")).expect("the asset directory");
+    std::fs::write(dist.join("index.html"), CLIENT_INDEX).expect("index.html");
+    std::fs::write(dist.join("assets").join("teaksta.css"), CLIENT_ASSET).expect("the asset");
+    dist
 }
 
 #[test]
@@ -101,17 +119,18 @@ fn the_registry_lists_each_activity_directory() {
 
 /// A router over a deployment holding two topics and no pipeline, which is
 /// every decision an endpoint makes before it reaches the analyser.
-fn served(root: &Path) -> TestClient<impl Endpoint> {
-    let state = AppState::new(config_for(root)).expect("the state boots");
-    TestClient::new(routes().data(Arc::new(state)))
+fn served(config: Config) -> TestClient<impl Endpoint> {
+    let state = Arc::new(AppState::new(config).expect("the state boots"));
+    TestClient::new(routes(&state.config).data(state))
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn/test]
+/// A deployment carrying no web client, which is the API-only one.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
 #[tokio::test]
 async fn the_index_lists_every_endpoint() {
     let root = webapp_with(&["Substantive"]);
 
-    let response = served(root.path()).get("/").send().await;
+    let response = served(config_for(root.path())).get("/").send().await;
 
     response.assert_status_is_ok();
     let body = response.0.into_body().into_string().await.expect("a body");
@@ -125,12 +144,76 @@ async fn the_index_lists_every_endpoint() {
     }
 }
 
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+#[tokio::test]
+async fn a_configured_client_answers_the_root() {
+    let root = webapp_with(&["Substantive"]);
+    let mut config = config_for(root.path());
+    config.webapp_dist = Some(client_bundle_under(root.path()));
+
+    let response = served(config).get("/").send().await;
+
+    response.assert_status_is_ok();
+    let body = response.0.into_body().into_string().await.expect("a body");
+    assert_eq!(body, CLIENT_INDEX);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+#[tokio::test]
+async fn a_client_route_is_answered_by_the_document() {
+    let root = webapp_with(&["Substantive"]);
+    let mut config = config_for(root.path());
+    config.webapp_dist = Some(client_bundle_under(root.path()));
+    let client = served(config);
+
+    // The bundle has no file for either, so both are the client's own
+    // routes and reach its router rather than a 404.
+    for path in ["/Substantive/colorize", "/deep/client/route"] {
+        let response = client.get(path).send().await;
+
+        response.assert_status_is_ok();
+        let body = response.0.into_body().into_string().await.expect("a body");
+        assert_eq!(body, CLIENT_INDEX, "{path} was not answered by the client");
+    }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+1/test]
+#[tokio::test]
+async fn an_asset_is_served_from_the_bundle() {
+    let root = webapp_with(&["Substantive"]);
+    let mut config = config_for(root.path());
+    config.webapp_dist = Some(client_bundle_under(root.path()));
+
+    let response = served(config).get("/assets/teaksta.css").send().await;
+
+    response.assert_status_is_ok();
+    let body = response.0.into_body().into_string().await.expect("a body");
+    assert_eq!(body, CLIENT_ASSET);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
+#[tokio::test]
+async fn the_api_answers_before_the_client() {
+    let root = webapp_with(&["Substantive"]);
+    let mut config = config_for(root.path());
+    config.webapp_dist = Some(client_bundle_under(root.path()));
+
+    let response = served(config).get("/api/activities").send().await;
+
+    response.assert_status_is_ok();
+    let body = response.0.into_body().into_string().await.expect("a body");
+    assert!(body.contains("\"Substantive\""), "{body}");
+}
+
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
 #[tokio::test]
 async fn the_registry_answers_topics_and_modes() {
     let root = webapp_with(&["Substantive", "Adverbial"]);
 
-    let response = served(root.path()).get("/api/activities").send().await;
+    let response = served(config_for(root.path()))
+        .get("/api/activities")
+        .send()
+        .await;
 
     response.assert_status_is_ok();
     response
@@ -153,7 +236,7 @@ async fn the_registry_answers_topics_and_modes() {
 #[tokio::test]
 async fn the_page_endpoint_needs_all_three() {
     let root = webapp_with(&["Substantive"]);
-    let client = served(root.path());
+    let client = served(config_for(root.path()));
 
     for query in [
         "activity=Substantive&mode=colorize",
@@ -175,7 +258,7 @@ async fn the_page_endpoint_needs_all_three() {
 #[tokio::test]
 async fn the_span_endpoint_needs_one_source() {
     let root = webapp_with(&["Substantive"]);
-    let client = served(root.path());
+    let client = served(config_for(root.path()));
 
     for body in [
         serde_json::json!({ "activity": "Substantive", "mode": "colorize" }),
@@ -202,7 +285,7 @@ async fn the_span_endpoint_needs_one_source() {
 #[tokio::test]
 async fn the_retired_paths_answer_nothing() {
     let root = webapp_with(&["Substantive"]);
-    let client = served(root.path());
+    let client = served(config_for(root.path()));
 
     for path in [
         "/WERTiServlet?url=a&activity=b",
@@ -228,7 +311,7 @@ async fn an_upload_without_a_file_is_refused() {
          --{boundary}--\r\n"
     );
 
-    let response = served(root.path())
+    let response = served(config_for(root.path()))
         .post("/api/upload")
         .content_type(format!("multipart/form-data; boundary={boundary}"))
         .header("content-length", body.len())
