@@ -14,6 +14,14 @@ children (
             {
                 id sme-bundle
                 title "Author the sme .drb bundle: tokenize/analyze/generate/sentences named pipelines"
+                log (
+                    {
+                        at 2026-09-10T12:59:00.68822Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Doing (nplan start)"
+                    }
+                )
             }
         )
     }

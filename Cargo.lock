@@ -3940,6 +3940,7 @@ dependencies = [
  "divvun-runtime",
  "ego-tree",
  "futures-util",
+ "hfst",
  "html-escape",
  "poem",
  "rand 0.9.5",
