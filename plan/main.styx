@@ -646,12 +646,20 @@ children (
                 id ux-design
                 title "Implement the approved design system in the web client; custom mc listbox; lemma hints"
                 kind @feat
+                sealed true
                 log (
                     {
                         at 2026-09-11T12:02:08.353454Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Operator approved the design/teaksta card set outright (2026-09-11) and directed two fixes ride with the implementation: (1) the cloze hint reveals the LEMMA, not the answer — TokenSpan::hint() currently returns possibleforms.join(\"/\"); the lemma attribute is already on the span; (2) mc becomes a custom listbox — native select can't be styled or shown open, and the menu markup must be spans (a ul/li inside the exercise p auto-closes the paragraph; the card CSS documents this). Source of truth: design/teaksta/** (twelve cards; shared --tk-* token block identical in every file). Cards use real app strings (Substantiivvat etc. from html_enhancer.rs) and real fixture data. Known content gaps flagged by design: a Sámi \"try again\" string needs a translator (cards reuse existing labels); \"dahje\" as the or-divider unverified. mc option order is the code's alphabetical recased order (answer never leaks by position); the design honors it."
+                    }
+
+                    {
+                        at 2026-09-11T12:57:13.52773Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
