@@ -13,7 +13,6 @@
 //! for a topic is the one that topic named.
 
 use teaksta::server::registry::{Enhancer, Registry};
-use teaksta::types::PIPELINE_LANGUAGE;
 
 /// The registry a deployment naming no topics file is served.
 fn shipped() -> Registry {
@@ -34,7 +33,7 @@ fn every_topic_marks_hits_with_its_registry_name() {
 
     for name in names {
         let post = registry
-            .get_postprocessor(PIPELINE_LANGUAGE, name)
+            .get_postprocessor(name)
             .expect("a name the registry just handed out");
 
         let classes = post.topic_span_classes();
@@ -81,7 +80,7 @@ fn the_preprocessor_stands_for_no_topic() {
 
     for topic in registry.topics() {
         let pre = registry
-            .get_preprocessor(PIPELINE_LANGUAGE, &topic.name)
+            .get_preprocessor(&topic.name)
             .expect("a name the registry just handed out");
 
         assert!(pre.topic_span_classes().is_empty(), "{}", topic.name);

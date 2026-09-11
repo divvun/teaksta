@@ -128,8 +128,9 @@ mod tests {
         assert!(html.contains("/api/enhance/blocks"));
         assert!(html.contains("Subject"));
         assert!(html.contains("colorize"));
-        // Nothing of the old servlet's naming survives anywhere in what the
-        // view puts on the page — not the endpoint, not a class, not an id.
+        // Nothing of the legacy application's naming survives anywhere in
+        // what the view puts on the page — not the endpoint, not a class, not
+        // an id.
         assert!(!html.contains("WERTi"));
         assert!(!html.contains("wertiview"));
     }

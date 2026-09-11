@@ -65,8 +65,8 @@ specs ({
                 // builds both flows directly, so there is no descriptor to
                 // parse, no classpath to stand in for and no directory to
                 // scan. What survived — hold one pipeline pair per topic,
-                // built once at startup, handed out by (language, name) — is
-                // the registry, and it is specified as part of the servlet's
+                // built once at startup, handed out by name — is the
+                // registry, and it is specified as part of the servlet's
                 // `init`, which is where the Java built it. Every parameter
                 // value these classes used to assemble at runtime is in
                 // `topics.toml` with the file it was read from recorded

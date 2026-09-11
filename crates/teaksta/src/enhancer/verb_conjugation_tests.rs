@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::types::CgToken;
-use crate::types::PIPELINE_LANGUAGE;
 
 fn reading(tags: &[&str]) -> Vec<String> {
     tags.iter().map(|t| t.to_string()).collect()
@@ -35,7 +34,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
-    let mut doc = Document::new("Mun boadán ruoktot. Mun boadán.", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("Mun boadán ruoktot. Mun boadán.");
     doc.cg_tokens = vec![
         CgToken {
             begin: 4,
@@ -87,7 +86,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
-    let mut doc = Document::new("Mun in boade.", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("Mun in boade.");
     doc.cg_tokens = vec![
         CgToken {
             begin: 0,

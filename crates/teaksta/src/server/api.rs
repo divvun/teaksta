@@ -43,7 +43,7 @@ use crate::context::Config;
 use crate::server::fetch::{self, Overloaded, Refusal, Unreachable};
 use crate::server::registry::Registry;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
-use crate::types::{Document, PIPELINE_LANGUAGE};
+use crate::types::Document;
 use crate::util::html_blocks;
 use crate::util::html_enhancer::{HtmlEnhancer, mode_label};
 use crate::util::json_enhancer::JsonEnhancer;
@@ -100,15 +100,7 @@ impl AppState {
     /// hands back the annotated document.
     fn analyse(&self, activity: &str, mode: Mode, page: &str, key: &str) -> Result<Document> {
         let cache = self.config.analysis_dir.to_string_lossy().into_owned();
-        let handler = PageHandler::new(
-            &self.registry,
-            activity,
-            key,
-            &cache,
-            page,
-            PIPELINE_LANGUAGE,
-            mode,
-        );
+        let handler = PageHandler::new(&self.registry, activity, key, &cache, page, mode);
         handler
             .process()?
             .with_context(|| format!("no pipeline is registered for topic {activity:?}"))
@@ -557,7 +549,12 @@ pub fn page_url(raw: &str) -> poem::Result<Url> {
 /// the key names an address, the page behind that address is now cut down
 /// before it is analysed, and every analysis written before the cut is of a
 /// document this build would never produce.
-pub const CACHE_FORMAT_VERSION: u32 = 2;
+///
+/// It went to 3 when the document dropped the language it carried. Every
+/// file written before that holds a field this build's model has no home
+/// for, and the cache files themselves are named differently now — so the
+/// old files are neither read nor looked for.
+pub const CACHE_FORMAT_VERSION: u32 = 3;
 
 /// How much of the digest the key carries. 128 bits is past the reach of a
 /// search for two subjects sharing one.

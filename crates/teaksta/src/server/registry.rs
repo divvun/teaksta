@@ -35,14 +35,13 @@ use crate::enhancer::object::Vislcg3ObjectEnhancer;
 use crate::enhancer::subject::Vislcg3SubjectEnhancer;
 use crate::enhancer::verb_conjugation::Vislcg3VerbConjugationEnhancer;
 use crate::pipeline::flow::Flow;
-use crate::types::PIPELINE_LANGUAGE;
 
 /// The compiled-in registry, and what a `TEAKSTA_TOPICS` file replaces.
 const BUILT_IN: &str = include_str!("../../topics.toml");
 
-/// Which enhancer drives a topic. The name in the file is the enhancer, not
-/// the UIMA delegate key that used to select it: the indirection through a
-/// descriptor is gone, so there is nothing left for a key to name.
+/// Which enhancer drives a topic. The name in the file names the enhancer
+/// itself: there is no indirection left to configure, so there is nothing
+/// else for a key to mean.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Enhancer {
@@ -228,25 +227,16 @@ impl Registry {
     /// The preprocessing flow for a topic, or nothing when the topic is not
     /// registered.
     ///
-    /// The language is taken because the caller carries one and a lookup that
-    /// silently ignored it would answer for a language this deployment has no
-    /// pipeline for. Every topic is registered under
-    /// [`PIPELINE_LANGUAGE`] and no other, so any other language misses.
-    pub fn get_preprocessor(&self, lang: &str, key: &str) -> Option<&Flow> {
-        self.registered(lang, key).map(|pair| &pair.pre)
+    /// A topic's name is the whole key. This deployment serves one language,
+    /// so there is no second dimension to look anything up by.
+    pub fn get_preprocessor(&self, name: &str) -> Option<&Flow> {
+        self.pipelines.get(name).map(|pair| &pair.pre)
     }
 
     /// The postprocessing flow for a topic. The counterpart of
     /// [`Registry::get_preprocessor`].
-    pub fn get_postprocessor(&self, lang: &str, key: &str) -> Option<&Flow> {
-        self.registered(lang, key).map(|pair| &pair.post)
-    }
-
-    fn registered(&self, lang: &str, key: &str) -> Option<&Pipelines> {
-        if lang != PIPELINE_LANGUAGE {
-            return None;
-        }
-        self.pipelines.get(key)
+    pub fn get_postprocessor(&self, name: &str) -> Option<&Flow> {
+        self.pipelines.get(name).map(|pair| &pair.post)
     }
 
     /// One topic registered with flows of the caller's choosing, for tests

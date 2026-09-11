@@ -15,7 +15,7 @@ import com.google.gson.Gson;
  * @author Adriane Boyd
  *
  */
-// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+1]
+// [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+2]
 public class JSONEnhancer {
 	private JCas cas;
 	private String activity;

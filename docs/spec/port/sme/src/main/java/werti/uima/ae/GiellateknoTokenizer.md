@@ -75,14 +75,14 @@
 > Java's `String.split`, but the buffer itself is not byte-identical to
 > the process output.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
 > @Override public void initialize(UimaContext aContext) throws ResourceInitializationException
 >
 > Port divergence: there is no counterpart to call. The stage has nothing to
 > initialise, so it has neither an `initialize` nor a constructor, and this
 > rule is carried by the type itself.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
 > Runs the base `JCasAnnotator_ImplBase` initialisation with the supplied
 > `UimaContext`, then assigns the class-level static field `tokenizers` a
 > brand-new empty `HashMap` from language code to `TokenizerME` and puts
@@ -109,9 +109,11 @@
 > Java loaded anyway; here the morphological pipeline is process-global and
 > loads its models once on first use, so there is no per-language registry, no
 > process-wide mutable map to reassign, and no initialisation call at all —
-> the stage is a unit value the flow constructs directly. What the registry
-> made observable was that the document's language decided nothing, and that
-> is what is tested in its place.
+> the stage is a unit value the flow constructs directly. There is no language
+> to key anything by either: a document carries none. What is tested in the
+> registry's place is that the stage needs no setup — two stages built the same
+> way tokenise identically, so there is no step one of them could have been
+> given and the other not.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException

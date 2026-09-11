@@ -207,23 +207,23 @@ impl Default for Vislcg3Annotator {
 impl Vislcg3Annotator {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
-    pub fn process(&self, jcas: &mut Document) -> Result<()> {
+    pub fn process(&self, doc: &mut Document) -> Result<()> {
         debug!("Starting vislcg3 processing");
 
-        let text = jcas.text.clone();
+        let text = doc.text.clone();
 
         // collect original tokens here
-        let token_order = index_order(&jcas.tokens);
+        let token_order = index_order(&doc.tokens);
         let original_tokens: Vec<Token> = token_order
             .iter()
-            .map(|&position| jcas.tokens[position].clone())
+            .map(|&position| doc.tokens[position].clone())
             .collect();
 
         // collect original tokens here
-        let sentence_order = index_order(&jcas.sentences);
+        let sentence_order = index_order(&doc.sentences);
         let original_sentences: Vec<SentenceAnnotation> = sentence_order
             .iter()
-            .map(|&position| jcas.sentences[position])
+            .map(|&position| doc.sentences[position])
             .collect();
 
         // convert token list to cg input
@@ -235,7 +235,7 @@ impl Vislcg3Annotator {
         let cg3output = self.run_fst_cg(&cg3input)?;
         trace!("cg3output {}", cg3output);
 
-        self.map_cg_output(jcas, &cg3output)
+        self.map_cg_output(doc, &cg3output)
     }
 
     /// The offsets layer of the pass, over a CG stream the caller supplies:
@@ -245,16 +245,16 @@ impl Vislcg3Annotator {
     /// The input lines are rebuilt here rather than carried in, so the walk
     /// reads the same token list it will write back to; nothing between the
     /// analyser call and this one touches the store.
-    fn map_cg_output(&self, jcas: &mut Document, cg3output: &str) -> Result<()> {
-        let text = jcas.text.clone();
-        let token_order = index_order(&jcas.tokens);
+    fn map_cg_output(&self, doc: &mut Document, cg3output: &str) -> Result<()> {
+        let text = doc.text.clone();
+        let token_order = index_order(&doc.tokens);
         let original_tokens: Vec<Token> = token_order
             .iter()
-            .map(|&position| jcas.tokens[position].clone())
+            .map(|&position| doc.tokens[position].clone())
             .collect();
-        let original_sentences: Vec<SentenceAnnotation> = index_order(&jcas.sentences)
+        let original_sentences: Vec<SentenceAnnotation> = index_order(&doc.sentences)
             .iter()
-            .map(|&position| jcas.sentences[position])
+            .map(|&position| doc.sentences[position])
             .collect();
         let lines = self.to_cg3_input(&text, &original_tokens, &original_sentences)?;
 
@@ -274,7 +274,7 @@ impl Vislcg3Annotator {
 
         // original tokens taken out of the index; applied to the store once the
         // walk is over, which is when the replacement becomes visible
-        let mut removed = vec![false; jcas.tokens.len()];
+        let mut removed = vec![false; doc.tokens.len()];
 
         // complete new tokens with information from old ones
         for placement in place_cohorts(&original_tokens, &lines, &cohorts) {
@@ -300,9 +300,9 @@ impl Vislcg3Annotator {
                 &mut cg_token,
             );
             trace!("new token begins at: {}", cg_token.begin);
-            // update CAS
+            // the token this cohort was placed on leaves the store
             removed[token_order[placement.token]] = true;
-            jcas.cg_tokens.push(cg_token);
+            doc.cg_tokens.push(cg_token);
         }
 
         // the annotations the walk replaced leave the store; the rest stay
@@ -310,7 +310,7 @@ impl Vislcg3Annotator {
         // no cohort was placed on keeps its span and reaches the learner as a
         // word without an analysis instead of vanishing
         let mut position = 0;
-        jcas.tokens.retain(|_| {
+        doc.tokens.retain(|_| {
             let keep = !removed[position];
             position += 1;
             keep

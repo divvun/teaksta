@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::types::CgToken;
-use crate::types::PIPELINE_LANGUAGE;
 
 fn plural_reading() -> Vec<String> {
     ["\"beana\"", "N", "<sme>", "Pl", "Nom", "@SUBJ"]
@@ -70,7 +69,7 @@ fn initialize_without_parameter_fails_and_leaves_field_unset() {
 #[test]
 fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     let enhancer = Vislcg3NounPlEnhancer::default();
-    let mut doc = Document::new("beanat beanat", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beanat beanat");
     doc.cg_tokens = vec![
         cg_token(0, 6, plural_reading()),
         cg_token(7, 13, plural_reading()),
@@ -102,7 +101,7 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
 #[test]
 fn process_ignores_readings_without_a_plural_case_tag() {
     let enhancer = Vislcg3NounPlEnhancer::default();
-    let mut doc = Document::new("čáhci", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("čáhci");
     doc.cg_tokens = vec![cg_token(0, 6, singular_reading())];
 
     enhancer.process(&mut doc, Mode::Colorize).expect("process");

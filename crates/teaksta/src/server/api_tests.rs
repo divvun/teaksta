@@ -137,7 +137,7 @@ fn each_page_source_gets_its_own_key() {
 fn the_key_of_a_page_is_fixed() {
     assert_eq!(
         cache_key("http://example.org/artihkal"),
-        "v2-7d11ce56504c4d7cc3ec144f78ccfb74"
+        "v3-c964de807f1d8af4fcdadd0407fc8094"
     );
 }
 

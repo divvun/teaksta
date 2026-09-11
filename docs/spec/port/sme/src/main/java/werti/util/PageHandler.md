@@ -11,8 +11,8 @@
 >   String path;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
-> pub fn new(a_registry: &'a Registry, a_topic: &'a str, a_url: &'a str, a_path: &'a str, a_text: &'a str, a_lang: &'a str, a_mode: Mode) -> Self
+> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+4]
+> pub fn new(a_registry: &'a Registry, a_topic: &'a str, a_url: &'a str, a_path: &'a str, a_text: &'a str, a_mode: Mode) -> Self
 >
 > Port divergence: every argument but the exercise is borrowed for the life
 > of the handler rather than copied into a field. The handler is built, used
@@ -20,10 +20,14 @@
 > page would copy the whole page for nothing.
 >
 > Port divergence: the first argument is the topic registry rather than a
-> `Processors`. It answers the same two lookups by the same two keys; what it
-> hands back is a flow rather than a produced UIMA analysis engine.
+> `Processors`. It answers the same two lookups, now by topic name alone; what
+> it hands back is a flow rather than a produced analysis engine.
+>
+> Port divergence: there is no language argument. This deployment serves one
+> language, so a handler that took one would be taking a value nothing it
+> calls can branch on.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+4]
 > Plain field assignment: `processors = aProcessors`, `topic = aTopic`,
 > `text = aText`, `lang = aLang`, `url = aUrl`, `path = aPath`. Note the
 > parameter order is (processors, topic, url, path, text, lang) while the
@@ -38,16 +42,20 @@
 > `lang` to `sme` when `topic` equals `Conjunctions`; it does not run, so `lang`
 > is whatever the caller supplied.
 >
-> Port divergence: the port takes a seventh argument, the exercise the request
-> asked for, and stores it in a field of its own. The postprocessing enhancers
-> read it from the flow rather than from a process-wide static, so it has to
-> reach them through the handler that runs the flow. It is stored exactly as
-> the other six are: no validation, no defaulting, no logging.
+> Port divergence: the port takes the exercise the request asked for and
+> stores it in a field of its own. The postprocessing enhancers read it from
+> the flow rather than from a process-wide static, so it has to reach them
+> through the handler that runs the flow. It is stored exactly as the others
+> are: no validation, no defaulting, no logging.
+>
+> Port divergence: `lang` is neither taken nor stored, so the disabled branch
+> that would have forced it has nothing left to force. Five fields are
+> assigned, not six.
 
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+7]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -100,12 +108,14 @@
 > output, which no exercise varies, and the postprocessor runs over it on
 > every request whichever branch produced it.
 >
-> Port divergence: the cache holds a JSON encoding of the document model rather
-> than XMI. XMI serialises a UIMA CAS and the port's document model is not one,
-> so there is nothing to write it as. The cache file keeps its `cas_<url>.xmi`
-> name, so an existing cache directory stays recognisable, and a file written by
-> a build whose document model differs fails to decode and is unreadable like
-> any other.
+> Port divergence: the cache holds a JSON encoding of the document model, and
+> the cache file is named `<url>.json` — the `url` field verbatim and the
+> suffix `.json`, with no prefix. XMI serialises a UIMA CAS and the port's
+> document model is not one, so neither the encoding nor the name it was
+> written under carries over. A file written by a build whose document model
+> differs fails to decode and is unreadable like any other; and because the
+> cache key carries the encoding version, files an earlier encoding wrote are
+> keyed somewhere this build never looks.
 >
 > Port divergence: the cache file is the one input to the pipeline this process
 > did not produce, so the offsets it carries are checked before anything indexes
@@ -134,18 +144,21 @@
 > file, one holding no annotations at all, which renders as an empty page
 > answered as a success and stays that way for as long as the file does.
 >
-> Port divergence: the two lookups go to the topic registry and hand back
-> flows rather than produced UIMA analysis engines. The keys and the miss are
-> unchanged — an unknown language or an unknown topic returns nothing, with no
-> logging and no error, and the caller handles it — and so is everything the
-> cache does around them. Every topic is registered under the one language
-> this deployment has a pipeline for, so the language arm of the miss is
-> reached by any other language rather than by a language with no topics
-> configured for it.
+> Port divergence: the two lookups go to the topic registry, are keyed by the
+> topic name alone, and hand back flows rather than produced analysis engines.
+> This deployment serves one language, so the language dimension of the key is
+> gone and with it the language arm of the miss; the remaining miss — an
+> unknown topic — returns nothing, with no logging and no error, and the caller
+> handles it exactly as before. Everything the cache does around the lookups is
+> unchanged. The document carries no language either, so nothing is set on it
+> from an argument that no longer exists.
 >
-> Port divergence: making a CAS cannot fail. The Java derived it from the
-> engine's type system, which is why a resource-initialization failure is one
-> of the two the caller tells apart; the document model here is one type shared
-> by every flow, so that arm is unreachable and is kept only because the
-> failure it names is part of what this function reports.
+> Port divergence: there is one failure, not two. Building the document cannot
+> fail — the Java derived a CAS from the engine's type system, which is why a
+> resource-initialization failure was one of the two arms the caller told
+> apart, whereas the port's document is a plain value — so what reaches the
+> caller is a single analysis failure carrying the reason the stage that broke
+> gave, logged once and wrapped in the same `Text analysis failed.` context.
+> Neither the failure type nor the message it carries names anything from the
+> runtime the port left behind.
 

@@ -63,8 +63,8 @@ static NON_SEPARATOR_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(?:.*?[^\p{Z}].*)$").expect("non separator pattern"));
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer]
-// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GiellateknoTokenizer;
 
@@ -84,11 +84,11 @@ impl GiellateknoTokenizer {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn]
-    pub fn process(&self, jcas: &mut Document) -> Result<()> {
+    pub fn process(&self, doc: &mut Document) -> Result<()> {
         debug!("Starting token annotation");
 
         // put relevant text spans in their proper positions in an empty document
-        let text_string = mask_to_spans(&jcas.text, &jcas.relevant_texts)?;
+        let text_string = mask_to_spans(&doc.text, &doc.relevant_texts)?;
 
         // Every line of the tokeniser output carries a trailing newline, as
         // the stdout consumer appended one per line read. A tokenisation that
@@ -156,7 +156,7 @@ impl GiellateknoTokenizer {
                     ..Default::default()
                 };
 
-                let covered = jcas
+                let covered = doc
                     .text
                     .get(t.begin..t.end)
                     .ok_or_else(|| anyhow!("token span {}..{} is out of range", t.begin, t.end))?
@@ -172,7 +172,7 @@ impl GiellateknoTokenizer {
                     let quote_len = first.map(char::len_utf8).unwrap_or(0);
                     t.begin = start + quote_len;
 
-                    jcas.tokens.push(Token {
+                    doc.tokens.push(Token {
                         begin: start,
                         end: start + quote_len,
                         ..Default::default()
@@ -181,7 +181,7 @@ impl GiellateknoTokenizer {
                     let quote_len = last.map(char::len_utf8).unwrap_or(0);
                     t.end = start + token.len() - quote_len;
 
-                    jcas.tokens.push(Token {
+                    doc.tokens.push(Token {
                         begin: start + token.len() - quote_len,
                         end: start + token.len(),
                         ..Default::default()
@@ -191,13 +191,13 @@ impl GiellateknoTokenizer {
                     let possessive_len = '\u{2019}'.len_utf8() + s_len;
                     t.end = start + token.len() - possessive_len;
 
-                    jcas.tokens.push(Token {
+                    doc.tokens.push(Token {
                         begin: start + token.len() - possessive_len,
                         end: start + token.len() - s_len,
                         ..Default::default()
                     });
 
-                    jcas.tokens.push(Token {
+                    doc.tokens.push(Token {
                         begin: start + token.len() - s_len,
                         end: start + token.len(),
                         ..Default::default()
@@ -205,11 +205,11 @@ impl GiellateknoTokenizer {
                 }
 
                 let (begin, end) = (t.begin, t.end);
-                jcas.tokens.push(t);
+                doc.tokens.push(t);
                 trace!(
                     "Token: {} {} {}",
                     begin,
-                    jcas.text.get(begin..end).unwrap_or(""),
+                    doc.text.get(begin..end).unwrap_or(""),
                     end
                 );
             }
@@ -229,7 +229,7 @@ fn ends_with_possessive(covered: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{PIPELINE_LANGUAGE, RelevantText};
+    use crate::types::RelevantText;
 
     fn relevant(begin: usize, end: usize) -> RelevantText {
         RelevantText {
@@ -242,7 +242,7 @@ mod tests {
     /// The document text handed to the tokeniser, with the given spans marked
     /// relevant.
     fn document(text: &str, spans: &[(usize, usize)]) -> Document {
-        let mut doc = Document::new(text, PIPELINE_LANGUAGE);
+        let mut doc = Document::new(text);
         for (begin, end) in spans {
             doc.relevant_texts.push(relevant(*begin, *end));
         }
@@ -274,17 +274,18 @@ mod tests {
     }
 
     /// The registry the Java built here keyed a tokeniser by language and was
-    /// never read back, so the stage has no initialisation step at all and
-    /// the document's language reaches nothing the pass does.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1/test]
+    /// never read back, so the stage has no initialisation step at all: it is
+    /// a unit value, and nothing is called on it between construction and use.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2/test]
     #[test]
-    fn the_pass_needs_no_setup_and_no_language() {
-        let mut registered = document("mun boran", &[(0, 9)]);
-        let mut foreign = document("mun boran", &[(0, 9)]);
-        foreign.language = "de".to_string();
+    fn the_pass_needs_no_setup() {
+        let mut first = document("mun boran", &[(0, 9)]);
+        let mut second = document("mun boran", &[(0, 9)]);
 
-        assert_eq!(processed(&mut registered), processed(&mut foreign));
-        assert_eq!(registered.tokens.len(), foreign.tokens.len());
+        // Two stages built the same way tokenise identically, so there is no
+        // setup step one of them could have been given and the other not.
+        assert_eq!(processed(&mut first), processed(&mut second));
+        assert_eq!(first.tokens.len(), second.tokens.len());
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4/test]

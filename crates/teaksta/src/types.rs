@@ -1,9 +1,9 @@
-//! Span-annotation document model replacing the UIMA CAS and the JCasGen
-//! type system (WERTiTypeSystem.xml + vislcg3TypeSystem.xml). Every
-//! annotation is a half-open byte span `[begin, end)` into `Document::text`.
+//! The span-annotation document model: the text under analysis, plus one
+//! store per annotation type. Every annotation is a half-open byte span
+//! `[begin, end)` into `Document::text`.
 //!
 //! The document is serialisable so the page handler can cache an analysed
-//! document between requests, which is what the UIMA XMI cache did.
+//! document between requests.
 
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
@@ -251,25 +251,15 @@ spanned!(
     SentenceAnnotation,
 );
 
-/// The key the shipped activity descriptors register their pipelines under,
-/// and so what [`Document::language`] carries in a running deployment.
-///
-/// It reads as a language code and is not one: every topic registers its pre-
-/// and postprocessor under `en` because no analysis engine was ever registered
-/// under `sme`, and the pipelines behind that key are the North Sámi ones. It
-/// sits beside the document rather than beside the handlers so that a test
-/// builds one the pipelines would actually accept.
-pub const PIPELINE_LANGUAGE: &str = "en";
-
 /// The analysis document: the text under analysis plus one store per
 /// annotation type. Pipeline stages consume and extend the stores.
+///
+/// This deployment analyses North Sámi and nothing else, so a document
+/// carries no language of its own: there is one set of models, one pipeline
+/// shape, and nothing anywhere that would branch on the answer.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Document {
     pub text: String,
-    /// The registry key the pipelines processing this document are looked up
-    /// under — [`PIPELINE_LANGUAGE`] in a running deployment — and not the
-    /// language the text is written in, which nothing here records.
-    pub language: String,
     pub page: PageMap,
     pub tokens: Vec<Token>,
     pub cg_tokens: Vec<CgToken>,
@@ -279,10 +269,9 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn new(text: impl Into<String>, language: impl Into<String>) -> Self {
+    pub fn new(text: impl Into<String>) -> Self {
         Document {
             text: text.into(),
-            language: language.into(),
             ..Default::default()
         }
     }
@@ -451,7 +440,7 @@ mod tests {
     /// The store the document reports an unreadable span in, once `add` has
     /// put one more annotation beside a readable token.
     fn reported_store(add: impl FnOnce(&mut Document)) -> Option<&'static str> {
-        let mut doc = Document::new(TEXT, PIPELINE_LANGUAGE);
+        let mut doc = Document::new(TEXT);
         doc.tokens.push(Token {
             begin: 0,
             end: 1,

@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::types::CgToken;
-use crate::types::PIPELINE_LANGUAGE;
 
 fn tags(tags: &[&str]) -> Vec<String> {
     tags.iter().map(|t| t.to_string()).collect()
@@ -64,7 +63,7 @@ fn initialize_without_the_parameter_fails() {
 #[test]
 fn process_wraps_each_conneg_token_in_numbered_span() {
     let enhancer = Vislcg3ConNegEnhancer::default();
-    let mut doc = Document::new("in boahtán, in boahtán", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("in boahtán, in boahtán");
     doc.cg_tokens = vec![conneg_token(3, 10), conneg_token(15, 22)];
 
     enhancer.process(&mut doc, Mode::Colorize).expect("process");

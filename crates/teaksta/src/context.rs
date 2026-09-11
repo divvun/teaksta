@@ -271,7 +271,7 @@ mod tests {
         let root = tempfile::tempdir().expect("temp dir");
         let analysed = root.path().join("analysed");
         std::fs::create_dir_all(&analysed).expect("the cache directory");
-        let cached = analysed.join("cas_1.xmi");
+        let cached = analysed.join("v3-0123456789abcdef.json");
         std::fs::write(&cached, "{}").expect("a cached document");
         environment.set(ANALYSIS_DIR_ENV, &analysed);
         for name in [UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {

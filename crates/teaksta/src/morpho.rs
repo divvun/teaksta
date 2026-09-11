@@ -205,9 +205,8 @@ pub struct MorphoPipeline {
 static SHARED: OnceLock<MorphoPipeline> = OnceLock::new();
 
 impl MorphoPipeline {
-    /// Process-wide pipeline instance. The legacy code kept one singleton
-    /// analysis engine per (language, topic); the Rust side shares one
-    /// bundle-backed pipeline set and one generator transducer.
+    /// Process-wide pipeline instance: one bundle-backed pipeline set and
+    /// one generator transducer, shared by every request and every topic.
     pub fn shared() -> &'static MorphoPipeline {
         SHARED.get_or_init(|| MorphoPipeline {
             runtime: tokio::runtime::Builder::new_current_thread()
@@ -386,11 +385,10 @@ impl MorphoPipeline {
         Ok(out)
     }
 
-    /// Sentence segmentation over raw text, returning byte spans. Replaces
-    /// the OpenNLP English sentence detector the legacy pipeline ran over
-    /// North Sámi text. The bundle's `sentences` pipeline returns sentence
-    /// surface texts; each is mapped back to a byte span by locating its
-    /// words sequentially in the input. The text is fed in chunks cut at
+    /// Sentence segmentation over raw text, returning byte spans. The
+    /// bundle's `sentences` pipeline returns sentence surface texts; each is
+    /// mapped back to a byte span by locating its words sequentially in the
+    /// input. The text is fed in chunks cut at
     /// sentence boundaries, so the sentences come back in document order
     /// and the cursor walking them across the text only ever moves forward.
     pub fn sentence_spans(&self, text: &str) -> Result<Vec<(usize, usize)>> {

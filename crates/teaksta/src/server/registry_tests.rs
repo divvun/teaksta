@@ -1,7 +1,5 @@
 use super::*;
 
-use crate::types::PIPELINE_LANGUAGE;
-
 /// The ten topics the compiled-in registry declares, in the order it serves
 /// them, each with the North Sámi label the learner is shown.
 const SHIPPED: &[(&str, &str)] = &[
@@ -52,7 +50,7 @@ fn every_topic_marks_its_registry_name() {
 
     for topic in registry.topics() {
         let post = registry
-            .get_postprocessor(PIPELINE_LANGUAGE, &topic.name)
+            .get_postprocessor(&topic.name)
             .expect("a name the registry just handed out");
 
         assert_eq!(
@@ -72,14 +70,14 @@ fn every_topic_carries_a_pipeline_pair() {
         assert!(registry.knows(name));
         assert_eq!(
             registry
-                .get_preprocessor(PIPELINE_LANGUAGE, name)
+                .get_preprocessor(name)
                 .expect("a preprocessor")
                 .len(),
             5
         );
         assert_eq!(
             registry
-                .get_postprocessor(PIPELINE_LANGUAGE, name)
+                .get_postprocessor(name)
                 .expect("a postprocessor")
                 .len(),
             2
@@ -88,38 +86,15 @@ fn every_topic_carries_a_pipeline_pair() {
 }
 
 #[test]
-fn a_lookup_misses_unknown_topic_or_language() {
+fn a_lookup_misses_an_unknown_topic() {
     let registry = Registry::from_config(None).expect("the compiled-in topics parse");
 
-    assert!(
-        registry
-            .get_preprocessor(PIPELINE_LANGUAGE, "Kitchens")
-            .is_none()
-    );
-    assert!(
-        registry
-            .get_postprocessor(PIPELINE_LANGUAGE, "Kitchens")
-            .is_none()
-    );
+    assert!(registry.get_preprocessor("Kitchens").is_none());
+    assert!(registry.get_postprocessor("Kitchens").is_none());
     assert!(!registry.knows("Kitchens"));
     // The name is matched as it is served, not case-folded.
-    assert!(
-        registry
-            .get_preprocessor(PIPELINE_LANGUAGE, "substantive")
-            .is_none()
-    );
-    // Every topic is registered under the one language this deployment has a
-    // pipeline for, so any other misses.
-    assert!(
-        registry
-            .get_preprocessor("klingon", "Substantive")
-            .is_none()
-    );
-    assert!(
-        registry
-            .get_postprocessor("klingon", "Substantive")
-            .is_none()
-    );
+    assert!(registry.get_preprocessor("substantive").is_none());
+    assert!(registry.get_postprocessor("substantive").is_none());
 }
 
 #[test]

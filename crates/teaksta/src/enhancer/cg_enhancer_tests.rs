@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::test_support::cg_token;
-use crate::types::PIPELINE_LANGUAGE;
 
 /// Every shared log line off, as the two verb topics ask for them.
 const QUIET: Trace = Trace {
@@ -165,7 +164,7 @@ fn every_angle_bracket_tag_is_removed() {
 #[test]
 fn distinct_forms_become_distractors_last_is_answer() {
     let mut map = span_map(&[(0, 5, "s1")]);
-    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana");
     let output = concat!(
         "beana+N+Sg+Acc\tbeana\n",
         "beana+N+Sg+Ill\tbeatnagii\n",
@@ -199,7 +198,7 @@ fn distinct_forms_become_distractors_last_is_answer() {
 #[test]
 fn a_single_surviving_form_leaves_a_token_alone() {
     let mut map = span_map(&[(0, 5, "s1")]);
-    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana");
     let output = concat!(
         "beana+N+Sg+Nom\tbeana\n",
         "beana+N+Sg+Ill\t+?\n",
@@ -215,7 +214,7 @@ fn a_single_surviving_form_leaves_a_token_alone() {
     // A Word line seen before any marker is ignored for the same reason,
     // even when nothing in the map could have matched it.
     let mut empty: HashMap<Word, SpanTag> = HashMap::new();
-    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana");
 
     attach_distractors(&mut doc, QUIET, "Word 0 5\n", &mut empty).unwrap();
 
@@ -230,7 +229,7 @@ fn a_single_surviving_form_leaves_a_token_alone() {
 #[test]
 fn a_block_is_consumed_by_one_word_record() {
     let mut map = span_map(&[(0, 5, "s1"), (6, 11, "s2")]);
-    let mut doc = Document::new("beana beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana beana");
     let output = concat!(
         "beana+N+Sg+Acc\tbeana\n",
         "beana+N+Sg+Ill\tbeatnagii\n",
@@ -260,7 +259,7 @@ fn a_block_is_consumed_by_one_word_record() {
 #[test]
 fn a_later_marker_replaces_the_earlier_block() {
     let mut map = span_map(&[(0, 1, "s1"), (2, 3, "s2")]);
-    let mut doc = Document::new("a b", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("a b");
     let output = concat!(
         "a+V+Ind+Prs+Sg1\tform1\n",
         "   \n",
@@ -312,7 +311,7 @@ fn malformed_word_records_abort_the_run() {
 
     for (record, message) in cases {
         let mut map = span_map(&[(0, 1, "s1")]);
-        let mut doc = Document::new("a", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("a");
 
         let err = attach_distractors(&mut doc, QUIET, &format!("{block}{record}"), &mut map)
             .expect_err(record);
@@ -330,7 +329,7 @@ fn malformed_word_records_abort_the_run() {
 #[test]
 fn a_single_form_enhances_a_cloze_token() {
     let mut map = span_map(&[(0, 5, "s1")]);
-    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana");
     let output = concat!(
         "beana+N+Sg+Nom\tbeana\n",
         "beana+N+Sg+Ill\t+?\n",
@@ -361,7 +360,7 @@ fn a_single_form_enhances_a_cloze_token() {
 #[test]
 fn duplicate_forms_collapse_and_empty_blocks_skip() {
     let mut map = span_map(&[(0, 1, "s1"), (2, 3, "s2")]);
-    let mut doc = Document::new("a b", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("a b");
     let output = concat!(
         "a+V+Inf\tboahtit\n",
         "a+V+PrfPrc\tboahtit\n",
@@ -393,7 +392,7 @@ fn duplicate_forms_collapse_and_empty_blocks_skip() {
 #[test]
 fn a_cloze_block_is_consumed_by_one_record() {
     let mut map = span_map(&[(0, 1, "s1"), (2, 3, "s2")]);
-    let mut doc = Document::new("a b", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("a b");
     let output = concat!(
         "a+V+Inf\tboahtit\n",
         "ñôŃßĘńŠē\n",
@@ -429,7 +428,7 @@ fn the_cloze_reader_shares_the_record_failures() {
 
     for (record, message) in cases {
         let mut map = span_map(&[(0, 1, "s1")]);
-        let mut doc = Document::new("a", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("a");
 
         let err = attach_possible_forms(&mut doc, QUIET, &format!("{block}{record}"), &mut map)
             .expect_err(record);
@@ -457,7 +456,7 @@ fn an_unusable_reading_is_dropped_on_its_own() {
     };
 
     for (mc, cloze) in [(true, false), (false, true)] {
-        let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("beana");
         let mut scan = Scan::default();
 
         pass(mc, cloze, &refuse, &refuse).enhance_token(&mut doc, &token, &accepted(), &mut scan);
@@ -472,7 +471,7 @@ fn an_unusable_reading_is_dropped_on_its_own() {
         assert!(scan.word_to_span_map.contains_key(&Word::new(0, 5)));
     }
 
-    let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("beana");
     let mut scan = Scan::default();
 
     pass(true, false, &block, &refuse).enhance_token(&mut doc, &token, &accepted(), &mut scan);
@@ -496,7 +495,7 @@ fn a_seam_failure_is_never_swallowed() {
     // the errors Java would not have caught; neither swallows the seam.
     for unchecked in [Unchecked::Propagate, Unchecked::Swallow] {
         let topic = TopicSpec { unchecked, ..PLAIN };
-        let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("beana");
         doc.cg_tokens
             .push(cg_token(0, 5, &[&["\"beana\"", "N", "Sg", "Nom"]]));
 
@@ -525,7 +524,7 @@ fn a_punctuation_cohort_is_never_a_hit() {
     let echo = |reading: &str| -> Result<String> { Ok(format!("{reading}\n")) };
 
     for mode in Mode::ALL {
-        let mut doc = Document::new("guovllu.", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("guovllu.");
         // the skew the offsets layer used to produce: a noun's readings on
         // the span of the full stop, with the stop's own reading beside them
         doc.cg_tokens.push(cg_token(

@@ -124,8 +124,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+2]
 	@Override
 	public void initialize(UimaContext aContext)
 			throws ResourceInitializationException {

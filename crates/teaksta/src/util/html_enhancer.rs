@@ -27,14 +27,14 @@ pub fn mode_label(mode: Mode) -> &'static str {
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer]
 pub struct HtmlEnhancer<'a> {
-    cas: &'a Document,
+    doc: &'a Document,
 }
 
 impl<'a> HtmlEnhancer<'a> {
     // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn]
-    pub fn new(c_cas: &'a Document) -> Self {
-        HtmlEnhancer { cas: c_cas }
+    pub fn new(a_document: &'a Document) -> Self {
+        HtmlEnhancer { doc: a_document }
     }
 
     /// Converts an HTML document with Enhancements to an HTML string. The
@@ -43,14 +43,13 @@ impl<'a> HtmlEnhancer<'a> {
     // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6]
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6]
     pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> String {
-        html_utils::render_page(&self.cas.page, self.cas, mode, Some(base_url))
+        html_utils::render_page(&self.doc.page, self.doc, mode, Some(base_url))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::PIPELINE_LANGUAGE;
 
     use crate::types::Enhancement;
     use crate::util::html_utils;
@@ -60,30 +59,30 @@ mod tests {
 
     /// A document seeded from `PAGE`, carrying one enhancement over `viesu`.
     fn analysed(relevant: bool) -> Document {
-        let (mut cas, map) = html_utils::extract(PAGE);
-        cas.page = map;
-        cas.enhancements.push(Enhancement {
+        let (mut doc, map) = html_utils::extract(PAGE);
+        doc.page = map;
+        doc.enhancements.push(Enhancement {
             begin: 11,
             end: 16,
             enhance_start: "<span id=\"teaksta-span-1\" class=\"teaksta-token\">".to_string(),
             enhance_end: "</span>".to_string(),
             relevant,
         });
-        cas
+        doc
     }
 
-    fn enhance(cas: &Document, base_url: &str, mode: Option<Mode>) -> String {
-        HtmlEnhancer::new(cas).enhance(mode, base_url)
+    fn enhance(doc: &Document, base_url: &str, mode: Option<Mode>) -> String {
+        HtmlEnhancer::new(doc).enhance(mode, base_url)
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.html-enhancer-fn/test]
     #[test]
-    fn the_constructor_stores_the_cas_by_reference() {
-        let cas = Document::new(PAGE, PIPELINE_LANGUAGE);
+    fn the_constructor_stores_the_document_by_reference() {
+        let doc = Document::new(PAGE);
 
-        let enhancer = HtmlEnhancer::new(&cas);
+        let enhancer = HtmlEnhancer::new(&doc);
 
-        assert!(std::ptr::eq(enhancer.cas, &cas));
+        assert!(std::ptr::eq(enhancer.doc, &doc));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6/test]
@@ -122,13 +121,13 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6/test]
     #[test]
     fn an_irrelevant_span_reaches_click_alone() {
-        let cas = analysed(false);
+        let doc = analysed(false);
 
         assert!(
-            !enhance(&cas, "http://example.org/", Some(Mode::Colorize)).contains("teaksta-span-1")
+            !enhance(&doc, "http://example.org/", Some(Mode::Colorize)).contains("teaksta-span-1")
         );
-        assert!(enhance(&cas, "http://example.org/", Some(Mode::Click)).contains("teaksta-span-1"));
-        assert!(!enhance(&cas, "http://example.org/", None).contains("teaksta-span-1"));
+        assert!(enhance(&doc, "http://example.org/", Some(Mode::Click)).contains("teaksta-span-1"));
+        assert!(!enhance(&doc, "http://example.org/", None).contains("teaksta-span-1"));
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6/test]

@@ -107,7 +107,7 @@ pub enum Unchecked {
 pub struct Trace {
     /// `"spantag before adding distractors:{}"`, before the mc attributes go in.
     pub span_tag: bool,
-    /// `"Enhancement={}"`, after the mc enhancement reaches the CAS.
+    /// `"Enhancement={}"`, after the mc enhancement reaches the document.
     pub enhancement: bool,
     /// `"possibleforms= {}"`, before the cloze attribute goes in.
     pub possible_forms: bool,
@@ -501,7 +501,7 @@ pub fn run(
 
 /// The output from the generator is used to create distractors and is
 /// placed into the right place in the span tag. Afterwards an enhancement
-/// with the span tag is created and passed to the cas.
+/// with the span tag is created and added to the document.
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.generate-span-tag-with-distractors-fn+3]
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.generate-span-tag-with-distractors-fn+3]
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.generate-span-tag-with-distractors-fn+3]
@@ -695,7 +695,7 @@ fn push_record(writer: &mut String, block: &str, word: &Word) {
     writer.push('\n');
 }
 
-/// make new enhancement, pass it to the cas
+/// make a new enhancement and add it to the document
 fn push_enhancement(
     doc: &mut Document,
     begin: usize,
@@ -709,7 +709,6 @@ fn push_enhancement(
         enhance_start: span_tag.start_tag(),
         enhance_end: span_tag.end_tag().to_string(),
     };
-    // update CAS
     doc.enhancements.push(e.clone());
     e
 }

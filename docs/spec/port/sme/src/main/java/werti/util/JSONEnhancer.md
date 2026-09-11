@@ -1,8 +1,8 @@
 # sme/src/main/java/werti/util/JSONEnhancer.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+1]
+> [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer+2]
 > pub struct JsonEnhancer<'a> {
->   cas: &'a Document,
+>   doc: &'a Document,
 >   mode: Mode,
 > }
 

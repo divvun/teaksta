@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn unknown_query_keys_are_ignored() {
-        let parsed = ExerciseQuery::from("topic=Subject&language=en&url=http%3A%2F%2Fa.example");
+        let parsed = ExerciseQuery::from("topic=Subject&colour=blue&url=http%3A%2F%2Fa.example");
 
         assert_eq!(parsed.topic, "Subject");
         assert_eq!(parsed.url, "http://a.example");

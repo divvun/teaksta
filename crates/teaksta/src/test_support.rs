@@ -3,7 +3,7 @@
 //! behaviours; the builders and the behavioural assertions live here so
 //! identical fixture code is not repeated per file.
 
-use crate::types::{CgReading, CgToken, Document, Enhancement, PIPELINE_LANGUAGE};
+use crate::types::{CgReading, CgToken, Document, Enhancement};
 
 /// One CG reading from its raw elements (lemma line content first, then
 /// tag strings).
@@ -55,7 +55,7 @@ pub(crate) fn assert_process_keeps_existing_enhancements(
     text: &str,
     process: impl FnOnce(&mut Document) -> anyhow::Result<()>,
 ) {
-    let mut doc = Document::new(text, PIPELINE_LANGUAGE);
+    let mut doc = Document::new(text);
     doc.enhancements.push(Enhancement {
         begin: 0,
         end: 3,
@@ -77,7 +77,7 @@ pub(crate) fn assert_process_ignores_token_without_tags(
     token: CgToken,
     process: impl FnOnce(&mut Document) -> anyhow::Result<()>,
 ) {
-    let mut doc = Document::new(text, PIPELINE_LANGUAGE);
+    let mut doc = Document::new(text);
     doc.cg_tokens.push(token);
 
     process(&mut doc).expect("the tag loop body never runs");

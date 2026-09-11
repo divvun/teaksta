@@ -8,10 +8,15 @@
 >   private static final Pattern sentenceBeginPattern = Pattern.compile("[\\p{L}\\p{N}\\p{P}]");
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+2]
 > @Override public void initialize(UimaContext aContext) throws ResourceInitializationException
+>
+> Port divergence: there is no counterpart to call. The stage has nothing to
+> initialise, so it has neither an `initialize` nor a constructor, and this
+> rule is carried by the type itself — which the port names `SentenceDetector`,
+> because no OpenNLP model is anywhere near it.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+2]
 > Runs the base `JCasAnnotator_ImplBase` initialisation with the supplied
 > `UimaContext` first, then builds the model registry.
 >
@@ -33,19 +38,28 @@
 > processes North Sámi; `process` therefore fails for any document whose
 > language is not exactly `"en"`.
 >
-> Port divergence: a one-entry registry decides exactly one thing, and the
-> port says that thing directly. There is no map from language to detector,
-> no process-wide mutable state for a fresh instance to replace, and no
-> initialisation call at all — the stage is a unit value the flow constructs.
-> What the map decided lives in `process`, which refuses any language but the
-> key the pipelines are registered under and otherwise takes the shared
-> morphological pipeline; that refusal is what is tested in place of the
-> map's contents.
+> Port divergence: nothing of this survives. There is no map from language to
+> detector, no process-wide mutable state for a fresh instance to replace, and
+> no initialisation call at all — the stage is a unit value the flow
+> constructs, and `process` takes the shared morphological pipeline directly.
+>
+> Retired with it: the refusal the map implied. A one-entry registry decided
+> that any language but `en` was turned away — a key that was never a language
+> in the first place, since the deployment analyses North Sámi and the entry
+> read `en`. The port has one set of models and one language, so a document
+> carries no language at all: there is no value to compare, no comparison to
+> make, and nothing for a test to witness. This rule therefore has no `/test`
+> facet, because what it specifies on the port side is that nothing happens.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+2]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
+>
+> Port divergence: the port's counterpart is
+> `pub fn process(&self, doc: &mut Document) -> Result<Vec<PlainTextSentenceAnnotation>>`.
+> The plain-text sentences are returned to the flow rather than added to the
+> document, which has no store for them.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+2]
 > Logs at info that sentence detection is starting.
 >
 > Reads the document text and builds a scratch buffer `rtext` of exactly
@@ -95,9 +109,13 @@
 > real text, so the model sees runs of spaces wherever the document had
 > non-token content.
 >
-> Port divergence: the detector lookup is a comparison against the key the
-> pipelines are registered under rather than a hit in a registry, so it
-> refuses the same languages without the registry existing. The start and end
-> of the pass are logged at debug rather than at info, since neither says
-> anything a deployment reads a log for.
+> Port divergence: there is no detector lookup and no language check. The
+> deployment has one set of models and the document carries no language, so
+> the masked buffer goes straight to the shared morphological pipeline. What
+> can still end the pass early is the masking itself: a token span the
+> document text cannot be read at is reported, and it is reported before
+> anything is asked of the models, exactly where the lookup used to sit.
+>
+> Port divergence: the start and end of the pass are logged at debug rather
+> than at info, since neither says anything a deployment reads a log for.
 

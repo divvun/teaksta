@@ -1,5 +1,5 @@
 use super::*;
-use crate::types::{PIPELINE_LANGUAGE, is_punctuation_cohort};
+use crate::types::is_punctuation_cohort;
 
 fn token(begin: usize, end: usize) -> Token {
     Token {
@@ -327,36 +327,36 @@ fn the_logged_reading_is_the_flattened_tag_sequence() {
 #[test]
 fn process_propagates_token_span_outside_text() {
     let annotator = Vislcg3Annotator::default();
-    let mut jcas = Document::new("guolli", PIPELINE_LANGUAGE);
-    jcas.tokens.push(token(0, 99));
+    let mut doc = Document::new("guolli");
+    doc.tokens.push(token(0, 99));
 
-    let err = annotator.process(&mut jcas).unwrap_err();
+    let err = annotator.process(&mut doc).unwrap_err();
 
     assert!(
         err.to_string()
             .contains("span 0..99 is not within the document text"),
         "unexpected error: {err}"
     );
-    assert_eq!(jcas.tokens.len(), 1);
-    assert!(jcas.cg_tokens.is_empty());
+    assert_eq!(doc.tokens.len(), 1);
+    assert!(doc.cg_tokens.is_empty());
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4/test]
 #[test]
 fn process_of_a_document_without_tokens_indexes_nothing() {
     let annotator = Vislcg3Annotator::default();
-    let mut jcas = Document::new("guolli", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("guolli");
 
-    let _ = annotator.process(&mut jcas);
+    let _ = annotator.process(&mut doc);
 
-    assert!(jcas.tokens.is_empty());
-    assert!(jcas.cg_tokens.is_empty());
+    assert!(doc.tokens.is_empty());
+    assert!(doc.cg_tokens.is_empty());
 }
 
 /// The document the mapping tests run over, with one token per whitespace-
 /// separated word of `text` and the whole of it one sentence.
 fn tokenised(text: &str) -> Document {
-    let mut doc = Document::new(text, PIPELINE_LANGUAGE);
+    let mut doc = Document::new(text);
     let mut at = 0usize;
     for word in text.split(' ') {
         if !word.is_empty() {

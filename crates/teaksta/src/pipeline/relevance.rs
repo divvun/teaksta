@@ -24,13 +24,13 @@ impl GenericRelevanceAnnotator {
     /// relevant, keeping the map back to the page for the enhanced output.
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2]
-    pub fn process(&self, cas: &mut Document) -> Result<()> {
+    pub fn process(&self, doc: &mut Document) -> Result<()> {
         debug!("Starting relevance annotation");
 
-        let (seed, map) = html_utils::extract(&cas.text);
-        cas.text = seed.text;
-        cas.relevant_texts.extend(seed.relevant_texts);
-        cas.page = map;
+        let (seed, map) = html_utils::extract(&doc.text);
+        doc.text = seed.text;
+        doc.relevant_texts.extend(seed.relevant_texts);
+        doc.page = map;
 
         debug!("Finished relevance annotation");
         Ok(())
@@ -40,7 +40,6 @@ impl GenericRelevanceAnnotator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::PIPELINE_LANGUAGE;
     use crate::types::RelevantText;
 
     const PAGE: &str = concat!(
@@ -49,7 +48,7 @@ mod tests {
     );
 
     fn annotated(html: &str) -> Document {
-        let mut doc = Document::new(html, PIPELINE_LANGUAGE);
+        let mut doc = Document::new(html);
         GenericRelevanceAnnotator::new().process(&mut doc).unwrap();
         doc
     }
@@ -105,7 +104,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.generic-relevance-annotator.generic-relevance-annotator.process-fn+2/test]
     #[test]
     fn process_appends_to_the_existing_relevant_text_store() {
-        let mut doc = Document::new(PAGE, PIPELINE_LANGUAGE);
+        let mut doc = Document::new(PAGE);
         doc.relevant_texts.push(RelevantText {
             begin: 100,
             end: 200,

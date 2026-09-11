@@ -8,10 +8,9 @@
 //! the tags those two enhancers read, and that is what
 //! [`crate::server::registry`] carries.
 //!
-//! The order is the one the UIMA aggregate descriptors fixed, because it is
-//! the order the stages need: nothing can be tokenised before the relevant
-//! text is known, and nothing can be enhanced before the constraint grammar
-//! has read the sentences.
+//! The order is the order the stages need: nothing can be tokenised before
+//! the relevant text is known, and nothing can be enhanced before the
+//! constraint grammar has read the sentences.
 
 use std::collections::HashMap;
 
@@ -30,7 +29,7 @@ use crate::enhancer::token::TokenEnhancer;
 use crate::enhancer::verb_conjugation::Vislcg3VerbConjugationEnhancer;
 use crate::pipeline::relevance::GenericRelevanceAnnotator;
 use crate::pipeline::sentences::{
-    HtmlSentenceAnnotator, OpenNlpSentenceDetector, PlainTextSentenceAnnotation,
+    HtmlSentenceAnnotator, PlainTextSentenceAnnotation, SentenceDetector,
 };
 use crate::pipeline::tokenizer::GiellateknoTokenizer;
 use crate::pipeline::vislcg3::Vislcg3Annotator;
@@ -42,7 +41,7 @@ use crate::types::Document;
 pub enum Stage {
     Relevance(GenericRelevanceAnnotator),
     Tokenizer(GiellateknoTokenizer),
-    SentenceDetector(OpenNlpSentenceDetector),
+    SentenceDetector(SentenceDetector),
     HtmlSentences(HtmlSentenceAnnotator),
     Vislcg3(Box<Vislcg3Annotator>),
     Token(TokenEnhancer),
@@ -90,8 +89,7 @@ impl Stage {
 /// The enhancer a topic's postprocessing flow ends in, built from the topic's
 /// own tag list.
 ///
-/// Each enhancer reads its tags under a parameter name of its own — the name
-/// its UIMA delegate declared, which its `initialize` still reads — so the
+/// Each enhancer reads its tags under a parameter name of its own, so the
 /// one tag list a topic carries is handed over under the name that enhancer
 /// expects.
 fn topic_stage(config: &TopicConfig) -> Result<Stage> {
@@ -148,7 +146,7 @@ impl Flow {
             stages: vec![
                 Stage::Relevance(GenericRelevanceAnnotator),
                 Stage::Tokenizer(GiellateknoTokenizer),
-                Stage::SentenceDetector(OpenNlpSentenceDetector),
+                Stage::SentenceDetector(SentenceDetector),
                 Stage::HtmlSentences(HtmlSentenceAnnotator),
                 Stage::Vislcg3(Box::default()),
             ],
@@ -190,33 +188,33 @@ impl Flow {
         self.stages.is_empty()
     }
 
-    /// Runs every stage over `cas` in flow order, for the exercise `mode`
+    /// Runs every stage over `doc` in flow order, for the exercise `mode`
     /// names. The plain-text sentence list is the one value a stage hands to
     /// a later stage rather than to the document, so it is carried here.
     ///
     /// Only the postprocessing enhancers vary with the exercise; the stages
     /// that annotate the document take the text as it stands and are handed
     /// no mode.
-    pub fn run(&self, cas: &mut Document, mode: Mode) -> Result<()> {
+    pub fn run(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let mut sentences: Vec<PlainTextSentenceAnnotation> = Vec::new();
         for stage in &self.stages {
             match stage {
-                Stage::Relevance(s) => s.process(cas)?,
-                Stage::Tokenizer(s) => s.process(cas)?,
-                Stage::SentenceDetector(s) => sentences = s.process(cas)?,
-                Stage::HtmlSentences(s) => s.process(cas, &sentences)?,
-                Stage::Vislcg3(s) => s.process(cas)?,
-                Stage::Token(s) => s.process(cas)?,
-                Stage::Noun(s) => s.process(cas, mode)?,
-                Stage::NounSg(s) => s.process(cas, mode)?,
-                Stage::NounPl(s) => s.process(cas, mode)?,
-                Stage::VerbConjugation(s) => s.process(cas, mode)?,
-                Stage::ConNeg(s) => s.process(cas, mode)?,
-                Stage::InfiniteVerb(s) => s.process(cas, mode)?,
-                Stage::Adverbial(s) => s.process(cas, mode)?,
-                Stage::Conjunction(s) => s.process(cas, mode)?,
-                Stage::Object(s) => s.process(cas, mode)?,
-                Stage::Subject(s) => s.process(cas, mode)?,
+                Stage::Relevance(s) => s.process(doc)?,
+                Stage::Tokenizer(s) => s.process(doc)?,
+                Stage::SentenceDetector(s) => sentences = s.process(doc)?,
+                Stage::HtmlSentences(s) => s.process(doc, &sentences)?,
+                Stage::Vislcg3(s) => s.process(doc)?,
+                Stage::Token(s) => s.process(doc)?,
+                Stage::Noun(s) => s.process(doc, mode)?,
+                Stage::NounSg(s) => s.process(doc, mode)?,
+                Stage::NounPl(s) => s.process(doc, mode)?,
+                Stage::VerbConjugation(s) => s.process(doc, mode)?,
+                Stage::ConNeg(s) => s.process(doc, mode)?,
+                Stage::InfiniteVerb(s) => s.process(doc, mode)?,
+                Stage::Adverbial(s) => s.process(doc, mode)?,
+                Stage::Conjunction(s) => s.process(doc, mode)?,
+                Stage::Object(s) => s.process(doc, mode)?,
+                Stage::Subject(s) => s.process(doc, mode)?,
             }
         }
         Ok(())
@@ -226,7 +224,6 @@ impl Flow {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::PIPELINE_LANGUAGE;
 
     /// A topic carrying whatever the caller wants to vary, with the rest of
     /// the fields at a value no test reads.
@@ -289,11 +286,10 @@ mod tests {
         }
     }
 
-    /// Each enhancer reads its tags under the parameter name its UIMA
-    /// delegate declared, and refuses to build without it. The one tag list a
-    /// topic carries therefore has to reach each of them under a different
-    /// name, which is what makes the mapping in `topic_stage` load-bearing
-    /// rather than decorative.
+    /// Each enhancer reads its tags under a parameter name of its own, and
+    /// refuses to build without it. The one tag list a topic carries therefore
+    /// has to reach each of them under a different name, which is what makes
+    /// the mapping in `topic_stage` load-bearing rather than decorative.
     #[test]
     fn each_enhancer_reads_its_own_parameter() {
         use crate::enhancer::object::Vislcg3ObjectEnhancer;
@@ -333,13 +329,13 @@ mod tests {
     #[test]
     fn an_empty_flow_runs_and_changes_nothing() {
         let flow = Flow::default();
-        let mut cas = Document::new("<p>Mun oidnen viesu.</p>", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("<p>Mun oidnen viesu.</p>");
 
-        flow.run(&mut cas, Mode::Colorize)
+        flow.run(&mut doc, Mode::Colorize)
             .expect("an empty flow is a no-op");
 
         assert!(flow.is_empty());
-        assert!(cas.enhancements.is_empty());
-        assert!(cas.tokens.is_empty());
+        assert!(doc.enhancements.is_empty());
+        assert!(doc.tokens.is_empty());
     }
 }

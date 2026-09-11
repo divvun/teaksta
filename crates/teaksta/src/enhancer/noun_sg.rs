@@ -295,7 +295,6 @@ fn stem_type_of(reading_str: &str) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::PIPELINE_LANGUAGE;
 
     fn reading(tags: &[&str]) -> CgReading {
         tags.iter().map(|tag| (*tag).to_string()).collect()
@@ -471,7 +470,7 @@ mod tests {
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
-        let mut doc = Document::new("gietta beana", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("gietta beana");
         doc.cg_tokens = vec![
             token(0, 6, vec![reading(&["\"gietta\"", "N", "Sg", "Nom"])]),
             token(7, 12, vec![reading(&["\"beana\"", "N", "Sg", "Acc"])]),
@@ -496,7 +495,7 @@ mod tests {
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
-        let mut doc = Document::new("gietta beana", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("gietta beana");
         doc.cg_tokens = vec![
             token(
                 0,

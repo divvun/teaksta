@@ -183,7 +183,7 @@ fn a_file_outside_the_served_directories_is_refused() {
         Path::new("/etc/passwd"),
         elsewhere.as_path(),
         // The analysis cache holds documents, not pages a caller may read.
-        &config.analysis_dir.join("cas_0.xmi"),
+        &config.analysis_dir.join("v3-0123456789abcdef.json"),
         // A neighbour whose name merely begins the same way.
         &root.path().join("keep-elsewhere").join("a.html"),
     ] {

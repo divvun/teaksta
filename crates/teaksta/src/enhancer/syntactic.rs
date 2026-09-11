@@ -197,7 +197,6 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
 mod tests {
     use super::*;
     use crate::test_support::cg_token;
-    use crate::types::PIPELINE_LANGUAGE;
 
     /// A spec that changes nothing about the shared pass, so a test naming
     /// one field says what it is testing.
@@ -242,7 +241,7 @@ mod tests {
             (Mode::Colorize, 1),
             (Mode::Click, 1),
         ] {
-            let mut doc = Document::new("Mun oainnán mánáid.", PIPELINE_LANGUAGE);
+            let mut doc = Document::new("Mun oainnán mánáid.");
             doc.cg_tokens.push(ambiguous());
 
             run(&mut doc, &spec(&tags, "teaksta-Subject"), mode)
@@ -259,7 +258,7 @@ mod tests {
     #[test]
     fn the_tag_class_and_attributes_reach_the_span() {
         let tags = vec!["@SUBJ→".to_string()];
-        let mut doc = Document::new("Mun oainnán mánáid.", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("Mun oainnán mánáid.");
         doc.cg_tokens
             .push(cg_token(0, 3, &[&["\"mun\"", "@SUBJ→"]]));
         doc.cg_tokens
@@ -295,7 +294,7 @@ mod tests {
     fn a_seam_failure_ends_the_pass() {
         let tags = vec!["@SUBJ→".to_string()];
 
-        let mut doc = Document::new("Mun oainnán mánáid.", PIPELINE_LANGUAGE);
+        let mut doc = Document::new("Mun oainnán mánáid.");
         doc.cg_tokens
             .push(cg_token(0, 3, &[&["\"mun\"", "@SUBJ→"]]));
 
@@ -330,7 +329,7 @@ mod tests {
         let tags = vec!["@SUBJ\u{2192}".to_string()];
 
         for mode in Mode::ALL {
-            let mut doc = Document::new("guovllu.", PIPELINE_LANGUAGE);
+            let mut doc = Document::new("guovllu.");
             // the skew the offsets layer used to produce: a word's readings
             // on the span of the full stop, with the stop's own beside them
             doc.cg_tokens.push(cg_token(

@@ -5,7 +5,6 @@
 use super::*;
 use crate::test_support::reading;
 use crate::types::CgToken;
-use crate::types::PIPELINE_LANGUAGE;
 
 /// The canned CG readings the tests draw on, as raw tag elements: an
 /// infinitive and a perfect participle (both matched by the enhancer), a
@@ -70,7 +69,7 @@ fn initialize_splits_the_value_on_commas_without_trimming() {
 #[test]
 fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
-    let mut doc = Document::new("boahtit boahtit", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("boahtit boahtit");
     doc.cg_tokens = vec![
         cg_token(0, 7, vec![reading(INF)]),
         cg_token(8, 15, vec![reading(INF)]),
@@ -102,7 +101,7 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
 #[test]
 fn process_selects_the_first_reading_matching_both_patterns() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
-    let mut doc = Document::new("boahtit", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("boahtit");
     doc.cg_tokens = vec![cg_token(
         0,
         7,
@@ -125,7 +124,7 @@ fn process_selects_the_first_reading_matching_both_patterns() {
 #[test]
 fn process_ignores_tokens_without_infinite_verb_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
-    let mut doc = Document::new("boahtá beana", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("boahtá beana");
     doc.cg_tokens = vec![
         cg_token(0, 6, vec![reading(FINITE)]),
         cg_token(7, 12, vec![reading(NOUN)]),
@@ -142,7 +141,7 @@ fn process_ignores_tokens_without_infinite_verb_readings() {
 fn process_selection_ignores_the_configured_tags() {
     let configured =
         Vislcg3InfiniteVerbEnhancer::new(Some("N Pl Nom, N Pl Gen")).expect("configured");
-    let mut doc = Document::new("boahtit", PIPELINE_LANGUAGE);
+    let mut doc = Document::new("boahtit");
     doc.cg_tokens = vec![cg_token(0, 7, vec![reading(INF)])];
 
     configured
@@ -154,7 +153,7 @@ fn process_selection_ignores_the_configured_tags() {
     assert_eq!(doc.enhancements.len(), 1);
     assert_eq!(doc.enhancements[0].begin, 0);
 
-    let mut nouns = Document::new("beanat", PIPELINE_LANGUAGE);
+    let mut nouns = Document::new("beanat");
     nouns.cg_tokens = vec![cg_token(0, 6, vec![reading(NOUN)])];
     configured
         .process(&mut nouns, Mode::Colorize)

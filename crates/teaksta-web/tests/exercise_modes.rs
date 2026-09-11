@@ -259,8 +259,9 @@ fn every_block_is_rendered_where_it_arrived() {
     );
 }
 
-/// Nothing of the old servlet's naming reaches the client. It was written as
-/// span ids as well as class names, and the exercises drop the ids, so the
+/// Nothing of the legacy application's naming reaches the client. It was
+/// written as span ids as well as class names, and the exercises drop the
+/// ids, so the
 /// replies the backend really answered with are read here rather than the
 /// rendering of them: the spelling itself is the guard, not any one of the
 /// shapes it was written in.
