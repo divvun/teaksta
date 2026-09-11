@@ -112,10 +112,8 @@ const FIXTURES: &[(&str, &str, &str, &str)] = &[
 ];
 
 /// The deployment every test is served from: the topics compiled into the
-/// binary, with the caches under a directory of their own. Nothing here reads
-/// the `sme` tree — it stays in the repository as the spec's reference and no
-/// longer as anything a server boots from. The model handles are
-/// process-wide, so this is built once.
+/// binary, with the caches under a directory of their own. The model handles
+/// are process-wide, so this is built once.
 fn deployment() -> &'static (Arc<AppState>, TempDir) {
     static DEPLOYMENT: OnceLock<(Arc<AppState>, TempDir)> = OnceLock::new();
     DEPLOYMENT.get_or_init(|| {

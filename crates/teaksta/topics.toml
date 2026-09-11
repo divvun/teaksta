@@ -9,9 +9,9 @@
 # replaces, where a topic was spread over three files: `activity.xml` under
 # `sme/src/main/webapp/activities/<name>/`, the UIMA aggregate descriptor it
 # named under `sme/desc/operators/`, and the delegate descriptor under
-# `sme/desc/enhancers/`. The `sme/` tree is still in the repository as the
-# spec's source-impl reference, and nothing reads it at runtime. Each value
-# carries the file it came from.
+# `sme/desc/enhancers/`. Those paths name the Java tree the port read them
+# out of, which is in this repository's history rather than its working tree.
+# Each value carries the file it came from.
 #
 # Fields:
 #   name       the registry name. `/api/activities` serves it, an enhancement

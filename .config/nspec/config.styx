@@ -1,82 +1,18 @@
-// Porting config — two impl blocks: source-impl (the original,
-// impl-only) and target-impl (the new language, impl + tests).
-// The markup wave annotates source-impl; the translate and test
-// waves give each rule a second impl site + a /test facet in
-// target-impl.
+// The port is finished, so the spec has one impl: the Rust that answers it.
+//
+// It was a dual-impl porting config while the Java was still here — a
+// source-impl block pinned every rule to the Konteaksta class it was read
+// out of, and target-impl pinned the same rule to the Rust that replaced it.
+// The Java trees were deleted once every rule had both, which retires the
+// source side of the contract; the rules themselves are unchanged, and their
+// markdown still lives under `docs/spec/port/sme/...` because that is where
+// each one came from. The Java's final annotated state is in this
+// repository's history, and its full SVN lineage is on the `svn/teaksta` and
+// `svn/view` branches.
 specs ({
     name teaksta,
     include (docs/spec/**/*.md),
     impls (
-        {
-            name source-impl,
-            languages (@java),
-            // Port source is the sme (Konteaksta) tree only; rus/ and
-            // rusVIEW/ are retained as reference, not port scope.
-            include (sme/src/main/java/**/*.java),
-            // Dead weight: unreachable from the ten live sme activity
-            // pipelines (vislcg3Pipe + vislcg3PostProc*). Verified via
-            // desc/operators flows and activity.xml references.
-            exclude (
-                sme/src/main/java/werti/uima/types/**
-                sme/src/main/java/werti/uima/ae/util/Morpha.java
-                sme/src/main/java/werti/uima/ae/util/Morphg.java
-                sme/src/main/java/werti/uima/ae/util/VerbVoiceConverter.java
-                sme/src/main/java/werti/uima/ae/util/PronounConverter.java
-                sme/src/main/java/werti/uima/ae/util/TransformationRule.java
-                sme/src/main/java/werti/uima/ae/MorphaLemmatizer.java
-                sme/src/main/java/werti/uima/ae/HTMLContentTypeAnnotator.java
-                sme/src/main/java/werti/uima/ae/MaltParser.java
-                sme/src/main/java/werti/uima/ae/TreeTaggerAnnotator.java
-                sme/src/main/java/werti/uima/ae/OpenNlpTagger.java
-                sme/src/main/java/werti/uima/ae/OpenNlpChunker.java
-                sme/src/main/java/werti/uima/ae/OpenNlpTokenizer.java
-                sme/src/main/java/werti/uima/ae/PhrasalVerbAnnotator.java
-                sme/src/main/java/werti/uima/ae/SentenceBoundaryDetector.java
-                sme/src/main/java/werti/server/OpenIDConsumer.java
-                sme/src/main/java/werti/uima/enhancer/BaseformPostEnhancer.java
-                sme/src/main/java/werti/uima/enhancer/HTMLContentTypeEnhancer.java
-                sme/src/main/java/werti/uima/enhancer/PoSEnhancer.java
-                sme/src/main/java/werti/uima/enhancer/WordEnhancer.java
-                sme/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java
-                sme/src/main/java/werti/uima/enhancer/Vislcg3NounSingularEnhancer.java
-                // Inert: `isValid` is the only entry point anything calls,
-                // `makeInvalid` and `addEnhId` are called from nowhere in the
-                // tree, and the `EnhancementId` type they write is itself
-                // excluded above. The guard at every caller is therefore
-                // unconditionally true, so neither the class nor the
-                // enhancement-id marker is ported.
-                sme/src/main/java/werti/util/CasUtils.java
-                sme/src/main/java/werti/util/RunDriver.java
-                sme/src/main/java/werti/util/HTMLFeatureExtractor.java
-                sme/src/main/java/werti/util/Transformer.java
-                sme/src/main/java/werti/util/Transformation.java
-                sme/src/main/java/werti/util/trans/**
-                // Retired with the concept, not merely unported. These three
-                // classes exist to recover ten topic definitions from a tree
-                // of XML: `Activities` scans one directory per topic,
-                // `ActivityConfiguration` reads each `activity.xml` through
-                // XPath and resolves its `<pipeline desc>` against the JVM
-                // classpath, and `Processors` parses the UIMA aggregate
-                // descriptor those expressions name and injects the
-                // activity's `server-cfg` entries into its
-                // `configurationParameterSettings`.
-                //
-                // The port carries the ten definitions in `topics.toml` and
-                // builds both flows directly, so there is no descriptor to
-                // parse, no classpath to stand in for and no directory to
-                // scan. What survived — hold one pipeline pair per topic,
-                // built once at startup, handed out by name — is the
-                // registry, and it is specified as part of the servlet's
-                // `init`, which is where the Java built it. Every parameter
-                // value these classes used to assemble at runtime is in
-                // `topics.toml` with the file it was read from recorded
-                // beside it, so nothing is lost by their going.
-                sme/src/main/java/werti/server/Activities.java
-                sme/src/main/java/werti/server/ActivityConfiguration.java
-                sme/src/main/java/werti/server/Processors.java
-            ),
-            mode @impl-only
-        }
         {name target-impl, languages (@rust), include (src/**/*.rs crates/**/*.rs), exclude (target/**), mode @both}
     )
 })
