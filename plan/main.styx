@@ -484,6 +484,7 @@ children (
                 title "Mechanical Javaism sweep: sentinels, lifecycles, allocation churn, dead code"
                 kind @refactor
                 deps (hd-error-paths)
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:51:16.042753Z
@@ -497,6 +498,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Follow-up from the hd-mode delivery: Mode now lives in server::api and is imported by enhancer/* and pipeline/flow.rs — worse layering than intended (pipeline/enhancer depending on the HTTP module). Rehome Mode to crate::types alongside Document during this sweep."
+                    }
+
+                    {
+                        at 2026-09-11T11:05:43.849642Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

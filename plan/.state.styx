@@ -61,5 +61,5 @@ assertions (
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
     {id hd-hints, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T10:24:20.52247Z}
-    {id hd-idioms, kind @doing, author "brendan@bbqsrc.net", at 2026-09-11T10:24:42.765039Z}
+    {id hd-idioms, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T11:05:43.849642Z}
 )
