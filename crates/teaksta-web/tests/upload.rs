@@ -58,10 +58,14 @@ fn the_usual_topics_and_exercises_are_offered() {
         assert!(html.contains(&label), "missing {label}");
     }
     for mode in offered().modes {
-        let label = mode.label.expect("every shipped mode is named");
-        assert!(html.contains(&label), "missing {label}");
+        assert!(
+            html.contains(&format!("class=\"seg-name\">{}<", mode.name)),
+            "missing {}",
+            mode.name
+        );
     }
     assert_eq!(html.matches("topic-chosen").count(), 1);
+    assert_eq!(html.matches("role=\"tab\"").count(), 4);
     assert!(html.contains("Adverbiála"));
 }
 
@@ -72,20 +76,25 @@ fn nothing_is_sent_without_a_file() {
     // The topics are all live in this registry, so the only dead control is
     // the submit button standing over an empty picker.
     assert_eq!(html.matches("disabled").count(), 1);
-    assert!(html.contains("class=\"go\""));
+    assert!(html.contains("class=\"tk-btn tk-btn--primary\""));
     assert!(html.contains("Sádde"));
-    assert!(html.contains("No text has been sent yet"));
+    // Nothing has been offered, so the drop target still asks for a file
+    // rather than naming one, and no gate has spoken.
+    assert!(html.contains("class=\"drop-label\""));
+    assert!(!html.contains("class=\"refusal\""));
 }
 
+/// What becomes of the file is the one either-or this form asks that the
+/// backend does not answer for itself, so it is the only radio group on it.
 #[test]
 fn a_file_is_kept_unless_refused() {
     let html = upload_page();
 
-    // Four exercise modes and the two answers to what becomes of the file.
-    assert_eq!(html.matches("type=\"radio\"").count(), 6);
+    assert_eq!(html.matches("type=\"radio\"").count(), 2);
     assert!(html.contains("Fiila vurkejuvvo nu ahte sáhtát geavahit liŋkka ođđasit eará háve."));
     assert!(html.contains("Fiila sihkkojuvvo gaskaija áigge."));
     assert_eq!(html.matches("name=\"keep\"").count(), 2);
+    assert_eq!(html.matches("class=\"opt\"").count(), 2);
 }
 
 #[test]

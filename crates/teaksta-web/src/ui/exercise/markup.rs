@@ -163,16 +163,19 @@ impl TokenSpan {
         accepts(&self.accepted_forms(), guess)
     }
 
-    /// The forms to show when a learner gives up on a token, separated the way
-    /// the legacy hint separated them.
-    pub fn hint(&self) -> String {
-        if !self.possible_forms.is_empty() {
-            self.possible_forms.join("/")
-        } else if !self.answer.is_empty() {
-            self.answer.join("/")
-        } else {
-            self.text.clone()
-        }
+    /// The base form to offer a learner who asks for help: the lemma the
+    /// enhancer read this word from.
+    ///
+    /// A hint is not an answer. The forms that count as right live in
+    /// `possible_forms` and `answer` and are never shown here — handing those
+    /// over would end the exercise rather than help with it. The lemma is the
+    /// thing worth taking away from a slot, and writing the right form from it
+    /// is the whole of the cloze exercise.
+    ///
+    /// A token the enhancer read no lemma for has no hint at all, which is why
+    /// this answers an option rather than falling back to the word itself.
+    pub fn hint(&self) -> Option<&str> {
+        self.lemma.as_deref().filter(|lemma| !lemma.is_empty())
     }
 
     fn read(attributes: &[(String, String)], inner: &str) -> Self {
@@ -825,24 +828,44 @@ mod tests {
         assert!(!token.accepts(""));
     }
 
+    /// The hint gives up the base form and nothing else. Every form that would
+    /// have been accepted stays behind it, so asking for help leaves the slot
+    /// still worth answering.
     #[test]
-    fn the_hint_separates_the_parallel_forms() {
-        assert_eq!(read(&[TOKEN]).tokens()[0].hint(), "viesu/viesuid");
+    fn the_hint_gives_the_lemma_not_the_answer() {
+        let markup = read(&[TOKEN]);
+        let token = &markup.tokens()[0];
+
+        assert_eq!(token.hint(), Some("viessu"));
+        assert!(token.accepts("viesu"));
+        assert!(token.accepts("viesuid"));
+        for form in token.accepted_forms() {
+            assert_ne!(token.hint(), Some(form.as_str()));
+        }
     }
 
+    /// The enhancer reads no lemma for a word it could not analyse, and a slot
+    /// over such a word has nothing to offer rather than something to guess.
     #[test]
-    fn the_hint_falls_back_to_the_form_read() {
+    fn a_token_with_no_lemma_has_no_hint() {
         let markup = read(&["<p><span class=\"teaksta-token\">viesu</span></p>"]);
 
-        assert_eq!(markup.tokens()[0].hint(), "viesu");
+        assert_eq!(markup.tokens()[0].hint(), None);
+        assert_eq!(
+            read(&["<p><span class=\"teaksta-token\" lemma=\"\">viesu</span></p>"]).tokens()[0]
+                .hint(),
+            None
+        );
     }
 
     #[test]
     fn the_answer_attribute_is_accepted_too() {
-        let markup = read(&["<p><span class=\"teaksta-token\" answer=\"lei leai\">lei</span></p>"]);
+        let markup = read(&[
+            "<p><span class=\"teaksta-token\" lemma=\"leat\" answer=\"lei leai\">lei</span></p>",
+        ]);
 
         assert!(markup.tokens()[0].accepts("leai"));
-        assert_eq!(markup.tokens()[0].hint(), "lei/leai");
+        assert_eq!(markup.tokens()[0].hint(), Some("leat"));
     }
 
     #[test]

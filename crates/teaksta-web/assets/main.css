@@ -1,361 +1,330 @@
+/* The teaksta design system.
+ *
+ * The token block is the palette, the type scale and the 8px space grid, and
+ * it is declared once here for the whole app. Everything below it is written
+ * in tokens alone, so a colour or a step is changed in one place.
+ *
+ * Two vocabularies meet on the same element. `teaksta-token` and the topic
+ * classes — `teaksta-Substantive` and its nine siblings — are the enhancer's
+ * own, written onto the analysed text by the backend; the `tk-` classes are
+ * this layer's, and carry state an exercise puts on a word. An enhancer class
+ * never styles anything by itself, which is what lets the click exercise hand
+ * the learner a page that gives nothing away.
+ */
+
 :root {
-    --ink: #1d2126;
-    --ink-soft: #5d6772;
-    --line: #d8dee6;
-    --paper: #fbfcfd;
-    --accent: #1f5fa8;
-    --accent-soft: #e8f0fa;
-    --warn: #a8321f;
-    --ok: #1f7a4d;
+    /* ── Paper & ink · warm neutrals ─────────────────────────────── */
+    --tk-paper: #FBF8F3;
+    --tk-paper-raised: #FFFDF9;
+    --tk-paper-sunken: #F4EFE7;
+    --tk-ink: #1A1613;
+    --tk-ink-muted: #5B5249;
+    --tk-ink-faint: #766E63;
+    --tk-line: #E7DFD2;
+    --tk-line-strong: #D3C8B7;
+    --tk-line-control: #8E8375;
+
+    /* ── Blue · primary, interactive, topic highlight ─────────────── */
+    --tk-blue: #0035AD;
+    --tk-blue-strong: #002A8A;
+    --tk-blue-soft: #2B58C4;
+    --tk-blue-tint: #E3E9F8;
+    --tk-blue-tint-strong: #CBD8F4;
+
+    /* ── Green · correct ──────────────────────────────────────────── */
+    --tk-green: #007229;
+    --tk-green-strong: #04581F;
+    --tk-green-tint: #DFEFE2;
+
+    /* ── Red · wrong, refused ─────────────────────────────────────── */
+    --tk-red: #D0402D;
+    --tk-red-strong: #A32A1A;
+    --tk-red-tint: #FAE4DF;
+
+    /* ── Yellow · hint ────────────────────────────────────────────── */
+    --tk-yellow: #FFCE00;
+    --tk-yellow-strong: #7A5400;
+    --tk-yellow-tint: #FFF0C4;
+
+    /* ── Type ─────────────────────────────────────────────────────── */
+    --tk-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --tk-font-serif: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --tk-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --tk-text-xs: 11.5px;
+    --tk-text-sm: 13px;
+    --tk-text-base: 15px;
+    --tk-text-md: 17px;
+    --tk-text-lg: 21px;
+    --tk-text-xl: 27px;
+    --tk-text-2xl: 34px;
+    --tk-prose-size: 19px;
+    --tk-prose-leading: 1.7;
+    --tk-prose-leading-inline: 2.15;
+    --tk-measure: 68ch;
+
+    /* ── Space · 8px grid ─────────────────────────────────────────── */
+    --tk-space-1: 4px;
+    --tk-space-2: 8px;
+    --tk-space-3: 12px;
+    --tk-space-4: 16px;
+    --tk-space-5: 24px;
+    --tk-space-6: 32px;
+    --tk-space-7: 48px;
+    --tk-space-8: 64px;
+
+    /* ── Radii · shadow · focus ───────────────────────────────────── */
+    --tk-radius-sm: 6px;
+    --tk-radius: 10px;
+    --tk-radius-lg: 14px;
+    --tk-radius-pill: 999px;
+    --tk-shadow: 0 1px 2px rgba(26, 22, 19, 0.04), 0 10px 28px -16px rgba(26, 22, 19, 0.28);
+    --tk-focus: #0035AD;
 }
 
-* {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font: 16px/1.55 "Helvetica Neue", Arial, sans-serif;
-}
-
-.shell {
-    max-width: 52rem;
-    margin: 0 auto;
-    padding: 0 1.5rem 4rem;
-}
-
-.chrome {
-    padding: 2.5rem 0 1.5rem;
-    border-bottom: 1px solid var(--line);
-}
-
-.wordmark {
-    display: inline-block;
-    font-size: 2.1rem;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    text-decoration: none;
-}
-
-.chrome-lead {
-    margin: 0.4rem 0 0;
-    color: var(--ink-soft);
-}
-
-.chrome-main {
-    padding-top: 2rem;
-}
-
-.chrome-foot {
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--line);
-    color: var(--ink-soft);
-    font-size: 0.85rem;
-}
-
-.gloss {
-    display: block;
-    color: var(--ink-soft);
-    font-size: 0.8rem;
-    font-weight: 400;
-    line-height: 1.35;
-}
-
-h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1.1rem;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
-
-.topics {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-    gap: 0.5rem;
-    margin: 0 0 2rem;
     padding: 0;
-    list-style: none;
+    min-height: 100vh;
+    background: var(--tk-paper);
+    color: var(--tk-ink);
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-base);
+    line-height: 1.5;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
 }
 
-.topic {
-    width: 100%;
-    padding: 0.7rem 0.9rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    background: #fff;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
+:focus-visible {
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
 }
 
-.topic:hover {
-    border-color: var(--accent);
-}
-
-.topic-chosen {
-    border-color: var(--accent);
-    background: var(--accent-soft);
-}
-
-/* A topic the deployment has switched off is shown but cannot be chosen. */
-.topic:disabled {
-    color: var(--ink-soft);
-    cursor: not-allowed;
-    opacity: 0.55;
-}
-
-.topic:disabled:hover {
-    border-color: var(--line);
-}
-
-.topic-sme {
-    display: block;
+/* ── Wordmark ─────────────────────────────────────────────────────── */
+.tk-wordmark {
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-lg);
     font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--tk-ink);
+    text-decoration: none;
 }
 
-.entry {
-    display: block;
-    padding: 1.5rem;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: #fff;
-}
-
-.field {
-    display: block;
-    margin-bottom: 0.4rem;
+/* ── Small text roles ─────────────────────────────────────────────── */
+.tk-eyebrow {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
     font-weight: 600;
-}
-
-.url-input {
-    width: 100%;
-    padding: 0.6rem 0.7rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    font: inherit;
-}
-
-.url-input:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-}
-
-.exercises {
-    margin: 1.5rem 0 1.25rem;
-    padding: 0.75rem 1rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-}
-
-legend {
-    padding: 0 0.4rem;
-    font-size: 1.1rem;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
-.exercise {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: baseline;
-    gap: 0 0.6rem;
-    padding: 0.35rem 0;
-    cursor: pointer;
-}
-
-.exercise input {
-    grid-row: span 2;
-}
-
-.exercise-sme {
-    font-weight: 600;
-}
-
-.go {
-    padding: 0.6rem 1.6rem;
-    border: 0;
-    border-radius: 6px;
-    background: var(--accent);
-    color: #fff;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.go:disabled {
-    background: var(--line);
-    color: var(--ink-soft);
-    cursor: not-allowed;
-}
-
-.chosen-note {
-    margin-top: 1rem;
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-}
-
-/* The upload form: the same entry form, sourced from a file of the teacher's
-   own rather than from an address. */
-
-.file-input {
-    display: block;
-    width: 100%;
-    padding: 0.6rem 0.7rem;
-    border: 1px dashed var(--line);
-    border-radius: 6px;
-    font: inherit;
-    cursor: pointer;
-}
-
-.file-input:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-}
-
-.file-input:disabled {
-    color: var(--ink-soft);
-    cursor: progress;
-}
-
-.file-note {
-    margin: 0.5rem 0 0;
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-}
-
-.keeping {
-    margin: 1.5rem 0 0;
-    padding: 0.75rem 1rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-}
-
-.keep-lead {
-    margin: 0 0 0.5rem;
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-}
-
-/* The way across to the other entry form, on both of them. */
-.swap {
-    display: inline-block;
-    margin-top: 1.5rem;
-    color: var(--accent);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.swap:hover {
-    text-decoration: underline;
-}
-
-.instruction {
-    margin: 0 0 1.5rem;
-    font-size: 1.15rem;
-    font-weight: 600;
-}
-
-.params {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 0.35rem 1rem;
-    margin: 0 0 1.5rem;
-    font-size: 0.9rem;
-}
-
-.params dt {
-    color: var(--ink-soft);
-}
-
-.params dd {
-    margin: 0;
-}
-
-.param-url {
-    overflow-wrap: anywhere;
-    font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 0.82rem;
-}
-
-.panel {
-    min-height: 10rem;
-    padding: 1.25rem;
-    border: 1px dashed var(--line);
-    border-radius: 8px;
-    background: #fff;
-}
-
-.state {
-    margin: 0;
-    font-weight: 600;
-}
-
-.state-pending {
-    color: var(--ink-soft);
-}
-
-.state-ready {
-    color: var(--ok);
-}
-
-.state-error {
-    color: var(--warn);
-}
-
-.back {
-    display: inline-block;
-    margin-top: 1.5rem;
-    color: var(--accent);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.back:hover {
-    text-decoration: underline;
-}
-
-/* The analysed text and the four exercises woven into it. The colours are the
-   ones each activity.xml declares under client-cfg, so a learner who knows the
-   legacy pages reads these the same way. */
-
-.score {
-    margin: 0 0 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--line);
-    font-weight: 600;
-}
-
-.enhanced {
-    font-size: 1.05rem;
-    line-height: 1.9;
-}
-
-.enhanced-line,
-.enhanced-head,
-.enhanced-item,
-.enhanced-quote {
-    margin: 0 0 0.9rem;
-}
-
-.enhanced-head {
-    font-size: 1.15rem;
-    text-transform: none;
+.tk-gloss {
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+    font-weight: 400;
     letter-spacing: 0;
 }
 
-.enhanced-quote {
-    padding-left: 1rem;
-    border-left: 3px solid var(--line);
-    color: var(--ink-soft);
+.tk-sme {
+    font-weight: 600;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: var(--tk-text-xl);
+}
+
+h2 {
+    font-size: var(--tk-text-md);
+}
+
+h3 {
+    font-size: var(--tk-text-base);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.tk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tk-space-2);
+    padding: 10px var(--tk-space-5);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-btn:hover {
+    border-color: var(--tk-blue);
+    color: var(--tk-blue-strong);
+}
+
+.tk-btn--primary {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue);
+    color: #FFFFFF;
+}
+
+.tk-btn--primary:hover {
+    border-color: var(--tk-blue-strong);
+    background: var(--tk-blue-strong);
+    color: #FFFFFF;
+}
+
+.tk-btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--tk-blue);
+}
+
+.tk-btn--quiet:hover {
+    background: var(--tk-blue-tint);
+    border-color: transparent;
+}
+
+.tk-btn[disabled] {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    cursor: not-allowed;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────── */
+.tk-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--tk-space-2);
+    padding: 5px var(--tk-space-3);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    font-size: var(--tk-text-sm);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.tk-chip--topic {
+    border-color: var(--tk-blue-tint-strong);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-chip--topic .tk-gloss {
+    color: var(--tk-blue-strong);
+    opacity: 0.72;
+}
+
+.tk-chip .tk-sme {
+    font-weight: 600;
+}
+
+/* ── Score chip ───────────────────────────────────────────────────── */
+.tk-score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    padding: 7px var(--tk-space-4) 7px var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    box-shadow: 0 1px 2px rgba(26, 22, 19, 0.04);
+}
+
+.tk-score-label {
+    font-size: var(--tk-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+}
+
+.tk-score-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.tk-dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.tk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tk-line-strong);
+}
+
+.tk-dot--on {
+    background: var(--tk-green);
+}
+
+.tk-dot--topic {
+    background: var(--tk-blue);
+}
+
+/* ══ The analysed text ═════════════════════════════════════════════ */
+.tk-reading {
+    max-width: var(--tk-measure);
+}
+
+.tk-prose {
+    margin: 0 0 var(--tk-space-4);
+    color: var(--tk-ink);
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-prose-size);
+    line-height: var(--tk-prose-leading);
+    hanging-punctuation: first;
+}
+
+.tk-prose:last-child {
+    margin-bottom: 0;
+}
+
+/* Inline controls add to the line box, so interactive modes ride a
+   slightly looser leading and the rhythm holds. */
+.tk-prose--inline {
+    line-height: var(--tk-prose-leading-inline);
+}
+
+/* The blocks the backend sent, each rendered as the element it arrived as. */
+.enhanced-head {
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    letter-spacing: -0.008em;
+    line-height: 1.3;
 }
 
 .enhanced-item {
-    margin-left: 1.5rem;
+    margin-left: var(--tk-space-5);
+    list-style: disc;
+}
+
+.enhanced-quote {
+    padding-left: var(--tk-space-4);
+    border-left: 3px solid var(--tk-line-strong);
+    color: var(--tk-ink-muted);
 }
 
 .enhanced img {
@@ -363,87 +332,1085 @@ legend {
     height: auto;
 }
 
-/* colorizeStyle */
-.token-hit {
-    color: #22f;
-    font-weight: bold;
+/* A word the enhancer wrapped. It carries nothing of its own: an exercise
+   gives it whatever state it has, so nothing is given away before the
+   learner answers. */
+.teaksta-token {
+    border-radius: 4px;
 }
 
-/* The clickable words carry no styling of their own until they are picked,
-   so the exercise gives nothing away before the learner answers. */
-.token-pick {
-    padding: 0;
+/* A word-sized band an exercise can put a state on without disturbing the
+   line it sits in. The negative margin cancels the padding exactly, so a
+   banded word takes the same horizontal advance as the bare word and the
+   prose keeps its rhythm. */
+.tk-slot {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    border-radius: 4px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Highlight · colorize ─────────────────────────────────────────── */
+/* Written on the state class alone rather than on one topic's class, so that
+   every topic the deployment offers highlights the same way. */
+.tk-hit {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: inset 0 -0.09em 0 rgba(0, 42, 138, 0.22);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Pickable word · click ────────────────────────────────────────── */
+.tk-pick {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
     border: 0;
-    background: none;
+    border-radius: 4px;
+    background: transparent;
     color: inherit;
     font: inherit;
     line-height: inherit;
+    text-align: inherit;
     cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-color 120ms ease, color 120ms ease;
 }
 
-.token-pick:hover:enabled {
-    background: var(--accent-soft);
+.tk-pick:hover:enabled,
+.tk-pick.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
 }
 
-.token-pick:disabled {
-    cursor: text;
+.tk-pick.tk-correct,
+.tk-pick.tk-wrong {
+    cursor: default;
 }
 
-.pick-right {
-    color: green;
-    font-weight: bold;
+.tk-correct {
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
 }
 
-.pick-wrong {
-    color: red;
-    font-weight: bold;
+.tk-wrong {
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
 }
 
-.mc-pick {
-    width: auto;
-    font: inherit;
+/* State is never colour alone: a mark rides along with it. */
+.tk-mark {
+    margin-left: 0.22em;
+    font-family: var(--tk-font-sans);
+    font-size: 0.62em;
+    font-weight: 700;
+    vertical-align: 0.35em;
+    opacity: 0.75;
+}
+
+/* A mark standing beside a slot rather than inside its band has no tint to
+   read against, so it carries the ink itself. */
+.tk-mark--ok {
+    color: var(--tk-green-strong);
+}
+
+.tk-mark--no {
+    color: var(--tk-red-strong);
+}
+
+/* ── Chooser · mc ─────────────────────────────────────────────────── */
+.tk-mc-wrap {
+    position: relative;
+    display: inline-block;
     vertical-align: baseline;
 }
 
-.mc-wrong {
-    color: red;
-    font-weight: bold;
-}
-
-/* clozeDefaultStyle */
-.cloze-box {
-    width: 35px;
-    border: 1px solid black;
-    background: white;
+.tk-mc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 4.6em;
+    padding: 0.1em 0.5em 0.14em 0.55em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
     font: inherit;
-    font-weight: bold;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
 }
 
-/* clozeWrongStyle */
-.cloze-miss {
-    color: red;
+.tk-mc:hover {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
 }
 
-/* clozeHintStyle */
-.cloze-hint {
-    width: 15px;
-    margin-left: 2px;
+.tk-mc[aria-expanded="true"] {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: 0 0 0 3px rgba(0, 53, 173, 0.16);
+}
+
+/* A form was taken and did not fit. The slot stays a control so it can be
+   answered again, and says so with a mark as well as a colour. */
+.tk-mc.tk-wrong {
+    border-color: var(--tk-red);
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+.tk-mc-value {
+    flex: 1;
+}
+
+.tk-mc-value--empty {
+    color: var(--tk-ink-faint);
+}
+
+.tk-caret {
+    flex: none;
+    color: var(--tk-ink-faint);
+}
+
+.tk-mc[aria-expanded="true"] .tk-caret {
+    color: var(--tk-blue);
+    transform: rotate(180deg);
+}
+
+.tk-mc-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    padding: var(--tk-space-1);
+    border: 1px solid var(--tk-line-strong);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+    font-family: var(--tk-font-serif);
+    font-size: 0.92em;
+    line-height: 1.3;
+}
+
+/* Spans, not a list: the menu lives inside the paragraph it belongs to, and
+   a <ul> there would close the <p> out from under it. */
+.tk-mc-option {
+    display: block;
+    padding: 0.32em 0.7em;
+    border-radius: var(--tk-radius-sm);
+    color: var(--tk-ink);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tk-mc-option:hover,
+.tk-mc-option.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+/* The option the keyboard is on. Focus stays on the chooser itself while the
+   menu is open, so the cursor is drawn here rather than left to a focus ring
+   no element would carry. */
+.tk-mc-option[aria-selected="true"] {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: inset 0 0 0 1px var(--tk-blue);
+}
+
+/* An open menu is an overlay inside the reading surface, so the stage keeps
+   room for it rather than letting it spill past its own edge. */
+.tk-reading--menus {
+    padding-bottom: 96px;
+}
+
+/* ── Slot · cloze ─────────────────────────────────────────────────── */
+.tk-cloze {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28em;
+    vertical-align: baseline;
+}
+
+.tk-cloze-input {
+    padding: 0.1em 0.4em 0.14em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+}
+
+.tk-cloze-input::placeholder {
+    color: var(--tk-ink-faint);
+    opacity: 1;
+}
+
+.tk-cloze-input:focus,
+.tk-cloze-input.tk-is-focus {
+    border-color: var(--tk-blue);
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+.tk-cloze-input.tk-correct {
+    border-color: var(--tk-green);
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
+}
+
+.tk-cloze-input.tk-wrong {
+    border-color: var(--tk-red);
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+.tk-hint-btn {
+    flex: none;
+    width: 1.5em;
+    height: 1.5em;
     padding: 0;
-    border: 1px solid #a0a0a0;
-    background: #e9e9e9;
-    color: #a0a0a0;
+    border: 1px solid var(--tk-line-control);
+    border-radius: 50%;
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink-muted);
+    font-family: var(--tk-font-sans);
+    font-size: 0.68em;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    align-self: center;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-hint-btn:hover,
+.tk-hint-btn.tk-is-hover {
+    border-color: var(--tk-yellow-strong);
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+}
+
+.tk-hint {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0.08em 0.5em 0.12em;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-yellow-tint);
+    color: var(--tk-yellow-strong);
+    font-family: var(--tk-font-sans);
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    vertical-align: 0.1em;
+}
+
+.tk-hint em {
+    font-family: var(--tk-font-serif);
+    font-size: 1.24em;
+    font-style: normal;
+    font-weight: 400;
+}
+
+.tk-hint-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35em;
+    height: 1.35em;
+    border-radius: 50%;
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    align-self: center;
+}
+
+/* ── Exercise head ────────────────────────────────────────────────── */
+.tk-exhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--tk-space-5);
+}
+
+.tk-prompt {
+    margin: 0;
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.tk-prompt .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+/* ══ Top bar ═══════════════════════════════════════════════════════ */
+.bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-5);
+    padding: var(--tk-space-4) var(--tk-space-7);
+    border-bottom: 1px solid var(--tk-line);
+    background: var(--tk-paper-raised);
+}
+
+.bar-right {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-5);
+}
+
+.bar-link {
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    text-decoration: none;
+    text-underline-offset: 3px;
+}
+
+.bar-link:hover {
+    color: var(--tk-blue-strong);
+    text-decoration: underline;
+}
+
+/* ── Column ───────────────────────────────────────────────────────── */
+.col {
+    max-width: 816px;
+    margin: 0 auto;
+    padding: var(--tk-space-7) var(--tk-space-7) var(--tk-space-8);
+}
+
+.foot {
+    margin: var(--tk-space-6) 0 0;
+    text-align: center;
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+}
+
+/* ── Context header ───────────────────────────────────────────────── */
+.ctx {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--tk-space-5);
+    flex-wrap: wrap;
+    margin-bottom: var(--tk-space-5);
+}
+
+.ctx h1 {
+    margin: 0;
+    font-size: var(--tk-text-2xl);
+    letter-spacing: -0.018em;
+}
+
+.ctx-gloss {
+    display: block;
+    margin-top: var(--tk-space-2);
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-md);
+    font-weight: 400;
+}
+
+.ctx-chips {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-2);
+    flex-wrap: wrap;
+}
+
+.src {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-2);
+    flex-wrap: wrap;
+    margin: 0 0 var(--tk-space-5);
+    padding-bottom: var(--tk-space-4);
+    border-bottom: 1px solid var(--tk-line);
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.src-title {
+    color: var(--tk-ink);
+    font-weight: 600;
+}
+
+.src-url {
+    overflow-wrap: anywhere;
+    font-family: var(--tk-font-mono);
+    font-size: var(--tk-text-xs);
+    color: var(--tk-ink-faint);
+}
+
+.src-sep {
+    color: var(--tk-line-strong);
+}
+
+/* ── Stage ────────────────────────────────────────────────────────── */
+.stage {
+    padding: var(--tk-space-7) var(--tk-space-8) var(--tk-space-8);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+.stage .tk-reading {
+    margin: 0 auto;
+}
+
+.stage-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-4);
+    flex-wrap: wrap;
+    margin-top: var(--tk-space-7);
+    padding-top: var(--tk-space-5);
+    border-top: 1px solid var(--tk-line);
+}
+
+.stage-swaps {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-2);
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+/* ══ Field heads, shared by the topic list and the mode switch ═════ */
+.tk-fieldhead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--tk-space-3);
+    margin-bottom: var(--tk-space-4);
+}
+
+.tk-fieldhead h2 {
+    font-size: var(--tk-text-md);
+}
+
+/* ── Topic picker ─────────────────────────────────────────────────── */
+.picker {
+    margin-bottom: var(--tk-space-6);
+}
+
+.topics {
+    display: grid;
+    gap: var(--tk-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.topic {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    width: 100%;
+    padding: 11px var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
+}
+
+.topic:hover {
+    border-color: var(--tk-blue-soft);
+    background: var(--tk-blue-tint);
+}
+
+.topic-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.topic-sme {
+    display: block;
+    font-weight: 600;
+    letter-spacing: -0.003em;
+}
+
+.topic-en {
+    display: block;
+    margin-top: 1px;
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+}
+
+.topic-tick {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--tk-line-control);
+    border-radius: 50%;
+    background: var(--tk-paper-raised);
+    color: transparent;
+}
+
+/* ── Chosen ───────────────────────────────────────────────────────── */
+.topic-chosen {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+    box-shadow: inset 0 0 0 1px var(--tk-blue);
+}
+
+.topic-chosen .topic-sme {
+    color: var(--tk-blue-strong);
+}
+
+.topic-chosen .topic-en {
+    color: var(--tk-blue-strong);
+    opacity: 0.75;
+}
+
+.topic-chosen .topic-tick {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue);
+    color: #FFFFFF;
+}
+
+/* ── Switched off by the deployment ───────────────────────────────── */
+.topic[disabled] {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    cursor: not-allowed;
+}
+
+.topic[disabled] .topic-en {
+    color: var(--tk-ink-muted);
+}
+
+.topic[disabled] .topic-tick {
+    border-color: var(--tk-line-strong);
+    background: transparent;
+}
+
+.topic[disabled]:hover {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+}
+
+/* ── Mode switch ──────────────────────────────────────────────────── */
+.exercises {
+    margin-bottom: var(--tk-space-6);
+}
+
+.seg {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--tk-space-1);
+    padding: var(--tk-space-1);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-sunken);
+}
+
+.seg-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px var(--tk-space-2) 11px;
+    border: 1px solid transparent;
+    border-radius: var(--tk-radius-sm);
+    background: transparent;
+    color: var(--tk-ink-muted);
     font: inherit;
     cursor: pointer;
-    vertical-align: middle;
+    transition: background-color 130ms ease, color 130ms ease, border-color 130ms ease;
 }
 
-/* clozeHintSolvedStyle */
-.cloze-shown {
-    color: #22f;
-    font-weight: bold;
+.seg-item:hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
 }
 
-.cloze-lemma {
-    color: var(--ink-soft);
-    font-size: 0.85em;
+.seg-name {
+    font-size: var(--tk-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+}
+
+.seg-hint {
+    font-size: var(--tk-text-xs);
+    letter-spacing: 0.005em;
+    opacity: 0.85;
+}
+
+.seg-item[aria-selected="true"] {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: inset 0 0 0 1px var(--tk-blue);
+}
+
+.seg-item[aria-selected="true"] .seg-hint {
+    opacity: 0.78;
+}
+
+/* ── What the chosen mode asks ────────────────────────────────────── */
+.seg-say {
+    display: flex;
+    align-items: baseline;
+    gap: var(--tk-space-3);
+    flex-wrap: wrap;
+    margin-top: var(--tk-space-4);
+    padding: var(--tk-space-4) var(--tk-space-4) var(--tk-space-4) var(--tk-space-5);
+    border-left: 3px solid var(--tk-blue);
+    border-radius: 0 var(--tk-radius-sm) var(--tk-radius-sm) 0;
+    background: var(--tk-blue-tint);
+}
+
+.seg-say-sme {
+    color: var(--tk-blue-strong);
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.seg-say .tk-gloss {
+    color: var(--tk-blue-strong);
+    opacity: 0.75;
+}
+
+/* ══ The entry panel ═══════════════════════════════════════════════ */
+.start {
+    padding: var(--tk-space-6);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+.start-head {
+    margin-bottom: var(--tk-space-5);
+}
+
+.start-head h2 {
+    font-size: var(--tk-text-lg);
+    letter-spacing: -0.008em;
+}
+
+.start-head p {
+    margin: var(--tk-space-2) 0 0;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.55;
+}
+
+.chosen-ctx {
+    display: flex;
+    gap: var(--tk-space-2);
+    flex-wrap: wrap;
+    margin: 0 0 var(--tk-space-6);
+    padding-bottom: var(--tk-space-5);
+    border-bottom: 1px solid var(--tk-line);
+}
+
+.field {
+    display: block;
+    margin-bottom: var(--tk-space-2);
+    font-weight: 600;
+}
+
+.field .tk-gloss {
+    margin-left: var(--tk-space-2);
+    font-weight: 400;
+}
+
+.row {
+    display: flex;
+    gap: var(--tk-space-2);
+}
+
+.input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px var(--tk-space-4);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+}
+
+.input::placeholder {
+    color: var(--tk-ink-faint);
+    opacity: 1;
+}
+
+.input:focus {
+    border-color: var(--tk-blue);
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+.row .tk-btn {
+    flex: none;
+}
+
+/* ── The seam between the two ways in ─────────────────────────────── */
+.or {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-4);
+    margin: var(--tk-space-6) 0;
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.or::before,
+.or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--tk-line);
+}
+
+/* ── Upload ───────────────────────────────────────────────────────── */
+.drop {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-4);
+    padding: var(--tk-space-5);
+    border: 1px dashed var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-sunken);
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
+}
+
+.drop:hover {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+}
+
+.drop-icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    border: 1px solid var(--tk-line);
+    color: var(--tk-blue);
+}
+
+.drop-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.drop-label {
+    display: block;
+    font-weight: 600;
+}
+
+.drop-sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.keep {
+    margin-top: var(--tk-space-5);
+}
+
+.keep-lead {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.55;
+}
+
+.opts {
+    display: grid;
+    gap: var(--tk-space-2);
+}
+
+.opt {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: var(--tk-space-3);
+    padding: var(--tk-space-3) var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    cursor: pointer;
+}
+
+.opt:hover {
+    border-color: var(--tk-blue-soft);
+}
+
+.opt input {
+    margin: 3px 0 0;
+    accent-color: var(--tk-blue);
+    width: 15px;
+    height: 15px;
+}
+
+.opt-text {
+    font-size: var(--tk-text-sm);
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--tk-space-3);
+    margin-top: var(--tk-space-5);
+}
+
+/* ══ Upload refused ════════════════════════════════════════════════ */
+.refusal {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--tk-space-4);
+    margin-top: var(--tk-space-5);
+    padding: var(--tk-space-5);
+    border: 1px solid var(--tk-red);
+    border-left-width: 3px;
+    border-radius: var(--tk-radius);
+    background: var(--tk-red-tint);
+}
+
+.refusal-icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--tk-red);
+    color: #FFFFFF;
+}
+
+.refusal-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.refusal-sme {
+    margin: 0;
+    color: var(--tk-red-strong);
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.refusal-en {
+    margin: var(--tk-space-2) 0 0;
+    color: var(--tk-red-strong);
+    font-size: var(--tk-text-sm);
+    line-height: 1.5;
+    opacity: 0.88;
+}
+
+.refusal-act {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    flex-wrap: wrap;
+    margin-top: var(--tk-space-4);
+}
+
+.refusal .tk-btn {
+    border-color: var(--tk-red-strong);
+    background: transparent;
+    color: var(--tk-red-strong);
+    padding: 8px var(--tk-space-4);
+    font-size: var(--tk-text-sm);
+}
+
+.refusal .tk-btn:hover {
+    background: var(--tk-red-strong);
+    border-color: var(--tk-red-strong);
+    color: #FFFFFF;
+}
+
+.code {
+    padding: 3px 8px;
+    border-radius: var(--tk-radius-pill);
+    background: rgba(163, 42, 26, 0.12);
+    color: var(--tk-red-strong);
+    font-family: var(--tk-font-mono);
+    font-size: var(--tk-text-xs);
+    letter-spacing: 0.01em;
+}
+
+/* ══ How it went ═══════════════════════════════════════════════════ */
+.result {
+    margin-top: var(--tk-space-7);
+    padding-top: var(--tk-space-6);
+    border-top: 1px solid var(--tk-line);
+}
+
+.res {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--tk-space-6);
+    flex-wrap: wrap;
+}
+
+.res-figure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--tk-space-3);
+}
+
+.res-num {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--tk-green-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.res-of {
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    color: var(--tk-ink-muted);
+}
+
+.res-label {
+    margin: var(--tk-space-3) 0 0;
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.res-label .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.meter {
+    display: flex;
+    gap: 3px;
+    height: 8px;
+    margin: var(--tk-space-5) 0 var(--tk-space-6);
+    overflow: hidden;
+    border-radius: var(--tk-radius-pill);
+}
+
+.meter span {
+    flex: 1;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-line-strong);
+}
+
+.meter .on { background: var(--tk-green); }
+.meter .miss { background: var(--tk-red); }
+
+/* ── What the learner got ─────────────────────────────────────────── */
+.review {
+    display: grid;
+    gap: var(--tk-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rev {
+    display: grid;
+    grid-template-columns: 20px minmax(120px, 1fr) minmax(150px, 1.4fr);
+    align-items: baseline;
+    gap: var(--tk-space-4);
+    padding: 9px var(--tk-space-3);
+    border-radius: var(--tk-radius-sm);
+}
+
+.rev:nth-child(odd) {
+    background: var(--tk-paper-sunken);
+}
+
+.rev-mark {
+    font-size: var(--tk-text-sm);
+    font-weight: 700;
+    text-align: center;
+}
+
+.rev-mark.ok { color: var(--tk-green-strong); }
+.rev-mark.no { color: var(--tk-red-strong); }
+
+.rev-word {
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-text-md);
+}
+
+.rev-word.no {
+    color: var(--tk-red-strong);
+}
+
+.rev-meta {
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.rev-meta em {
+    font-family: var(--tk-font-serif);
+    font-size: 1.08em;
+    font-style: normal;
+    color: var(--tk-ink);
+}
+
+/* ══ Waiting, and what went wrong ══════════════════════════════════ */
+.state {
+    margin: 0;
+    font-weight: 600;
+}
+
+.state .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.state-pending {
+    color: var(--tk-ink-muted);
+}
+
+.state-error {
+    color: var(--tk-red-strong);
 }

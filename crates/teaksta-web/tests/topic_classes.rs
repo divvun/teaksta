@@ -49,6 +49,7 @@ fn colorize_page() -> String {
         ColorizeModeProps {
             markup: Rc::new(read(COLORIZE)),
             topic: topic(),
+            prompt: "Geahča ivdnejuvvon sániid.".to_string(),
         },
     );
     dom.rebuild_in_place();
@@ -93,19 +94,25 @@ fn per_tag_classes_ride_alongside_the_topic_class() {
     assert_eq!(carried("teaksta-Conjunctions"), 3);
 }
 
+/// The highlight is written on the state class, not on one topic's own, so
+/// this topic wears the same band the noun topics wear — which is the whole
+/// point of a class the enhancer never styles by itself.
 #[test]
 fn colorize_styles_every_conjunction() {
     let markup = read(COLORIZE);
     let html = colorize_page();
 
-    assert_eq!(
-        html.matches(&format!("class=\"{HIT_CLASS}\"")).count(),
-        markup.hits(&topic())
-    );
+    assert_eq!(html.matches(HIT_CLASS).count(), markup.hits(&topic()));
+    // The per-tag class the enhancer wrote alongside the topic's own rides
+    // along untouched, with the highlight added after both.
+    assert!(html.contains(&format!(
+        "teaksta-token teaksta-Conjunctions teaksta-CC {HIT_CLASS}"
+    )));
     for form in ["ja", "muhto", "go"] {
         assert!(html.contains(&format!(">{form}</span>")), "missing {form}");
     }
-    assert!(html.contains("Ivdnejuvvon sánit: 3"));
+    assert!(html.contains("Ivdnejuvvon sánit"));
+    assert!(html.contains("class=\"tk-score-count\">3<"));
     assert!(html.contains("beatnaga ikte."));
 }
 

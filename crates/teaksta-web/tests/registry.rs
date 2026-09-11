@@ -64,16 +64,27 @@ fn the_picker_lists_every_topic_in_sami() {
     }
 }
 
+/// The four modes are a segmented switch rather than a radio list: they are
+/// four ways into one text, and the switch says so. Each segment carries the
+/// backend's own name for the mode, and the chosen one's North Sámi
+/// instruction is spelled out under the row in both languages.
 #[test]
-fn the_form_offers_the_url_field_and_radios() {
+fn the_form_offers_a_url_field_and_modes() {
     let html = picker_page();
 
     assert!(html.contains("name=\"url\""));
-    assert_eq!(html.matches("type=\"radio\"").count(), 4);
+    assert_eq!(html.matches("role=\"tab\"").count(), 4);
+    assert_eq!(html.matches("aria-selected=\"true\"").count(), 1);
+    assert!(!html.contains("type=\"radio\""));
     for mode in offered().modes {
-        let label = mode.label.expect("every shipped mode is named");
-        assert!(html.contains(&label), "missing {label}");
+        assert!(
+            html.contains(&format!("class=\"seg-name\">{}<", mode.name)),
+            "missing {}",
+            mode.name
+        );
     }
+    assert!(html.contains("Geahča ivdnejuvvon sániid."));
+    assert!(html.contains("Look at the coloured words."));
 }
 
 #[test]
@@ -81,10 +92,12 @@ fn the_first_topic_starts_out_chosen() {
     let html = picker_page();
 
     assert_eq!(html.matches("topic-chosen").count(), 1);
-    assert!(html.contains("aria-pressed=\"true\">"));
+    assert!(html.contains("aria-pressed=\"true\""));
     assert!(html.contains("Adverbiála"));
 }
 
+/// A topic a deployment has switched off stays in the list and sunken rather
+/// than disappearing, so the list never changes shape.
 #[test]
 fn a_topic_the_backend_switched_off_is_dead() {
     let mut registry = offered();
@@ -92,7 +105,10 @@ fn a_topic_the_backend_switched_off_is_dead() {
 
     let html = render(registry);
 
-    assert_eq!(html.matches("<button").count(), 11);
+    // Ten topics, four mode segments, and the button that sends the form.
+    assert_eq!(html.matches("<button").count(), 15);
+    assert_eq!(html.matches("class=\"topic\"").count(), 9);
     assert_eq!(html.matches("disabled").count(), 2);
+    assert!(html.contains("Adverbiála"));
     assert!(html.contains("Konjunkšuvnnat"));
 }
