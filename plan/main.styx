@@ -663,6 +663,34 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-hygiene
+                title "Exercise text hygiene: sanitize block markup, decoy words carry letters"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-11T13:14:44.812008Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator reports from real pages (2026-09-11): (1) links are not stripped — confirmed: render_blocks passes live <a href> through and the frontend renders them (clicking navigates away mid-exercise); operator directs using the proper sanitizer: https://github.com/necessary-nu/sanitizer-rs (WHATWG HTML Sanitizer API implementation; read its repo for the config API). Sanitize the exercise BLOCK payload: unwrap anchors keeping their text (teaksta-token spans inside must survive untouched), remove non-content markers (sup/citation references like [1] — which currently also yield a clickable decoy \"1\"), keep semantic inline elements (em/strong/i/b). The whole-page GET render may keep its links — the exercise payload is the scope. (2) \"counting punctuation as words\": operator saw \".\" as a word; not yet reproduced (all probes keep punctuation outside spans; suspect NBSP/offset-skew or a page shape we lack — verify against the operator's URL when known). Direct fix regardless: TokenEnhancer's decoy filter currently requires only one non-punctuation char (space/digit/symbol qualifies) — tighten to require at least one LETTER (\\p{L}), spec-bumped honestly; kills bare digits, symbols, and any punctuation that slips through by whatever mechanism. Related: the \"channel lagged by N\" divvun-runtime failure blocks big-page verification; do not attempt to fix divvun-runtime from this repo."
+                    }
+                )
+            }
+
+            {
+                id ux-stream
+                title "Feed the pipelines incrementally: chunked forwards instead of one-shot documents"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-11T13:21:34.894948Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator-diagnosed (2026-09-11): the morpho seam one-shots whole documents into divvun-runtime pipelines (single PipelineValue::String per forward), so batch producers burst against the runtime's 16-slot stage buffers and tokio broadcast drops values — \"pipeline \\\"sentences\\\" failed: channel lagged by N\" on any document with enough sentences. Operator ruled: the fix is in TEAKSTA's seam usage — stream documents in incrementally (chunked forwards), NOT in divvun-runtime. Reproduction without network: POST /api/enhance/blocks with 60 inline sentences → \"channel lagged by 45\"; se.wikipedia Sápmi/Kárášjohka/Anár all fail via fetch. Design: morpho.rs runs each pipeline over ordered chunks (one forward per chunk under the same slot lock, outputs concatenated in order); chunk text inputs (tokenize/sentences) at paragraph then sentence boundaries with a sentence-count budget well under the 16-event buffer (~6-8 enders per chunk); chunk the analyze token-line stream after sentence-final punctuation lines with the same budget. Small inputs = one chunk = today's behavior byte-identical (fixtures must pass unregenerated). generate() is in-process hfst, untouched."
+                    }
+                )
+            }
         )
     }
 )
