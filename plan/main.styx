@@ -461,12 +461,20 @@ children (
                 title "Errors propagate: no stdout swallows, checked IO, tolerant CG stream parsing"
                 kind @fix
                 deps (hd-enhancers)
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:51:02.267989Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Idiom H4 + M43 + panic 5/6. (1) tokenizer.rs:179: a failed tokenize prints to stdout and substitutes String::new() — the request returns 200 with an exercise containing no exercises; propagate with ?. Same printStackTrace-as-println at noun_sg.rs:355,415 (dies in hd-enhancers fold), cg_enhancer.rs:523, activity_configuration.rs:389 — tracing::error! or propagation. (2) M43: page_handler.rs:120 let _ = create_dir_all; upload.rs:232-236 set_read_only discards metadata and set_permissions results, silently defeating STORED_MODE = 0o400 — check both. (3) Panic 5: vislcg3.rs:67-73 a readingless CG cohort (two adjacent \"<\" header lines) aborts the whole request via ?; skip the cohort. (4) Panic 6: vislcg3.rs:315 filters !line.is_empty() but a whitespace-only line passes starts_with([' ','\\t']) with empty split_whitespace and bails — filter on trim().is_empty(). run_fst_cg rebuilds the stream line-by-line so one stray \" \\n\" from the bundle is currently fatal. (5) M30: vislcg3.rs:67-73 first_reading formats {:?} of the reading and :193 substring-tests for \"CLB\" — a lemma containing CLB matches; use iter().any(|t| t == \"CLB\")."
+                    }
+
+                    {
+                        at 2026-09-11T10:00:26.260915Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
@@ -504,6 +512,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Operator decision (2026-09-10): wire the UI to the span endpoint rather than contract-only or deletion. Today fetch_spans/SpanRequest/parse_spans/EnhancedSpans (teaksta-web api.rs:99-133) have zero production callers (coherence M1, idiom M45); the UI fetches the whole enhanced page and re-parses with the 816-line markup.rs lexer. Target shape: exercise modes fetch the raw page plus POST /api/enhance span map and splice client-side, shrinking the lexer's role to the raw page. Both sides' types already match exactly (verified in review — SpanRequest one-of html/url invariant, attribute vocabulary character-for-character). Note the span map alone can't render a page: keep the page fetch for document context, the span map keys by position. PAGE_SPAN_CLASS \"teaksta-page\" (enhancer_utils.rs:12) currently has no consumer anywhere and no CSS — the wiring should either consume or drop it. Depends on hd-topic-classes (class vocabulary single-sourced first) and hd-click-decoys (relevant/hit semantics settled first so the span map carries them)."
+                    }
+
+                    {
+                        at 2026-09-11T09:33:05.225931Z
+                        author "brendan@bbqsrc.net"
+                        kind @decision
+                        text "Course correction (operator, 2026-09-11): the original premise was wrong — the POST span map is the dead add-on's PER-TOKEN protocol (one entry per token span, no prose/punctuation; positions index a document text the SPA never receives; teaksta-page = ported wertiview inline-neutralizer, not a block wrapper). Verified by live capture and the Java (JSONEnhancer wraps single e-tag groups). Operator decision: build a BLOCK-KEYED v2 — the endpoint (new shape or new endpoint) serves the analysed text block-by-block with token/topic spans inline, spec'd as a teaksta-native addition (new rules; do NOT bump the ported json-enhancer/render-spans rules to claim behavior the Java lacks — the per-token shape stays as the documented add-on contract). UI renders exercises from the block JSON; markup.rs shrinks to fragment parsing. PageMap.segments already carries the block structure server-side."
                     }
                 )
             }
