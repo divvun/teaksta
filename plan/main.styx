@@ -707,6 +707,56 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-offsets
+                title "Compound and MWE cohorts map to their surface word: no cursor skew in offset mapping"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-11T14:00:05.983099Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Root cause of the operator's \".\" bug, caught live (2026-09-11) on se.wikipedia Sápmi: a teaksta-Substantive HIT span with lemma \"guovlu\" covering the text \".\", neighbors shifted (lemma \"duottar\" on \"Skánddat\", lemma \"viđji\" on \"nohká\" — its id carries cohort-with-dynamic-compound). Mechanism: the analyze pipeline (mwesplit) emits MULTIPLE cohorts for one surface word (dynamic compounds like \"várreviđji\" → constituent cohorts); the offset mapper searches each cohort form forward in the document text, finds a constituent form inside the compound surface, and the cursor desynchronizes — every following token in the region maps one word off until a noun lands on punctuation. Repro artifact: scratchpad/verify-S%C3%A1pmi.json (1 letterless HIT). The letterless-decoy filter (ux-hygiene) cannot catch hits. Fix in the offset-mapping layer (pipeline/tokenizer.rs form→offset cursor and/or vislcg3.rs CG-token mapping): detect consecutive cohorts whose forms are substrings/concatenation of the one surface word at the cursor and map them all WITHIN that word (or map the whole compound to the surface span), and make the mapper re-sync robustly instead of cascading skew when a form is found in the wrong place. End state: zero letterless HITS on the Sápmi page, and neighbors carry the right lemmas for their surface words."
+                    }
+                )
+            }
+        )
+    }
+
+    {
+        id native
+        title "A normal Rust web server: no classpath, no descriptors, no UIMA vocabulary"
+        kind @refactor
+        children (
+            {
+                id native-registry
+                title "Topics are Rust: delete the descriptor XML, activity tree, and classpath machinery"
+                kind @refactor
+                log (
+                    {
+                        at 2026-09-11T14:43:25.610539Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator directive (2026-09-11, emphatic): remove ALL runtime remnants of the Java past — \"make this a normal Rust web server\". Current reality: AppState::new cannot boot without the legacy tree — activities.rs scans sme/src/main/webapp/activities for activity.xml, activity_configuration.rs emulates XPath over them and resolves descriptor refs through a classpath stand-in, processors.rs parses UIMA AnalysisEngine descriptor XML (delegates, fixedFlow, configurationParameterSettings) out of sme/desc to build Flows. All of it exists to recover ten topic definitions that should be ~200 lines of Rust. Do: a native topic registry (name, Sámi label — absorb html_enhancer::SAMI_LABELS — enabled flag, topic enhancer + its tag parameters, shared pre/post flow shape), with the LIVE parameter values extracted once from sme/desc + activity.xml and baked in with provenance comments; flow.rs builds stages from the native definitions; DELETE activity_configuration.rs, the descriptor parsing in processors.rs, activities.rs scanning, Config.{classpath_root, activities_dir, webapp_root} and their env vars; fetch.rs served file: roots shrink to the two upload dirs. sme/ STAYS in the repo as the spec-pinned port reference (source-impl annotations live there) — but the runtime and every test must boot with zero reads from it. Spec: retire the descriptor-machinery rules with their concepts (CasUtils precedent: exclude the dead Java files in nspec config with justification); registry/context/servlet rules bumped honestly. topic_classes invariant tests walk the native registry afterward."
+                    }
+                )
+            }
+
+            {
+                id native-naming
+                title "The Java vocabulary dies: xmi, cas, AnalysisEngine, NPE strings, the phantom language key"
+                kind @refactor
+                deps (native-registry)
+                log (
+                    {
+                        at 2026-09-11T14:43:43.070599Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "After native-registry (and after ux-offsets merges — shared files): sweep the Java-runtime vocabulary out of the living code. Targets found by grep: cache files named cas_<key>.xmi with read_xmi/write_xmi (rename to honest JSON names, bump CACHE_FORMAT_VERSION); \"cas\"/\"jcas\" variable and parameter names throughout pipeline/enhancer code (the type is Document — call it that); EngineError::AnalysisEngineProcess/ResourceInitialization and every \"AnalysisEngineProcessException\"/\"NullPointerException:\"/\"IOException:\" message string (normal Rust error types and messages; the user SAW AnalysisEngineProcessException in a live 500 body); UimaError if it survives; PIPELINE_LANGUAGE and the (language, topic) Processors keying — the phantom \"en\" registry key dies, pipelines key by topic alone (PageHandler's lang parameter goes with it); OpenNlpSentenceDetector naming (no OpenNLP exists — it is the sentence-spans seam consumer); check for other brand-of-the-past names (GiellateknoTokenizer names real provenance — keep or rename per judgment, the Giellatekno tokenisation is genuinely what runs). Spec: def rules pin many of these names — bump signatures honestly; rules whose entire concept is the Java runtime retire with it. High rule churn expected; the honest-shrink precedent is established."
+                    }
+                )
+            }
         )
     }
 )
