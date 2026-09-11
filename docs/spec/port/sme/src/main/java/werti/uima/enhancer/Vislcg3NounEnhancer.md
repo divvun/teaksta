@@ -123,7 +123,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
 > The annotator entry point. Consumes `CGToken` annotations (each carrying an
 > `FSArray` of `CGReading`, where a `CGReading` is a `NonEmptyStringList` of
 > morphological tags) and produces `Enhancement` annotations wrapping the matched
@@ -150,8 +150,16 @@
 >   `([a-zA-Z]*+[0-9]*+\+)?(Sem/([a-zA-Z]*+_*+)*+\+)?\+Attr(\+<([a-zA-Z]*+_*+)*+>)?(\+[a-zA-Z]*+[0-9])?(\+[a-zA-Z]*+)?(\+Foc/[a-zA-Z]*+)?(\+[a-zA-Z]*+)?`
 >   with no trailing `|`.
 > - `excludePattern` = `V\+|A\+(?!.*Pred)|Det|Pr$|Pron\+|Pcle|Adv|Interj|CC|CS|ACR\+Dyn`
-> - `hintPattern` = `Pr$`
-> - `validHintPattern` = `A\+|Det|Adv`
+>
+> The Java compiled two further patterns here, `hintPattern` = `Pr$` and
+> `validHintPattern` = `A\+|Det|Adv`, for the preposition-hint pass. That pass
+> is retired; the port compiles neither, and why is recorded under *Retired* at
+> the foot of this rule.
+>
+> The `Pr$` alternative of `excludePattern` is unreachable for the same reason
+> `hintPattern` was, and is kept because it is what the Java compiled. It costs
+> nothing: an adposition is excluded anyway, by the `Adv` alternative matching
+> the `ADVL` of the syntactic function tag that adposition carries.
 >
 > The number alternation is grouped, so a branch is one number followed by one
 > case: `numberPattern` accepts exactly the thirteen number-and-case
@@ -163,31 +171,21 @@
 >
 > Creates `classCounts`, a map from span id to a plain integer counter, and
 > `wordToSpanMap`, a map from `Word` to `SpanTag`, then walks the `CGToken`
-> annotations. Sets `isMcActivity` and `isClozeActivity` from the activity name
-> and initialises `hintID` to `""`, `hintDistance` to 0 and `isValidHint` to
-> false. Each generator branch accumulates its input in its own in-memory
-> buffer.
+> annotations. Sets `isMcActivity` and `isClozeActivity` from the activity name.
+> Each generator branch accumulates its input in its own in-memory buffer.
 >
 > Then iterates the `CGToken` annotations in index order. For each token:
 >
-> Resets `hintTag` to `""`, `isValidReading` to false, `reading_str` to `""` and
-> `lemma` to `""`. Loops over `cgt.getReadings()` by index. For each `CGReading`,
-> builds `currentReadingString` by iterating the string list and concatenating
+> Resets `isValidReading` to false, `reading_str` to `""` and `lemma` to `""`.
+> Loops over `cgt.getReadings()` by index. For each `CGReading`, builds
+> `currentReadingString` by iterating the string list and concatenating
 > `"+" + tag` for every tag, so the string always begins with a `+`
 > (e.g. `+čáhci+N+<sme>+Sem/Plc_Substnc_Wthr+Sg+Nom`). Then, in this order:
 >
-> 1. If `isValidHint` is still true, the hint's reach is re-tested against this
->    reading: if `validHintPattern` does not find a match AND it is not the case
->    that both `posPattern` and `numberPattern` find a match, set `isValidHint` to
->    false — this reading breaks the link between a preposition hint and its noun.
-> 2. If `hintTag` is still empty and `hintPattern` (`Pr$`) matches, set `hintTag`
->    to `currentReadingString` with the leading `+` removed, all `"` characters
->    deleted and every remaining `+` replaced by `-`, and set `isValidHint` to
->    true.
-> 3. If `excludePattern` matches, set `isValidReading` to false and `break` out of
+> 1. If `excludePattern` matches, set `isValidReading` to false and `break` out of
 >    the reading loop entirely — one excluded reading disqualifies the whole
 >    token, even if an earlier reading already qualified.
-> 4. Otherwise, if `isValidReading` is not yet true and both `posPattern` and
+> 2. Otherwise, if `isValidReading` is not yet true and both `posPattern` and
 >    `numberPattern` match, set `isValidReading` to true, set `reading_str` to
 >    `currentReadingString` with the leading `+` removed and all `"` deleted, and
 >    set `lemma` to `reading_str.split("\\+")[0]`.
@@ -205,10 +203,7 @@
 >   a single space; `get_id` returns `spanClass + "-" + id` and `count` is the
 >   current counter value.
 > - Calls `addAttribute("lemma", lemma)` on it.
-> - If `hintID` is non-empty AND `hintDistance < 4` AND `isValidHint`, also calls
->   `addAttribute("hintid", hintID)`.
-> - Sets `isValidHint` back to false and stores `word -> spanTag` in
->   `wordToSpanMap`.
+> - Stores `word -> spanTag` in `wordToSpanMap`.
 > - If the activity is `mc`: strips the literal `+<sme>` from `reading_str`, calls
 >   `writeMorphologicalForms` on the result, and appends to the mc buffer the
 >   returned block, then the marker line `"ñôŃßĘńŠē\n"`, then `word.toString()`
@@ -227,15 +222,7 @@
 >   `enhanceStart` the tag's rendered opening markup and `enhanceEnd` its
 >   `"</span>"`, and pushes it onto the document.
 >
-> If instead `isValidReading` is false but `hintTag` is non-empty, the token is
-> emitted as a hint: `hintDistance` is reset to 0, a `Word` is built from the
-> token offsets, `classCounts` is bumped for `hintTag`, `hintID` is set to
-> `EnhancerUtils.get_id("teaksta-span-" + hintTag, count)`, and an `Enhancement`
-> is added to the CAS with `relevant = true`, the token offsets,
-> `enhanceStart` the markup of a span tag carrying that id and the single class
-> `teaksta-hinttag`, and `enhanceEnd = "</span>"`.
->
-> `hintDistance` is incremented once per token regardless of branch.
+> If `isValidReading` is false the token contributes nothing at all.
 >
 > After the token loop, an `mc` activity hands the accumulated generator input
 > to the inverted FST through the morphological pipeline the runtime already
@@ -264,6 +251,35 @@
 > against, and two requests asking for different exercises never observe each
 > other's. The mc and cloze branches are selected from it exactly as the
 > equality tests above select them.
+>
+> Retired: the preposition-hint pass. The Java carried `hintPattern`,
+> `validHintPattern`, `hintTag`, `hintID`, `hintDistance` and `isValidHint`
+> through this method to wrap an adposition in a span of its own classed
+> `wertiviewhinttag` and hang a `hintid` attribute naming that span on the noun
+> it governed. The port does none of it, because the pass never did anything in
+> production either, on two independent grounds.
+>
+> It could not fire. `hintPattern` is anchored as `Pr$`, and
+> `currentReadingString` is the whole reading flattened, but CG-3 closes an
+> adposition cohort with a syntactic function tag, so the string ends in
+> `@ADVL>` or `@<ADVL` and never in `Pr`. The Java knew this about its own
+> readings: `writeMorphologicalForms` and `writeLemmaAndAnalyses` both cut a
+> reading at `indexOf("@")` and both guard that index as `> 0`, i.e. the
+> function tag is present and is not first. Run over the shipped North Sámi
+> pipeline, a preposition-heavy probe produced 56 adposition readings and not
+> one of them matched `Pr$`.
+>
+> Nothing consumed it. `wertiviewhinttag` and `hintid` appear nowhere in the
+> legacy webapp — not in the activity JS, not in a stylesheet, not in a JSP or
+> a descriptor — so even a hint span that had been emitted would have rendered
+> as an unstyled wrapper and the attribute would have been read by no one. The
+> only hint the legacy client ever showed is unrelated: `wertiviewhint`, the
+> `?` button `activity.js` builds beside a cloze gap to reveal the answer,
+> which the port already serves from the forms hung on the span itself.
+>
+> Nothing else changes with the pass gone. An adposition was never enhanced —
+> `excludePattern` drops it on the `Adv` in its own function tag — so the spans
+> a topic produces, and the attributes they carry, are exactly what they were.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

@@ -15,10 +15,6 @@ pub const TOKEN_CLASS: &str = "teaksta-token";
 /// of speech.
 pub const HIT_CLASS: &str = "teaksta-hit";
 
-/// The class of the span a preposition gets in its own right, which the noun
-/// it governs points back at.
-pub const HINT_CLASS: &str = "teaksta-hinttag";
-
 /// The offsets of one token: what the generator round-trip carries through
 /// its input and reads back to find the span built for that token. Two words
 /// are the same word when they cover the same span.

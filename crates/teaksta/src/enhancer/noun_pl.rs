@@ -38,7 +38,7 @@ const TOPIC: TopicSpec = TopicSpec {
     span_class: "teaksta-SubstantivePlural",
     pos: r"N\+",
     selector: NUMBER_CASE_PATTERN,
-    hints: None,
+    exclude: None,
     strip_lang_tag: true,
     log_chosen_reading: false,
     unchecked: Unchecked::Propagate,

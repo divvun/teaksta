@@ -4,9 +4,8 @@
 //! Sámi nouns in singular form; the patterns in [`TOPIC`] extract the correct
 //! tokens for enhancement.
 //!
-//! This is the only topic that runs the preposition-hint pass and the only
-//! one that drops a token because one of its readings is an unlikely part of
-//! speech; everything else it does is the shared pass in
+//! This is the only topic that drops a token because one of its readings is
+//! an unlikely part of speech; everything else it does is the shared pass in
 //! [`crate::enhancer::cg_enhancer`].
 //!
 //! Authors: Niels Ott, Adriane Boyd, Heli Uibo, Eduard Schaf.
@@ -17,7 +16,7 @@ use anyhow::{Result, bail};
 use regex::Regex;
 use tracing::info;
 
-use crate::enhancer::cg_enhancer::{self, HintRules, TopicSpec, Trace, Unchecked};
+use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
 use crate::server::api::Mode;
 use crate::types::Document;
 
@@ -43,6 +42,12 @@ fn a_plus_without_pred(input: &str) -> bool {
 }
 
 /// The alternatives of the exclude pattern that need no lookaround.
+///
+/// The `Pr$` alternative is unreachable: CG-3 closes every adposition cohort
+/// with a syntactic function tag, so a flattened reading ends in `@ADVL>` or
+/// `@<ADVL` and never in `Pr`. It is kept because it is what the Java
+/// compiled, and it costs nothing — an adposition is excluded anyway, by the
+/// `Adv` alternative matching the `ADVL` in that same function tag.
 static EXCLUDE_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"V\+|Det|Pr$|Pron\+|Pcle|Adv|Interj|CC|CS|ACR\+Dyn").expect("exclude pattern")
 });
@@ -81,12 +86,7 @@ const TOPIC: TopicSpec = TopicSpec {
     span_class: "teaksta-Substantive",
     pos: r"N\+",
     selector: NUMBER_PATTERN,
-    hints: Some(HintRules {
-        hint: r"Pr$",
-        // the following tags are allowed between hint and noun
-        valid_hint: r"A\+|Det|Adv",
-        exclude: exclude_find,
-    }),
+    exclude: Some(exclude_find),
     strip_lang_tag: true,
     log_chosen_reading: false,
     unchecked: Unchecked::Propagate,
@@ -245,8 +245,8 @@ impl Vislcg3NounEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);

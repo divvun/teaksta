@@ -23,7 +23,7 @@ const TOPIC: TopicSpec = TopicSpec {
     span_class: "teaksta-NegVerbs",
     pos: r"V\+",
     selector: r"Ind\+Prs\+ConNeg|Ind\+Prt\+ConNeg",
-    hints: None,
+    exclude: None,
     strip_lang_tag: true,
     log_chosen_reading: true,
     unchecked: Unchecked::Swallow,

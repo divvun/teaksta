@@ -1,5 +1,5 @@
 //! What the singular-noun topic does that its siblings do not: the reading
-//! patterns, the preposition-hint pass, and the two generator inputs. The
+//! patterns, the unlikely-reading filter, and the two generator inputs. The
 //! pass they all share is exercised in `cg_enhancer_tests`.
 
 use super::*;
@@ -51,7 +51,7 @@ fn a_missing_n_tags_parameter_fails_initialisation() {
     assert!(enh.n_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
 fn a_singular_noun_span_carries_its_lemma() {
     let enh = enhancer();
@@ -78,32 +78,37 @@ fn a_singular_noun_span_carries_its_lemma() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
-fn preposition_hint_is_linked_from_next_noun() {
+fn an_adposition_is_excluded_and_links_nothing() {
     let enh = enhancer();
-    let mut doc = Document::new("maŋŋel beana", PIPELINE_LANGUAGE);
-    doc.cg_tokens.push(cg_token(0, 8, &[&["\"maŋŋel\"", "Pr"]]));
+    let mut doc = Document::new("maŋŋel biepmu", PIPELINE_LANGUAGE);
+    // The reading shape CG-3 really emits: an adposition cohort closes with
+    // its syntactic function tag, which is why the retired hint pattern —
+    // anchored as `Pr$` — could never match one.
     doc.cg_tokens
-        .push(cg_token(9, 14, &[&["\"beana\"", "N", "Sg", "Nom"]]));
+        .push(cg_token(0, 8, &[&["\"maŋŋel\"", "Pr", "@<ADVL"]]));
+    doc.cg_tokens
+        .push(cg_token(9, 16, &[&["\"biebmu\"", "N", "Sg", "Gen", "@P<"]]));
 
     enh.process(&mut doc, Mode::Colorize).unwrap();
 
-    assert_eq!(doc.enhancements.len(), 2);
+    // Only the noun is enhanced. The adposition is dropped by the `Adv`
+    // alternative of the exclude pattern, matching the `ADVL` of its own
+    // function tag, and it leaves nothing on the span that follows it.
+    assert_eq!(doc.enhancements.len(), 1);
+    assert_eq!(
+        (doc.enhancements[0].begin, doc.enhancements[0].end),
+        (9, 16)
+    );
     assert_eq!(
         doc.enhancements[0].enhance_start,
-        "<span id=\"teaksta-span-maŋŋel-Pr-1\" class=\"teaksta-hinttag\">"
-    );
-    assert_eq!((doc.enhancements[0].begin, doc.enhancements[0].end), (0, 8));
-    assert_eq!(
-        doc.enhancements[1].enhance_start,
-        "<span id=\"teaksta-span-beana-N-Sg-Nom-1\" \
-         class=\"teaksta-token teaksta-Substantive\" lemma=\"beana\" \
-         hintid=\"teaksta-span-maŋŋel-Pr-1\">"
+        "<span id=\"teaksta-span-biebmu-N-Sg-Gen-@Px-1\" \
+         class=\"teaksta-token teaksta-Substantive\" lemma=\"biebmu\">"
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
 fn a_bare_number_tag_without_case_is_skipped() {
     let enh = enhancer();
@@ -118,7 +123,7 @@ fn a_bare_number_tag_without_case_is_skipped() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
 fn every_named_number_and_case_pair_qualifies() {
     let enh = enhancer();
@@ -137,7 +142,7 @@ fn every_named_number_and_case_pair_qualifies() {
     assert_eq!(doc.enhancements.len(), 13);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
 fn one_excluded_reading_disqualifies_a_token() {
     let enh = enhancer();
@@ -156,7 +161,7 @@ fn one_excluded_reading_disqualifies_a_token() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 #[test]
 fn an_adjective_before_pred_stays_eligible() {
     let enh = enhancer();

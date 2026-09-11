@@ -210,10 +210,15 @@ async fn spans(activity: &str, mode: &str) -> HashMap<String, String> {
 /// One block request over the inline document, answered as the markup of
 /// each block in document order.
 async fn blocks(activity: &str, mode: &str) -> Vec<String> {
+    blocks_of(DOCUMENT, activity, mode).await
+}
+
+/// [`blocks`] over a page of the caller's choosing.
+async fn blocks_of(page: &str, activity: &str, mode: &str) -> Vec<String> {
     let response = client()
         .post("/api/enhance/blocks")
         .body_json(&serde_json::json!({
-            "html": DOCUMENT,
+            "html": page,
             "activity": activity,
             "mode": mode,
         }))
@@ -501,6 +506,50 @@ async fn each_mode_fills_its_own_block_fields() {
     assert!(mc.contains("answer=\"viesu\""), "{mc}");
     assert!(mc.contains("distractors="), "{mc}");
     assert!(cloze.contains("possibleforms=\"viesu"), "{cloze}");
+}
+
+/// A page built to trigger the retired preposition-hint pass: every sentence
+/// puts a `Pr` adposition in front of the noun it governs, which is the one
+/// construction that pass looked for.
+const ADPOSITION_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head><meta charset=\"utf-8\">\n",
+    "<title>Maŋŋel</title></head><body>\n",
+    "<p>Mun vuolgg\u{e1}n ma\u{14b}\u{14b}el biepmu.</p>\n",
+    "<p>Sii bohte ovdal beaivvi.</p>\n",
+    "<p>Ma\u{14b}\u{14b}el stuorra d\u{e1}lu lea uhca viessu.</p>\n",
+    "</body></html>\n"
+);
+
+/// The preposition-hint pass is gone, and a page written to trigger it is how
+/// that is shown end to end: no span carries the `teaksta-hinttag` class it
+/// wrapped an adposition in, and no span carries the `hintid` attribute it
+/// hung on the noun. The adposition is not marked up at all — it never was,
+/// because the exclude pattern drops it on the `Adv` of its own function tag
+/// — while the nouns it governs are enhanced exactly as any other.
+#[tokio::test]
+async fn no_block_carries_retired_hint_markup() {
+    if !models_available() {
+        return;
+    }
+    for mode in ["colorize", "click", "mc", "cloze"] {
+        let markup = blocks_of(ADPOSITION_PAGE, "Substantive", mode)
+            .await
+            .join("");
+        assert!(!markup.contains("teaksta-hinttag"), "{mode}: {markup}");
+        assert!(!markup.contains("hintid"), "{mode}: {markup}");
+    }
+
+    // The governed nouns are still hits, so retiring the pass cost no markup.
+    let colorize = blocks_of(ADPOSITION_PAGE, "Substantive", "colorize")
+        .await
+        .join("");
+    for noun in ["biepmu", "beaivvi", "dálu", "viessu"] {
+        assert!(colorize.contains(&format!(">{noun}<")), "{colorize}");
+    }
+    // and the adpositions themselves are wrapped in nothing.
+    for adposition in ["maŋŋel", "ovdal"] {
+        assert!(!colorize.contains(&format!(">{adposition}<")), "{colorize}");
+    }
 }
 
 /// The web client renders its exercises from what the block endpoint

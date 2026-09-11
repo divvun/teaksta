@@ -67,12 +67,12 @@ fn attributes_render_in_the_order_added() {
     let mut tag = SpanTag::new("X", &[TOKEN_CLASS, "teaksta-Substantive"]);
 
     tag.add_attribute("lemma", "beana");
-    tag.add_attribute("hintid", "h-1");
+    tag.add_attribute("answer", "beatnaga");
 
     assert_eq!(
         tag.start_tag(),
         "<span id=\"X\" class=\"teaksta-token teaksta-Substantive\" \
-         lemma=\"beana\" hintid=\"h-1\">"
+         lemma=\"beana\" answer=\"beatnaga\">"
     );
 }
 

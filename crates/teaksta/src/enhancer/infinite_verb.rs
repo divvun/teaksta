@@ -22,7 +22,7 @@ const TOPIC: TopicSpec = TopicSpec {
     span_class: "teaksta-InfiniteVerbs",
     pos: r"V\+",
     selector: r"PrfPrc|VGen|VAbess|Ger|Actio\+Ess|Inf|ConNeg",
-    hints: None,
+    exclude: None,
     strip_lang_tag: false,
     log_chosen_reading: false,
     unchecked: Unchecked::Propagate,

@@ -22,7 +22,7 @@ const TOPIC: TopicSpec = TopicSpec {
     span_class: "teaksta-VerbConjugation",
     pos: r"V\+",
     selector: r"Sg1|Sg2|Sg3|Du1|Du2|Du3|Pl1|Pl2|Pl3",
-    hints: None,
+    exclude: None,
     strip_lang_tag: false,
     log_chosen_reading: false,
     unchecked: Unchecked::Swallow,

@@ -543,6 +543,13 @@ children (
                         kind @note
                         text "Coherence M11: the preposition-hint pass reaches the wire and stops — cg_enhancer.rs:438 writes a hintid attribute and :757 emits HINT_CLASS \"teaksta-hinttag\" spans (cg_span.rs:20), but TokenSpan::read (markup.rs:166-188) reads id/class/lemma/distractors/answer/possibleforms only, teaksta-hinttag never carries teaksta-token so it's never a token, and no CSS selector styles it. After hd-span-ui settles how the UI consumes spans: either surface hints in cloze/mc (the pedagogical intent — the hint links a preposition to its governed word via hintid) or retire the pass and its wire vocabulary honestly. Check the Java reference/legacy JS for what the hint UX actually was before deciding."
                     }
+
+                    {
+                        at 2026-09-11T10:21:56.68095Z
+                        author "brendan@bbqsrc.net"
+                        kind @decision
+                        text "Retired the preposition-hint pass rather than consuming it. Two independent grounds, both from the legacy tree. (1) It could not fire: hintPattern is anchored `Pr$` and matches the whole flattened reading, but CG-3 closes an adposition cohort with a syntactic function tag, so the reading ends `@ADVL>`/`@<ADVL`, never `Pr`. The Java knew this of its own readings — Vislcg3NounEnhancer.java:495,629 cut at `indexOf(\"@\")` guarded `> 0`. A preposition-heavy probe over the shipped sme pipeline produced 56 adposition readings, 0 matching `Pr$`. (2) Nothing consumed it: `wertiviewhinttag` and `hintid` occur nowhere in the legacy webapp — no JS, CSS, JSP, or descriptor — only in the two Java enhancers that wrote them. The legacy client's only hint is `wertiviewhint`, the `?` reveal button activity.js:573-579 builds client-side, which the port already serves from TokenSpan::hint(). Block output over a page written to trigger the pass is byte-identical before and after removal, so consuming would have meant inventing behaviour (repairing the regex) rather than honouring any."
+                    }
                 )
             }
 

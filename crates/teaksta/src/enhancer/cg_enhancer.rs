@@ -10,7 +10,7 @@
 //! [`crate::enhancer::cg_span`].
 //!
 //! What genuinely differs between the topics — the span class, the reading
-//! patterns, the preposition-hint rules only the singular-noun topic has,
+//! patterns, the unlikely-reading filter only the singular-noun topic has,
 //! which log lines each Java class kept, and whether an unchecked exception
 //! escapes `process` — is named by [`TopicSpec`] and supplied per topic.
 //! The two generator inputs differ per topic in shape as well as in data,
@@ -26,7 +26,7 @@ use anyhow::{Result, anyhow, bail};
 use regex::Regex;
 use tracing::{debug, error, info};
 
-pub use crate::enhancer::cg_span::{HINT_CLASS, SpanTag, TOKEN_CLASS, Word};
+pub use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
 use crate::types::{CgToken, Document, Enhancement, ReadingJoin, flatten_reading_into};
@@ -111,20 +111,6 @@ pub struct Trace {
     pub possible_forms: bool,
 }
 
-/// The preposition-hint pass, which only the singular-noun topic runs: it
-/// links a noun span back to the preposition that governs it, and drops a
-/// token outright when any of its readings is an unlikely part of speech.
-#[derive(Debug, Clone, Copy)]
-pub struct HintRules {
-    /// Marks a reading as a hint in its own right.
-    pub hint: &'static str,
-    /// The tags allowed between a hint and the noun it governs.
-    pub valid_hint: &'static str,
-    /// Note that the whole token is excluded when this matches any reading,
-    /// even when another reading is valid.
-    pub exclude: fn(&str) -> bool,
-}
-
 /// Everything one topic changes about the shared enhancement pass.
 #[derive(Debug, Clone, Copy)]
 pub struct TopicSpec {
@@ -136,8 +122,9 @@ pub struct TopicSpec {
     pub pos: &'static str,
     /// Number, case, mood or non-finite pattern a reading must also match.
     pub selector: &'static str,
-    /// Set only for the topic that runs the preposition-hint pass.
-    pub hints: Option<HintRules>,
+    /// Drops the whole token when this matches any one of its readings, even
+    /// when another reading is valid. Set only by the singular-noun topic.
+    pub exclude: Option<fn(&str) -> bool>,
     /// Whether the mc generator input is built from the reading with its
     /// `+<sme>` language tag already removed.
     pub strip_lang_tag: bool,
@@ -252,52 +239,34 @@ pub fn remove_tags(input_str: &str) -> String {
     TAG_REGEX.replace_all(&input_str, "").into_owned()
 }
 
-/// The reading a token was accepted on, plus the hint tag the same pass
-/// picked up when the topic looks for one.
+/// The reading a token was accepted on.
 #[derive(Default)]
 struct Selection {
     valid: bool,
     reading: String,
     lemma: String,
-    hint_tag: String,
 }
 
 /// The compiled form of a topic's reading patterns.
 struct Matcher {
     pos: Regex,
     selector: Regex,
-    hint: Option<Regex>,
-    valid_hint: Option<Regex>,
     exclude: Option<fn(&str) -> bool>,
 }
 
 impl Matcher {
     fn new(spec: &TopicSpec) -> Result<Self> {
-        let pos = Regex::new(spec.pos)?;
-        let selector = Regex::new(spec.selector)?;
-        let (hint, valid_hint, exclude) = match spec.hints {
-            Some(rules) => (
-                Some(Regex::new(rules.hint)?),
-                Some(Regex::new(rules.valid_hint)?),
-                Some(rules.exclude),
-            ),
-            None => (None, None, None),
-        };
         Ok(Matcher {
-            pos,
-            selector,
-            hint,
-            valid_hint,
-            exclude,
+            pos: Regex::new(spec.pos)?,
+            selector: Regex::new(spec.selector)?,
+            exclude: spec.exclude,
         })
     }
 
     /// Select from all readings the first occurrence that is matching pos
-    /// and number. A topic with hint rules also decides here whether a hint
-    /// carried over from an earlier token is still valid, whether this token
-    /// is itself a hint, and whether one unlikely reading disqualifies the
-    /// whole token.
-    fn select(&self, cgt: &CgToken, hint_is_valid: &mut bool) -> Selection {
+    /// and number. A topic with an exclude rule also decides here whether one
+    /// unlikely reading disqualifies the whole token.
+    fn select(&self, cgt: &CgToken) -> Selection {
         let mut found = Selection::default();
         // one buffer for the whole token: every reading is flattened into it
         // in turn, and only the reading the token is accepted on is kept
@@ -307,24 +276,6 @@ impl Matcher {
             flatten_reading_into(&mut current, reading, ReadingJoin::LeadingPlus);
             let on_topic = self.pos.is_match(&current) && self.selector.is_match(&current);
 
-            // an invalid hint doesn't match the valid hint pattern and also
-            // the pos and number hint patterns
-            if let Some(valid_hint) = &self.valid_hint
-                && *hint_is_valid
-                && !valid_hint.is_match(&current)
-                && !on_topic
-            {
-                *hint_is_valid = false;
-            }
-            // determine if the current tag is a hint; remove the first "+"
-            // and quotes and replace "+" with a "-"
-            if let Some(hint) = &self.hint
-                && found.hint_tag.is_empty()
-                && hint.is_match(&current)
-            {
-                found.hint_tag = current[1..].replace('"', "").replace('+', "-");
-                *hint_is_valid = true;
-            }
             // don't consider readings that match the exclude pattern, to
             // filter out unlikely readings (e.g. "и" is a CC in almost all
             // cases, the probability that it is a N is very low)
@@ -347,8 +298,8 @@ impl Matcher {
 }
 
 /// What the token scan accumulates: the span-id frequency counter, the map
-/// tying offsets to the span being built, one generator-input buffer per
-/// Java writer, and the running preposition hint.
+/// tying offsets to the span being built, and one generator-input buffer per
+/// Java writer.
 ///
 /// Both Java writers targeted the same truncated generator input file, so
 /// only the branch that is actually taken contributes content.
@@ -358,9 +309,6 @@ struct Scan {
     word_to_span_map: HashMap<Word, SpanTag>,
     generator_input: String,
     generator_input_cloze: String,
-    hint_id: String,
-    hint_distance: i32,
-    hint_is_valid: bool,
 }
 
 /// One `process` call: the topic it runs for and the generator inputs that
@@ -394,14 +342,10 @@ impl Run<'_> {
 
         // go through tokens
         for cgt in cg_tokens {
-            let found = self.matcher.select(cgt, &mut scan.hint_is_valid);
+            let found = self.matcher.select(cgt);
             if found.valid {
                 self.enhance_token(doc, cgt, &found, &mut scan);
-            } else if !found.hint_tag.is_empty() {
-                scan.hint_distance = 0;
-                emit_hint_span(doc, cgt, &found.hint_tag, &mut scan);
             }
-            scan.hint_distance += 1;
         }
 
         if self.mc {
@@ -449,14 +393,6 @@ impl Run<'_> {
         let id = enhancer_utils::get_id(&format!("teaksta-span-{}", span_reading_string), count);
         let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, self.spec.span_class]);
         span_tag.add_attribute("lemma", &found.lemma);
-
-        // only add the hint ID if the distance is allowed and the hint still
-        // valid; distance = 1 would allow no tokens in between
-        if !scan.hint_id.is_empty() && scan.hint_distance < 4 && scan.hint_is_valid {
-            span_tag.add_attribute("hintid", &scan.hint_id);
-        }
-        // reset the validity of a hint
-        scan.hint_is_valid = false;
 
         scan.word_to_span_map.insert(word, span_tag.clone());
         self.queue_for_generator(doc, &word, &span_tag, found, scan);
@@ -764,17 +700,6 @@ fn push_enhancement(
     // update CAS
     doc.enhancements.push(e.clone());
     e
-}
-
-/// The hint span a preposition gets in its own right, and the id the noun
-/// that follows will point back at.
-fn emit_hint_span(doc: &mut Document, cgt: &CgToken, hint_tag: &str, scan: &mut Scan) {
-    // create a word with begin and end of the current CGToken
-    let word = Word::new(cgt.begin, cgt.end);
-    let count = bump(&mut scan.class_counts, hint_tag);
-    scan.hint_id = enhancer_utils::get_id(&format!("teaksta-span-{}", hint_tag), count);
-    let span_tag = SpanTag::new(scan.hint_id.clone(), &[HINT_CLASS]);
-    push_enhancement(doc, word.begin, word.end, &span_tag);
 }
 
 /// Count one sighting of a span id and report the running total: the first

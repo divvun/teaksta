@@ -47,7 +47,7 @@ const PLAIN: TopicSpec = TopicSpec {
     span_class: "teaksta-Plain",
     pos: r"N\+",
     selector: r"(Sg|Pl)\+Nom",
-    hints: None,
+    exclude: None,
     strip_lang_tag: false,
     log_chosen_reading: false,
     unchecked: Unchecked::Propagate,
@@ -60,7 +60,6 @@ fn accepted() -> Selection {
         valid: true,
         reading: "beana+N+Sg+Nom".to_string(),
         lemma: "beana".to_string(),
-        hint_tag: String::new(),
     }
 }
 
@@ -440,7 +439,7 @@ fn the_cloze_reader_shares_the_record_failures() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
@@ -484,7 +483,7 @@ fn an_unusable_reading_is_dropped_on_its_own() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
