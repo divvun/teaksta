@@ -668,12 +668,20 @@ children (
                 id ux-hygiene
                 title "Exercise text hygiene: sanitize block markup, decoy words carry letters"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-11T13:14:44.812008Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Operator reports from real pages (2026-09-11): (1) links are not stripped — confirmed: render_blocks passes live <a href> through and the frontend renders them (clicking navigates away mid-exercise); operator directs using the proper sanitizer: https://github.com/necessary-nu/sanitizer-rs (WHATWG HTML Sanitizer API implementation; read its repo for the config API). Sanitize the exercise BLOCK payload: unwrap anchors keeping their text (teaksta-token spans inside must survive untouched), remove non-content markers (sup/citation references like [1] — which currently also yield a clickable decoy \"1\"), keep semantic inline elements (em/strong/i/b). The whole-page GET render may keep its links — the exercise payload is the scope. (2) \"counting punctuation as words\": operator saw \".\" as a word; not yet reproduced (all probes keep punctuation outside spans; suspect NBSP/offset-skew or a page shape we lack — verify against the operator's URL when known). Direct fix regardless: TokenEnhancer's decoy filter currently requires only one non-punctuation char (space/digit/symbol qualifies) — tighten to require at least one LETTER (\\p{L}), spec-bumped honestly; kills bare digits, symbols, and any punctuation that slips through by whatever mechanism. Related: the \"channel lagged by N\" divvun-runtime failure blocks big-page verification; do not attempt to fix divvun-runtime from this repo."
+                    }
+
+                    {
+                        at 2026-09-11T13:37:09.890015Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
