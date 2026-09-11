@@ -624,12 +624,34 @@ children (
                 id ux-reader
                 title "Reader-mode extraction: fetched pages reduce to their main content before analysis"
                 kind @feat
+                sealed true
                 log (
                     {
                         at 2026-09-11T11:46:23.472394Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Operator request (2026-09-11): exercises over fetched URLs currently include the whole page — menu bars, nav, footers all become exercise text. Apply a Readability-style main-content reduction. Scope rule: a page fetched over http(s) is reduced to its main content; a page the caller provided deliberately (inline html POST, file: upload) is taken as given — this keeps the block fixtures and upload flow byte-stable. Fallback: if extraction yields nothing usable, use the full page. Candidate crates: dom_smoothie (modern Readability.js port), readability — evaluate for maintenance and fit. Integration point: the fetch seam (server/fetch.rs / page_source in api.rs), as a pure html→html step. Bump CACHE_FORMAT_VERSION (analysis of fetched pages changes). Spec: teaksta-native divergence on the fetch behavior rules."
+                    }
+
+                    {
+                        at 2026-09-11T12:10:22.695631Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
+                    }
+                )
+            }
+
+            {
+                id ux-design
+                title "Implement the approved design system in the web client; custom mc listbox; lemma hints"
+                kind @feat
+                log (
+                    {
+                        at 2026-09-11T12:02:08.353454Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator approved the design/teaksta card set outright (2026-09-11) and directed two fixes ride with the implementation: (1) the cloze hint reveals the LEMMA, not the answer — TokenSpan::hint() currently returns possibleforms.join(\"/\"); the lemma attribute is already on the span; (2) mc becomes a custom listbox — native select can't be styled or shown open, and the menu markup must be spans (a ul/li inside the exercise p auto-closes the paragraph; the card CSS documents this). Source of truth: design/teaksta/** (twelve cards; shared --tk-* token block identical in every file). Cards use real app strings (Substantiivvat etc. from html_enhancer.rs) and real fixture data. Known content gaps flagged by design: a Sámi \"try again\" string needs a translator (cards reuse existing labels); \"dahje\" as the or-divider unverified. mc option order is the code's alphabetical recased order (answer never leaks by position); the design honors it."
                     }
                 )
             }
