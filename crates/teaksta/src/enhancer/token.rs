@@ -18,7 +18,7 @@ use regex::Regex;
 use tracing::{Level, debug, enabled, trace, warn};
 
 use crate::enhancer::cg_span::{HIT_CLASS, SpanTag, TOKEN_CLASS};
-use crate::types::{Document, Enhancement, covered_text};
+use crate::types::{Document, Enhancement, covered_text, is_punctuation_cohort};
 use crate::util::enhancer_utils;
 
 /// `.*\p{L}.*` as a full match: the token has to carry at least one Unicode
@@ -95,12 +95,19 @@ impl TokenEnhancer {
                 tag: t.tag.as_deref(),
                 lemma: t.lemma.as_deref(),
             })
-            .chain(cas.cg_tokens.iter().map(|t| Candidate {
-                begin: t.begin,
-                end: t.end,
-                tag: None,
-                lemma: None,
-            }))
+            .chain(
+                cas.cg_tokens
+                    // a cohort the analysis calls punctuation is not a word,
+                    // so it is not offered as one to pick either
+                    .iter()
+                    .filter(|t| !is_punctuation_cohort(t))
+                    .map(|t| Candidate {
+                        begin: t.begin,
+                        end: t.end,
+                        tag: None,
+                        lemma: None,
+                    }),
+            )
             .collect();
         index.sort_by(|left, right| left.begin.cmp(&right.begin).then(right.end.cmp(&left.end)));
         index
@@ -108,8 +115,8 @@ impl TokenEnhancer {
 
     /// Iterate over all tokens and put a span around them. If a token matches
     /// one of the given POS tags, then mark it up as a hit.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5]
     pub fn process(&self, cas: &mut Document) -> Result<()> {
         let mut id: i32 = 0;
         debug!("Starting enhancement");
@@ -281,7 +288,7 @@ mod tests {
         assert!(err.to_string().contains("not a boolean"), "{}", err);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn punctuation_tokens_are_skipped_and_consume_no_id() {
         let mut cas = Document::new(". Mun boran", PIPELINE_LANGUAGE);
@@ -318,7 +325,7 @@ mod tests {
     /// token carrying a line break at all fails the test — where the Java
     /// admitted a single one, because the break could itself be the
     /// non-punctuation character its test asked for.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_token_carrying_a_line_break_is_skipped() {
         for text in ["a\nb", "a\nb\nc"] {
@@ -335,7 +342,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_token_made_only_of_punctuation_is_skipped() {
         let mut cas = Document::new("...", PIPELINE_LANGUAGE);
@@ -367,7 +374,7 @@ mod tests {
     /// Nothing a learner cannot read as a word is offered as one: not the
     /// full stop the operator was shown, not a year, not a section sign,
     /// and not a span covering nothing but a non-breaking space.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_token_without_letters_is_never_a_decoy() {
         for text in [".", "1905", "\u{a7}", "\u{20ac}", "\u{a9}", "\u{a0}", " "] {
@@ -381,7 +388,7 @@ mod tests {
     /// A word is a word whatever it is written with: North Sámi diacritics
     /// are letters, and an abbreviation carrying a stop carries letters
     /// beside it.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_token_with_a_letter_is_a_decoy() {
         for text in ["viesu", "K\u{e1}r\u{e1}\u{161}johka", "omd.", "1905:s"] {
@@ -393,7 +400,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn an_unreadable_token_span_is_skipped() {
         let mut cas = Document::new("Sámegiella", PIPELINE_LANGUAGE);
@@ -420,7 +427,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_null_tag_is_never_a_hit() {
         let mut cas = Document::new("beana", PIPELINE_LANGUAGE);
@@ -440,7 +447,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn the_lemma_filter_demotes_matches_without_a_lemma() {
         let mut cas = Document::new("aaa bbb ccc", PIPELINE_LANGUAGE);
@@ -458,7 +465,7 @@ mod tests {
         assert_eq!(relevant, vec![false, false, true]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn existing_enhancements_are_kept_and_new_ones_appended() {
         let mut cas = Document::new("beana", PIPELINE_LANGUAGE);
@@ -486,7 +493,7 @@ mod tests {
         assert_eq!(cas.tokens.len(), 1);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn the_cg_tokens_left_behind_are_enhanced() {
         // what the CAS looks like once the CG annotator has swapped every
@@ -511,7 +518,7 @@ mod tests {
         assert!(cas.enhancements.iter().all(|e| !e.relevant));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_cg_token_is_never_a_hit() {
         // a CG token carries no tag of its own, so the configured tag list
@@ -533,7 +540,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn both_kinds_of_token_are_read_in_order() {
         let mut cas = Document::new("aaa bbb ccc", PIPELINE_LANGUAGE);
@@ -555,7 +562,36 @@ mod tests {
         assert_eq!(relevant, vec![true, false, false]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4/test]
+    /// A cohort the analysis calls punctuation is not offered as a word to
+    /// pick, whatever its readings say and whatever it was placed over. The
+    /// letter test alone would not stop this one: the span covers a word.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
+    #[test]
+    fn a_punctuation_cohort_is_never_a_decoy() {
+        let mut cas = Document::new("guovllu beana", PIPELINE_LANGUAGE);
+        cas.cg_tokens.push(CgToken {
+            begin: 0,
+            end: 7,
+            readings: vec![
+                vec!["\"guovlu\"".to_string(), "N".to_string()],
+                vec!["\".\"".to_string(), "CLB".to_string()],
+            ],
+        });
+        cas.cg_tokens.push(cg_token(8, 13));
+
+        TokenEnhancer::default().process(&mut cas).unwrap();
+
+        let spans: Vec<(usize, usize)> =
+            cas.enhancements.iter().map(|e| (e.begin, e.end)).collect();
+        assert_eq!(spans, vec![(8, 13)]);
+        // and the refused cohort consumed no id
+        assert_eq!(
+            cas.enhancements[0].enhance_start,
+            "<span id=\"teaksta-span-1\" class=\"teaksta-token\">"
+        );
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5/test]
     #[test]
     fn a_span_naming_no_text_is_skipped() {
         // begin and end past the end of the text, and a cut through the

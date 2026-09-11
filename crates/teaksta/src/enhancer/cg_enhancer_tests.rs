@@ -439,11 +439,11 @@ fn the_cloze_reader_shares_the_record_failures() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+8/test]
 #[test]
 fn an_unusable_reading_is_dropped_on_its_own() {
     let refuse = |reading: &str| -> Result<String> {
@@ -483,11 +483,11 @@ fn an_unusable_reading_is_dropped_on_its_own() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+8/test]
 #[test]
 fn a_seam_failure_is_never_swallowed() {
     let echo = |reading: &str| -> Result<String> { Ok(format!("{reading}\n")) };
@@ -507,5 +507,42 @@ fn a_seam_failure_is_never_swallowed() {
             // printStackTrace never let it do
             Err(e) => assert!(e.is::<GeneratorFailure>(), "unexpected error: {e:#}"),
         }
+    }
+}
+
+/// A cohort the analysis calls punctuation is never a topic hit, whatever
+/// else its readings say. This is the guard that stands behind the offsets
+/// layer rather than a second opinion about the analysis: the token below
+/// carries a perfectly good noun reading, and is still not offered as a word,
+/// because one of its readings says the text it covers is a full stop.
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+8/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+8/test]
+#[test]
+fn a_punctuation_cohort_is_never_a_hit() {
+    let echo = |reading: &str| -> Result<String> { Ok(format!("{reading}\n")) };
+
+    for mode in Mode::ALL {
+        let mut doc = Document::new("guovllu.", PIPELINE_LANGUAGE);
+        // the skew the offsets layer used to produce: a noun's readings on
+        // the span of the full stop, with the stop's own reading beside them
+        doc.cg_tokens.push(cg_token(
+            7,
+            8,
+            &[
+                &["\"guovlu\"", "N", "Sem/Plc", "Sg", "Nom"],
+                &["\".\"", "CLB"],
+            ],
+        ));
+
+        let outcome = run(&mut doc, &PLAIN, mode, &echo, &echo);
+        // without a generator the mc and cloze passes report the seam; what
+        // matters either way is that nothing was built on the full stop
+        if let Err(e) = outcome {
+            assert!(e.is::<GeneratorFailure>(), "unexpected error: {e:#}");
+        }
+        assert!(doc.enhancements.is_empty(), "{mode:?} enhanced a full stop");
     }
 }

@@ -125,10 +125,10 @@
 > quadratic in output size; `buffer` and `finished` are non-volatile fields
 > published to other threads without synchronisation.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
 > private List<CGToken> parseCGOutput(String cgOutput, JCas jcas)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
 > Parses VISL CG-3 cohort output into a fresh list of `CGToken` feature structures.
 > Walks `cgOutput` line by line, skipping the empty ones, so the blank line
 > between cohorts disappears. Holds a "current" `CGToken` (initially null) and a
@@ -194,11 +194,30 @@
 > subreading: its tags extend the reading above rather than opening a new one,
 > which keeps a compound's whole tag sequence in one flat reading, as the
 > `lookup2cg` stream delivered it.
+>
+> Port divergence: the surface form inside `"<...>"` is kept rather than
+> discarded, so a parsed cohort is a wordform paired with its readings rather
+> than readings alone.
+>
+> The form is what the analyser says the readings under it are about, and it is
+> the only thing in the stream that ties them to a place in the document. The
+> Java did not need it, because it assumed the analyser answered one cohort per
+> line of input and paired the two lists by position. That assumption does not
+> hold against this pipeline: its `mwesplit` stage splits a multiword the
+> tokeniser had joined back into its constituent cohorts, so one input line
+> comes back as several. Without the wordform there is nothing to tell a split
+> group apart from a stream that has simply run one cohort ahead.
+>
+> The form is read between the leading `"<` and the last `>"` on the header
+> line, with CG-3's backslash escapes undone, so a word written with a
+> quotation mark in it reads as the text it is. A header those wrappers cannot
+> be found in yields the empty form, which matches no input line and is
+> therefore placed nowhere rather than placed wrongly.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
 > @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
 > The UIMA annotator entry point. Consumes `Token` and `SentenceAnnotation`
 > annotations from the CAS and replaces every `Token` with a `CGToken` carrying the
 > constraint-grammar readings for that position.
@@ -248,25 +267,60 @@
 > loop never changes inside the loop, so it only disables skipping on the final
 > original token.
 >
-> Port divergence: the boundary test reads the reading's tags. The skip loop asks
-> whether the cohort's first reading carries CG-3's `CLB` tag, by comparing each
-> tag of that reading against it, rather than searching for the letters `CLB`
-> anywhere in a rendering of the whole reading. A base form that happens to
-> contain those letters — as part of a word, or as the whole of one — is a word
-> and not a sentence boundary, and under the substring test it was silently
-> treated as one, skipping the cohort a real token was waiting to be paired with.
+> Port divergence: cohorts are placed on the document by their wordforms, not
+> paired with tokens by position, and the skip loop is gone with the assumption
+> that produced it.
 >
-> The rendering itself is kept only for the two log lines, and is the reading's
-> tags separated by spaces rather than the UIMA debug form of a feature
-> structure, which has no counterpart here.
+> The Java's walk paired the two lists by counting: one cohort per original
+> token, with `j` running one ahead per iteration and the `CLB` skip loop as the
+> single correction, for the boundary period `toCG3Input` injects after a
+> heading. That holds only while the analyser answers exactly one cohort per
+> line of input. This pipeline does not: its `mwesplit` stage splits a multiword
+> the tokeniser had joined — `Finnmárkku duottar` is one token of the
+> tokeniser's own multiword list and two cohorts of the analyser's — so one line
+> comes back as two. From the extra cohort onward every token was handed the
+> analysis of the word in front of it, for the rest of the document, until a
+> noun's span came to rest on a full stop and the learner was shown `.` as a
+> word to click, to choose a form for, or to fill in.
+>
+> What the pass does instead: `toCG3Input` answers the input as a list of lines,
+> each naming the token it was taken from, and the injected boundary naming
+> none. Each line then takes the run of cohorts that covers it. The first cohort
+> must be the one the line opens with — its wordform is a prefix of the line's
+> text — and each further cohort of the group must continue the line from where
+> the last one ended, with nothing but whitespace between, which is what
+> separates the constituents of a split multiword and nothing else. Every cohort
+> in the group is placed at its own wordform inside that line's stretch of the
+> document, so a split group never reaches past the surface word it came from,
+> and a dynamic compound, which the analyser answers with a single cohort
+> carrying its constituents as a subreading, keeps the whole word.
+>
+> When the cohort at the cursor is not the one the line opens with, the
+> alignment looks ahead a bounded number of cohorts for one that is, skips what
+> it passed with a debug line, and carries on from there. That is what accounts
+> for the injected boundary period, for a cohort `parseCGOutput` dropped because
+> it carried no reading, and for a form the analyser rewrote. When no cohort
+> within the window opens the line, the line is left unanalysed — its token
+> stays in the store as a word without an analysis rather than being replaced —
+> and the cursor does not move, so the lines after it still find their own
+> cohorts. The window is deliberately small: an analysis that cannot be placed
+> is worth less than none at all, because a wrong one is shown to a learner as
+> if it were right.
+>
+> Because each cohort is placed once and at most one cohort is placed per
+> position, the map from a CG token to where it sits in the store is gone: every
+> placement appends, in document order.
+>
+> Port divergence: the rendering of a cohort's first reading is kept only for
+> the two log lines, and is the reading's tags separated by spaces rather than
+> the UIMA debug form of a feature structure, which has no counterpart here.
 >
 > A cohort without readings no longer reaches this walk: `parseCGOutput` drops
 > it, so the first-reading access that the Java let fail with an out-of-bounds
 > error over a malformed stream has nothing to fail on.
 >
 > Port divergence: the tokens the walk replaced are taken out of the store in
-> place rather than copied into a second one, and the map from a CG token to
-> where it sits is reached through one lookup per token rather than two.
+> place rather than copied into a second one.
 >
 > Port divergence: the CG input, the CG output and the per-token records — a
 > page's worth of lines on every request — are logged at trace rather than at
@@ -297,10 +351,10 @@
 > the pipeline even in the Java. A failure of the bundle propagates to the
 > caller.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
 > private String toCG3Input(List<Token> tokenList, List<SentenceAnnotation> sentList)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
 > Serialises the token stream into the one-token-per-line plain text that the
 > external analysis pipeline consumes.
 >
@@ -321,4 +375,17 @@
 >
 > Quirk: matching is against the whole covered text, so a sentence-final token like
 > `!?` is treated as punctuation but `word.` is not, and a period is injected after it.
+>
+> Port divergence: the answer is the list of lines rather than the text they
+> make, and each line names the token it was taken from — the injected sentence
+> boundary naming none, because it stands for no text in the document.
+>
+> The text itself is unchanged: rendering the list is each line followed by one
+> newline, which is the string the Java built, and it is what the analyser is
+> handed. What the list adds is the provenance the Java threw away by building
+> a string. `process` needs it to say where a cohort belongs: a cohort answering
+> a line that names no token has no place in the document and is dropped, and
+> one answering a line that names a token is placed inside that token's own
+> stretch of it. Reading the provenance back out of the string afterwards is
+> exactly the guesswork that let the offsets drift.
 

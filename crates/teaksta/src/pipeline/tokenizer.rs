@@ -73,8 +73,8 @@ impl GiellateknoTokenizer {
     /// one-token-per-line result back onto offsets in the document. The
     /// stdout-consumer plumbing the external `preprocess` command needed is
     /// subsumed by the morphological pipeline seam.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
@@ -120,9 +120,14 @@ impl GiellateknoTokenizer {
                 // and thus not found in the original text.
                 None => {
                     let Some(hyphen) = index_of_from(&text_string, "-", skew) else {
-                        // restarts the scan at the head of the document, so
-                        // later tokens can match at earlier, wrong positions
-                        skew = 0;
+                        // A token that is neither at the cursor nor a repaired
+                        // hyphenation is one this text cannot be annotated
+                        // with. It is skipped where it stands and the cursor
+                        // is left alone, so the tokens after it still find
+                        // themselves: rewinding to the head of the document
+                        // would let every one of them match at an earlier,
+                        // wrong position.
+                        debug!("no place at or after {skew} for the token {token:?}");
                         continue;
                     };
 
@@ -282,7 +287,7 @@ mod tests {
         assert_eq!(registered.tokens.len(), foreign.tokens.len());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4/test]
     #[test]
     fn process_rejects_a_relevant_span_outside_the_document() {
         let mut doc = document("mun", &[(0, 99)]);
@@ -295,7 +300,7 @@ mod tests {
         assert!(doc.tokens.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4/test]
     #[test]
     fn process_annotates_only_spans_slicing_document_text() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);
@@ -352,7 +357,7 @@ mod tests {
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn/test]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4/test]
     #[test]
     fn a_failed_tokenisation_is_reported_not_swallowed() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);

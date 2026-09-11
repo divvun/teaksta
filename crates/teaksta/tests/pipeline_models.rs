@@ -930,3 +930,108 @@ async fn the_upload_gate_reads_the_uploaded_text() {
     let page = enhanced.0.into_body().into_string().await.expect("a body");
     assert!(page.contains("teaksta-token"), "{page}");
 }
+
+/// A page whose prose the analyser answers with more cohorts than the
+/// tokeniser asked for.
+///
+/// `Finnmárkku duottar` is an entry of the tokeniser's own multiword list, so
+/// the tokeniser answers it as one token and the analyser's `mwesplit` stage
+/// splits it back into two cohorts — one surface word, two cohorts, which is
+/// the shape that used to shift every later word's analysis onto the word in
+/// front of it until a noun's span landed on the full stop.
+/// `várreviđji` is the other shape: a dynamic compound the analyser reads as
+/// one cohort carrying its constituents as a subreading, which must keep the
+/// whole word.
+const SPLIT_COHORT_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head>\n",
+    "<meta charset=\"utf-8\"><title>S\u{e1}pmi</title></head>\n",
+    "<body>\n",
+    "<p>Sk\u{e1}nddat v\u{e1}rrevi\u{111}ji nohk\u{e1} lullin. ",
+    "Finnm\u{e1}rkku duottar nohk\u{e1} guovllu.</p>\n",
+    "</body></html>\n"
+);
+
+/// Every `<span ...>text</span>` of a block, as the id, the base form the
+/// markup carries (empty when it carries none) and the text it covers.
+fn marked_spans(block: &str) -> Vec<(String, String, String)> {
+    let mut found = Vec::new();
+    let mut rest = block;
+    while let Some(at) = rest.find("<span ") {
+        let attributes_end = rest[at..].find('>').expect("an open tag ends") + at;
+        let attributes = &rest[at + 6..attributes_end];
+        let text_end = rest[attributes_end..]
+            .find("</span>")
+            .expect("a span is closed")
+            + attributes_end;
+        let attribute = |name: &str| -> String {
+            let key = format!("{name}=\"");
+            match attributes.find(&key) {
+                Some(start) => {
+                    let value = &attributes[start + key.len()..];
+                    value[..value.find('"').expect("a quoted value")].to_string()
+                }
+                None => String::new(),
+            }
+        };
+        found.push((
+            attribute("id"),
+            attribute("lemma"),
+            rest[attributes_end + 1..text_end].to_string(),
+        ));
+        rest = &rest[text_end + 7..];
+    }
+    found
+}
+
+/// The offsets a learner is shown are the analyser's own, word for word,
+/// even where one surface word came back as several cohorts.
+///
+/// Every span covers exactly one word of the page: none of them covers a
+/// full stop, none straddles two words, and the base forms sit on the words
+/// they belong to — `duottar` on `duottar`, `guovlu` on `guovllu`, and
+/// nothing at all on `Sk\u{e1}nddat`, which the analyser has no reading for.
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4/test]
+#[tokio::test]
+async fn a_split_multiword_keeps_spans_on_their_words() {
+    if !models_available() {
+        return;
+    }
+
+    for mode in ["colorize", "click", "mc", "cloze"] {
+        let blocks = blocks_of(SPLIT_COHORT_PAGE, "Substantive", mode).await;
+        let mut seen: HashMap<String, String> = HashMap::new();
+
+        for block in &blocks {
+            for (id, lemma, covered) in marked_spans(block) {
+                // nothing a learner cannot read as a word is offered as one,
+                // whether it is a hit or a decoy
+                assert!(
+                    covered.chars().any(char::is_alphabetic),
+                    "{mode}: the span {id} covers {covered:?}"
+                );
+                assert!(
+                    !covered.chars().any(char::is_whitespace),
+                    "{mode}: the span {id} straddles words: {covered:?}"
+                );
+                if !lemma.is_empty() {
+                    seen.insert(covered, lemma);
+                }
+            }
+        }
+
+        // and the base forms are on the words they are the base form of
+        assert_eq!(
+            seen.get("duottar").map(String::as_str),
+            Some("duottar"),
+            "{mode}: {seen:#?}"
+        );
+        assert_eq!(
+            seen.get("guovllu").map(String::as_str),
+            Some("guovlu"),
+            "{mode}: {seen:#?}"
+        );
+        assert_eq!(seen.get("Sk\u{e1}nddat"), None, "{mode}: {seen:#?}");
+        assert_eq!(seen.get("nohk\u{e1}"), None, "{mode}: {seen:#?}");
+    }
+}

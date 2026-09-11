@@ -18,7 +18,7 @@ use tracing::{debug, info};
 use crate::enhancer::cg_enhancer::GeneratorFailure;
 use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
 use crate::server::api::Mode;
-use crate::types::{CgReading, CgToken, Document, Enhancement};
+use crate::types::{CgReading, CgToken, Document, Enhancement, is_punctuation_cohort};
 use crate::util::enhancer_utils;
 
 /// What a topic reads off the reading a token was accepted on, to hang on
@@ -112,6 +112,15 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
         let tag_class = spec.tag_class.map(|class_of| class_of(con_t));
         // go through tokens
         for token_index in 0..doc.cg_tokens.len() {
+            // a cohort the analysis calls punctuation is not a word, whatever
+            // else its readings say and wherever the offsets layer put it
+            if is_punctuation_cohort(&doc.cg_tokens[token_index]) {
+                debug!(
+                    "not enhancing the punctuation at {}..{}",
+                    doc.cg_tokens[token_index].begin, doc.cg_tokens[token_index].end
+                );
+                continue;
+            }
             if matches!(mode, Mode::Cloze | Mode::Mc) {
                 // more than one reading? don't mark up if the exercise type is
                 // mc or cloze
@@ -220,9 +229,9 @@ mod tests {
     /// behaviour is exercised once, over the tags and reading test they all
     /// supply: any reading carrying the tag matches, and a token is
     /// unambiguous when it has exactly one reading.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+3/test]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+3/test]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+4/test]
     #[test]
     fn an_ambiguous_token_reaches_the_marking_exercises_only() {
         let tags = vec!["@SUBJ→".to_string()];
@@ -281,7 +290,7 @@ mod tests {
     /// A transducer the deployment cannot reach is not one reading the topic
     /// cannot use: skipping it would answer the request with an exercise
     /// whose questions carry nothing to answer them with.
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+6/test]
     #[test]
     fn a_seam_failure_ends_the_pass() {
         let tags = vec!["@SUBJ→".to_string()];
@@ -304,5 +313,36 @@ mod tests {
 
         assert_eq!(err.to_string(), "the generator is not set");
         assert!(doc.enhancements.is_empty());
+    }
+
+    /// A cohort the analysis calls punctuation is never marked, whatever
+    /// else its readings say and whichever exercise is being built. The
+    /// token below carries the configured tag on a reading of its own and is
+    /// still refused, because another reading says the text it covers is a
+    /// full stop.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+6/test]
+    #[test]
+    fn a_punctuation_cohort_is_never_marked() {
+        let tags = vec!["@SUBJ\u{2192}".to_string()];
+
+        for mode in Mode::ALL {
+            let mut doc = Document::new("guovllu.", PIPELINE_LANGUAGE);
+            // the skew the offsets layer used to produce: a word's readings
+            // on the span of the full stop, with the stop's own beside them
+            doc.cg_tokens.push(cg_token(
+                7,
+                8,
+                &[&["\"guovlu\"", "N", "@SUBJ\u{2192}"], &["\".\"", "CLB"]],
+            ));
+
+            run(&mut doc, &spec(&tags, "teaksta-Subject"), mode)
+                .expect("a cohort nothing is built on is not a failure");
+
+            assert!(doc.enhancements.is_empty(), "{mode:?} marked a full stop");
+        }
     }
 }

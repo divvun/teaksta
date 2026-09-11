@@ -7,11 +7,10 @@
 //!
 //! Authors: Niels Ott?, Adriane Boyd, Heli Uibo
 
-use std::collections::hash_map::Entry;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::LazyLock;
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use regex::Regex;
 use tracing::{debug, trace};
 
@@ -24,26 +23,12 @@ use crate::types::{
 /// The rendering of a cohort's first reading, for the log lines the walk
 /// carries. Every cohort the parse keeps has one, so the empty string stands
 /// only for a cohort that never reached the walk.
-fn first_reading(token: &CgToken) -> String {
-    match token.readings.first() {
+fn first_reading(readings: &[CgReading]) -> String {
+    match readings.first() {
         Some(reading) => flatten_reading(reading, ReadingJoin::TrailingSpace),
         None => String::new(),
     }
 }
-
-/// Whether a cohort's first reading carries CG-3's clause-boundary tag. The
-/// test is over the reading's tags, so a base form whose own text holds the
-/// letters `CLB` is a word and not a sentence boundary.
-fn is_clause_boundary(token: &CgToken) -> bool {
-    token
-        .readings
-        .first()
-        .is_some_and(|reading| reading.iter().any(|tag| tag == "CLB"))
-}
-
-/// Tokens made purely of punctuation, matched against the whole covered text.
-static PUNCTUATION_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(?:[[:punct:]]+|…)$").expect("punctuation pattern"));
 
 /// Sentence-final punctuation that makes an injected boundary period
 /// redundant, matched against the whole covered text.
@@ -79,6 +64,132 @@ fn indent_depth(line: &str) -> usize {
     line.chars().take_while(|c| *c == ' ' || *c == '\t').count()
 }
 
+/// One line of the one-token-per-line text handed to the analyser: what was
+/// written, and which of the original tokens it was taken from.
+///
+/// The sentence boundary the pass injects after a heading is written like any
+/// other line and stands for no text in the document, so it names no token —
+/// and the cohort the analyser answers it with is therefore placed nowhere.
+#[derive(Debug, Clone)]
+struct CgLine {
+    text: String,
+    token: Option<usize>,
+}
+
+/// One cohort of the CG stream: the surface form inside `"<...>"`, which is
+/// the analyser's own statement about which text the readings under it are
+/// about, and those readings.
+#[derive(Debug, Clone, Default)]
+struct Cohort {
+    form: String,
+    readings: Vec<CgReading>,
+}
+
+/// Where one cohort's readings belong in the document, and which input line —
+/// and so which original token — it was matched against.
+#[derive(Debug, Clone, Copy)]
+struct Placement {
+    token: usize,
+    cohort: usize,
+    begin: usize,
+    end: usize,
+}
+
+/// How far ahead in the cohort stream one input line may look for the cohort
+/// that opens it.
+///
+/// The stream and the line list are two renderings of the same text, so they
+/// run together; the window is what the alignment is allowed to spend getting
+/// back in step after they disagree — an injected boundary period, a cohort
+/// the parse dropped for carrying no reading, a form the analyser rewrote. It
+/// is small on purpose: a line that cannot find itself within a few cohorts
+/// is better left unanalysed than matched against a cohort belonging to
+/// another word.
+const RESYNC_WINDOW: usize = 8;
+
+/// Whether this cohort's surface form is what the line opens with — the
+/// anchor the whole alignment rests on. An empty form anchors nothing.
+fn opens(line: &CgLine, cohort: &Cohort) -> bool {
+    !cohort.form.is_empty() && line.text.starts_with(&cohort.form)
+}
+
+/// Where `form` continues `text` from `at`, when everything between is
+/// whitespace: the only thing that separates the constituents a multiword
+/// cohort was split into. A form that sits further into the line with a
+/// letter in front of it belongs to some other word, so it is not placed
+/// here.
+fn tiles(text: &str, at: usize, form: &str) -> Option<usize> {
+    if form.is_empty() {
+        return None;
+    }
+    let rest = text.get(at..)?;
+    let found = rest.find(form)?;
+    rest[..found]
+        .chars()
+        .all(char::is_whitespace)
+        .then_some(at + found)
+}
+
+/// Pair the cohorts the analyser answered with the lines they are about, and
+/// say where in the document each one belongs.
+///
+/// One line may be answered with several cohorts: the analyser splits a
+/// multiword the tokeniser had joined, and a token can therefore come back as
+/// two or more cohorts. Every one of them is placed inside that one line's
+/// own stretch of the document, found by its wordform, so the group never
+/// reaches past the surface word it came from and the lines after it keep
+/// their own cohorts.
+fn place_cohorts(tokens: &[Token], lines: &[CgLine], cohorts: &[Cohort]) -> Vec<Placement> {
+    let mut placements = Vec::new();
+    let mut next = 0usize;
+
+    for line in lines {
+        // The cohort this line opens with. Looking past the ones that cannot
+        // be it — rather than taking whatever sits at the cursor — is what
+        // keeps one unaccounted-for cohort from shifting every later line
+        // onto the word before it.
+        let ceiling = (next + RESYNC_WINDOW).min(cohorts.len());
+        let Some(opening) = (next..ceiling).find(|&k| opens(line, &cohorts[k])) else {
+            debug!("no cohort answers the input line {:?}", line.text);
+            continue;
+        };
+        if opening > next {
+            debug!(
+                "skipping {} cohort(s) no input line accounts for, before {:?}",
+                opening - next,
+                line.text
+            );
+        }
+        next = opening;
+
+        // and then the rest of the group: every further cohort that tiles
+        // what is left of this line
+        let mut at = 0usize;
+        while next < cohorts.len() {
+            let form = cohorts[next].form.as_str();
+            let Some(found) = tiles(&line.text, at, form) else {
+                break;
+            };
+            if let Some(token) = line.token {
+                let begin = tokens[token].begin + found;
+                placements.push(Placement {
+                    token,
+                    cohort: next,
+                    begin,
+                    end: begin + form.len(),
+                });
+            }
+            at = found + form.len();
+            next += 1;
+            if at >= line.text.len() {
+                break;
+            }
+        }
+    }
+
+    placements
+}
+
 // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator]
 #[derive(Debug, Clone)]
 pub struct Vislcg3Annotator {
@@ -94,8 +205,8 @@ impl Default for Vislcg3Annotator {
 }
 
 impl Vislcg3Annotator {
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
     pub fn process(&self, jcas: &mut Document) -> Result<()> {
         debug!("Starting vislcg3 processing");
 
@@ -116,78 +227,88 @@ impl Vislcg3Annotator {
             .collect();
 
         // convert token list to cg input
-        let cg3input = self.to_cg3_input(&text, &original_tokens, &original_sentences)?;
+        let lines = self.to_cg3_input(&text, &original_tokens, &original_sentences)?;
+        let cg3input = cg3_input_text(&lines);
         trace!("cg3input: {}", cg3input);
 
         // run vislcg3
         let cg3output = self.run_fst_cg(&cg3input)?;
-        // parse cg output
         trace!("cg3output {}", cg3output);
-        let mut new_tokens = self.parse_cg_output(&cg3output);
+
+        self.map_cg_output(jcas, &cg3output)
+    }
+
+    /// The offsets layer of the pass, over a CG stream the caller supplies:
+    /// places every cohort the analyser answered on the text it names, and
+    /// replaces each token a cohort was placed on.
+    ///
+    /// The input lines are rebuilt here rather than carried in, so the walk
+    /// reads the same token list it will write back to; nothing between the
+    /// analyser call and this one touches the store.
+    fn map_cg_output(&self, jcas: &mut Document, cg3output: &str) -> Result<()> {
+        let text = jcas.text.clone();
+        let token_order = index_order(&jcas.tokens);
+        let original_tokens: Vec<Token> = token_order
+            .iter()
+            .map(|&position| jcas.tokens[position].clone())
+            .collect();
+        let original_sentences: Vec<SentenceAnnotation> = index_order(&jcas.sentences)
+            .iter()
+            .map(|&position| jcas.sentences[position])
+            .collect();
+        let lines = self.to_cg3_input(&text, &original_tokens, &original_sentences)?;
+
+        // parse cg output
+        let cohorts = self.parse_cg_output(cg3output);
         // the check that we got as many tokens back as we provided is disabled,
-        // so a length mismatch is not rejected
-        if new_tokens.is_empty() {
+        // so a length mismatch is not rejected — it is what a split multiword
+        // looks like, and the placement below is what keeps it local
+        if cohorts.is_empty() {
             bail!("CG3 output is empty!");
         }
         debug!(
             "CG3 answered {} cohorts for {} tokens",
-            new_tokens.len(),
+            cohorts.len(),
             original_tokens.len()
         );
 
-        let mut j: usize = 0; // counter for new tokens
-        let mut new_t: Option<usize> = None;
-        let mut reading = String::new();
-        let mut boundary = false;
-        // where each already-indexed CG token sits in the store, so indexing
-        // the same one again lands on the same annotation
-        let mut indexed: HashMap<usize, usize> = HashMap::new();
         // original tokens taken out of the index; applied to the store once the
         // walk is over, which is when the replacement becomes visible
         let mut removed = vec![false; jcas.tokens.len()];
 
         // complete new tokens with information from old ones
-        for i in 0..original_tokens.len() {
-            let orig_t = &original_tokens[i];
-            let orig_covered = covered_text(&text, orig_t.begin, orig_t.end)?;
-            if j < new_tokens.len() {
-                new_t = Some(j);
-                reading = first_reading(&new_tokens[j]);
-                boundary = is_clause_boundary(&new_tokens[j]);
-            }
-            trace!("Token:{} CGToken:{}", orig_covered, reading);
-
-            // Skip the fullstop tokens that were added in order to treat headings as separate sentences.
-            while boundary
-                && !PUNCTUATION_PATTERN.is_match(orig_covered)
-                && i < original_tokens.len() - 1
-                && j < new_tokens.len() - 1
-            {
-                j += 1;
-                if j < new_tokens.len() {
-                    new_t = Some(j);
-                    reading = first_reading(&new_tokens[j]);
-                    boundary = is_clause_boundary(&new_tokens[j]);
-                    trace!("Token: {} new CGToken:{}", orig_covered, reading);
-                }
-            }
-            let target = new_t.ok_or_else(|| anyhow!("no CG token for the original token"))?;
-            self.copy(orig_t, &mut new_tokens[target]);
-            j += 1;
-            trace!("new token begins at: {}", new_tokens[target].begin);
+        for placement in place_cohorts(&original_tokens, &lines, &cohorts) {
+            let readings = cohorts[placement.cohort].readings.clone();
+            trace!(
+                "Token:{} CGToken:{}",
+                covered_text(&text, placement.begin, placement.end)?,
+                first_reading(&readings)
+            );
+            let mut cg_token = CgToken {
+                readings,
+                ..CgToken::default()
+            };
+            // the stretch this cohort speaks for: the whole token when the
+            // analyser answered its line with one cohort, and the
+            // constituent's own part of it when it answered with several
+            self.copy(
+                &Token {
+                    begin: placement.begin,
+                    end: placement.end,
+                    ..Token::default()
+                },
+                &mut cg_token,
+            );
+            trace!("new token begins at: {}", cg_token.begin);
             // update CAS
-            removed[token_order[i]] = true;
-            match indexed.entry(target) {
-                Entry::Occupied(held) => jcas.cg_tokens[*held.get()] = new_tokens[target].clone(),
-                Entry::Vacant(slot) => {
-                    slot.insert(jcas.cg_tokens.len());
-                    jcas.cg_tokens.push(new_tokens[target].clone());
-                }
-            }
+            removed[token_order[placement.token]] = true;
+            jcas.cg_tokens.push(cg_token);
         }
 
         // the annotations the walk replaced leave the store; the rest stay
-        // where they are rather than being cloned into a new one
+        // where they are rather than being cloned into a new one, so a token
+        // no cohort was placed on keeps its span and reaches the learner as a
+        // word without an analysis instead of vanishing
         let mut position = 0;
         jcas.tokens.retain(|_| {
             let keep = !removed[position];
@@ -214,30 +335,34 @@ impl Vislcg3Annotator {
     /*
      * helper for converting Token annotations to a String for vislcg3
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
     fn to_cg3_input(
         &self,
         text: &str,
         token_list: &[Token],
         sent_list: &[SentenceAnnotation],
-    ) -> Result<String> {
-        let mut result = String::new();
+    ) -> Result<Vec<CgLine>> {
+        let mut result = Vec::new();
 
         // figure out where sentences end in terms of positions in the text
         let sentence_ends: HashSet<usize> = sent_list.iter().map(|s| s.end).collect();
 
-        for t in token_list {
+        for (position, t) in token_list.iter().enumerate() {
             let covered = covered_text(text, t.begin, t.end)?;
-            result.push_str(covered);
+            result.push(CgLine {
+                text: covered.to_string(),
+                token: Some(position),
+            });
             // Add sentence boundaries after headings <h1-6>.
             if sentence_ends.contains(&t.end) && !SENTENCE_FINAL_PATTERN.is_match(covered) {
-                result.push('\n');
-                result.push_str(&self.cg_sentence_boundary_token);
+                result.push(CgLine {
+                    text: self.cg_sentence_boundary_token.clone(),
+                    token: None,
+                });
             }
-            result.push('\n'); // each token on a separate line
         }
-        trace!("text to be parsed: {}", result);
+        trace!("text to be parsed: {}", cg3_input_text(&result));
         Ok(result)
     }
 
@@ -282,13 +407,13 @@ impl Vislcg3Annotator {
     /*
      * helper for parsing output from vislcg3 back into our CGTokens
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
-    fn parse_cg_output(&self, cg_output: &str) -> Vec<CgToken> {
-        let mut result: Vec<CgToken> = Vec::new();
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
+    fn parse_cg_output(&self, cg_output: &str) -> Vec<Cohort> {
+        let mut result: Vec<Cohort> = Vec::new();
 
         // current token and its readings
-        let mut current: Option<CgToken> = None;
+        let mut current: Option<Cohort> = None;
         let mut current_readings: Vec<CgReading> = Vec::new();
         // read output line by line, eat the blank lines between cohorts —
         // including the ones a stray space or tab leaves looking non-empty
@@ -299,8 +424,13 @@ impl Vislcg3Annotator {
                     // save previous token
                     close_cohort(&mut result, previous, std::mem::take(&mut current_readings));
                 }
-                // create new token; the surface form inside "<...>" is discarded
-                current = Some(CgToken::default());
+                // create new token, keeping the surface form inside "<...>":
+                // it is the analyser saying which text these readings are
+                // about, and the only thing that ties them to the document
+                current = Some(Cohort {
+                    form: cohort_form(line),
+                    readings: Vec::new(),
+                });
                 current_readings = Vec::new();
             // case 2: a reading in the current cohort, which CG-3 indents
             } else if line.starts_with([' ', '\t']) {
@@ -331,13 +461,44 @@ impl Vislcg3Annotator {
 /// at least one reading joins the result; one that collected none carries
 /// nothing any consumer can read, so it is logged and dropped rather than
 /// handed on as a token whose first reading does not exist.
-fn close_cohort(result: &mut Vec<CgToken>, mut cohort: CgToken, readings: Vec<CgReading>) {
+fn close_cohort(result: &mut Vec<Cohort>, mut cohort: Cohort, readings: Vec<CgReading>) {
     if readings.is_empty() {
         debug!("skipping a CG cohort that carries no reading");
         return;
     }
     cohort.readings = readings;
     result.push(cohort);
+}
+
+/// The surface form a cohort header line carries, with CG-3's backslash
+/// escapes undone so a word written with a quotation mark reads as the text
+/// it is. A header the wrapper cannot be found in yields the empty form,
+/// which matches no line and is therefore placed nowhere.
+fn cohort_form(line: &str) -> String {
+    let Some(inner) = line.strip_prefix("\"<") else {
+        return String::new();
+    };
+    let Some(end) = inner.rfind(">\"") else {
+        return String::new();
+    };
+    let mut form = String::with_capacity(end);
+    let mut chars = inner[..end].chars();
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => form.extend(chars.next()),
+            _ => form.push(c),
+        }
+    }
+    form
+}
+
+/// The one-token-per-line text the analyser is handed: every line, its own
+/// newline behind it.
+fn cg3_input_text(lines: &[CgLine]) -> String {
+    lines
+        .iter()
+        .map(|line| format!("{}\n", line.text))
+        .collect()
 }
 
 #[cfg(test)]

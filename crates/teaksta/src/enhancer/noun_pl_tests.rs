@@ -66,7 +66,7 @@ fn initialize_without_parameter_fails_and_leaves_field_unset() {
     assert!(enhancer.n_pl_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+7/test]
 #[test]
 fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     let enhancer = Vislcg3NounPlEnhancer::default();
@@ -98,7 +98,7 @@ fn process_spans_plural_nouns_and_numbers_repeated_readings() {
     assert_eq!(doc.enhancements[1].enhance_start, second);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+7/test]
 #[test]
 fn process_ignores_readings_without_a_plural_case_tag() {
     let enhancer = Vislcg3NounPlEnhancer::default();

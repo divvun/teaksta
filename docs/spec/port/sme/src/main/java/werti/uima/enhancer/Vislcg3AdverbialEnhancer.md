@@ -104,7 +104,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+2]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+4]
 > Logs "Starting Adverbial enhancement" at info, then reads the process-wide
 > static field WERTiServlet.enhancement_type into a local. That field holds the
 > exercise type chosen by the user — one of "colorize", "click", "mc", "cloze"
@@ -163,4 +163,22 @@
 > above cannot arise — and two requests asking for different exercises never
 > observe each other's. Which tokens are reached is otherwise as above: `mc`
 > and `cloze` pass over an ambiguous token, `colorize` and `click` keep it.
+>
+> Port divergence: a cohort the analysis calls punctuation is never enhanced.
+> Before any of its readings is looked at, the token is refused when any one of
+> them carries `CLB` — the tag a clause boundary comes back with, which on this
+> analyser is the full stop, comma, colon, semicolon, exclamation and question
+> marks and the ellipsis — or `PUNCT`, which is the quotation marks, the
+> brackets and the dashes. The test is over the tags, so a base form whose own
+> letters spell one of them is still a word.
+>
+> This is a guard rather than a second opinion about the analysis. The topic
+> already selects the readings it wants, so over a document whose offsets are
+> right it changes nothing; what it is for is the document whose offsets are
+> wrong. A full stop that had been handed a noun's readings used to reach the
+> learner marked up as a word — clickable, with distractor forms generated for
+> it and a blank to fill in — and nothing downstream could tell it from one.
+> The guard sits on the shared pass every topic runs, so no topic can be
+> written without it and no later mistake in the offsets layer can bring it
+> back.
 

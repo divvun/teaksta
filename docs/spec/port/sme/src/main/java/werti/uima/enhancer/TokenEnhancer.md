@@ -37,10 +37,10 @@
 > mandatory `Method` parameter (default `Markup`) that this annotator
 > never reads.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5]
 > @SuppressWarnings("unchecked") public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+5]
 > Wraps every non-punctuation token in a `teaksta-token` span, marking
 > those whose POS tag is in the configured `tags` list as hits. Consumes
 > `werti.uima.types.annot.Token` annotations (features `begin`, `end`,
@@ -145,4 +145,20 @@
 > character boundaries — is skipped along with the punctuation, and
 > consumes no id. Java read the covered text through the CAS accessor,
 > which would raise there; there is nothing to enhance either way.
+>
+> Port divergence: a CG token the analysis calls punctuation is left out of the
+> annotation index, so it is offered neither as a hit nor as a decoy. A cohort
+> is punctuation when any one of its readings carries `CLB` — the tag a clause
+> boundary comes back with, which on this analyser is the full stop, comma,
+> colon, semicolon, exclamation and question marks and the ellipsis — or
+> `PUNCT`, which is the quotation marks, the brackets and the dashes. The test
+> is over the tags, so a base form whose own letters spell one of them is still
+> a word.
+>
+> The letter test below would not catch this on its own: what it asks about is
+> the text the span covers, and a cohort that was placed on the wrong word
+> covers a word. Asking the analysis instead is what refuses the full stop that
+> was handed a noun's readings, wherever the offsets layer put it. Refusing it
+> here costs it no id, so the decoys around it are numbered as though it had
+> never been in the index.
 

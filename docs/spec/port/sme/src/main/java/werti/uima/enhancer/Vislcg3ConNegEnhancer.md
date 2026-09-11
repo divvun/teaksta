@@ -124,10 +124,10 @@
 > `process` uses a hard-coded regex instead — so this parameter has no effect on
 > behaviour beyond the (null) log line.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+8]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+8]
 > Per-CAS entry point. Consumes CGToken annotations (with their CGReading
 > FSArray) and produces Enhancement annotations wrapping connegative verb forms
 > in HTML span tags. Never throws AnalysisEngineProcessException in practice —
@@ -227,6 +227,24 @@
 > `isValid` answers true for every CAS that reaches here — the guard is an
 > unconditional branch over a marker the deployment has no way to set. The
 > whole of `CasUtils` and the `EnhancementId` marker it wrote go with it.
+>
+> Port divergence: a cohort the analysis calls punctuation is never enhanced.
+> Before any of its readings is looked at, the token is refused when any one of
+> them carries `CLB` — the tag a clause boundary comes back with, which on this
+> analyser is the full stop, comma, colon, semicolon, exclamation and question
+> marks and the ellipsis — or `PUNCT`, which is the quotation marks, the
+> brackets and the dashes. The test is over the tags, so a base form whose own
+> letters spell one of them is still a word.
+>
+> This is a guard rather than a second opinion about the analysis. The topic
+> already selects the readings it wants, so over a document whose offsets are
+> right it changes nothing; what it is for is the document whose offsets are
+> wrong. A full stop that had been handed a noun's readings used to reach the
+> learner marked up as a word — clickable, with distractor forms generated for
+> it and a blank to fill in — and nothing downstream could tell it from one.
+> The guard sits on the shared pass every topic runs, so no topic can be
+> written without it and no later mistake in the offsets layer can bring it
+> back.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

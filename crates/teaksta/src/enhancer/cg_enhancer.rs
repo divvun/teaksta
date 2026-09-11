@@ -29,7 +29,9 @@ use tracing::{debug, error, info, trace};
 pub use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
-use crate::types::{CgToken, Document, Enhancement, ReadingJoin, flatten_reading_into};
+use crate::types::{
+    CgToken, Document, Enhancement, ReadingJoin, flatten_reading_into, is_punctuation_cohort,
+};
 use crate::util::enhancer_utils;
 
 /// Separates one token's generator input (and, in the generator output, one
@@ -345,6 +347,15 @@ impl Run<'_> {
 
         // go through tokens
         for cgt in cg_tokens {
+            // a cohort the analysis calls punctuation is not a word, whatever
+            // else its readings say and wherever the offsets layer put it
+            if is_punctuation_cohort(cgt) {
+                debug!(
+                    "not enhancing the punctuation at {}..{}",
+                    cgt.begin, cgt.end
+                );
+                continue;
+            }
             let found = self.matcher.select(cgt);
             if found.valid {
                 self.enhance_token(doc, cgt, &found, &mut scan);

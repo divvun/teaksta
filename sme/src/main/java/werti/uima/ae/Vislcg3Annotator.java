@@ -187,8 +187,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	}
 */
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+4]
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 		log.debug("Starting vislcg3 processing");
@@ -294,8 +294,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for converting Token annotations to a String for vislcg3
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.to-cg3-input-fn+1]
 	private String toCG3Input(List<Token> tokenList, List<SentenceAnnotation> sentList) {
 		StringBuilder result = new StringBuilder();
 
@@ -459,8 +459,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for parsing output from vislcg3 back into our CGTokens
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+5]
 	private List<CGToken> parseCGOutput(String cgOutput, JCas jcas) {
 		ArrayList<CGToken> result = new ArrayList<CGToken>();
 

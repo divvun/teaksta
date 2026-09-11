@@ -65,6 +65,39 @@ pub fn flatten_reading(cgr: &CgReading, join: ReadingJoin) -> String {
     out
 }
 
+/// The tags the constraint grammar marks a cohort with when what it covers
+/// is punctuation rather than a word.
+///
+/// `CLB` is the clause boundary — the full stop, comma, colon, semicolon,
+/// exclamation and question marks and the ellipsis all come back carrying it
+/// — and `PUNCT` is the rest: the quotation marks, brackets and dashes, whose
+/// `LEFT` and `RIGHT` qualifiers ride beside `PUNCT` rather than replacing
+/// it. Both are read off the real stream rather than assumed.
+pub const PUNCTUATION_TAGS: [&str; 2] = ["CLB", "PUNCT"];
+
+/// Whether the analysis says this cohort covers punctuation rather than a
+/// word, and so that nothing may be built on it: no topic hit, no decoy, no
+/// slot in a question.
+///
+/// The test is over the tags of the cohort's readings, so a base form whose
+/// own letters spell `CLB` is a word and not a boundary. It asks every
+/// reading rather than the first, because a cohort the analysis calls
+/// punctuation on any reading at all is not a word a learner is asked about
+/// — and because that is what makes the answer independent of which reading
+/// a topic would have picked.
+///
+/// This is a guard and not a filter: it is the last thing standing between a
+/// mistake in the offsets layer and a full stop offered to a learner as a
+/// word to click or a blank to fill, so every consumer of the CG tokens
+/// applies it before it looks at a reading.
+pub fn is_punctuation_cohort(token: &CgToken) -> bool {
+    token.readings.iter().any(|reading| {
+        reading
+            .iter()
+            .any(|tag| PUNCTUATION_TAGS.contains(&tag.as_str()))
+    })
+}
+
 /// The exercise a request asks for.
 // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
@@ -349,6 +382,43 @@ mod tests {
         buffer.clear();
         flatten_reading_into(&mut buffer, &reading, ReadingJoin::LeadingPlus);
         assert_eq!(buffer, "+\"gietta\"+N+Sg+Nom");
+    }
+
+    /// A cohort carrying one reading built from `tags`.
+    fn cohort(tags: &[&str]) -> CgToken {
+        CgToken {
+            begin: 0,
+            end: 1,
+            readings: vec![tags.iter().map(|tag| (*tag).to_string()).collect()],
+        }
+    }
+
+    #[test]
+    fn the_punctuation_guard_reads_tags_not_lemmas() {
+        // what the analyser answers for the punctuation of a real page
+        assert!(is_punctuation_cohort(&cohort(&["\".\"", "CLB"])));
+        assert!(is_punctuation_cohort(&cohort(&["\",\"", "CLB"])));
+        assert!(is_punctuation_cohort(&cohort(&["\"…\"", "CLB"])));
+        assert!(is_punctuation_cohort(&cohort(&["\"«\"", "PUNCT", "LEFT"])));
+        assert!(is_punctuation_cohort(&cohort(&["\")\"", "PUNCT", "RIGHT"])));
+        assert!(is_punctuation_cohort(&cohort(&["\"–\"", "PUNCT"])));
+
+        // a base form whose own letters spell a tag is a word
+        assert!(!is_punctuation_cohort(&cohort(&["\"CLB\"", "N", "Sg"])));
+        assert!(!is_punctuation_cohort(&cohort(&["\"vuoiPUNCTga\"", "N"])));
+        assert!(!is_punctuation_cohort(&cohort(&["\"guovlu\"", "N", "Sg"])));
+        assert!(!is_punctuation_cohort(&CgToken::default()));
+
+        // any reading is enough, not only the one a topic would have chosen
+        let noun_first = CgToken {
+            begin: 0,
+            end: 1,
+            readings: vec![
+                vec!["\"guovlu\"".to_string(), "N".to_string()],
+                vec!["\".\"".to_string(), "CLB".to_string()],
+            ],
+        };
+        assert!(is_punctuation_cohort(&noun_first));
     }
 
     fn covered(begin: usize, end: usize) -> Option<String> {

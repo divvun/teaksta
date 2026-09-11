@@ -113,10 +113,10 @@
 > made observable was that the document's language decided nothing, and that
 > is what is tested in its place.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+4]
 > Tokenises the relevant portions of the document by shelling out to the
 > Giellatekno `preprocess` script and mapping its one-token-per-line
 > output back onto character offsets in the document. Consumes
@@ -239,7 +239,8 @@
 >
 > Quirk: resetting `skew` to `0` when a token cannot be located makes the
 > scan restart at the beginning of the document, so subsequent tokens can
-> be matched at earlier, wrong positions.
+> be matched at earlier, wrong positions. The port does not keep this: see
+> the divergence below.
 >
 > Quirk: `getDocumentLanguage()` and the `tokenizers` map built in
 > `initialize` are both unused; the OpenNLP tokenisation path they served
@@ -260,4 +261,19 @@
 > not find instead. The syllable is by construction the stretch of the masked
 > text starting at the cursor, so that search answers the cursor itself and
 > the failure is unreachable rather than merely unhandled.
+>
+> Port divergence: the cursor only ever moves forward. A token that is neither
+> at or after the cursor nor a hyphenation `preprocess` repaired is skipped
+> where it stands, with a debug line naming it and the cursor left where it
+> was, instead of the scan being rewound to the head of the document.
+>
+> The rewind cost more than the token it was reached for. Every token after it
+> searched a document it had already walked, so each one could match an earlier
+> occurrence of its own text — a word that appears twice on a page is enough —
+> and from there the whole tail of the document was annotated at positions
+> belonging to earlier words. One token that cannot be placed is one word
+> without a span; a cursor that has gone backwards is every word after it
+> carrying somebody else's offsets, which is the same failure the CG annotator's
+> own alignment exists to prevent and just as invisible to the learner, who is
+> shown a highlighted word and no reason to doubt it.
 
