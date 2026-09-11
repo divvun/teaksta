@@ -241,6 +241,75 @@ async fn blocks_of(page: &str, activity: &str, mode: &str) -> Vec<String> {
         .collect()
 }
 
+/// The fixture page's prose, written the way a page off the web writes it:
+/// words inside links, a citation marker in a superscript, and a stylesheet
+/// and a control among the prose. The text a learner reads is word for word
+/// [`FIXTURE_PAGE`], so what the two answer can be compared.
+const LINK_LADEN_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head>\n",
+    "<meta charset=\"utf-8\">\n",
+    "<title>Teakstabihtt\u{e1}</title>\n",
+    "</head>\n",
+    "<body>\n",
+    "<h1>Teakstabihtt\u{e1}</h1>\n",
+    "<style>p { color: red }</style>\n",
+    "<p>Mun oidnen <a href=\"https://example.org/viessu\">viesu</a> ikte. ",
+    "Viesut leat stuorr\u{e1}t.<sup class=\"reference\">",
+    "<a href=\"#cite_note-1\">[1]</a></sup></p>\n",
+    "<p><a href=\"/b\u{e1}rdni\">B\u{e1}rdni</a> lea skuvllas. Nieida logai girjji.</p>\n",
+    "<p>Beana viehk\u{e1} olgun, ja mii boahtit ruoktot.",
+    "<button>Deaddil</button></p>\n",
+    "\n",
+    "</body></html>\n"
+);
+
+/// A page off the web is mostly links, and a learner who clicks a linked
+/// word to answer must not be taken off the exercise. The blocks of a linked
+/// page are the blocks of the same prose unlinked: no anchor reaches the
+/// client, the citation marker and the control reach it no more than the
+/// stylesheet does, and every word is still there to be picked — the same
+/// number of them as when nothing was linked at all.
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+2/test]
+#[tokio::test]
+async fn links_reach_no_block_and_cost_no_words() {
+    if !models_available() {
+        return;
+    }
+    let linked = blocks_of(LINK_LADEN_PAGE, "Substantive", "click")
+        .await
+        .join("");
+    let plain = blocks_of(FIXTURE_PAGE, "Substantive", "click")
+        .await
+        .join("");
+
+    for anchor in ["<a ", "</a>", "href"] {
+        assert!(
+            !linked.contains(anchor),
+            "an anchor reached a block: {linked}"
+        );
+    }
+    for apparatus in ["[1]", "Deaddil", "color: red"] {
+        assert!(
+            !linked.contains(apparatus),
+            "{apparatus} reached a block: {linked}"
+        );
+    }
+
+    // Every word the links held is still a word to pick, and no more or
+    // fewer words are offered than the same prose offers unlinked.
+    for word in ["viesu", "B\u{e1}rdni", "Beana"] {
+        assert!(
+            linked.contains(&format!(">{word}<")),
+            "{word} is not a word to pick: {linked}"
+        );
+    }
+    assert_eq!(
+        linked.matches("teaksta-token").count(),
+        plain.matches("teaksta-token").count(),
+        "the links cost words:\n{linked}\n{plain}"
+    );
+}
+
 #[tokio::test]
 async fn the_registry_offers_every_shipped_topic() {
     if !models_available() {
