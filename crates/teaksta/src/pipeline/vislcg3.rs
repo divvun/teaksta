@@ -8,12 +8,11 @@
 //! Authors: Niels Ott?, Adriane Boyd, Heli Uibo
 
 use std::collections::{HashMap, HashSet};
-use std::io::BufRead;
 use std::sync::LazyLock;
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
 use crate::morpho::MorphoPipeline;
 use crate::types::{CgReading, CgToken, Document, SentenceAnnotation, Token, covered_text};
@@ -280,8 +279,26 @@ impl Vislcg3Annotator {
      * + morph. disambiguation + shallow syntactic analysis (CG). The preprocessing (tokenisation)
      * is done by the tokeniser.
      */
+    /// The stdout- and stderr-draining plumbing the external processes needed
+    /// — a consumer per stream, one collecting into a buffer and one logging
+    /// what it read — is subsumed by the morphological pipeline seam, which
+    /// hands the CG3 output back directly.
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
     fn run_fst_cg(&self, input: &str) -> Result<String> {
         // the analyser takes one token per line
         let tokens: Vec<String> = input.lines().map(str::to_string).collect();
@@ -344,114 +361,6 @@ impl Vislcg3Annotator {
             result.push(last);
         }
         Ok(result)
-    }
-}
-
-/// A runnable that reads from a reader (that may be fed by a child process)
-/// and puts what it reads to the logger as debug messages.
-///
-/// No call site remains; the helper that drove it is disabled.
-///
-/// Author: nott
-// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger]
-pub struct ExtCommandConsume2Logger<R: BufRead> {
-    reader: R,
-    msg_prefix: String,
-}
-
-impl<R: BufRead> ExtCommandConsume2Logger<R> {
-    /// `reader` is the reader to read from, `msg_prefix` a string to prefix
-    /// the read lines with.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.ext-command-consume2-logger-fn]
-    pub fn new(reader: R, msg_prefix: String) -> Self {
-        ExtCommandConsume2Logger { reader, msg_prefix }
-    }
-
-    /// Reads from the reader linewise and puts the result to the logger.
-    /// Errors are never propagated but stuffed into the logger as well.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-logger.run-fn]
-    pub fn run(&mut self) {
-        let msg_prefix = self.msg_prefix.clone();
-        for line in (&mut self.reader).lines() {
-            match line {
-                Ok(line) => debug!("{}{}", msg_prefix, line),
-                Err(e) => {
-                    error!(error = %e, "Error in reading from external command.");
-                    break;
-                }
-            }
-        }
-    }
-}
-
-/// A runnable that reads from a reader (that may be fed by a child process)
-/// and puts what it reads into a variable.
-///
-/// No call site remains; the helper that drove it is disabled.
-///
-/// Author: nott
-// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string]
-pub struct ExtCommandConsume2String<R: BufRead> {
-    reader: R,
-    finished: bool,
-    buffer: String,
-}
-
-impl<R: BufRead> ExtCommandConsume2String<R> {
-    /// `reader` is the reader to read from.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.ext-command-consume2-string-fn]
-    pub fn new(reader: R) -> Self {
-        ExtCommandConsume2String {
-            reader,
-            finished: false,
-            buffer: String::new(),
-        }
-    }
-
-    /// Reads from the reader linewise and puts the result to the buffer.
-    /// See also [`Self::get_buffer`] and [`Self::is_done`].
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.run-fn]
-    pub fn run(&mut self) {
-        let mut buffer = std::mem::take(&mut self.buffer);
-        for line in (&mut self.reader).lines() {
-            match line {
-                Ok(line) => {
-                    buffer += &line;
-                    buffer += "\n";
-                }
-                Err(e) => {
-                    error!(error = %e, "Error in reading from external command.");
-                    break;
-                }
-            }
-        }
-        self.buffer = buffer;
-        // set whether the drain ended cleanly or was aborted by a read error,
-        // so a truncated buffer is handed out with no indication of the failure
-        self.finished = true;
-    }
-
-    /// True if the reader read by this struct has reached its end.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.is-done-fn]
-    pub fn is_done(&self) -> bool {
-        self.finished
-    }
-
-    /// The string collected by this struct, or `None` if the stream has not
-    /// reached its end yet.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.ext-command-consume2-string.get-buffer-fn]
-    pub fn get_buffer(&self) -> Option<&str> {
-        if !self.finished {
-            return None;
-        }
-
-        Some(&self.buffer)
     }
 }
 

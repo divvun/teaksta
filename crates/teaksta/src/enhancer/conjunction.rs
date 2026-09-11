@@ -7,12 +7,11 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
-use tracing::{debug, info};
+use tracing::debug;
 
-use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
+use crate::enhancer::syntactic;
 use crate::server::api::Mode;
-use crate::types::{CgReading, CgToken, Document, Enhancement};
-use crate::util::enhancer_utils;
+use crate::types::{CgReading, CgToken, Document};
 
 // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer]
 #[derive(Debug, Clone, Default)]
@@ -54,68 +53,23 @@ impl Vislcg3ConjunctionEnhancer {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.process-fn+4]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
-        info!("Starting conjunction enhancement");
-
-        // keep track of ids for each annotation class
-        let mut class_counts: HashMap<String, i32> = HashMap::new();
-        for con_t in &self.conjunction_tags {
-            class_counts.insert(con_t.clone(), 0);
-            info!("Tag: {}", con_t);
-        }
-
-        // iterating over the configured tags instead of the class-count key set
-        // because it is important to control the order in which spans are
-        // enhanced
-
-        for con_t in &self.conjunction_tags {
-            // go through tokens
-            for token_index in 0..doc.cg_tokens.len() {
-                if matches!(mode, Mode::Cloze | Mode::Mc) {
-                    // more than one reading? don't mark up if the exercise type
-                    // is mc or cloze
-                    if !self.is_safe(&doc.cg_tokens[token_index]) {
-                        continue;
-                    }
-                }
-
-                let (begin, end, reading_count) = {
-                    let cgt = &doc.cg_tokens[token_index];
-                    (cgt.begin, cgt.end, cgt.readings.len())
-                };
-
-                // analyze reading(s)
-                // Loop over all the readings. If there is one analysis that
-                // matches the tag pattern then the token will be selected for
-                // the exercise.
-                for i in 0..reading_count {
-                    let matches = self.contains_tag(&doc.cg_tokens[token_index].readings[i], con_t);
-
-                    if matches {
-                        // increment id
-                        let new_id = class_counts[con_t] + 1;
-                        let id = enhancer_utils::get_id(&format!("teaksta-span-{con_t}"), new_id);
-                        let span_tag = SpanTag::new(
-                            id,
-                            &[TOKEN_CLASS, Self::SPAN_CLASS, &format!("teaksta-{con_t}")],
-                        );
-                        // make new enhancement
-                        let e = Enhancement {
-                            begin,
-                            end,
-                            enhance_start: span_tag.start_tag(),
-                            enhance_end: span_tag.end_tag().to_string(),
-                            relevant: true,
-                        };
-                        class_counts.insert(con_t.clone(), new_id);
-                        doc.enhancements.push(e);
-                        break;
-                    }
-                }
-            }
-        }
-
-        info!("Finished conjunction enhancement");
-        Ok(())
+        syntactic::run(
+            doc,
+            &syntactic::FunctionSpec {
+                start_log: "Starting conjunction enhancement",
+                finish_log: "Finished conjunction enhancement",
+                span_class: Self::SPAN_CLASS,
+                // this is the one topic that names the matched tag in the
+                // markup as well as the topic, so the client can tell a
+                // coordinator from a subordinator
+                tag_class: Some(&|con_t: &str| format!("teaksta-{con_t}")),
+                tags: &self.conjunction_tags,
+                is_safe: &|t| self.is_safe(t),
+                contains_tag: &|cgr, tag| self.contains_tag(cgr, tag),
+                attributes: None,
+            },
+            mode,
+        )
     }
 
     /// Determines whether the given token is safe, i.e. unambiguous

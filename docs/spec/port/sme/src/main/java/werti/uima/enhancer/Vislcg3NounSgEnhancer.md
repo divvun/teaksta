@@ -105,7 +105,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
 > private String getDistractors(String lemma, String stemtype, boolean propernoun)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
 > Generates the wrong-answer surface forms for the multiple-choice activity by driving the
 > Giellatekno finite-state transducers as external processes. Returns a single string of
 > generated word forms, each followed by one space (so the result has a trailing space and
@@ -178,6 +178,23 @@
 > analyser's first analysis is in some other case the leftover case tags remain in the
 > generation prefix and produce doubled tags. Quirk: the transducer paths are hardcoded
 > fields here rather than drawn from `werti.util.Constants`.
+>
+> Port divergence: no process is spawned and no shell command line exists. Both transducer
+> steps go through the in-process morphological pipeline, which is handed the analyser input
+> and the generation input as text and hands their output back as text; the two command
+> strings the Java assembled and logged ("Morph analysis pipeline: {}" and "Form generation
+> pipeline: {}") are therefore not built and not logged, and neither are the transducer path
+> fields they were built from held. With no process there is no standard output to drain: the
+> stdout-consumer helper, its thread, its buffer and the interrupted-join path that returned
+> null are all gone, and so is the reader-closing step. The line-terminator normalisation that
+> helper performed is what the analyser branch still needs, so the first analysis is taken as
+> the first line of the analyser output; the generator output is split on the same whitespace
+> set as before, which the normalisation never affected. A failing transducer step is the one
+> failure the Java caught: it is reported on standard output exactly as the `IOException`
+> message was, and the run falls through to the final log with nothing generated. Everything
+> else — the seven case slots and their order, the proper-noun marker, the two `v1` variants,
+> the `Sg+Nom` strip, the index-out-of-bounds on a malformed analyser response, and which
+> tokens are kept — is as above.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
 > private String getLemma(CGReading cgr)
@@ -220,7 +237,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn]
 > @Override public void initialize(UimaContext context) throws ResourceInitializationException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1]
 > UIMA annotator initialisation. First logs the `NSgTags` field at info level ("Noun Sg
 > tags {}"), then delegates to the superclass `initialize`, then reads the mandatory
 > string configuration parameter named `NSgTags` from the `UimaContext`, splits it on the
@@ -237,7 +254,9 @@
 > If the parameter is absent the cast of the null value and the split fail with a null
 > dereference, which surfaces as an initialisation failure. Quirk: the log statement runs
 > before the assignment (and before the superclass call), so it always reports the tag
-> list as unset.
+> list as unset. The lookup binary, its flags and the two transducer paths the Java class
+> carried as instance fields and only ever assembled command lines out of are not held at
+> all.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.is-safe-fn]
 > private boolean isSafe(CGToken t)

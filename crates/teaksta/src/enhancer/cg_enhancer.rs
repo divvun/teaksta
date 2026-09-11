@@ -29,7 +29,7 @@ use tracing::{debug, info};
 pub use crate::enhancer::cg_span::{HINT_CLASS, SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
-use crate::types::{CgToken, Document, Enhancement};
+use crate::types::{CgToken, Document, Enhancement, ReadingJoin, flatten_reading_into};
 use crate::util::{cas_utils, enhancer_utils};
 
 /// Separates one token's generator input (and, in the generator output, one
@@ -293,11 +293,12 @@ impl Matcher {
     /// whole token.
     fn select(&self, cgt: &CgToken, hint_is_valid: &mut bool) -> Selection {
         let mut found = Selection::default();
+        // one buffer for the whole token: every reading is flattened into it
+        // in turn, and only the reading the token is accepted on is kept
+        let mut current = String::new();
         for reading in &cgt.readings {
-            let mut current = String::new();
-            for rtag in reading {
-                current = current + "+" + rtag;
-            }
+            current.clear();
+            flatten_reading_into(&mut current, reading, ReadingJoin::LeadingPlus);
             let on_topic = self.pos.is_match(&current) && self.selector.is_match(&current);
 
             // an invalid hint doesn't match the valid hint pattern and also
@@ -371,12 +372,22 @@ impl Run<'_> {
     /// The body the Java wraps in its try block: walk the tokens, then hand
     /// whichever generator input the activity called for to the FST and read
     /// the forms back onto the spans.
+    ///
+    /// The token store is moved out for the walk and put back before
+    /// returning: the pass reads the tokens while it extends the document's
+    /// enhancements, and nothing it reaches from here reads the tokens again.
     fn collect(&self, doc: &mut Document, elapsed: &mut f64) -> Result<()> {
-        let cg_tokens = doc.cg_tokens.clone();
+        let cg_tokens = std::mem::take(&mut doc.cg_tokens);
+        let outcome = self.walk(doc, &cg_tokens, elapsed);
+        doc.cg_tokens = cg_tokens;
+        outcome
+    }
+
+    fn walk(&self, doc: &mut Document, cg_tokens: &[CgToken], elapsed: &mut f64) -> Result<()> {
         let mut scan = Scan::default();
 
         // go through tokens
-        for cgt in &cg_tokens {
+        for cgt in cg_tokens {
             let found = self.matcher.select(cgt, &mut scan.hint_is_valid);
             if found.valid {
                 self.enhance_token(doc, cgt, &found, &mut scan);
