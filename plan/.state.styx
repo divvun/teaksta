@@ -69,5 +69,5 @@ assertions (
     {id ux-reader, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T12:10:22.695631Z}
     {id ux-stream, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:56:56.977656Z}
     {id native-naming, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T16:44:29.972172Z}
-    {id native-purge, kind @doing, author "brendan@bbqsrc.net", at 2026-09-11T16:45:13.553685Z}
+    {id native-purge, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T17:11:37.513315Z}
 )

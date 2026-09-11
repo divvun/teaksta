@@ -794,6 +794,7 @@ children (
                 title "Delete the Java trees from the repo in one commit"
                 kind @chore
                 deps (native-naming)
+                sealed true
                 log (
                     {
                         at 2026-09-11T14:51:50.80378Z
@@ -807,6 +808,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @decision
                         text "Operator amendment (2026-09-11): the finale also sweeps all other dangling artifacts — the legacy root README (fdcf220's \"current problems with Konteaksta\" notes), any debug logs / stray SVN-era files at the repo root, and every remaining TODO/FIXME/XXX-style marker in living code and docs (resolve or delete, never park). And: write a standard, sane README.md — what teaksta is (one paragraph, ICALL for North Sámi, WERTi lineage in one sentence), quickstart (build, the env vars table with TEAKSTA_* incl. models, dx bundle for the web client, run), architecture sketch (poem server + divvun-runtime pipelines + Dioxus client + topics.toml), development (cargo test, model-gated suites, fixture regeneration, nplan/spec pointers), license. The Java deletion itself stays ONE pure-deletion commit; the README and artifact sweep may be separate commits under the same node."
+                    }
+
+                    {
+                        at 2026-09-11T17:11:37.513315Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
