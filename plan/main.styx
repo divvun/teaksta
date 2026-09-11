@@ -690,12 +690,20 @@ children (
                 id ux-stream
                 title "Feed the pipelines incrementally: chunked forwards instead of one-shot documents"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-11T13:21:34.894948Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Operator-diagnosed (2026-09-11): the morpho seam one-shots whole documents into divvun-runtime pipelines (single PipelineValue::String per forward), so batch producers burst against the runtime's 16-slot stage buffers and tokio broadcast drops values — \"pipeline \\\"sentences\\\" failed: channel lagged by N\" on any document with enough sentences. Operator ruled: the fix is in TEAKSTA's seam usage — stream documents in incrementally (chunked forwards), NOT in divvun-runtime. Reproduction without network: POST /api/enhance/blocks with 60 inline sentences → \"channel lagged by 45\"; se.wikipedia Sápmi/Kárášjohka/Anár all fail via fetch. Design: morpho.rs runs each pipeline over ordered chunks (one forward per chunk under the same slot lock, outputs concatenated in order); chunk text inputs (tokenize/sentences) at paragraph then sentence boundaries with a sentence-count budget well under the 16-event buffer (~6-8 enders per chunk); chunk the analyze token-line stream after sentence-final punctuation lines with the same budget. Small inputs = one chunk = today's behavior byte-identical (fixtures must pass unregenerated). generate() is in-process hfst, untouched."
+                    }
+
+                    {
+                        at 2026-09-11T13:56:56.977656Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
