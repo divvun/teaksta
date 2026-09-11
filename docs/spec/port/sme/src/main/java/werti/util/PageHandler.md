@@ -38,7 +38,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -107,6 +107,13 @@
 > the file unreadable exactly as a file that will not decode is. North Sámi is
 > multibyte throughout, so a document paired with the wrong text is off a
 > character boundary rather than merely out of range.
+>
+> Port divergence: a cache directory that cannot be created is logged at warn
+> with the reason rather than having its result ignored. The request carries on
+> without a cache, as it does for a file it cannot read or write, but every
+> later request over this deployment pays the same cost for the same reason,
+> and a directory that cannot be made is a fault in the deployment rather than
+> an accident of one page.
 >
 > Port divergence: a cache failure costs the request its cache, not its
 > enhancement. A file that cannot be read is logged at info as the original logs

@@ -15,7 +15,10 @@ use regex::Regex;
 use tracing::{debug, info};
 
 use crate::morpho::MorphoPipeline;
-use crate::types::{CgReading, CgToken, Document, SentenceAnnotation, Token, covered_text};
+use crate::types::{
+    CgReading, CgToken, Document, ReadingJoin, SentenceAnnotation, Token, covered_text,
+    flatten_reading,
+};
 
 trait Spanned {
     fn begin(&self) -> usize;
@@ -54,16 +57,24 @@ fn index_order<T: Spanned>(items: &[T]) -> Vec<usize> {
     ordered
 }
 
-/// The rendering of a cohort's first reading: the string the skip loop tests
-/// for the `CLB` boundary tag and that the log lines carry. The whole tag
-/// sequence is rendered, so there is no bound on how deep into the reading
-/// the `CLB` test can see.
-fn first_reading(token: &CgToken) -> Result<String> {
-    let reading = token
+/// The rendering of a cohort's first reading, for the log lines the walk
+/// carries. Every cohort the parse keeps has one, so the empty string stands
+/// only for a cohort that never reached the walk.
+fn first_reading(token: &CgToken) -> String {
+    match token.readings.first() {
+        Some(reading) => flatten_reading(reading, ReadingJoin::TrailingSpace),
+        None => String::new(),
+    }
+}
+
+/// Whether a cohort's first reading carries CG-3's clause-boundary tag. The
+/// test is over the reading's tags, so a base form whose own text holds the
+/// letters `CLB` is a word and not a sentence boundary.
+fn is_clause_boundary(token: &CgToken) -> bool {
+    token
         .readings
         .first()
-        .ok_or_else(|| anyhow!("Index 0 out of bounds for length {}", token.readings.len()))?;
-    Ok(format!("{:?}", reading))
+        .is_some_and(|reading| reading.iter().any(|tag| tag == "CLB"))
 }
 
 /// Tokens made purely of punctuation, matched against the whole covered text.
@@ -123,8 +134,8 @@ impl Vislcg3Annotator {
         Self::default()
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
     pub fn process(&self, jcas: &mut Document) -> Result<()> {
         debug!("Starting vislcg3 processing");
 
@@ -154,7 +165,7 @@ impl Vislcg3Annotator {
         // parse cg output
         info!("cg3output {}", cg3output);
         info!("parsing CG output");
-        let mut new_tokens = self.parse_cg_output(&cg3output)?;
+        let mut new_tokens = self.parse_cg_output(&cg3output);
         // the check that we got as many tokens back as we provided is disabled,
         // so a length mismatch is not rejected
         if new_tokens.is_empty() {
@@ -166,6 +177,7 @@ impl Vislcg3Annotator {
         let mut j: usize = 0; // counter for new tokens
         let mut new_t: Option<usize> = None;
         let mut reading = String::new();
+        let mut boundary = false;
         // where each already-indexed CG token sits in the store, so indexing
         // the same one again lands on the same annotation
         let mut indexed: HashMap<usize, usize> = HashMap::new();
@@ -179,12 +191,13 @@ impl Vislcg3Annotator {
             let orig_covered = covered_text(&text, orig_t.begin, orig_t.end)?;
             if j < new_tokens.len() {
                 new_t = Some(j);
-                reading = first_reading(&new_tokens[j])?;
+                reading = first_reading(&new_tokens[j]);
+                boundary = is_clause_boundary(&new_tokens[j]);
             }
             info!("Token:{} CGToken:{}", orig_covered, reading);
 
             // Skip the fullstop tokens that were added in order to treat headings as separate sentences.
-            while reading.contains("CLB")
+            while boundary
                 && !PUNCTUATION_PATTERN.is_match(orig_covered)
                 && i < original_tokens.len() - 1
                 && j < new_tokens.len() - 1
@@ -192,7 +205,8 @@ impl Vislcg3Annotator {
                 j += 1;
                 if j < new_tokens.len() {
                     new_t = Some(j);
-                    reading = first_reading(&new_tokens[j])?;
+                    reading = first_reading(&new_tokens[j]);
+                    boundary = is_clause_boundary(&new_tokens[j]);
                     info!("Token: {} new CGToken:{}", orig_covered, reading);
                 }
             }
@@ -315,22 +329,22 @@ impl Vislcg3Annotator {
     /*
      * helper for parsing output from vislcg3 back into our CGTokens
      */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
-    fn parse_cg_output(&self, cg_output: &str) -> Result<Vec<CgToken>> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
+    fn parse_cg_output(&self, cg_output: &str) -> Vec<CgToken> {
         let mut result: Vec<CgToken> = Vec::new();
 
         // current token and its readings
         let mut current: Option<CgToken> = None;
         let mut current_readings: Vec<CgReading> = Vec::new();
-        // read output line by line, eat the blank lines between cohorts
-        for line in cg_output.lines().filter(|line| !line.is_empty()) {
+        // read output line by line, eat the blank lines between cohorts —
+        // including the ones a stray space or tab leaves looking non-empty
+        for line in cg_output.lines().filter(|line| !line.trim().is_empty()) {
             // case 1: new cohort
             if line.starts_with("\"<") {
-                if let Some(mut previous) = current.take() {
+                if let Some(previous) = current.take() {
                     // save previous token
-                    previous.readings = std::mem::take(&mut current_readings);
-                    result.push(previous);
+                    close_cohort(&mut result, previous, std::mem::take(&mut current_readings));
                 }
                 // create new token; the surface form inside "<...>" is discarded
                 current = Some(CgToken::default());
@@ -339,9 +353,6 @@ impl Vislcg3Annotator {
             } else if line.starts_with([' ', '\t']) {
                 // split reading line into tags, dropping the indentation
                 let mut reading: CgReading = line.split_whitespace().map(str::to_string).collect();
-                if reading.is_empty() {
-                    bail!("Index -1 out of bounds for length 0");
-                }
                 reading.retain(|tag| !is_runtime_tag(tag));
                 // a subreading is indented one level deeper and qualifies the
                 // reading above it, so its tags extend that reading
@@ -355,13 +366,25 @@ impl Vislcg3Annotator {
             // reading: the escaped blank between two cohorts (`:` followed by
             // the escaped text of the blank), or a trace line.
         }
-        if let Some(mut last) = current.take() {
+        if let Some(last) = current.take() {
             // save last token
-            last.readings = std::mem::take(&mut current_readings);
-            result.push(last);
+            close_cohort(&mut result, last, std::mem::take(&mut current_readings));
         }
-        Ok(result)
+        result
     }
+}
+
+/// Close a cohort that the walk has read to its end. A cohort that collected
+/// at least one reading joins the result; one that collected none carries
+/// nothing any consumer can read, so it is logged and dropped rather than
+/// handed on as a token whose first reading does not exist.
+fn close_cohort(result: &mut Vec<CgToken>, mut cohort: CgToken, readings: Vec<CgReading>) {
+    if readings.is_empty() {
+        debug!("skipping a CG cohort that carries no reading");
+        return;
+    }
+    cohort.readings = readings;
+    result.push(cohort);
 }
 
 #[cfg(test)]

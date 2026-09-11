@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use anyhow::Result;
 use tracing::{debug, info};
 
+use crate::enhancer::cg_enhancer::GeneratorFailure;
 use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS};
 use crate::server::api::Mode;
 use crate::types::{CgReading, CgToken, Document, Enhancement};
@@ -124,6 +125,11 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
                 let attributes = match spec.attributes {
                     Some(read) => match read(reading) {
                         Ok(attributes) => attributes,
+                        // the transducer seam failing is the deployment's
+                        // fault, not this reading's: skipping it would answer
+                        // the request with an exercise whose questions carry
+                        // no answers to choose between, so it is raised
+                        Err(e) if e.is::<GeneratorFailure>() => return Err(e),
                         // a reading whose base form or generator input cannot
                         // be built is dropped on its own, not together with
                         // the rest of the document
@@ -256,5 +262,33 @@ mod tests {
             "<span id=\"teaksta-span-@SUBJ→-1\" \
              class=\"teaksta-token teaksta-Subject teaksta-@SUBJ→\" lemma=\"mun\">"
         );
+    }
+
+    /// A transducer the deployment cannot reach is not one reading the topic
+    /// cannot use: skipping it would answer the request with an exercise
+    /// whose questions carry nothing to answer them with.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5/test]
+    #[test]
+    fn a_seam_failure_ends_the_pass() {
+        let tags = vec!["@SUBJ→".to_string()];
+
+        let mut doc = Document::new("Mun oainnán mánáid.", PIPELINE_LANGUAGE);
+        doc.cg_tokens
+            .push(cg_token(0, 3, &[&["\"mun\"", "@SUBJ→"]]));
+
+        let err = run(
+            &mut doc,
+            &FunctionSpec {
+                attributes: Some(&|_: &CgReading| {
+                    Err(GeneratorFailure("the generator is not set".to_string()).into())
+                }),
+                ..spec(&tags, "teaksta-Subject")
+            },
+            Mode::Colorize,
+        )
+        .expect_err("a seam failure reaches the caller");
+
+        assert_eq!(err.to_string(), "the generator is not set");
+        assert!(doc.enhancements.is_empty());
     }
 }

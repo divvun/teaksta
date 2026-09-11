@@ -105,7 +105,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn]
 > private String getDistractors(String lemma, String stemtype, boolean propernoun)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4]
 > Generates the wrong-answer surface forms for the multiple-choice activity by driving the
 > Giellatekno finite-state transducers as external processes. Returns a single string of
 > generated word forms, each followed by one space (so the result has a trailing space and
@@ -190,11 +190,15 @@
 > helper performed is what the analyser branch still needs, so the first analysis is taken as
 > the first line of the analyser output; the generator output is split on the same whitespace
 > set as before, which the normalisation never affected. A failing transducer step is the one
-> failure the Java caught: it is reported on standard output exactly as the `IOException`
-> message was, and the run falls through to the final log with nothing generated. Everything
-> else — the seven case slots and their order, the proper-noun marker, the two `v1` variants,
-> the `Sg+Nom` strip, the index-out-of-bounds on a malformed analyser response, and which
-> tokens are kept — is as above.
+> failure the Java caught, and where the Java printed the `IOException` message to standard
+> output and fell through to the final log with nothing generated, it is raised here instead.
+> It is raised as a failure of the seam rather than of this reading, which is the distinction
+> the enhancement pass acts on: a base form the topic cannot read is dropped on its own,
+> while a transducer the deployment cannot reach ends the request, because a multiple-choice
+> question whose wrong answers are all missing is not a poorer exercise but a broken one.
+> Everything else — the seven case slots and their order, the proper-noun marker, the two
+> `v1` variants, the `Sg+Nom` strip, the index-out-of-bounds on a malformed analyser
+> response, and which tokens are kept — is as above.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-lemma-fn]
 > private String getLemma(CGReading cgr)
@@ -271,7 +275,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5]
 > The annotator body. Consumes `CGToken` annotations (with their `readings` array of
 > `CGReading`) from the CAS and produces `Enhancement` annotations; it does not read or
 > modify any other annotation type, and it never removes anything.
@@ -305,6 +309,12 @@
 > a tag that is a lone `"`, an analyser response the compound branch cannot split — is
 > reported at debug level and skipped on its own. The reading scan moves on to the next
 > reading of the same token and the rest of the document is enhanced as usual.
+>
+> A failure of the transducer seam itself is not one of those. It is the deployment's
+> fault rather than this reading's, and skipping it would answer the request with a
+> multiple-choice exercise none of whose questions carry wrong answers to choose between,
+> so it is raised and the request fails with it. The two are told apart by the kind of
+> failure and not by its wording.
 >
 > A new `Enhancement` feature structure is created over the CAS with `relevant` set to
 > true, `begin` set to the token's begin offset and `end` set to the token's end offset.

@@ -124,8 +124,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
 		NSgTags = Arrays.asList(((String)context.getConfigParameterValue("NSgTags")).split(","));
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
 		log.info("Starting Noun Sg enhancement");
@@ -305,8 +305,8 @@ public class Vislcg3NounSgEnhancer extends JCasAnnotator_ImplBase {
     /*
 	 * Generates distractors for the multiple choice exercise.
 	 */
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4]
     private String getDistractors(String lemma, String stemtype, boolean propernoun) {
         String[] distract_forms = {"Sg+Nom", "Sg+Acc", "Sg+Gen", "Sg+Ill", "Sg+Loc", "Sg+Com", "Ess"};
         

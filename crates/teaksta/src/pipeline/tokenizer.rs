@@ -1,7 +1,7 @@
 //! Wrapper for the "Giellatekno tokenizer" (tokenisation that is specially
 //! adapted to North Sámi).
 
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Context as _, Result, anyhow, bail};
 use regex::Regex;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex, MutexGuard};
@@ -146,8 +146,8 @@ impl GiellateknoTokenizer {
     /// one-token-per-line result back onto offsets in the document. The
     /// stdout-consumer plumbing the external `preprocess` command needed is
     /// subsumed by the morphological pipeline seam.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
@@ -172,14 +172,16 @@ impl GiellateknoTokenizer {
         info!("Preprocessing command: {}", tokenisation_pipeline);
 
         // Every line of the tokeniser output carries a trailing newline, as
-        // the stdout consumer appended one per line read.
-        let tokenised_text: String = match MorphoPipeline::shared().tokenize(&text_string) {
-            Ok(lines) => lines.iter().map(|line| format!("{line}\n")).collect(),
-            Err(e) => {
-                println!("{}", e);
-                String::new()
-            }
-        };
+        // the stdout consumer appended one per line read. A tokenisation that
+        // failed is the request's failure: the alternative is an empty token
+        // list, which reaches the learner as a page with no exercise on it
+        // and no indication that anything went wrong.
+        let tokenised_text: String = MorphoPipeline::shared()
+            .tokenize(&text_string)
+            .context("tokenising the relevant text")?
+            .iter()
+            .map(|line| format!("{line}\n"))
+            .collect();
 
         info!("tokenised_text={}", tokenised_text);
 
@@ -337,6 +339,24 @@ mod tests {
         lines.iter().map(|line| format!("{line}\n")).collect()
     }
 
+    /// `process` over a document, for the tests that are about what the pass
+    /// does with the tokeniser's output rather than about the tokeniser. With
+    /// the models in place the call succeeds; without them it names the step
+    /// that failed, which is the only other outcome the pass has.
+    fn processed(doc: &mut Document) -> bool {
+        match GiellateknoTokenizer::new().process(doc) {
+            Ok(()) => true,
+            Err(e) => {
+                let message = format!("{e:#}");
+                assert!(
+                    message.contains("tokenising the relevant text"),
+                    "unexpected error: {message}"
+                );
+                false
+            }
+        }
+    }
+
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn/test]
     #[test]
     fn initialize_registers_english_and_process_never_consults_it() {
@@ -351,10 +371,10 @@ mod tests {
 
         let mut doc = document("mun boran", &[(0, 9)]);
         doc.language = "de".to_string();
-        assert!(GiellateknoTokenizer::new().process(&mut doc).is_ok());
+        processed(&mut doc);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
     #[test]
     fn process_rejects_a_relevant_span_outside_the_document() {
         let mut doc = document("mun", &[(0, 99)]);
@@ -367,12 +387,12 @@ mod tests {
         assert!(doc.tokens.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
     #[test]
     fn process_annotates_only_spans_slicing_document_text() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);
 
-        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+        processed(&mut doc);
 
         for t in &doc.tokens {
             assert!(t.begin <= t.end);
@@ -390,7 +410,7 @@ mod tests {
     fn process_accumulates_nothing_without_relevant_text() {
         let mut doc = document("mun boran guoli.", &[]);
 
-        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+        processed(&mut doc);
 
         assert!(doc.tokens.is_empty());
         assert_eq!(doc.text, "mun boran guoli.");
@@ -418,17 +438,32 @@ mod tests {
         assert!(!NON_SEPARATOR_PATTERN.is_match(""));
 
         let mut doc = document("", &[]);
-        GiellateknoTokenizer::new().process(&mut doc).unwrap();
+        processed(&mut doc);
 
         assert!(doc.tokens.is_empty());
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
     #[test]
-    fn process_completes_with_or_without_pipeline_output() {
+    fn a_failed_tokenisation_is_reported_not_swallowed() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);
 
-        assert!(GiellateknoTokenizer::new().process(&mut doc).is_ok());
+        match GiellateknoTokenizer::new().process(&mut doc) {
+            // with the models in place the relevant text is tokenised
+            Ok(()) => assert!(!doc.tokens.is_empty()),
+            // and without them the pass reports the failure, rather than
+            // completing over an empty token list and handing the request an
+            // exercise with no exercises in it
+            Err(e) => {
+                let message = format!("{e:#}");
+                assert!(
+                    message.contains("tokenising the relevant text"),
+                    "unexpected error: {message}"
+                );
+                assert!(doc.tokens.is_empty());
+            }
+        }
     }
 
     #[test]

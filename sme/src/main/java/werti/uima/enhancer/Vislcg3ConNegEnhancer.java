@@ -94,8 +94,8 @@ public class Vislcg3ConNegEnhancer extends JCasAnnotator_ImplBase {
 		connegTags = Arrays.asList(((String)context.getConfigParameterValue("connegTags")).split(","));
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
     // stop processing if the client has requested it

@@ -126,7 +126,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
 > Consumes `CGToken` annotations (each carrying an FSArray of `CGReading`
 > string-lists) and produces `Enhancement` annotations wrapping every token
 > whose analysis is a plural North Sámi noun.
@@ -201,8 +201,10 @@
 > `generateSpanTagWithPossibleForms`, accumulating time the same way. The shell
 > line the Java assembled from `Constants`, the two shared un-suffixed temp
 > files it redirected through, the pair of writers opened on the same truncating
-> path and the spawned process are all gone. A failure of the generator seam is
-> reported and abandons the rest of the run.
+> path and the spawned process are all gone. A failure of the generator seam reaches the
+> caller. The exercises built from generated forms carry none at all without
+> it, and an enhancement that quietly carries none is wrong rather than merely
+> poorer, so the failure is raised instead of being printed and stepped over.
 >
 > Finally logs "Finished Noun Pl enhancement.", the total wall time in seconds
 > and the generation time in seconds at INFO.

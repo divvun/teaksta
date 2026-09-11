@@ -12,6 +12,7 @@
 use anyhow::{Result, bail};
 use tracing::info;
 
+use crate::enhancer::cg_enhancer::GeneratorFailure;
 use crate::enhancer::syntactic;
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
@@ -55,8 +56,8 @@ impl Vislcg3NounSgEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         syntactic::run(
             doc,
@@ -159,8 +160,8 @@ impl Vislcg3NounSgEnhancer {
     /// needed — the consumer, its buffer and the shell pipelines the class
     /// assembled to spawn them — is subsumed by the morphological pipeline
     /// seam, which hands the transducer output back directly.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.ext-command-consume2-string-fn]
@@ -177,9 +178,11 @@ impl Vislcg3NounSgEnhancer {
     }
 
     /// The surface forms the generator returns for one base form, each
-    /// followed by a space. A transducer step that fails is reported on
-    /// standard output — as the Java reported its `IOException` — and stops
-    /// the run with nothing generated rather than raising.
+    /// followed by a space. A transducer step that fails is the seam's
+    /// failure and not this reading's: the Java printed it to standard output
+    /// and returned nothing generated, where here it is raised so the request
+    /// hears about it instead of being answered with an exercise whose
+    /// questions have no wrong answers to choose between.
     fn generated_forms(&self, lemma: &str, stemtype: &str, propernoun: bool) -> Result<String> {
         let mut lemma = lemma.to_string();
         let mut generation_input = String::new();
@@ -193,13 +196,9 @@ impl Vislcg3NounSgEnhancer {
         if lemma.contains('#') {
             // correct lemma for compound words = morf analysis - N+Sg+Nom
             lemma = lemma.replace("#", "");
-            let from_fst = match morpho.analyze_disambiguate(&[lemma.clone()]) {
-                Ok(s) => s,
-                Err(e) => {
-                    println!("{}", e);
-                    return Ok(String::new());
-                }
-            };
+            let from_fst = morpho
+                .analyze_disambiguate(&[lemma.clone()])
+                .map_err(|e| anyhow::Error::new(GeneratorFailure(e.to_string())))?;
             // the word may be morphologically ambiguous; take the first
             // analysis
             let analysis = from_fst.lines().next().unwrap_or_default();
@@ -235,13 +234,9 @@ impl Vislcg3NounSgEnhancer {
             }
         }
 
-        let from_ifst = match morpho.generate(&generation_input) {
-            Ok(s) => s,
-            Err(e) => {
-                println!("{}", e);
-                return Ok(String::new());
-            }
-        };
+        let from_ifst = morpho
+            .generate(&generation_input)
+            .map_err(|e| anyhow::Error::new(GeneratorFailure(e.to_string())))?;
 
         let mut result = String::new();
         // StringTokenizer's default delimiter set
@@ -476,7 +471,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5/test]
     #[test]
     fn process_wraps_tokens_in_numbered_substantive_spans() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg Nom, Sg Acc")).unwrap();
@@ -501,7 +496,7 @@ mod tests {
         assert_eq!(second.enhance_start, span_start("teaksta-span- Sg Acc-1"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5/test]
     #[test]
     fn process_numbers_per_tag_stopping_at_first_match() {
         let enhancer = Vislcg3NounSgEnhancer::new(Some("Sg,Nom")).unwrap();
@@ -536,7 +531,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.process-fn+5/test]
     #[test]
     fn a_malformed_reading_reports_instead_of_unwinding() {
         let enhancer = enhancer();
@@ -569,7 +564,20 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3/test]
+    /// The shape a generated distractor set has, whichever branch built it.
+    fn assert_generated(result: &str) {
+        assert!(result.is_empty() || result.ends_with(' '), "{result:?}");
+        assert!(
+            !result.contains('\n') && !result.contains('\t'),
+            "{result:?}"
+        );
+        for word in result.split_whitespace() {
+            assert!(!word.contains('+'), "{word} still carries generator tags");
+            assert!(!word.contains('-'), "{word} is an ungenerated form");
+        }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4/test]
     #[test]
     fn distractors_hold_only_generated_surface_forms() {
         let enhancer = enhancer();
@@ -579,35 +587,41 @@ mod tests {
             ("lohkki", "NomAg", false),
             ("Deatnu", "G7", true),
         ] {
-            let result = enhancer
-                .get_distractors(lemma, stemtype, proper)
-                .expect("the non-compound branch swallows generator failures");
-
-            assert!(result.is_empty() || result.ends_with(' '), "{result:?}");
-            assert!(
-                !result.contains('\n') && !result.contains('\t'),
-                "{result:?}"
-            );
-            for word in result.split_whitespace() {
-                assert!(!word.contains('+'), "{word} still carries generator tags");
-                assert!(!word.contains('-'), "{word} is an ungenerated form");
+            match enhancer.get_distractors(lemma, stemtype, proper) {
+                Ok(result) => assert_generated(&result),
+                // a transducer the deployment cannot reach is reported, not
+                // answered with a question that has no wrong answers
+                Err(err) => assert!(err.is::<GeneratorFailure>(), "unexpected error: {err:#}"),
             }
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4/test]
     #[test]
     fn a_compound_lemma_takes_the_analyser_branch() {
         let enhancer = enhancer();
 
         match enhancer.get_distractors("girji#gahppir", "", false) {
-            Ok(result) => {
-                assert!(result.is_empty() || result.ends_with(' '), "{result:?}");
-                for word in result.split_whitespace() {
-                    assert!(!word.contains('+') && !word.contains('-'), "{word}");
-                }
-            }
-            Err(err) => assert!(err.to_string().contains("Index 1 out of bounds"), "{err}"),
+            Ok(result) => assert_generated(&result),
+            // the analyser branch's own index error belongs to this reading,
+            // and a seam that cannot be reached belongs to the deployment
+            Err(err) => assert!(
+                err.to_string().contains("Index 1 out of bounds") || err.is::<GeneratorFailure>(),
+                "unexpected error: {err:#}"
+            ),
         }
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.get-distractors-fn+4/test]
+    #[test]
+    fn a_seam_failure_is_not_an_unusable_reading() {
+        // The two are told apart by type, not by message, because the pass
+        // drops the one and raises the other.
+        let unusable = anyhow::anyhow!("string index out of range: 0");
+        assert!(!unusable.is::<GeneratorFailure>());
+
+        let seam = anyhow::Error::new(GeneratorFailure("the generator is not set".to_string()));
+        assert!(seam.is::<GeneratorFailure>());
+        assert_eq!(seam.to_string(), "the generator is not set");
     }
 }

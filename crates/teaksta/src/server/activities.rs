@@ -213,7 +213,13 @@ mod tests {
             panic!("a malformed activity.xml must abort construction");
         };
 
-        assert_eq!(err.to_string(), "IOException");
+        assert_eq!(
+            err.to_string(),
+            format!(
+                "IOException: {}",
+                dir.path().join("Broken").join("activity.xml").display()
+            )
+        );
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]

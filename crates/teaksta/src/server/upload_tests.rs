@@ -20,7 +20,7 @@ fn rejection(error: anyhow::Error) -> Rejection {
         .unwrap_or_else(|| panic!("a gate rejection, not {error:#}"))
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[test]
 fn a_body_without_a_file_part_is_refused() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -32,7 +32,7 @@ fn a_body_without_a_file_part_is_refused() {
     assert_eq!(rejection(empty), Rejection::NoFile);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[test]
 fn the_cap_is_five_megabytes() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -46,7 +46,7 @@ fn the_cap_is_five_megabytes() {
     assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 0);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[test]
 fn a_non_page_upload_is_refused() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -117,7 +117,33 @@ fn a_page_without_prose_reads_as_nothing() {
     assert_eq!(SME_READING_SHARE, 0.6);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
+#[test]
+fn both_steps_of_the_stored_mode_are_checked() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let directory = tempfile::tempdir().expect("temp dir");
+    let stored = directory.path().join("abc");
+    std::fs::write(&stored, PAGE).expect("write");
+
+    set_read_only(&stored).expect("the mode is set");
+    let mode = std::fs::metadata(&stored)
+        .expect("metadata")
+        .permissions()
+        .mode();
+    assert_eq!(mode & 0o777, STORED_MODE);
+
+    // A file that is not there has no mode to read, and that is reported
+    // rather than passed over as it was when both results were discarded.
+    let absent = directory.path().join("gone");
+    let err = set_read_only(&absent).expect_err("a missing file has no mode");
+    assert!(
+        format!("{err:#}").contains("reading the mode of"),
+        "unexpected error: {err:#}"
+    );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[test]
 fn a_stored_upload_is_addressed_by_file_url() {
     let directory = tempfile::tempdir().expect("temp dir");
@@ -130,7 +156,7 @@ fn a_stored_upload_is_addressed_by_file_url() {
     assert!(url.ends_with("/abc"), "{url}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[test]
 fn an_upload_directory_with_a_space_still_addresses() {
     let root = tempfile::tempdir().expect("temp dir");

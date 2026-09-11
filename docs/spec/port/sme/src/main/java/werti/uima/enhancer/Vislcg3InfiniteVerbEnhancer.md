@@ -123,7 +123,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6]
 > Consumes `CGToken` annotations (with their `CGReading` feature-structure array) and produces
 > `Enhancement` annotations wrapping every token whose morphological reading is an infinite verb form.
 >
@@ -189,7 +189,10 @@
 > independently, though only one can be true at a time. The shell argv the Java assembled from
 > `Constants`, the two shared un-suffixed temp files it redirected through, the pair of writers opened
 > on the same truncating path and the spawned process are all gone, and a failure of the generator
-> seam is reported and abandons the rest of the run.
+> seam reaches the caller. The exercises built from generated forms carry none
+> at all without it, and an enhancement that quietly carries none is wrong
+> rather than merely poorer, so the failure is raised instead of being printed
+> and stepped over.
 >
 > Finally logs the completion message, the total execution time in seconds as
 > `(endTime - startTime) * 0.001`, and the accumulated generation time as

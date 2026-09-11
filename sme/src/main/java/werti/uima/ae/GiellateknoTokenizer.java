@@ -140,8 +140,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	}
 
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {

@@ -67,7 +67,7 @@ fn initialize_splits_the_value_on_commas_without_trimming() {
     assert!(unset.infverb_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -99,7 +99,7 @@ fn process_spans_infinite_verbs_and_numbers_repeated_readings() {
     assert_eq!(doc.enhancements[1].enhance_start, second);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn process_selects_the_first_reading_matching_both_patterns() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -122,7 +122,7 @@ fn process_selects_the_first_reading_matching_both_patterns() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn process_ignores_tokens_without_infinite_verb_readings() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -138,7 +138,7 @@ fn process_ignores_tokens_without_infinite_verb_readings() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn process_returns_early_when_the_cas_was_cancelled() {
     let enhancer = Vislcg3InfiniteVerbEnhancer::default();
@@ -151,7 +151,7 @@ fn process_returns_early_when_the_cas_was_cancelled() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn process_selection_ignores_the_configured_tags() {
     let configured =

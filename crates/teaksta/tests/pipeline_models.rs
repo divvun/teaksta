@@ -403,6 +403,21 @@ async fn the_upload_gate_reads_the_uploaded_text() {
     // The deployment's upload directory carries a space and a non-ASCII
     // character, so the address it hands back has to be encoded to survive.
     assert!(url.contains("teaksta%20v%C3%A1rri"), "{url}");
+    // A text the store kept really is owner-read-only. Both calls that put it
+    // into that mode are checked, so a text they could not have been answered
+    // for is not stored at all rather than stored writable.
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let path = Url::parse(&url)
+            .expect("the address parses")
+            .to_file_path()
+            .expect("a path");
+        let mode = std::fs::metadata(&path)
+            .expect("the stored file")
+            .permissions()
+            .mode();
+        assert_eq!(mode & 0o777, 0o400, "{mode:o}");
+    }
 
     let (content_type, body) = multipart("english.html", ENGLISH_DOCUMENT);
     let refused = client

@@ -51,7 +51,7 @@ fn a_missing_n_tags_parameter_fails_initialisation() {
     assert!(enh.n_tags.is_none());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn a_singular_noun_span_carries_its_lemma() {
     let enh = enhancer();
@@ -78,7 +78,7 @@ fn a_singular_noun_span_carries_its_lemma() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn preposition_hint_is_linked_from_next_noun() {
     let enh = enhancer();
@@ -103,7 +103,7 @@ fn preposition_hint_is_linked_from_next_noun() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn a_bare_number_tag_without_case_is_skipped() {
     let enh = enhancer();
@@ -118,7 +118,7 @@ fn a_bare_number_tag_without_case_is_skipped() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn every_named_number_and_case_pair_qualifies() {
     let enh = enhancer();
@@ -137,7 +137,7 @@ fn every_named_number_and_case_pair_qualifies() {
     assert_eq!(doc.enhancements.len(), 13);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn one_excluded_reading_disqualifies_a_token() {
     let enh = enhancer();
@@ -156,7 +156,7 @@ fn one_excluded_reading_disqualifies_a_token() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
 #[test]
 fn an_adjective_before_pred_stays_eligible() {
     let enh = enhancer();

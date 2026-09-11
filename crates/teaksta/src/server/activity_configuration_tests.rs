@@ -286,7 +286,7 @@ fn load_xml_fails_on_lang_code_with_apostrophe() {
     assert!(err.to_string().contains("XPathExpressionException"));
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2/test]
 #[test]
 fn constructor_records_parent_dir_as_activity_base() {
     let dir = tempfile::tempdir().unwrap();
@@ -302,7 +302,7 @@ fn constructor_records_parent_dir_as_activity_base() {
     assert!(cfg.client_config.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2/test]
 #[test]
 fn constructor_resolves_descriptors_under_the_given_root() {
     let dir = tempfile::tempdir().unwrap();
@@ -327,26 +327,31 @@ fn constructor_resolves_descriptors_under_the_given_root() {
     assert_eq!(elsewhere.get_pre_desc("sme"), None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2/test]
 #[test]
 fn constructor_wraps_missing_file_as_io_exception() {
     let dir = tempfile::tempdir().unwrap();
+    let absent = dir.path().join("absent.xml");
 
-    let err = ActivityConfiguration::new(&dir.path().join("absent.xml"), Path::new(NO_DESCRIPTORS))
+    let err = ActivityConfiguration::new(&absent, Path::new(NO_DESCRIPTORS))
         .err()
         .unwrap();
 
-    assert_eq!(err.to_string(), "IOException");
+    // the activity that could not be loaded is named by the failure itself
+    assert_eq!(
+        err.to_string(),
+        format!("IOException: {}", absent.display())
+    );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2/test]
 #[test]
 fn constructor_rejects_path_without_parent_directory() {
     let err = ActivityConfiguration::new(Path::new("activity.xml"), Path::new(NO_DESCRIPTORS))
         .err()
         .unwrap();
 
-    assert_eq!(err.to_string(), "IOException");
+    assert_eq!(err.to_string(), "IOException: activity.xml");
     assert!(format!("{err:#}").contains("no parent directory"));
 }
 
@@ -715,12 +720,13 @@ fn main_loads_activity_named_by_first_argument() {
 
     main(&args, Path::new(NO_DESCRIPTORS)).unwrap();
 
-    let absent = vec![dir.path().join("absent.xml").to_str().unwrap().to_string()];
+    let missing = dir.path().join("absent.xml");
+    let absent = vec![missing.to_str().unwrap().to_string()];
     assert_eq!(
         main(&absent, Path::new(NO_DESCRIPTORS))
             .unwrap_err()
             .to_string(),
-        "IOException"
+        format!("IOException: {}", missing.display())
     );
 }
 

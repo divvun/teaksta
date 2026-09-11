@@ -167,8 +167,8 @@ public class ActivityConfiguration {
 	
 	
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
 	public ActivityConfiguration(File xmlActivityConfig) throws IOException  {
 		try {
 			actbaseDir = xmlActivityConfig.getParentFile().getAbsolutePath();

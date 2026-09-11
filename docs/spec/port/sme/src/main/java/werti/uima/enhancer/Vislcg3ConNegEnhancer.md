@@ -127,7 +127,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6]
 > Per-CAS entry point. Consumes CGToken annotations (with their CGReading
 > FSArray) and produces Enhancement annotations wrapping connegative verb forms
 > in HTML span tags. Never throws AnalysisEngineProcessException in practice —
@@ -202,8 +202,10 @@
 > the same way into generateSpanTagWithPossibleForms. The shell argv the Java
 > assembled from Constants, the two shared un-suffixed temp files it redirected
 > through, the pair of writers opened on the same truncating path and the
-> spawned process are all gone. A failure of the generator seam is reported and
-> abandons the rest of the run.
+> spawned process are all gone. A failure of the generator seam reaches the
+> caller. The exercises built from generated forms carry none at all without
+> it, and an enhancement that quietly carries none is wrong rather than merely
+> poorer, so the failure is raised instead of being printed and stepped over.
 >
 > Then logs "Finished ConNeg enhancement." plus the total wall-clock time and the
 > accumulated generation time, both in seconds (milliseconds multiplied by

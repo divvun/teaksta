@@ -187,8 +187,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	}
 */
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
 		log.debug("Starting vislcg3 processing");
@@ -459,8 +459,8 @@ public class Vislcg3Annotator extends JCasAnnotator_ImplBase {
 	/*
 	 * helper for parsing output from vislcg3 back into our CGTokens
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
 	private List<CGToken> parseCGOutput(String cgOutput, JCas jcas) {
 		ArrayList<CGToken> result = new ArrayList<CGToken>();
 

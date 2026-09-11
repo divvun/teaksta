@@ -101,10 +101,10 @@
 > initialisation, so each new instance replaces the map shared with all
 > other live instances.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
 > Tokenises the relevant portions of the document by shelling out to the
 > Giellatekno `preprocess` script and mapping its one-token-per-line
 > output back onto character offsets in the document. Consumes
@@ -150,6 +150,13 @@
 > string. The process's stderr is never drained and its exit status is
 > never checked; the process object is not waited on beyond the stdout
 > join.
+>
+> Port divergence: a tokenisation that failed ends the pass. Carrying on
+> over the empty string is what the Java did, and what that produces is a
+> document with no `Token` annotations — which every later stage reads as a
+> page holding nothing to enhance, so the request is answered with an
+> exercise that has no exercises in it and nothing anywhere says why. The
+> failure is raised instead, naming the step that failed.
 >
 > Token splitting. Logs `tokenised_text` at info, then splits it on `"\n"`
 > to get the token list. A `skew` cursor into `textString`, initially `0`,
@@ -208,7 +215,8 @@
 > Quirk: if the `IOException` path is taken, `tokenised_text` stays `""`
 > and the split yields a single empty token, which is skipped by the
 > non-separator test, so `process` completes successfully with zero
-> `Token` annotations rather than reporting failure.
+> `Token` annotations rather than reporting failure. The port does not keep
+> this: see the divergence above.
 >
 > Quirk: the hyphen-repair branch has an off-by-one — `substring(skew,
 > indexOf('-', skew) - 1)` drops the character immediately before the

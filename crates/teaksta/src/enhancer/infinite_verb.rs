@@ -64,8 +64,8 @@ impl Vislcg3InfiniteVerbEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);

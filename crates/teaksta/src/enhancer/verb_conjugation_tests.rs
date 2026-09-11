@@ -32,7 +32,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
     assert!(err.to_string().contains("finverbTags"), "{err}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -84,7 +84,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();

@@ -106,14 +106,14 @@ fn to_cg3_input_reports_span_outside_text() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_builds_token_and_drops_surface() {
     let annotator = Vislcg3Annotator::new();
     let cg =
         "\"<Mun>\"\n\t\"mun\" Pron Pers Sg1 Nom\n\n\"<boran>\"\n\t\"borrat\" V IV Ind Prs Sg1\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(tokens.len(), 2);
     assert_eq!(tokens[0].begin, 0);
@@ -128,13 +128,13 @@ fn parse_cg_output_builds_token_and_drops_surface() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_drops_indent_keeps_later_readings() {
     let annotator = Vislcg3Annotator::new();
     let cg = "\"<lea>\"\n\t\"leat\" V IV Ind Prs Sg3\n\t\"leat\" V IV Imprt Sg2\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(tokens.len(), 1);
     assert_eq!(
@@ -146,52 +146,57 @@ fn parse_cg_output_drops_indent_keeps_later_readings() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
-fn parse_cg_output_collapses_blanks_leaving_bare_cohorts() {
+fn parse_cg_output_skips_cohorts_without_a_reading() {
     let annotator = Vislcg3Annotator::new();
-    let cg = "\"<Mun>\"\n\n\n\"<boran>\"\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    // two adjacent headers, and a header with nothing after it
+    assert!(
+        annotator
+            .parse_cg_output("\"<Mun>\"\n\n\n\"<boran>\"\n")
+            .is_empty()
+    );
 
-    assert_eq!(tokens.len(), 2);
-    assert!(tokens[0].readings.is_empty());
-    assert!(tokens[1].readings.is_empty());
+    // the readingless cohorts go and the rest of the stream survives
+    let cg = "\"<Mun>\"\n\"<boran>\"\n\t\"borrat\" V IV Ind Prs Sg1\n\"<guoli>\"\n";
+    let tokens = annotator.parse_cg_output(cg);
+
+    assert_eq!(tokens.len(), 1);
+    assert_eq!(
+        tokens[0].readings,
+        vec![reading(&["\"borrat\"", "V", "IV", "Ind", "Prs", "Sg1"])]
+    );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_discards_readings_before_first_cohort() {
     let annotator = Vislcg3Annotator::new();
     let cg = "\n\t\"orphan\" N Sg Nom\n\"<Mun>\"\n\t\"mun\" Pron\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(tokens.len(), 1);
     assert_eq!(tokens[0].readings, vec![reading(&["\"mun\"", "Pron"])]);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_without_cohort_header_yields_nothing() {
     let annotator = Vislcg3Annotator::new();
 
-    assert!(annotator.parse_cg_output("").unwrap().is_empty());
-    assert!(
-        annotator
-            .parse_cg_output("\t\"mun\" Pron\n")
-            .unwrap()
-            .is_empty()
-    );
+    assert!(annotator.parse_cg_output("").is_empty());
+    assert!(annotator.parse_cg_output("\t\"mun\" Pron\n").is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_skips_escaped_blank_markers() {
     let annotator = Vislcg3Annotator::new();
     let cg = "\"<Mun>\"\n\t\"mun\" Pron Pers Sg1 Nom @SUBJ>\n:\\n\n\"<.>\"\n\t\".\" CLB\n:\\n\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(tokens.len(), 2);
     assert_eq!(
@@ -203,7 +208,7 @@ fn parse_cg_output_skips_escaped_blank_markers() {
     assert_eq!(tokens[1].readings, vec![reading(&["\".\"", "CLB"])]);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_drops_weight_and_tracking_tags() {
     let annotator = Vislcg3Annotator::new();
@@ -214,7 +219,7 @@ fn parse_cg_output_drops_weight_and_tracking_tags() {
         "\t\"viessu\" N <W:1.5> <firstCohort> <LastCohort> Sg Gen\n"
     );
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(
         tokens[0].readings,
@@ -225,13 +230,13 @@ fn parse_cg_output_drops_weight_and_tracking_tags() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_keeps_semantic_angle_bracket_tags() {
     let annotator = Vislcg3Annotator::new();
     let cg = "\"<viesu>\"\n\t\"viessu\" N <sme> Sg Acc <W:0.0>\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(
         tokens[0].readings,
@@ -239,13 +244,13 @@ fn parse_cg_output_keeps_semantic_angle_bracket_tags() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
 fn parse_cg_output_folds_subreading_into_parent() {
     let annotator = Vislcg3Annotator::new();
     let cg = "\"<girjeráju>\"\n\t\"rádju\" N Sg Gen\n\t\t\"girji\" N Cmp/SgNom Cmp\n\t\"rádju\" N Sg Acc\n";
 
-    let tokens = annotator.parse_cg_output(cg).unwrap();
+    let tokens = annotator.parse_cg_output(cg);
 
     assert_eq!(
         tokens[0].readings,
@@ -265,18 +270,71 @@ fn parse_cg_output_folds_subreading_into_parent() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4/test]
 #[test]
-fn parse_cg_output_reports_index_error_on_whitespace() {
+fn parse_cg_output_tolerates_whitespace_only_lines() {
     let annotator = Vislcg3Annotator::new();
-    let cg = "\"<Mun>\"\n \t\n";
+    let cg = "\"<Mun>\"\n \t\n\t\"mun\" Pron Pers Sg1 Nom\n   \n\"<boran>\"\n\t\"borrat\" V\n";
 
-    let err = annotator.parse_cg_output(cg).unwrap_err();
+    let tokens = annotator.parse_cg_output(cg);
 
-    assert_eq!(err.to_string(), "Index -1 out of bounds for length 0");
+    assert_eq!(tokens.len(), 2);
+    assert_eq!(
+        tokens[0].readings,
+        vec![reading(&["\"mun\"", "Pron", "Pers", "Sg1", "Nom"])]
+    );
+    assert_eq!(tokens[1].readings, vec![reading(&["\"borrat\"", "V"])]);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2/test]
+#[test]
+fn the_boundary_test_reads_tags_not_the_lemma() {
+    // a base form whose own letters spell the boundary tag
+    let lemma = CgToken {
+        begin: 0,
+        end: 4,
+        readings: vec![reading(&["\"CLB\"", "N", "Sg", "Nom"])],
+    };
+    assert!(!is_clause_boundary(&lemma));
+
+    let inside_a_word = CgToken {
+        begin: 0,
+        end: 6,
+        readings: vec![reading(&["\"vuoiCLBga\"", "N", "Sg", "Nom"])],
+    };
+    assert!(!is_clause_boundary(&inside_a_word));
+
+    let boundary = CgToken {
+        begin: 0,
+        end: 1,
+        readings: vec![reading(&["\".\"", "CLB"])],
+    };
+    assert!(is_clause_boundary(&boundary));
+
+    // only the first reading decides, and a cohort with none is no boundary
+    let second_reading_only = CgToken {
+        begin: 0,
+        end: 1,
+        readings: vec![reading(&["\".\"", "PUNCT"]), reading(&["\".\"", "CLB"])],
+    };
+    assert!(!is_clause_boundary(&second_reading_only));
+    assert!(!is_clause_boundary(&CgToken::default()));
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2/test]
+#[test]
+fn the_logged_reading_is_the_flattened_tag_sequence() {
+    let token = CgToken {
+        begin: 0,
+        end: 6,
+        readings: vec![reading(&["\"guolli\"", "N", "Sg", "Nom"])],
+    };
+
+    assert_eq!(first_reading(&token), "\"guolli\" N Sg Nom ");
+    assert_eq!(first_reading(&CgToken::default()), "");
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2/test]
 #[test]
 fn process_propagates_token_span_outside_text() {
     let annotator = Vislcg3Annotator::new();
@@ -294,7 +352,7 @@ fn process_propagates_token_span_outside_text() {
     assert!(jcas.cg_tokens.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2/test]
 #[test]
 fn process_of_a_document_without_tokens_indexes_nothing() {
     let annotator = Vislcg3Annotator::new();

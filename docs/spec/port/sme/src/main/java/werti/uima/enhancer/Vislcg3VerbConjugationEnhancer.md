@@ -127,7 +127,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5]
 > Consumes `CGToken` annotations produced by the vislcg3 analysis stage and
 > produces `Enhancement` annotations wrapping every finite North Sámi verb
 > form in an HTML `<span>`.
@@ -205,8 +205,10 @@
 > `generateSpanTagWithPossibleForms`, accumulating time the same way. The shell
 > line the Java assembled from `Constants`, the two shared un-suffixed temp
 > files it redirected through, the pair of writers opened on the same truncating
-> path and the spawned process are all gone. A failure of the generator seam is
-> reported and abandons the rest of the run.
+> path and the spawned process are all gone. A failure of the generator seam reaches the
+> caller. The exercises built from generated forms carry none at all without
+> it, and an enhancement that quietly carries none is wrong rather than merely
+> poorer, so the failure is raised instead of being printed and stepped over.
 >
 > Finally logs at info level that the enhancement finished, the total
 > execution time in seconds (`(endTime - startTime) * 0.001`) and the

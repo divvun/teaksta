@@ -24,7 +24,7 @@ use std::time::Instant;
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 pub use crate::enhancer::cg_span::{HINT_CLASS, SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
@@ -73,13 +73,19 @@ static TAGS_TBR_LITERALS: LazyLock<Vec<&'static str>> = LazyLock::new(|| {
     literals
 });
 
-/// A failure of the generator seam. This is the only step covered by the
-/// `catch (IOException | InterruptedException)` that wraps the Java body:
-/// it is printed and abandons the rest of the run, whatever the topic's
-/// [`Unchecked`] policy says.
+/// A failure of the transducer seam — the step the `catch (IOException |
+/// InterruptedException)` around the Java body covers. It is a fault in the
+/// deployment rather than in one reading, and the exercises built from
+/// generated forms carry none at all without it, so it reaches the request
+/// whatever the topic's [`Unchecked`] policy says about the errors Java would
+/// not have caught.
+///
+/// Every pass that drops a single unusable reading tests for this type to
+/// tell the two apart: `e.is::<GeneratorFailure>()` is the seam, and anything
+/// else is the reading.
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
-struct GeneratorFailure(String);
+pub struct GeneratorFailure(pub String);
 
 /// What a topic does with an exception Java would not have caught — an
 /// out-of-range substring, a non-numeric `Word` record, a span tag missing
@@ -524,13 +530,16 @@ pub fn run(
 
     // Everything the Java body wraps in try { } catch (IOException |
     // InterruptedException) { printStackTrace(); }. The generator seam is
-    // the only step that raises one of those two; whether anything else
-    // escapes is the topic's own policy.
+    // the only step that raises one of those two, and the Java printed it and
+    // carried on; here it reaches the caller instead, because a topic that
+    // generates its forms has no exercise without them and an enhancement
+    // that quietly carries none is wrong rather than merely poorer. Whether
+    // anything else escapes is still the topic's own policy.
     if let Err(e) = pass.collect(doc, &mut elapsed_generating) {
-        if spec.unchecked == Unchecked::Propagate && !e.is::<GeneratorFailure>() {
+        if e.is::<GeneratorFailure>() || spec.unchecked == Unchecked::Propagate {
             return Err(e);
         }
-        eprintln!("{}", e);
+        error!("{} enhancement abandoned: {:#}", spec.label, e);
     }
 
     info!("Finished {} enhancement.", spec.label);

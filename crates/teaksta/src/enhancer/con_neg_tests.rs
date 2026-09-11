@@ -60,7 +60,7 @@ fn initialize_without_the_parameter_fails() {
     assert_eq!(enhancer.conneg_tags, None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
 #[test]
 fn process_leaves_a_cancelled_document_untouched() {
     let enhancer = Vislcg3ConNegEnhancer::default();
@@ -76,7 +76,7 @@ fn process_leaves_a_cancelled_document_untouched() {
     assert!(doc.enhancements.is_empty());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
 #[test]
 fn process_wraps_each_conneg_token_in_numbered_span() {
     let enhancer = Vislcg3ConNegEnhancer::default();

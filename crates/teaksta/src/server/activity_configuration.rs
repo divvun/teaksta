@@ -346,16 +346,16 @@ impl ActivityConfiguration {
         Ok(())
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
     pub fn new(xml_activity_config: &Path, classpath_root: &Path) -> Result<ActivityConfiguration> {
-        match ActivityConfiguration::build(xml_activity_config, classpath_root) {
-            Ok(res) => Ok(res),
-            Err(e) => {
-                println!("{}", xml_activity_config.display());
-                Err(e.context("IOException"))
-            }
-        }
+        ActivityConfiguration::build(xml_activity_config, classpath_root).map_err(|e| {
+            // The Java named the offending file on standard output, where a
+            // deployment's logs never saw it. It travels with the error
+            // instead, so whoever reads the failure reads which activity
+            // could not be loaded.
+            e.context(format!("IOException: {}", xml_activity_config.display()))
+        })
     }
 
     /// The body of the constructor's `try` block; every failure below is

@@ -11,11 +11,11 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Context as _, Result, anyhow};
 use rand::Rng;
 use rand::distr::Alphanumeric;
 use reqwest::Url;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::morpho::MorphoPipeline;
 use crate::util::html_utils;
@@ -78,8 +78,8 @@ pub struct Upload {
 /// Runs the three gates over an upload and stores what passes them, handing
 /// back the path it was stored at. A closed gate is a [`Rejection`] carried
 /// by the error; anything else is a deployment failure.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
 pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
     let Some(file_name) = upload.file_name.as_deref() else {
         return Err(Rejection::NoFile.into());
@@ -103,7 +103,15 @@ pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
 
     let stored = directory.join(random_name());
     std::fs::write(&stored, &upload.content)?;
-    set_read_only(&stored);
+    // A text that cannot be made read-only is not stored: the file written a
+    // moment ago is taken back out, so a failed upload leaves no writable
+    // copy of the teacher's text behind for the next request to find.
+    if let Err(e) = set_read_only(&stored) {
+        if let Err(removal) = std::fs::remove_file(&stored) {
+            warn!("{} could not be removed: {}", stored.display(), removal);
+        }
+        return Err(e);
+    }
     Ok(stored)
 }
 
@@ -227,14 +235,20 @@ fn random_name() -> String {
         .collect()
 }
 
-fn set_read_only(file: &Path) {
+/// Put the stored file into [`STORED_MODE`]. Both steps are checked: the
+/// mode is the whole of what keeps a stored text from being rewritten or run,
+/// so a deployment where it cannot be set is one where the store does not do
+/// what it says, and saying so is worth more than a file nobody can account
+/// for.
+pub(crate) fn set_read_only(file: &Path) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
 
-    if let Ok(metadata) = std::fs::metadata(file) {
-        let mut permissions = metadata.permissions();
-        permissions.set_mode(STORED_MODE);
-        let _ = std::fs::set_permissions(file, permissions);
-    }
+    let mut permissions = std::fs::metadata(file)
+        .with_context(|| format!("reading the mode of {}", file.display()))?
+        .permissions();
+    permissions.set_mode(STORED_MODE);
+    std::fs::set_permissions(file, permissions)
+        .with_context(|| format!("setting {} read-only", file.display()))
 }
 
 /// The `file:` URL an accepted upload is reachable at.

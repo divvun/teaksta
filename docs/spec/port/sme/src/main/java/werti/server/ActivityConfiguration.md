@@ -26,10 +26,10 @@
 > descriptors were resolved under. A resolved descriptor is a `file:` URL
 > string, or nothing when the expression named no file under that root.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
 > pub fn new(xml_activity_config: &Path, classpath_root: &Path) -> Result<ActivityConfiguration>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.activity-configuration-fn+2]
 > Builds an activity configuration by parsing a single `activity.xml` file,
 > resolving its descriptor expressions against the classpath root it is
 > handed. The whole body is wrapped in a `try` block catching `Exception`.
@@ -50,6 +50,12 @@
 > block prints the `File` itself to standard output via `System.out.println`
 > (yielding the file's path as given) and rethrows it wrapped as
 > `new IOException(e)`. No other exception type ever leaves the constructor.
+>
+> Port divergence: the file's path travels with the wrapped failure instead of
+> going to standard output. The Java printed it where a deployment's logs never
+> saw it, while the error the caller did see named no file at all; the wrapper
+> reads `IOException: <path>`, so whoever reads the failure reads which activity
+> could not be loaded. Nothing is written to standard output.
 >
 > The input stream is never closed; it is left for the garbage collector.
 > `clientConfig` is allocated here but never populated, because the client

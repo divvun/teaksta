@@ -13,7 +13,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::server::api::Mode;
 use crate::server::processors::{AnalysisEngine, Processors};
@@ -119,8 +119,8 @@ impl<'a> PageHandler<'a> {
 
     /// Creates a CAS from the text and runs the pre- and postprocessors for the
     /// topic.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
     pub fn process(&self) -> Result<Option<Document>> {
         let preprocessor = self.processors.get_preprocessor(&self.lang, &self.topic);
         let postprocessor = self.processors.get_postprocessor(&self.lang, &self.topic);
@@ -134,8 +134,18 @@ impl<'a> PageHandler<'a> {
                 cas.text = normalised_text;
                 cas.language = self.lang.clone();
                 let casfile_path = PathBuf::from(&self.path);
-                if !casfile_path.exists() {
-                    let _ = std::fs::create_dir_all(&casfile_path);
+                if !casfile_path.exists()
+                    && let Err(e) = std::fs::create_dir_all(&casfile_path)
+                {
+                    // The cache is an optimisation, so a directory that
+                    // cannot be made costs this request nothing beyond its
+                    // cache — but it costs every later one the same, which is
+                    // a deployment fault worth naming rather than discarding.
+                    warn!(
+                        "Failed to create the cas directory {}! {}",
+                        casfile_path.display(),
+                        e
+                    );
                 }
                 let casfile = casfile_path.join(format!("cas_{}.xmi", self.url));
                 let cached = match casfile.is_file() {
@@ -326,7 +336,7 @@ mod tests {
         assert_eq!(handler.mode, Mode::Cloze);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
     #[test]
     fn process_returns_nothing_when_topic_lacks_engines() {
         let processors = empty_processors();
@@ -350,7 +360,7 @@ mod tests {
         assert!(!cache_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
     #[test]
     fn process_returns_nothing_when_the_language_is_unknown() {
         let processors = empty_processors();
@@ -373,7 +383,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
     #[test]
     fn an_undecodable_cache_file_is_replaced() {
         let processors = model_free_processors();
@@ -397,7 +407,7 @@ mod tests {
         assert_eq!(repaired.page.html, PAGE);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
     #[test]
     fn a_readable_cache_file_is_postprocessed() {
         let processors = model_free_processors();
@@ -426,7 +436,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+4/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
     #[test]
     fn an_unreadable_cached_span_is_a_miss() {
         for span in [

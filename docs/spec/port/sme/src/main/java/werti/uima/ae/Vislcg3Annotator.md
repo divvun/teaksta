@@ -128,7 +128,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn]
 > private List<CGToken> parseCGOutput(String cgOutput, JCas jcas)
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.parse-cg-output-fn+4]
 > Parses VISL CG-3 cohort output into a fresh list of `CGToken` feature structures.
 > Walks `cgOutput` line by line, skipping the empty ones, so the blank line
 > between cohorts disappears. Holds a "current" `CGToken` (initially null) and a
@@ -146,9 +146,8 @@
 > An indented line is treated as a reading of the current cohort. It is split on
 > whitespace, which yields the reading's tags in order and no empty fields, so
 > the indentation CG-3 puts in front of every reading is dropped by the split
-> itself rather than by a backward walk that stopped at it. A reading holding no
-> tags at all — a line of nothing but whitespace — fails the parse. The tag list
-> is what gets added to the current cohort's reading list.
+> itself rather than by a backward walk that stopped at it. The tag list is what
+> gets added to the current cohort's reading list.
 >
 > After the last line, if a current token exists it is flushed the same way and
 > appended. Returns the result list, which is empty when `cgOutput` produced no
@@ -156,9 +155,22 @@
 > allocated in `jcas` but are not added to any CAS index here.
 >
 > Quirk: reading lines seen before the first `"<` header are parsed and then
-> silently dropped when the first cohort resets the list. Quirk: a cohort with no
-> reading lines yields a `CGToken` with a zero-length `readings` array, which the
-> caller then indexes at 0.
+> silently dropped when the first cohort resets the list.
+>
+> Port divergence: the walk is tolerant of a malformed stream, because what it
+> reads was written by an external tool and a whole request rides on it.
+>
+> A line holding nothing but whitespace is a blank line, so a stray space or tab
+> is eaten along with the separators rather than reaching the reading branch and
+> failing the parse over an empty tag list. One such line anywhere in a page's CG
+> output would otherwise cost the whole request.
+>
+> A cohort that collected no readings — two `"<...>"` headers in a row, or a
+> header at the end of the stream — is logged at debug and dropped rather than
+> joining the result. It carries nothing any consumer can read, and the walk in
+> `process` reads a cohort's first reading, which such a cohort has not got. The
+> rest of the stream is parsed and returned as usual, so one malformed cohort
+> costs its own cohort and nothing else.
 >
 > Port divergence: the stream parsed is the one a current VISL CG-3 emits, not
 > the 2013 `lookup2cg` output this walk was written against, and it carries
@@ -183,10 +195,10 @@
 > which keeps a compound's whole tag sequence in one flat reading, as the
 > `lookup2cg` stream delivered it.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
 > @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
 > The UIMA annotator entry point. Consumes `Token` and `SentenceAnnotation`
 > annotations from the CAS and replaces every `Token` with a `CGToken` carrying the
 > constraint-grammar readings for that position.
@@ -225,9 +237,8 @@
 >
 > `IOException`, `IllegalArgumentException` and `InterruptedException` are each
 > caught and rethrown wrapped in `AnalysisEngineProcessException`. Other unchecked
-> exceptions — notably the out-of-bounds error from `getReadings().get(0)` on a
-> cohort with no readings — escape unwrapped. On success, logs
-> "Finished visclg3 processing" at INFO (the message misspells vislcg3).
+> exceptions escape unwrapped. On success, logs "Finished visclg3 processing" at
+> INFO (the message misspells vislcg3).
 >
 > Quirk: when the parsed list runs out before the original tokens do, `newT` and
 > `reading` keep their values from the previous iteration, so the same `CGToken`
@@ -236,6 +247,22 @@
 > surviving annotation. Quirk: the `i < originalTokens.size()-1` guard in the skip
 > loop never changes inside the loop, so it only disables skipping on the final
 > original token.
+>
+> Port divergence: the boundary test reads the reading's tags. The skip loop asks
+> whether the cohort's first reading carries CG-3's `CLB` tag, by comparing each
+> tag of that reading against it, rather than searching for the letters `CLB`
+> anywhere in a rendering of the whole reading. A base form that happens to
+> contain those letters — as part of a word, or as the whole of one — is a word
+> and not a sentence boundary, and under the substring test it was silently
+> treated as one, skipping the cohort a real token was waiting to be paired with.
+>
+> The rendering itself is kept only for the two log lines, and is the reading's
+> tags separated by spaces rather than the UIMA debug form of a feature
+> structure, which has no counterpart here.
+>
+> A cohort without readings no longer reaches this walk: `parseCGOutput` drops
+> it, so the first-reading access that the Java let fail with an out-of-bounds
+> error over a malformed stream has nothing to fail on.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
 > private String runFST_CG(String input) throws IOException,InterruptedException

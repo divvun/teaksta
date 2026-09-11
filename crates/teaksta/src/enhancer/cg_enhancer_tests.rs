@@ -3,6 +3,7 @@
 //! for the function it drives, because all five run this implementation.
 
 use super::*;
+use crate::test_support::cg_token;
 use crate::types::PIPELINE_LANGUAGE;
 
 /// Every shared log line off, as the two verb topics ask for them.
@@ -439,11 +440,11 @@ fn the_cloze_reader_shares_the_record_failures() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+4/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+4/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+4/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+5/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
 #[test]
 fn an_unusable_reading_is_dropped_on_its_own() {
     let refuse = |reading: &str| -> Result<String> {
@@ -481,4 +482,31 @@ fn an_unusable_reading_is_dropped_on_its_own() {
         scan.generator_input,
         format!("beana+N+Sg+Acc\n{}\nWord 0 5\n", MARKER)
     );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6/test]
+#[test]
+fn a_seam_failure_is_never_swallowed() {
+    let echo = |reading: &str| -> Result<String> { Ok(format!("{reading}\n")) };
+
+    // The two topics whose Java handler is a bare `catch (Exception)` swallow
+    // the errors Java would not have caught; neither swallows the seam.
+    for unchecked in [Unchecked::Propagate, Unchecked::Swallow] {
+        let topic = TopicSpec { unchecked, ..PLAIN };
+        let mut doc = Document::new("beana", PIPELINE_LANGUAGE);
+        doc.cg_tokens
+            .push(cg_token(0, 5, &[&["\"beana\"", "N", "Sg", "Nom"]]));
+
+        match run(&mut doc, &topic, Mode::Mc, &echo, &echo) {
+            // with the generator in place the pass completes
+            Ok(()) => {}
+            // and without it the failure reaches the caller, which the Java's
+            // printStackTrace never let it do
+            Err(e) => assert!(e.is::<GeneratorFailure>(), "unexpected error: {e:#}"),
+        }
+    }
 }

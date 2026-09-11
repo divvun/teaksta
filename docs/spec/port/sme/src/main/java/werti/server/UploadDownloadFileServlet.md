@@ -31,14 +31,14 @@
 > Empty content detects as nothing and is not a page. The comparison is a
 > substring test, so a detected `text/html; charset=UTF-8` matches `text/html`.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
 > pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf>
 >
 > pub fn file_url(stored: &Path) -> Result<String>
 >
 > async fn upload_text(mut multipart: Multipart, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
 > `POST /api/upload` takes a teacher's text as `multipart/form-data` and, if
 > it passes every gate, stores it and answers the `file:` URL it is now
 > reachable at — which is what the enhancement endpoints take as their `url`.
@@ -65,7 +65,7 @@
 >
 > A file that passes every gate is written under the keep directory when
 > `keep` was asked for and the temporary directory otherwise, under a
-> ten-character random alphanumeric name, and set owner-read-only so it can be
+> ten-character random alphanumeric name, and set to mode `0400` so it can be
 > neither executed nor rewritten. The reply is a JSON object whose single
 > `url` member is the `file:` URL of the absolute stored path, built from that
 > path rather than written around it: a deployment whose upload directory
@@ -74,9 +74,19 @@
 > with it. Nothing is redirected and no HTML is written: the caller decides
 > what to do next.
 >
+> Both steps of setting the mode — reading the file's permissions and writing
+> the new ones back — are checked, and a text whose mode could not be set is
+> not stored: the file written a moment earlier is removed again and the
+> failure is answered. The mode is the whole of what keeps a stored text from
+> being rewritten or run, so a deployment where it cannot be set is one where
+> the store does not do what it says, and a writable copy of a teacher's text
+> left behind under a name the reply never disclosed is worth less than the
+> failure. A removal that itself fails is logged at warn, there being nothing
+> further to try by then.
+>
 > A failure that is not a gate — the analyser being unavailable, the store
-> being unwritable — is a 500, because it is the deployment's fault rather
-> than the uploader's.
+> being unwritable, a stored text that cannot be made read-only — is a 500,
+> because it is the deployment's fault rather than the uploader's.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.language-gate-fn]
 > pub fn sme_share(page: &str) -> Result<f64>
