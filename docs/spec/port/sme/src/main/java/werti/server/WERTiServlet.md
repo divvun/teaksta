@@ -282,7 +282,7 @@
 > The answer is a JSON array, one entry per block of the analysed text in
 > document order, each an object whose `html` member is that block's markup
 > as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+2]`
 > renders it: the prose the page shows, punctuation and all, with the
 > enhancement spans the whole-page render would have placed already in it.
 > The member is named rather than the block being a bare string, so what the

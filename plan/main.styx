@@ -663,6 +663,12 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-hygiene
+                title "Exercise text hygiene: sanitize block markup, decoy words carry letters"
+                kind @fix
+            }
         )
     }
 )

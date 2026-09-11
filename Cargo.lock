@@ -4922,6 +4922,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sanitizer"
+version = "0.1.0"
+source = "git+https://github.com/necessary-nu/sanitizer-rs#7a0fda809f420ae5a4525458ca78c721fce6df5f"
+dependencies = [
+ "bumpalo",
+ "html5ever 0.39.0",
+ "markup5ever 0.39.0",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "schannel"
 version = "0.1.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5558,6 +5571,7 @@ dependencies = [
  "regex",
  "reqwest",
  "roxmltree",
+ "sanitizer",
  "scraper",
  "serde",
  "serde_json",

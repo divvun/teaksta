@@ -132,13 +132,13 @@
 > enhancement that reached no wrapper — one covering no segment, or one
 > dropped as overlapping — contributes no entry.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+2]
 > pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Vec<String>
 >
 > Port divergence: as for `render_page`, nothing here can fail, so no
 > `Result` is returned.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+2]
 > The analysed text of the page, one entry per block of it, in document
 > order, with every enhancement placed into it.
 >
@@ -159,7 +159,43 @@
 > its own start tag names. A block therefore carries the very markup the
 > whole-page render would have put there.
 >
-> The placed page is then walked once in document order. An element opening a
+> The placed page is then sanitized, which is where this parts company with
+> the whole-page render: blocks are exercise material rather than a page, and
+> markup a learner is handed must not answer to a click of its own. The page
+> goes through a WHATWG Sanitizer API configuration that names what it takes
+> out and lets everything else through as the parser read it. An `a` element
+> is replaced by its children, in the HTML and the SVG namespace both, so a
+> linked word keeps its text and every enhancement span standing in it, and
+> only the anchor goes. `sup`, `style`, `noscript`, `form`, `button`,
+> `input`, `select`, `textarea` and `template` are taken out with their
+> subtrees, and the sanitizer's own safe baseline takes `script`, `iframe`,
+> `object`, `embed`, `frame` and every `on*` event-handler attribute along
+> with them. Nothing is allow-listed: an element allow-list would drop
+> whatever it failed to name, and an attribute allow-list would drop the id,
+> the classes and the generated fields the enhancers write on their spans —
+> which are the exercise — so every other element and every attribute
+> survives untouched.
+>
+> Taking `sup` out whole is the citation rule. A reference marker is written
+> as a superscript `[1]` linking into a list at the foot of the page; it is
+> not a word a learner reads, and its digit was being offered as one to
+> click. The configuration names elements, never classes, so a superscript
+> that is not a reference cannot be told from one that is and goes with it,
+> which exercise text can afford. The semantic inline markup — `em`,
+> `strong`, `i`, `b`, `sub` — stays.
+>
+> The page is handed over as a whole document, because markup that does not
+> open with a doctype or an `html` element is read as a fragment: a page
+> whose first node is a comment serialises to exactly that, and reading it as
+> a fragment would tear its head open and leave its title standing among the
+> prose. A page that already carries a doctype is unharmed by the one
+> prepended for this, since the second is ignored where it is read.
+> Sanitising markup that is already clean answers it back unchanged, so a
+> page holding none of what is named above yields the blocks it yielded
+> before there was a sanitizer to run. A page the sanitizer refuses answers
+> no blocks at all, rather than blocks nobody vouched for.
+>
+> The sanitized page is then walked once in document order. An element opening a
 > block box — the same list `extract` reads a block boundary from — ends the
 > block being written and begins one written as itself; when it closes, the
 > block it interrupted begins again. `html` and `body` hold the page rather

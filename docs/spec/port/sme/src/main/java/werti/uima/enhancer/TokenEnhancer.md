@@ -37,10 +37,10 @@
 > mandatory `Method` parameter (default `Markup`) that this annotator
 > never reads.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
 > @SuppressWarnings("unchecked") public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.process-fn+4]
 > Wraps every non-punctuation token in a `teaksta-token` span, marking
 > those whose POS tag is in the configured `tags` list as hits. Consumes
 > `werti.uima.types.annot.Token` annotations (features `begin`, `end`,
@@ -81,10 +81,27 @@
 > when the page is rendered.
 >
 > For each token, skips it entirely unless its covered text fully matches
-> the regex `.*[^\p{P}].*` — that is, the token must contain at least one
-> character that is not Unicode punctuation. Because `.` does not match
-> line terminators here, a token whose text spans more than one line break
-> also fails the test and is skipped.
+> the regex `.*\p{L}.*` — that is, the token must carry at least one
+> Unicode letter.
+>
+> Port divergence: the Java asked only for one character outside the
+> Unicode punctuation category, which is a weaker test than it reads as.
+> A digit is not punctuation, and neither is a currency sign, a section
+> sign, a non-breaking space or an ordinary one — so a bare `1905`, a `§`
+> and a span covering nothing but whitespace all passed it, and the click
+> exercise offered each of them to the learner as a word to pick. A
+> citation marker is the everyday case: the `1` of a `[1]` reaching the
+> text as a token of its own became a decoy the learner could click. The
+> port asks for a letter instead. Every word of a North Sámi text carries
+> one, diacritics included, so nothing a learner is meant to read is lost,
+> and an abbreviation such as `omd.` keeps its span because it carries
+> letters beside the stop.
+>
+> Because `.` does not match a line terminator here and a letter is not
+> one, a token whose text carries a line break at all fails the test and
+> is skipped — where the Java skipped only a token spanning more than one,
+> since a single break could itself be the non-punctuation character its
+> test asked for.
 >
 > Port divergence: a token whose span the document text cannot be read at —
 > out of range, or inside one of the multibyte characters North Sámi is
