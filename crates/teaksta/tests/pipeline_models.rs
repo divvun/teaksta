@@ -552,6 +552,67 @@ async fn no_block_carries_retired_hint_markup() {
     }
 }
 
+/// A page with a menu and a footer on it, as an uploaded one might have.
+const CHROME_LADEN_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head><meta charset=\"utf-8\">\n",
+    "<title>Beana</title></head><body>\n",
+    "<nav><ul>\n",
+    "<li><a href=\"/ovdasiidu\">Ovdasiidu</a></li>\n",
+    "<li><a href=\"/searvvus\">Searvvus</a></li>\n",
+    "<li><a href=\"/gulahallan\">Gulahallan</a></li>\n",
+    "</ul></nav>\n",
+    "<article>\n",
+    "<p>Mun oidnen viesu ikte. Viesut leat stuorr\u{e1}t ja alit, ja sii leat ",
+    "huksejuvvon boarr\u{e1}siid \u{e1}iggis.</p>\n",
+    "<p>B\u{e1}rdni lea skuvllas odne. Nieida logai girjji mii lei beavddis, ja ",
+    "sii leat ustibat.</p>\n",
+    "<p>Beana viehk\u{e1} olgun, ja mii boahtit ruoktot. Boazu lea guohtumin ",
+    "duoddaris, ja mii oaidnit daid.</p>\n",
+    "</article>\n",
+    "<footer><p>Siidok\u{e1}rta ja priv\u{e1}htavuohta.</p></footer>\n",
+    "</body></html>\n"
+);
+
+/// A page this deployment was given is analysed as it was given. An accepted
+/// upload arrives as a `file:` address, and the reader-mode reduction that
+/// cuts a fetched page down to its article is scoped away from it: the menu
+/// and the footer of an uploaded page are still its author's own words, and
+/// the learner who uploaded it gets back the text they uploaded.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn/test]
+#[tokio::test]
+async fn an_uploaded_page_is_analysed_whole() {
+    if !models_available() {
+        return;
+    }
+    let url = page_url("chrome.html", CHROME_LADEN_PAGE);
+
+    let response = client()
+        .post("/api/enhance/blocks")
+        .body_json(&serde_json::json!({
+            "url": url,
+            "activity": "Substantive",
+            "mode": "colorize",
+        }))
+        .send()
+        .await;
+
+    response.assert_status_is_ok();
+    let body = response.0.into_body().into_string().await.expect("a body");
+    let answered: Vec<Value> = serde_json::from_str(&body).expect("a JSON array");
+    let markup: String = answered
+        .iter()
+        .map(|block| block["html"].as_str().expect("a block carries its markup"))
+        .collect();
+
+    for chrome in ["Ovdasiidu", "Searvvus", "Gulahallan", "Siidok\u{e1}rta"] {
+        assert!(
+            markup.contains(chrome),
+            "{chrome} was cut from a page this deployment was given:\n{markup}"
+        );
+    }
+    assert!(markup.contains("viesu"), "{markup}");
+}
+
 /// The web client renders its exercises from what the block endpoint
 /// answers, so its fixtures are only worth anything if they are blocks this
 /// server really wrote. Each is checked against a fresh reply here, and

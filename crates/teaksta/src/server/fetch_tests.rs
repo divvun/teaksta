@@ -244,6 +244,52 @@ fn climbing_out_of_a_served_directory_is_refused() {
     );
 }
 
+/// A page with enough chrome on it that the reduction would cut it down —
+/// which is what makes reading one off the disk unchanged mean something.
+fn a_reducible_page() -> String {
+    let mut page = String::from(concat!(
+        "<!DOCTYPE html><html><head><title>Beana viehk\u{e1} olgun</title></head><body>",
+        "<nav><ul><li><a href=\"/ovdasiidu\">Ovdasiidu</a></li>",
+        "<li><a href=\"/searvvus\">Searvvus</a></li>",
+        "<li><a href=\"/gulahallan\">Gulahallan</a></li></ul></nav>",
+        "<article>"
+    ));
+    for _ in 0..6 {
+        page.push_str(
+            "<p>Mun oidnen viesu ikte. Viesut leat stuorr\u{e1}t ja alit, ja sii leat \
+             huksejuvvon boarr\u{e1}siid \u{e1}iggis. B\u{e1}rdni lea skuvllas odne, ja \
+             nieida logai girjji mii lei beavddis.</p>",
+        );
+    }
+    page.push_str("</article><footer><p>Priv\u{e1}htavuohta</p></footer></body></html>");
+    page
+}
+
+/// The scope of the reader-mode reduction, at the seam that decides it: a
+/// page read off the disk is the one this deployment was given — an accepted
+/// upload, or a page shipped with an activity — and is handed on exactly as
+/// it was written, chrome and all.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn/test]
+#[tokio::test]
+async fn a_file_is_read_as_it_was_written() {
+    let (_root, config) = deployment();
+    let page = a_reducible_page();
+    // The fixture has to be one the reduction would act on, or the assertion
+    // below would hold for the wrong reason.
+    assert_ne!(
+        reader::reduce(page.clone(), "http://example.org/artihkal"),
+        page,
+        "this page is not one the reduction would change"
+    );
+    let at = config.upload_temp_dir.join("artihkal.html");
+    std::fs::write(&at, &page).expect("a stored page");
+
+    let target = target(&of(&at), &config).expect("a served file is readable");
+    let read = fetch(target).await.expect("the stored page is read");
+
+    assert_eq!(read, page, "a page off the disk was reduced");
+}
+
 #[test]
 fn a_file_not_yet_written_is_still_placed() {
     let (_root, config) = deployment();

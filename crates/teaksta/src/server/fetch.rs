@@ -7,6 +7,10 @@
 //! made before anything is opened: [`target`] either hands back a vetted
 //! [`Target`] or refuses, and [`fetch`] can only be called with a `Target`.
 //!
+//! It is also where a page off the network is told apart from a page off the
+//! disk, so it is where the reader-mode reduction in
+//! [`crate::server::reader`] is applied — to the first and never the second.
+//!
 //! # Schemes
 //!
 //! `http`, `https` and `file`, and nothing else. A `data:`, `ftp:` or
@@ -111,6 +115,7 @@ use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
+use crate::server::reader;
 
 /// How long a page fetch may take, start to finished body.
 pub const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
@@ -185,8 +190,8 @@ impl Target {
 /// Reads the address a request points at, refusing everything this deployment
 /// will not fetch. Nothing is opened here: a refusal costs no connection and
 /// no directory listing beyond resolving the path a `file:` address names.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
 pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal> {
     let address = url.to_string();
     match url.scheme() {
@@ -210,11 +215,20 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
 }
 
 /// Reads a vetted target. A `file:` target is read from disk; a web one is
-/// fetched through the shared client, under the concurrency bound.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+/// fetched through the shared client, under the concurrency bound, and then
+/// reduced to its main content.
+///
+/// This is where the reduction is scoped, because this is where the
+/// difference it turns on is known. A page off the network is a stranger's
+/// whole document, menus and all, and is cut down to the part of it somebody
+/// wrote; a page off the disk is one this deployment was given — an accepted
+/// upload, or a page shipped with an activity — and is answered as it was
+/// written. Neither endpoint chooses, and an inline body never arrives here.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
 pub async fn fetch(target: Target) -> Result<String> {
     let Target { address, read } = target;
     match read {
@@ -225,7 +239,14 @@ pub async fn fetch(target: Target) -> Result<String> {
         }
         Read::Web(url) => {
             let _slot = slot().await?;
-            let fetch = tokio::task::spawn_blocking(move || get(&url, &address));
+            // The reduction runs on the same blocking thread the fetch did.
+            // It parses the page twice over, which is work the reactor should
+            // not be doing, and the extractor's own document is not `Send`,
+            // so it must live and die inside one closure.
+            let fetch = tokio::task::spawn_blocking(move || {
+                let page = get(&url, &address)?;
+                Ok(reader::reduce(page, url.as_str()))
+            });
             fetch
                 .await
                 .map_err(|join| anyhow!("the fetch ended: {join}"))?

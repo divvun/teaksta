@@ -242,8 +242,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -329,8 +329,8 @@ struct SpanRequest {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
 #[handler]
 async fn enhance_spans(
     CappedJson(request): CappedJson<SpanRequest>,
@@ -404,8 +404,8 @@ struct TextBlock {
     html: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
 #[handler]
 async fn enhance_blocks(
     CappedJson(request): CappedJson<BlockRequest>,
@@ -581,7 +581,13 @@ pub fn page_url(raw: &str) -> poem::Result<Url> {
 /// document model raises this, so every file an earlier encoding wrote is
 /// keyed somewhere the new one never looks: the cache goes cold rather than
 /// sour, and no deployment has to be told to empty a directory.
-pub const CACHE_FORMAT_VERSION: u32 = 1;
+///
+/// A build that changes what is analysed raises it for the same reason. It
+/// went to 2 when fetched pages began to be reduced to their main content:
+/// the key names an address, the page behind that address is now cut down
+/// before it is analysed, and every analysis written before the cut is of a
+/// document this build would never produce.
+pub const CACHE_FORMAT_VERSION: u32 = 2;
 
 /// How much of the digest the key carries. 128 bits is past the reach of a
 /// search for two subjects sharing one.

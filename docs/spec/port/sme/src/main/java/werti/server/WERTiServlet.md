@@ -88,7 +88,7 @@
 > no filesystem work and a topic added on disk appears when the server is
 > restarted.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > pub fn target(url: &Url, config: &Config) -> Result<Target, Refusal>
@@ -97,7 +97,7 @@
 >
 > pub enum Refusal { Scheme, Private, Confined }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -156,7 +156,17 @@
 > that answer slowly and forever cannot starve the upload endpoint or the
 > analysis behind this one.
 >
-> The fetched page is analysed by the topic's pipeline pair for the requested
+> Port divergence: a page that arrived over `http` or `https` is reduced to
+> its main content before it is analysed, as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]`
+> reduces one. The servlet analysed whatever the far end sent, so a learner
+> pointed at a newspaper practised on its navigation menus, its cookie banner
+> and its footer as readily as on its article. What is analysed here is the
+> article. A page read from a `file:` address is not reduced — it is one this
+> deployment was given rather than one it went and found — so an accepted
+> upload and a page shipped with an activity are still analysed whole.
+>
+> The page is then analysed by the topic's pipeline pair for the requested
 > exercise, which is handed to the pipeline along with the page, and the
 > result is rendered as a whole page with the request's address as its base
 > URL so the page's own relative links still resolve. Nothing is held across
@@ -164,14 +174,16 @@
 > pipeline registered is a 500, because the registry offered it.
 >
 > The analysed document is cached under a key derived from the address, so the
-> same page requested again is answered from the cache. One line is logged per
-> answered request carrying the address, the exercise and the elapsed time;
-> nothing is appended to a file.
+> same page requested again is answered from the cache. What is cached is the
+> analysis of the reduced page, and the encoding version the key carries is
+> what keeps an analysis written before the reduction from being served after
+> it. One line is logged per answered request carrying the address, the
+> exercise and the elapsed time; nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
 > async fn enhance_spans(CappedJson(request): CappedJson<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -186,6 +198,14 @@
 > is refused, 502 for a page that cannot be fetched and 503 for a fetch that
 > found no slot. An inline `html` body reaches no address and is judged against
 > none.
+>
+> Port divergence: a page the request named and this endpoint went and fetched
+> over `http` or `https` is reduced to its main content before it is analysed,
+> exactly as the whole-page endpoint's is, and by the same step. A page read
+> from a `file:` address is not, and neither is an inline `html` body: both are
+> pages the caller provided deliberately, and what the caller provided is what
+> is analysed, chrome and all. The scope is the fetch's, not the endpoint's —
+> the two endpoints that take a `url` cannot differ about it.
 >
 > The body is weighed before any of that. It may carry 5 MiB and a little
 > framing — what an upload may weigh, since a page carried inline is the
@@ -225,14 +245,14 @@
 > under the old one: they are never looked for again, rather than found and
 > failing to decode.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
 > async fn enhance_blocks(CappedJson(request): CappedJson<BlockRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > struct BlockRequest { html: Option<String>, url: Option<String>, activity: String, mode: String }
 >
 > struct TextBlock { html: String }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
 > `POST /api/enhance/blocks` answers the analysed text block by block, as
 > `application/json`, for a client that renders the exercise itself.
 >
@@ -251,11 +271,13 @@
 > the same content-type requirement as `POST /api/enhance` reads its own, and
 > answered with the same 400, 413, 415, 502 and 503 in the same cases. `mode`
 > and `activity` are validated as they are for every other endpoint, the page
-> is fetched and confined exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]`
-> fetches and confines one, and the analysed document is cached under the same
-> key derived from the same subject, so the two endpoints answer one another's
-> pages from one analysis.
+> is fetched, confined and — when it came off the network — reduced to its
+> main content exactly as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]`
+> fetches, confines and reduces one, and the analysed document is cached under
+> the same key derived from the same subject, so the two endpoints answer one
+> another's pages from one analysis. An inline `html` body is analysed as it
+> was sent, which is what keeps the web client's own fixtures stable.
 >
 > The answer is a JSON array, one entry per block of the analysed text in
 > document order, each an object whose `html` member is that block's markup
@@ -269,6 +291,80 @@
 >
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
+> pub fn reduce(page: String, address: &str) -> String
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
+> A page fetched over `http` or `https` is reduced to its main content before
+> anything is analysed: the navigation menus, the cookie banner, the sidebar
+> of teasers and the footer of links are dropped, and what is analysed is the
+> article. This is teaksta's own step, with nothing behind it in the Java,
+> which analysed whatever the far end sent and so asked a learner to practise
+> the noun cases on a site map.
+>
+> The reduction is the one a browser's reader mode performs, and it is
+> performed by a faithful port of it: block elements are scored by how much
+> prose-shaped text they hold, the subtree that wins is kept, and everything
+> else goes. `dom_smoothie` is the port used — it tracks Readability.js
+> closely, it is maintained, and it is MIT, which this tree may use. It parses
+> through a second copy of the `html5ever` stack, which is the price of an
+> extractor that behaves like the one a learner already has in their browser;
+> the seam between it and the rest of this tree is a string of HTML, so no
+> type from either crosses.
+>
+> ## What is reduced
+>
+> A page fetched over the network, and nothing else. The inline `html` body
+> the POST endpoints accept and every page read from a `file:` address — an
+> accepted upload, a page shipped with an activity — are taken as given:
+> somebody chose those words, there is no chrome around them to find, and
+> dropping the parts a scorer liked least would be a surprise rather than a
+> service.
+>
+> The scope is enforced by where the step is called and not by anything a
+> caller passes. The fetch seam is the one place an address becomes a page and
+> the only place that knows whether the page came off a socket or off the
+> disk, so the reduction lives in its network arm. All three endpoints that
+> take a `url` go through it and therefore reduce identically; an inline body
+> never reaches it at all.
+>
+> ## What comes back
+>
+> The article as a document of its own: the extracted content under the title
+> the page was published as, written both into `<title>`, so a browser handed
+> the whole-page render says what the page is, and as an `<h1>`, so the
+> exercise itself does. The extractor drops a heading that merely repeated the
+> title from the content it kept, so the `<h1>` restores that heading rather
+> than doubling it; a heading that said something else is still below it. The
+> page's declared language is carried over. What is kept is block elements
+> holding text, which is what the extraction seam looks for, so the analysed
+> text still divides into blocks as the page's own did.
+>
+> Links and images inside the article are rewritten against the address the
+> page was fetched from. The whole-page render sets a `<base href>` of its
+> own, but the block endpoint answers fragments with nothing around them, so a
+> relative `src` that survived the cut would otherwise be resolved against
+> whoever displays it.
+>
+> ## When nothing is reduced
+>
+> Extraction is a heuristic and a learner's page may be a class handout or
+> four sentences under a heading, so the step refuses its own work in three
+> places, and every refusal answers the page unchanged, byte for byte. Before
+> parsing, when the extractor's own quick readability check — a score of at
+> least 20 over nodes carrying at least 140 characters — says there is no
+> article shape here to find. At parsing, when it settles on no subtree. And
+> after, when what it kept holds under 140 characters of analysable text, or
+> under a twentieth of what the whole page would have given the analyser.
+>
+> Both floors are measured with the analyser's own extraction rather than with
+> the extractor's, so the two sides are counted by one rule. The twentieth is
+> deliberately low: a chrome-heavy page reducing to a tenth of its text is the
+> step working, not failing, and what the share catches is the other case —
+> the scorer settling on a teaser box and discarding an article many times its
+> size. A page that comes back is therefore either the page that went in or a
+> reduction that cleared both floors, and never blank.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
 > pub fn new(config: Config) -> Result<AppState>
