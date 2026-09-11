@@ -771,12 +771,20 @@ children (
                 title "The Java vocabulary dies: xmi, cas, AnalysisEngine, NPE strings, the phantom language key"
                 kind @refactor
                 deps (native-registry)
+                sealed true
                 log (
                     {
                         at 2026-09-11T14:43:43.070599Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "After native-registry (and after ux-offsets merges — shared files): sweep the Java-runtime vocabulary out of the living code. Targets found by grep: cache files named cas_<key>.xmi with read_xmi/write_xmi (rename to honest JSON names, bump CACHE_FORMAT_VERSION); \"cas\"/\"jcas\" variable and parameter names throughout pipeline/enhancer code (the type is Document — call it that); EngineError::AnalysisEngineProcess/ResourceInitialization and every \"AnalysisEngineProcessException\"/\"NullPointerException:\"/\"IOException:\" message string (normal Rust error types and messages; the user SAW AnalysisEngineProcessException in a live 500 body); UimaError if it survives; PIPELINE_LANGUAGE and the (language, topic) Processors keying — the phantom \"en\" registry key dies, pipelines key by topic alone (PageHandler's lang parameter goes with it); OpenNlpSentenceDetector naming (no OpenNLP exists — it is the sentence-spans seam consumer); check for other brand-of-the-past names (GiellateknoTokenizer names real provenance — keep or rename per judgment, the Giellatekno tokenisation is genuinely what runs). Spec: def rules pin many of these names — bump signatures honestly; rules whose entire concept is the Java runtime retire with it. High rule churn expected; the honest-shrink precedent is established."
+                    }
+
+                    {
+                        at 2026-09-11T16:44:29.972172Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
