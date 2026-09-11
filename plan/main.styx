@@ -712,12 +712,20 @@ children (
                 id ux-offsets
                 title "Compound and MWE cohorts map to their surface word: no cursor skew in offset mapping"
                 kind @fix
+                sealed true
                 log (
                     {
                         at 2026-09-11T14:00:05.983099Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Root cause of the operator's \".\" bug, caught live (2026-09-11) on se.wikipedia Sápmi: a teaksta-Substantive HIT span with lemma \"guovlu\" covering the text \".\", neighbors shifted (lemma \"duottar\" on \"Skánddat\", lemma \"viđji\" on \"nohká\" — its id carries cohort-with-dynamic-compound). Mechanism: the analyze pipeline (mwesplit) emits MULTIPLE cohorts for one surface word (dynamic compounds like \"várreviđji\" → constituent cohorts); the offset mapper searches each cohort form forward in the document text, finds a constituent form inside the compound surface, and the cursor desynchronizes — every following token in the region maps one word off until a noun lands on punctuation. Repro artifact: scratchpad/verify-S%C3%A1pmi.json (1 letterless HIT). The letterless-decoy filter (ux-hygiene) cannot catch hits. Fix in the offset-mapping layer (pipeline/tokenizer.rs form→offset cursor and/or vislcg3.rs CG-token mapping): detect consecutive cohorts whose forms are substrings/concatenation of the one surface word at the cursor and map them all WITHIN that word (or map the whole compound to the surface span), and make the mapper re-sync robustly instead of cascading skew when a form is found in the wrong place. End state: zero letterless HITS on the Sápmi page, and neighbors carry the right lemmas for their surface words."
+                    }
+
+                    {
+                        at 2026-09-11T15:09:34.694309Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

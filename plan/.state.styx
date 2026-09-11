@@ -66,5 +66,5 @@ assertions (
     {id ux-hygiene, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:37:09.890015Z}
     {id ux-reader, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T12:10:22.695631Z}
     {id ux-stream, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:56:56.977656Z}
-    {id ux-offsets, kind @doing, author "brendan@bbqsrc.net", at 2026-09-11T14:00:18.899519Z}
+    {id ux-offsets, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T15:09:34.694309Z}
 )
