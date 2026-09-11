@@ -1,12 +1,17 @@
 //! Typed client for the teaksta backend.
 //!
-//! Four endpoints answer this app: one names the topics and exercise modes on
-//! offer, one hands back a whole enhanced page, one hands back the span map for
-//! a page the caller already holds, and one takes a teacher's own text and hands
-//! back the URL the other two read it from. Each is answered in a single
-//! request.
+//! Three endpoints answer this app: one names the topics and exercise modes on
+//! offer, one hands back the analysed text of a page block by block, and one
+//! takes a teacher's own text and hands back the URL the second reads it from.
+//! Each is answered in a single request.
+//!
+//! The backend also answers a whole enhanced page and a per-token span map,
+//! and this app asks for neither. The page is a foreign document this app has
+//! no business rendering, and the span map is the browser add-on's protocol:
+//! its entries are keyed by positions in an analysed document text the caller
+//! never receives, and they carry the matched word forms alone — no prose, no
+//! punctuation, no block structure — so no exercise can be built from them.
 
-use std::collections::BTreeMap;
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
@@ -17,9 +22,8 @@ pub use upload::{
     MAX_UPLOAD_BYTES, Rejection, UploadFile, boundary_for, multipart_body, parse_upload, upload,
 };
 
-/// Where both enhancement endpoints live: the page one under GET, the span map
-/// under POST.
-pub const ENHANCE_PATH: &str = "/api/enhance";
+/// Where the analysed text is asked for, block by block.
+pub const BLOCKS_PATH: &str = "/api/enhance/blocks";
 
 /// Where the topic and mode registry lives.
 pub const ACTIVITIES_PATH: &str = "/api/activities";
@@ -53,22 +57,9 @@ impl Backend {
         &self.base
     }
 
-    /// The GET the entry form performs: the enhanced page for one URL, topic
-    /// and mode.
-    pub fn enhance_url(&self, request: &EnhanceRequest) -> String {
-        format!(
-            "{}{}?url={}&activity={}&mode={}",
-            self.base,
-            ENHANCE_PATH,
-            urlencoding::encode(&request.url),
-            urlencoding::encode(&request.activity),
-            urlencoding::encode(&request.mode),
-        )
-    }
-
-    /// Where the span map is asked for.
-    pub fn spans_url(&self) -> String {
-        format!("{}{}", self.base, ENHANCE_PATH)
+    /// Where the analysed text is asked for.
+    pub fn blocks_url(&self) -> String {
+        format!("{}{}", self.base, BLOCKS_PATH)
     }
 
     /// Where the registry is read from.
@@ -82,47 +73,34 @@ impl Backend {
     }
 }
 
-/// One whole-page enhancement request.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EnhanceRequest {
-    /// The web page the learner wants to practise on.
-    pub url: String,
+/// One request for the analysed text of a page: the page itself, or where the
+/// backend fetches it. Exactly one of the two is sent, which is what the
+/// endpoint accepts.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BlockRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub html: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
     /// The activity directory name, e.g. `VerbConjugation`.
     pub activity: String,
     /// The exercise asked for: colorize, click, mc or cloze.
     pub mode: String,
 }
 
-impl EnhanceRequest {
-    pub fn new(url: impl Into<String>, activity: impl Into<String>, mode: &str) -> Self {
+impl BlockRequest {
+    /// Ask for the analysed text of a page the backend fetches itself, which
+    /// is what a learner naming a web page asks for.
+    pub fn fetched(url: impl Into<String>, activity: impl Into<String>, mode: &str) -> Self {
         Self {
-            url: url.into(),
+            html: None,
+            url: Some(url.into()),
             activity: activity.into(),
             mode: mode.to_string(),
         }
     }
 
-    /// Whether the backend has everything it needs, which it does not while a
-    /// route is still being filled in.
-    pub fn is_complete(&self) -> bool {
-        !self.url.is_empty() && !self.activity.is_empty() && !self.mode.is_empty()
-    }
-}
-
-/// The span endpoint's body: the page itself, or where the backend fetches it.
-/// Exactly one of the two is sent, which is what the endpoint accepts.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct SpanRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub html: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-    pub activity: String,
-    pub mode: String,
-}
-
-impl SpanRequest {
-    /// Ask for the spans of a page the caller already holds.
+    /// Ask for the analysed text of a page the caller already holds.
     pub fn inline(html: impl Into<String>, activity: impl Into<String>, mode: &str) -> Self {
         Self {
             html: Some(html.into()),
@@ -132,21 +110,30 @@ impl SpanRequest {
         }
     }
 
-    /// Ask for the spans of a page the backend fetches itself.
-    pub fn fetched(url: impl Into<String>, activity: impl Into<String>, mode: &str) -> Self {
-        Self {
-            html: None,
-            url: Some(url.into()),
-            activity: activity.into(),
-            mode: mode.to_string(),
-        }
+    /// Whether the backend has everything it needs, which it does not while a
+    /// route is still being filled in. Exactly one source, and a source that
+    /// holds something: a route carrying an empty `url` names no page.
+    pub fn is_complete(&self) -> bool {
+        let source = match (&self.html, &self.url) {
+            (Some(html), None) => !html.is_empty(),
+            (None, Some(url)) => !url.is_empty(),
+            _ => false,
+        };
+
+        source && !self.activity.is_empty() && !self.mode.is_empty()
     }
 }
 
-/// The span endpoint's reply: the position each enhanced fragment covers in the
-/// page, to the markup that replaces it. Keys are strings because JSON object
-/// keys are.
-pub type EnhancedSpans = BTreeMap<String, String>;
+/// One block of the analysed text: the prose of that block with the topic's
+/// spans already standing in it.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct TextBlock {
+    pub html: String,
+}
+
+/// The block endpoint's reply: every block of the analysed text, in document
+/// order.
+pub type EnhancedText = Vec<TextBlock>;
 
 /// One topic the backend offers.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
@@ -213,8 +200,8 @@ pub fn parse_registry(body: &str) -> Result<Registry, ApiError> {
     serde_json::from_str(body).map_err(|error| ApiError::Malformed(error.to_string()))
 }
 
-/// Decode a span-map reply.
-pub fn parse_spans(body: &str) -> Result<EnhancedSpans, ApiError> {
+/// Decode a block reply.
+pub fn parse_blocks(body: &str) -> Result<EnhancedText, ApiError> {
     serde_json::from_str(body).map_err(|error| ApiError::Malformed(error.to_string()))
 }
 
@@ -267,30 +254,18 @@ pub async fn fetch_registry(backend: &Backend) -> Result<Registry, ApiError> {
     Ok(registry)
 }
 
-/// One enhanced page, as HTML, in a single request.
-pub async fn fetch_enhanced(
+/// The analysed text of one page, block by block, in a single request. The
+/// endpoint takes exactly one of the two sources, so a body naming both or
+/// neither is refused here instead of being sent for a refusal.
+pub async fn fetch_blocks(
     backend: &Backend,
-    request: &EnhanceRequest,
-) -> Result<String, ApiError> {
+    request: &BlockRequest,
+) -> Result<EnhancedText, ApiError> {
     if !request.is_complete() {
         return Err(ApiError::Incomplete);
     }
 
-    get_text(&backend.enhance_url(request)).await
-}
-
-/// The span map for a page the caller already holds. The endpoint takes
-/// exactly one of the two sources, so a body naming both or neither is refused
-/// here instead of being sent for a refusal.
-pub async fn fetch_spans(
-    backend: &Backend,
-    request: &SpanRequest,
-) -> Result<EnhancedSpans, ApiError> {
-    if request.html.is_some() == request.url.is_some() {
-        return Err(ApiError::Incomplete);
-    }
-
-    parse_spans(&post_json(&backend.spans_url(), request).await?)
+    parse_blocks(&post_json(&backend.blocks_url(), request).await?)
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -304,7 +279,7 @@ async fn get_text(url: &str) -> Result<String, ApiError> {
 }
 
 #[cfg(target_arch = "wasm32")]
-async fn post_json(url: &str, body: &SpanRequest) -> Result<String, ApiError> {
+async fn post_json(url: &str, body: &BlockRequest) -> Result<String, ApiError> {
     let payload =
         serde_json::to_string(body).map_err(|error| ApiError::Malformed(error.to_string()))?;
     let response = gloo_net::http::Request::post(url)
@@ -336,7 +311,7 @@ async fn get_text(_url: &str) -> Result<String, ApiError> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-async fn post_json(_url: &str, _body: &SpanRequest) -> Result<String, ApiError> {
+async fn post_json(_url: &str, _body: &BlockRequest) -> Result<String, ApiError> {
     Err(ApiError::Unsupported)
 }
 
@@ -351,8 +326,8 @@ mod tests {
         r#"{"name":"cloze","label":"Čále rivttes sániid!"}]}"#
     );
 
-    fn sample() -> EnhanceRequest {
-        EnhanceRequest::new(
+    fn sample() -> BlockRequest {
+        BlockRequest::fetched(
             "http://example.org/artihkal?id=7&p=2",
             "VerbConjugation",
             "cloze",
@@ -361,22 +336,9 @@ mod tests {
 
     #[test]
     fn same_origin_builds_a_root_relative_url() {
-        let url = Backend::default().enhance_url(&sample());
-
-        assert!(url.starts_with("/api/enhance?"));
+        assert_eq!(Backend::default().blocks_url(), "/api/enhance/blocks");
         assert_eq!(Backend::default().activities_url(), "/api/activities");
-        assert_eq!(Backend::default().spans_url(), "/api/enhance");
-    }
-
-    #[test]
-    fn the_query_carries_the_endpoint_parameters() {
-        let url = Backend::default().enhance_url(&sample());
-
-        assert_eq!(
-            url,
-            "/api/enhance?url=http%3A%2F%2Fexample.org%2Fartihkal%3Fid%3D7%26p%3D2\
-             &activity=VerbConjugation&mode=cloze"
-        );
+        assert_eq!(Backend::default().upload_url(), "/api/upload");
     }
 
     #[test]
@@ -384,27 +346,18 @@ mod tests {
         let backend = Backend::at("https://gtweb.uit.no/teaksta/");
 
         assert_eq!(backend.base(), "https://gtweb.uit.no/teaksta");
-        assert!(
-            backend
-                .enhance_url(&sample())
-                .starts_with("https://gtweb.uit.no/teaksta/api/enhance?")
+        assert_eq!(
+            backend.blocks_url(),
+            "https://gtweb.uit.no/teaksta/api/enhance/blocks"
         );
     }
 
     #[test]
-    fn a_request_missing_a_parameter_is_incomplete() {
-        assert!(sample().is_complete());
-        assert!(!EnhanceRequest::new("", "Subject", "click").is_complete());
-        assert!(!EnhanceRequest::new("http://a.example", "", "click").is_complete());
-        assert!(!EnhanceRequest::new("http://a.example", "Subject", "").is_complete());
-    }
-
-    #[test]
-    fn a_span_request_sends_one_source() {
+    fn a_block_request_sends_one_source() {
         let inline =
-            serde_json::to_string(&SpanRequest::inline("<p>a</p>", "Object", "mc")).unwrap();
+            serde_json::to_string(&BlockRequest::inline("<p>a</p>", "Object", "mc")).unwrap();
         let fetched =
-            serde_json::to_string(&SpanRequest::fetched("http://a.example", "Object", "mc"))
+            serde_json::to_string(&BlockRequest::fetched("http://a.example", "Object", "mc"))
                 .unwrap();
 
         assert_eq!(
@@ -415,6 +368,26 @@ mod tests {
             fetched,
             r#"{"url":"http://a.example","activity":"Object","mode":"mc"}"#
         );
+    }
+
+    /// The endpoint takes exactly one of the two sources and needs both the
+    /// topic and the exercise, so a request short of any of that never leaves
+    /// the browser.
+    #[test]
+    fn a_request_missing_a_parameter_is_incomplete() {
+        assert!(sample().is_complete());
+        assert!(!BlockRequest::fetched("", "Subject", "click").is_complete());
+        assert!(!BlockRequest::fetched("http://a.example", "", "click").is_complete());
+        assert!(!BlockRequest::fetched("http://a.example", "Subject", "").is_complete());
+        assert!(!BlockRequest::default().is_complete());
+
+        let both = BlockRequest {
+            html: Some("<p>a</p>".to_string()),
+            url: Some("http://a.example".to_string()),
+            activity: "Subject".to_string(),
+            mode: "click".to_string(),
+        };
+        assert!(!both.is_complete());
     }
 
     #[test]
@@ -448,17 +421,19 @@ mod tests {
     }
 
     #[test]
-    fn spans_parse_keyed_by_document_position() {
-        let spans =
-            parse_spans(r#"{"11":"<span>boaris</span>","24":"<span>beana</span>"}"#).unwrap();
+    fn blocks_parse_in_document_order() {
+        let blocks =
+            parse_blocks(r#"[{"html":"<h1>Beana</h1>"},{"html":"<p>Boaris beana.</p>"}]"#).unwrap();
 
-        assert_eq!(spans.len(), 2);
-        assert_eq!(spans.get("11").unwrap(), "<span>boaris</span>");
+        assert_eq!(blocks.len(), 2);
+        assert_eq!(blocks[0].html, "<h1>Beana</h1>");
+        assert_eq!(blocks[1].html, "<p>Boaris beana.</p>");
+        assert_eq!(parse_blocks("[]").unwrap(), Vec::new());
     }
 
     #[test]
     fn a_non_json_body_reports_a_malformed_reply() {
-        let error = parse_spans("<html>").unwrap_err();
+        let error = parse_blocks("<html>").unwrap_err();
 
         assert!(matches!(error, ApiError::Malformed(_)));
         assert!(error.to_string().starts_with("malformed response: "));

@@ -177,6 +177,15 @@ async fn spans<E: Endpoint>(client: &TestClient<E>, body: &serde_json::Value) ->
     client.post("/api/enhance").body_json(body).send().await
 }
 
+/// One block request over a body the caller composed.
+async fn blocks<E: Endpoint>(client: &TestClient<E>, body: &serde_json::Value) -> TestResponse {
+    client
+        .post("/api/enhance/blocks")
+        .body_json(body)
+        .send()
+        .await
+}
+
 /// A deployment carrying no web client, which is the API-only one.
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
@@ -191,6 +200,7 @@ async fn the_index_lists_every_endpoint() {
         "GET  /api/activities",
         "GET  /api/enhance",
         "POST /api/enhance",
+        "POST /api/enhance/blocks",
         "POST /api/upload",
     ] {
         assert!(body.contains(path), "{path} is missing from {body}");
@@ -331,8 +341,9 @@ async fn the_span_endpoint_needs_one_source() {
     }
 }
 
-/// A span request whose page weighs the given number of bytes, which is the
-/// only member of the body that grows.
+/// An enhancement request whose page weighs the given number of bytes, which
+/// is the only member of the body that grows. Both POST endpoints take the
+/// same four members, so both are weighed with this.
 fn span_body_of(page_bytes: usize) -> String {
     let page = "a".repeat(page_bytes);
     format!("{{\"html\":\"{page}\",\"activity\":\"Kitchens\",\"mode\":\"colorize\"}}")
@@ -402,6 +413,130 @@ async fn a_body_that_is_not_json_is_refused() {
             .await
             .assert_status(StatusCode::UNSUPPORTED_MEDIA_TYPE);
     }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn/test]
+#[tokio::test]
+async fn the_block_endpoint_needs_one_source() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+
+    for body in [
+        serde_json::json!({ "activity": "Substantive", "mode": "colorize" }),
+        serde_json::json!({
+            "html": "<p>a</p>",
+            "url": "http://example.org/a",
+            "activity": "Substantive",
+            "mode": "colorize",
+        }),
+        serde_json::json!({ "html": "<p>a</p>", "mode": "colorize" }),
+        serde_json::json!({ "html": "<p>a</p>", "activity": "Substantive" }),
+        serde_json::json!({ "html": "<p>a</p>", "activity": "Substantive", "mode": "shuffle" }),
+        serde_json::json!({ "html": "<p>a</p>", "activity": "Kitchens", "mode": "mc" }),
+    ] {
+        blocks(&client, &body)
+            .await
+            .assert_status(StatusCode::BAD_REQUEST);
+    }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn/test]
+#[tokio::test]
+async fn an_oversized_block_body_is_refused() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+    let body = span_body_of(MAX_ENHANCE_BODY);
+
+    // The same cap the span endpoint applies, declared and undeclared alike.
+    client
+        .post("/api/enhance/blocks")
+        .content_type("application/json")
+        .header("content-length", body.len())
+        .body(body.clone())
+        .send()
+        .await
+        .assert_status(StatusCode::PAYLOAD_TOO_LARGE);
+
+    client
+        .post("/api/enhance/blocks")
+        .content_type("application/json")
+        .body(body)
+        .send()
+        .await
+        .assert_status(StatusCode::PAYLOAD_TOO_LARGE);
+
+    // A megabyte passes the cap and is parsed: only the handler knows
+    // `Kitchens` is not a topic the registry loaded.
+    let under = span_body_of(1024 * 1024);
+    client
+        .post("/api/enhance/blocks")
+        .content_type("application/json")
+        .header("content-length", under.len())
+        .body(under)
+        .send()
+        .await
+        .assert_status(StatusCode::BAD_REQUEST);
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn/test]
+#[tokio::test]
+async fn a_block_body_must_announce_json() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+    let body = "html=%3Cp%3Ea%3C%2Fp%3E&activity=Substantive&mode=colorize";
+
+    for content_type in ["application/x-www-form-urlencoded", "text/plain"] {
+        client
+            .post("/api/enhance/blocks")
+            .content_type(content_type)
+            .body(body)
+            .send()
+            .await
+            .assert_status(StatusCode::UNSUPPORTED_MEDIA_TYPE);
+    }
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn/test]
+#[tokio::test]
+async fn the_block_endpoint_refuses_them_too() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+
+    for address in ["http://169.254.169.254/", "file:///etc/passwd"] {
+        let body = serde_json::json!({
+            "url": address,
+            "activity": "Substantive",
+            "mode": "colorize",
+        });
+
+        blocks(&client, &body)
+            .await
+            .assert_status(StatusCode::BAD_REQUEST);
+    }
+}
+
+/// The block path sits under the span path, and neither takes the other's
+/// requests: the span endpoint answers `/api/enhance` alone and the block one
+/// answers only its own address, under POST alone.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn/test]
+#[tokio::test]
+async fn the_block_path_is_its_own() {
+    let root = webapp_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+
+    client
+        .get("/api/enhance/blocks")
+        .send()
+        .await
+        .assert_status(StatusCode::METHOD_NOT_ALLOWED);
+
+    // The span endpoint is untouched by the sibling beneath it.
+    spans(
+        &client,
+        &serde_json::json!({ "html": "<p>a</p>", "activity": "Kitchens", "mode": "colorize" }),
+    )
+    .await
+    .assert_status(StatusCode::BAD_REQUEST);
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]

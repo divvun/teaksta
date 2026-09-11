@@ -5,19 +5,30 @@
 //! class happens to read like its name however the scheme is spelled — cannot
 //! tell a working derivation from a broken one. `Conjunctions` can: its
 //! enhancer once marked hits `teaksta-conjunction`, and under that class the
-//! whole topic was inert. The fixtures here are `GET /api/enhance` and
-//! `GET /api/activities` replies saved as they arrived.
+//! whole topic was inert. The fixtures here are `POST /api/enhance/blocks`
+//! and `GET /api/activities` replies saved as they arrived.
 
 use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use teaksta_web::api::parse_registry;
+use teaksta_web::api::{parse_blocks, parse_registry};
 use teaksta_web::ui::exercise::colorize::{ColorizeMode, ColorizeModeProps, HIT_CLASS};
-use teaksta_web::ui::exercise::markup::parse;
+use teaksta_web::ui::exercise::markup::{Markup, parse};
 
 const ACTIVITIES: &str = include_str!("fixtures/activities.json");
-const COLORIZE: &str = include_str!("fixtures/conjunctions-colorize.html");
+const COLORIZE: &str = include_str!("fixtures/conjunctions-colorize.json");
+
+/// One saved reply, read as the exercises read it.
+fn read(reply: &str) -> Markup {
+    let blocks: Vec<String> = parse_blocks(reply)
+        .expect("the backend's reply parses")
+        .into_iter()
+        .map(|block| block.html)
+        .collect();
+
+    parse(&blocks)
+}
 
 /// The name the backend serves this topic under, taken from the registry
 /// rather than written out here: it is the name the client builds the class
@@ -36,7 +47,7 @@ fn colorize_page() -> String {
     let mut dom = VirtualDom::new_with_props(
         ColorizeMode,
         ColorizeModeProps {
-            markup: Rc::new(parse(COLORIZE)),
+            markup: Rc::new(read(COLORIZE)),
             topic: topic(),
         },
     );
@@ -51,7 +62,7 @@ fn the_topic_is_named_by_the_registry() {
 
 #[test]
 fn the_enhancer_marks_the_conjunctions_it_found() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
     let topic = topic();
 
     assert_eq!(markup.hits(&topic), 3);
@@ -66,7 +77,7 @@ fn the_enhancer_marks_the_conjunctions_it_found() {
 
 #[test]
 fn per_tag_classes_ride_alongside_the_topic_class() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
     let carried = |class: &str| {
         markup
             .tokens()
@@ -84,7 +95,7 @@ fn per_tag_classes_ride_alongside_the_topic_class() {
 
 #[test]
 fn colorize_styles_every_conjunction() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
     let html = colorize_page();
 
     assert_eq!(
@@ -100,7 +111,7 @@ fn colorize_styles_every_conjunction() {
 
 #[test]
 fn another_topic_finds_nothing_on_the_page() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
 
     assert_eq!(markup.hits("Substantive"), 0);
     assert_eq!(markup.hits("NegVerbs"), 0);

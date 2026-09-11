@@ -1,0 +1,14 @@
+[
+  {
+    "html": "<h1><span answer=\"teakstabihttá+N+Sem/Txt+Sg+Nom+&lt;cohort-with-dynamic-compound&gt;+?\" class=\"teaksta-token teaksta-Substantive\" distractors=\"teakstabihtá teakstabihttái teakstabihtás teakstabihtáin\" id=\"teaksta-span-teakstabihttá-N-Sem/Txt-Sg-Nom-xcohort-with-dynamic-compoundy-@HNOUN-1\" lemma=\"teakstabihttá\">Teakstabihttá</span></h1>"
+  },
+  {
+    "html": "<p>Mun oidnen <span answer=\"viesu\" class=\"teaksta-token teaksta-Substantive\" distractors=\"viessu vissui viesus viesuin viesu\" id=\"teaksta-span-viessu-N-Sem/Build-Sg-Acc-@xOBJ-1\" lemma=\"viessu\">viesu</span> ikte. <span answer=\"viesut\" class=\"teaksta-token teaksta-Substantive\" distractors=\"viesuid viesuide viesuin viesuiguin viesut\" id=\"teaksta-span-viessu-N-Sem/Build-Pl-Nom-@SUBJy-1\" lemma=\"viessu\">Viesut</span> leat stuorrát.</p>"
+  },
+  {
+    "html": "<p><span answer=\"bárdni\" class=\"teaksta-token teaksta-Substantive\" distractors=\"bártni bárdnái bártnis bártniin bárdni\" id=\"teaksta-span-bárdni-N-Sem/Hum-Sg-Nom-@SUBJy-1\" lemma=\"bárdni\">Bárdni</span> lea <span answer=\"skuvllas\" class=\"teaksta-token teaksta-Substantive\" distractors=\"skuvla skuvllain skuvlan skuvlla skuvllas\" id=\"teaksta-span-skuvla-N-Sem/Edu_Org-Sg-Loc-@xADVL-ine-1\" lemma=\"skuvla\">skuvllas</span>. <span answer=\"nieida\" class=\"teaksta-token teaksta-Substantive\" distractors=\"nieidda niidii nieiddas nieiddain nieida\" id=\"teaksta-span-nieida-N-Sem/Hum-Sg-Nom-@SUBJy-1\" lemma=\"nieida\">Nieida</span> logai <span answer=\"girjji\" class=\"teaksta-token teaksta-Substantive\" distractors=\"girji girjái girjjis girjjiin girjji\" id=\"teaksta-span-girji-N-Sem/Txt-Sg-Acc-@xOBJ-1\" lemma=\"girji\">girjji</span>.</p>"
+  },
+  {
+    "html": "<p><span answer=\"beana\" class=\"teaksta-token teaksta-Substantive\" distractors=\"beatnaga beatnagii beatnagis beatnagiin beana\" id=\"teaksta-span-beana-N-Sem/Ani-Sg-Nom-@SUBJy-1\" lemma=\"beana\">Beana</span> viehká olgun, ja mii boahtit ruoktot.</p>"
+  }
+]

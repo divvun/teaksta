@@ -122,3 +122,49 @@
 > keeps it from disturbing the layout of wherever the client puts it. An
 > enhancement that reached no wrapper — one covering no segment, or one
 > dropped as overlapping — contributes no entry.
+
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
+> pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<Vec<String>>
+
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
+> The analysed text of the page, one entry per block of it, in document
+> order, with every enhancement placed into it.
+>
+> This is teaksta's own, with no counterpart in the Java. HTMLUtils rendered
+> either a whole page or the per-token fragments the browser add-on spliced
+> back into a page it already held, and nothing between the two. A client
+> that is not an add-on has neither: it never sees the page, so a fragment
+> keyed by a position in a document text it does not hold tells it nothing,
+> and a whole foreign page is not something it can render its own controls
+> into. What it needs is the analysed prose itself, cut where the page cuts
+> it, with the topic's spans already in place — which is what this answers.
+>
+> Enhancements are placed exactly as
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]`
+> places them, over the same parsed page and by the same code: the click
+> exercise's decoys among them, a decoy the topic also marked dropped in
+> favour of the topic's own span, and each enhancement wrapped in the element
+> its own start tag names. A block therefore carries the very markup the
+> whole-page render would have put there.
+>
+> The placed page is then walked once in document order. An element opening a
+> block box — the same list `extract` reads a block boundary from — ends the
+> block being written and begins one written as itself; when it closes, the
+> block it interrupted begins again. `html` and `body` hold the page rather
+> than any of its prose, so they open no block and write nothing. A subtree
+> extraction never read — `script`, `noscript`, `style`, `form`, `object`,
+> `embed`, `head`, `template` — is skipped whole, so nothing that was not
+> analysed can reach a block.
+>
+> Each block is written as one element: the name of the block box holding it,
+> with no attributes, or `p` for text sitting under no block box at all. The
+> page's own inline markup inside it is written back as the parser read it,
+> attributes and all, escaped once; a void element is written without an end
+> tag. An inline element open across a block boundary is closed into the
+> block that ends and opened again in the one that begins, so every block
+> stands on its own however the page nests. Text is escaped once as text.
+>
+> A block is answered only when it carries text a learner reads: one holding
+> nothing but whitespace, or nothing but empty markup such as an image, is
+> dropped rather than answered empty. A page with no analysable text answers
+> no blocks at all.

@@ -218,6 +218,51 @@
 > under the old one: they are never looked for again, rather than found and
 > failing to decode.
 
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+> async fn enhance_blocks(CappedJson(request): CappedJson<BlockRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
+>
+> struct BlockRequest { html: Option<String>, url: Option<String>, activity: String, mode: String }
+>
+> struct TextBlock { html: String }
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+> `POST /api/enhance/blocks` answers the analysed text block by block, as
+> `application/json`, for a client that renders the exercise itself.
+>
+> This is teaksta's own endpoint, with nothing behind it in the Java. The
+> servlet answered either a whole page or the per-token span map the browser
+> add-on spliced into a page it already held, and both still answer here. But
+> neither serves a client that holds no page: the span map is keyed by
+> positions in an analysed document text the client never receives, and it
+> carries the matched word forms alone — no prose, no punctuation, no block
+> structure — so an exercise cannot be built from it. The block endpoint is
+> what a page-less client asks instead, and it is the only one the web client
+> uses.
+>
+> The body is a JSON object with `activity`, `mode`, and exactly one of `html`
+> (the page itself) and `url` (where to fetch it), read under the same cap and
+> the same content-type requirement as `POST /api/enhance` reads its own, and
+> answered with the same 400, 413, 415, 502 and 503 in the same cases. `mode`
+> and `activity` are validated as they are for every other endpoint, the page
+> is fetched and confined exactly as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+5]`
+> fetches and confines one, and the analysed document is cached under the same
+> key derived from the same subject, so the two endpoints answer one another's
+> pages from one analysis.
+>
+> The answer is a JSON array, one entry per block of the analysed text in
+> document order, each an object whose `html` member is that block's markup
+> as
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]`
+> renders it: the prose the page shows, punctuation and all, with the
+> enhancement spans the whole-page render would have placed already in it.
+> The member is named rather than the block being a bare string, so what the
+> string holds is stated by the protocol rather than guessed at. A page with
+> no analysable text answers an empty array.
+>
+> One line is logged per answered request carrying the exercise and the
+> elapsed time.
+
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
 > pub fn new(config: Config) -> Result<AppState>
 

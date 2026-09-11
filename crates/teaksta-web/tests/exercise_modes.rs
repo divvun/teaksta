@@ -1,28 +1,46 @@
-//! The four exercises, rendered from pages the backend really answered with.
+//! The four exercises, rendered from the analysed text the backend really
+//! answered with.
 //!
-//! The fixtures are `GET /api/enhance` replies for the `Substantive` topic over
-//! one North Sámi page, saved as they arrived. Each mode has its own reply
-//! because each mode is enhanced differently: colorize, mc and cloze carry the
-//! topic's hits alone, while click carries a span for every word of the page —
-//! the hits among the decoys the learner may pick instead.
+//! The fixtures are `POST /api/enhance/blocks` replies for the `Substantive`
+//! topic over one North Sámi page, saved as they arrived — see
+//! `cargo run -p teaksta --example capture_fixtures`, which holds the page
+//! they are taken from. Each mode has its own reply because each mode is
+//! enhanced differently: colorize, mc and cloze carry the topic's hits alone,
+//! while click carries a span for every word of the text — the hits among the
+//! decoys the learner may pick instead.
 
 use std::rc::Rc;
 
 use dioxus::prelude::*;
 
+use teaksta_web::api::parse_blocks;
 use teaksta_web::ui::exercise::click::{ClickMode, ClickModeProps, ClickToken, Verdict};
 use teaksta_web::ui::exercise::cloze::{ClozeMode, ClozeModeProps, ClozeToken, Slot as Written};
 use teaksta_web::ui::exercise::colorize::{ColorizeMode, ColorizeModeProps};
 use teaksta_web::ui::exercise::markup::{Markup, TokenSpan, parse};
 use teaksta_web::ui::exercise::mc::{self, McMode, McModeProps, McToken, Slot as Chosen};
-use teaksta_web::ui::exercise::{EnhancedPage, EnhancedPageProps};
+use teaksta_web::ui::exercise::{EnhancedText, EnhancedTextProps};
 
-const COLORIZE: &str = include_str!("fixtures/substantive-colorize.html");
-const CLICK: &str = include_str!("fixtures/substantive-click.html");
-const MC: &str = include_str!("fixtures/substantive-mc.html");
-const CLOZE: &str = include_str!("fixtures/substantive-cloze.html");
+const COLORIZE: &str = include_str!("fixtures/substantive-colorize.json");
+const CLICK: &str = include_str!("fixtures/substantive-click.json");
+const MC: &str = include_str!("fixtures/substantive-mc.json");
+const CLOZE: &str = include_str!("fixtures/substantive-cloze.json");
 
 const TOPIC: &str = "Substantive";
+
+/// The blocks of one saved reply, in the order the backend answered them.
+fn blocks(reply: &str) -> Vec<String> {
+    parse_blocks(reply)
+        .expect("the backend's reply parses")
+        .into_iter()
+        .map(|block| block.html)
+        .collect()
+}
+
+/// One saved reply, read as the exercises read it.
+fn read(reply: &str) -> Markup {
+    parse(&blocks(reply))
+}
 
 /// How many words of the click page belong to the topic, and how many are
 /// there for the learner to mistake for one.
@@ -57,7 +75,7 @@ fn colorize_page() -> String {
     render(
         ColorizeMode,
         ColorizeModeProps {
-            markup: Rc::new(parse(COLORIZE)),
+            markup: Rc::new(read(COLORIZE)),
             topic: TOPIC.to_string(),
         },
     )
@@ -67,7 +85,7 @@ fn click_page() -> String {
     render(
         ClickMode,
         ClickModeProps {
-            markup: Rc::new(parse(CLICK)),
+            markup: Rc::new(read(CLICK)),
             topic: TOPIC.to_string(),
         },
     )
@@ -77,7 +95,7 @@ fn mc_page() -> String {
     render(
         McMode,
         McModeProps {
-            markup: Rc::new(parse(MC)),
+            markup: Rc::new(read(MC)),
             topic: TOPIC.to_string(),
         },
     )
@@ -87,7 +105,7 @@ fn cloze_page() -> String {
     render(
         ClozeMode,
         ClozeModeProps {
-            markup: Rc::new(parse(CLOZE)),
+            markup: Rc::new(read(CLOZE)),
             topic: TOPIC.to_string(),
         },
     )
@@ -103,9 +121,9 @@ fn the_mode_parameter_picks_the_exercise() {
         ("nonesuch", "mode-colorize"),
     ] {
         let html = render(
-            EnhancedPage,
-            EnhancedPageProps {
-                html: COLORIZE.to_string(),
+            EnhancedText,
+            EnhancedTextProps {
+                blocks: blocks(COLORIZE),
                 topic: TOPIC.to_string(),
                 mode: mode.to_string(),
             },
@@ -117,7 +135,7 @@ fn the_mode_parameter_picks_the_exercise() {
 
 #[test]
 fn the_enhancer_marks_the_nouns_it_found() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
 
     assert_eq!(markup.hits(TOPIC), HITS);
     assert_eq!(
@@ -130,8 +148,8 @@ fn the_enhancer_marks_the_nouns_it_found() {
 }
 
 #[test]
-fn the_click_page_offers_the_hits_among_decoys() {
-    let markup = parse(CLICK);
+fn the_click_text_offers_the_hits_among_decoys() {
+    let markup = read(CLICK);
 
     // Same page, same nouns — but every other word is offered alongside them.
     assert_eq!(markup.hits(TOPIC), HITS);
@@ -168,39 +186,67 @@ fn the_click_page_offers_the_hits_among_decoys() {
     }
 }
 
+/// The prose the backend answered with reaches the learner whole: the
+/// sentences either side of a token, the punctuation between them, and
+/// nothing of the document the page was cut out of.
 #[test]
-fn the_page_survives_being_taken_apart() {
+fn the_text_survives_being_taken_apart() {
     let html = colorize_page();
 
     assert!(html.contains("Mun oidnen"));
     assert!(html.contains("leat stuorrát"));
     assert!(html.contains("viehká olgun, ja mii boahtit ruoktot"));
+    assert!(html.contains("ikte."));
     assert!(!html.contains("<script"));
+    for absent in ["<html", "<head", "<body", "<title", "<base"] {
+        assert!(!html.contains(absent), "{absent} reached the learner");
+    }
+}
+
+/// The blocks arrive one per element of the page and are rendered in that
+/// order, the heading among the paragraphs.
+#[test]
+fn every_block_is_rendered_where_it_arrived() {
+    let markup = read(COLORIZE);
+    let html = colorize_page();
+
+    assert_eq!(blocks(COLORIZE).len(), 4);
+    assert_eq!(markup.blocks().len(), 4);
+    assert_eq!(html.matches("class=\"enhanced-head\"").count(), 1);
+    assert_eq!(html.matches("class=\"enhanced-line\"").count(), 3);
+
+    let heading = html.find("enhanced-head").expect("the heading is rendered");
+    let first = html.find("Mun oidnen").expect("the first paragraph");
+    let last = html.find("viehká olgun").expect("the last paragraph");
+    assert!(
+        heading < first && first < last,
+        "the blocks are out of order"
+    );
 }
 
 /// Nothing of the old servlet's naming reaches the client. It was written as
 /// span ids as well as class names, and the exercises drop the ids, so the
-/// pages the backend really answered with are read here rather than the
+/// replies the backend really answered with are read here rather than the
 /// rendering of them: the spelling itself is the guard, not any one of the
 /// shapes it was written in.
 #[test]
 fn no_naming_from_before_the_rename_survives() {
     let rendered = colorize_page();
 
-    for (name, page) in [
+    for (name, reply) in [
         ("colorize", COLORIZE),
         ("mc", MC),
         ("cloze", CLOZE),
         ("rendered", rendered.as_str()),
     ] {
-        assert!(!page.contains("WERTi"), "{name}");
-        assert!(!page.contains("wertiview"), "{name}");
+        assert!(!reply.contains("WERTi"), "{name}");
+        assert!(!reply.contains("wertiview"), "{name}");
     }
 }
 
 #[test]
 fn colorize_styles_every_topic_word() {
-    let markup = parse(COLORIZE);
+    let markup = read(COLORIZE);
     let hits = markup.hits(TOPIC);
     let html = colorize_page();
 
@@ -221,7 +267,7 @@ fn colorize_asks_the_learner_nothing() {
 
 #[test]
 fn click_leaves_every_word_unmarked() {
-    let markup = parse(CLICK);
+    let markup = read(CLICK);
     let html = click_page();
 
     // Every word is offered, hits and decoys alike, and none gives away which
@@ -243,7 +289,7 @@ fn click_leaves_every_word_unmarked() {
 
 #[test]
 fn click_marks_a_topic_word_right() {
-    let markup = parse(CLICK);
+    let markup = read(CLICK);
 
     for word in ["Viesut", "viesu", "Beana", "skuvllas"] {
         assert_eq!(
@@ -256,9 +302,9 @@ fn click_marks_a_topic_word_right() {
 
 #[test]
 fn click_marks_a_decoy_wrong() {
-    let markup = parse(CLICK);
+    let markup = read(CLICK);
 
-    // The words the page really carries beside the nouns: picking one is the
+    // The words the text really carries beside the nouns: picking one is the
     // mistake the exercise exists to catch.
     for word in ["Mun", "oidnen", "ikte", "leat", "stuorrát", "lea", "logai"] {
         assert_eq!(
@@ -280,7 +326,7 @@ fn click_marks_a_decoy_wrong() {
 
 #[test]
 fn click_scores_only_the_hits() {
-    let markup = parse(CLICK);
+    let markup = read(CLICK);
 
     // What the score line counts: the words the topic marked, not the words
     // on offer.
@@ -328,7 +374,7 @@ fn a_judged_click_shows_its_verdict() {
 
 #[test]
 fn mc_offers_the_servers_distractor_forms() {
-    let markup = parse(MC);
+    let markup = read(MC);
     let token = token_reading(&markup, "viesu");
 
     assert_eq!(
@@ -344,7 +390,7 @@ fn mc_offers_the_servers_distractor_forms() {
 
 #[test]
 fn mc_renders_a_select_per_hit() {
-    let markup = parse(MC);
+    let markup = read(MC);
     let html = mc_page();
 
     assert_eq!(html.matches("<select").count(), markup.hits(TOPIC));
@@ -359,7 +405,7 @@ fn mc_renders_a_select_per_hit() {
 
 #[test]
 fn mc_hides_the_answer_behind_the_capitals() {
-    let markup = parse(MC);
+    let markup = read(MC);
     let offered = mc::choices(&token_reading(&markup, "Viesut"));
 
     assert_eq!(offered.len(), mc::MAX_CHOICES);
@@ -369,7 +415,7 @@ fn mc_hides_the_answer_behind_the_capitals() {
 
 #[test]
 fn mc_accepts_only_the_form_read() {
-    let markup = parse(MC);
+    let markup = read(MC);
     let token = token_reading(&markup, "viesu");
 
     assert!(token.accepts("viesu"));
@@ -380,7 +426,7 @@ fn mc_accepts_only_the_form_read() {
 
 #[test]
 fn an_ungenerable_form_stays_answerable() {
-    let markup = parse(MC);
+    let markup = read(MC);
     let token = token_reading(&markup, "Teakstabihttá");
     let offered = mc::choices(&token);
 
@@ -435,7 +481,7 @@ fn a_right_choice_fixes_the_slot() {
 
 #[test]
 fn the_cloze_page_carries_parallel_forms() {
-    let markup = parse(CLOZE);
+    let markup = read(CLOZE);
     let parallel = markup
         .tokens()
         .iter()
@@ -450,7 +496,7 @@ fn the_cloze_page_carries_parallel_forms() {
 
 #[test]
 fn cloze_accepts_every_parallel_form() {
-    let markup = parse(CLOZE);
+    let markup = read(CLOZE);
     let token = token_of_lemma(&markup, "skuvla");
 
     assert_eq!(token.possible_forms, ["skuvllas", "skuvllain"]);
@@ -461,7 +507,7 @@ fn cloze_accepts_every_parallel_form() {
 
 #[test]
 fn cloze_rejects_a_form_off_the_paradigm() {
-    let markup = parse(CLOZE);
+    let markup = read(CLOZE);
     let token = token_of_lemma(&markup, "skuvla");
 
     assert!(!token.accepts("skuvla"));
@@ -472,7 +518,7 @@ fn cloze_rejects_a_form_off_the_paradigm() {
 
 #[test]
 fn the_hint_shows_the_parallel_forms() {
-    let markup = parse(CLOZE);
+    let markup = read(CLOZE);
 
     assert_eq!(
         token_of_lemma(&markup, "skuvla").hint(),
@@ -484,7 +530,7 @@ fn the_hint_shows_the_parallel_forms() {
 
 #[test]
 fn cloze_renders_a_box_per_hit() {
-    let markup = parse(CLOZE);
+    let markup = read(CLOZE);
     let html = cloze_page();
     let hits = markup.hits(TOPIC);
 
