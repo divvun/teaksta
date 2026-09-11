@@ -438,12 +438,20 @@ children (
                 title "Fold conjunction and noun_sg into the shared enhancer cores"
                 kind @refactor
                 deps (hd-mode)
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:50:52.877236Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Idiom M19/M6, plus the H2/H3/H8 hotspots that live in the two unfolded files. conjunction.rs:51-127 is a verbatim copy of syntactic::run differing only in span classes — parameterize FunctionSpec (per-tag extra class) and route conjunction through it. noun_sg.rs is the one topic enhancer never folded into the cg_enhancer TopicSpec core and kept the full unreformed Java: H2 quadratic buffer (self.buffer = self.buffer.clone() + &line + \"\\n\" at :78), H3 String->Cursor->String no-op through dead ExtCommandConsume2String subprocess plumbing (:359-365, :419-425; second dead copy at vislcg3.rs:401), H8 readings re-flattened by + concat inside the tags*tokens*readings triple loop (:243-247, :272-277; same four-line flatten cloned at subject.rs:77/object.rs:77/adverbial.rs:77/cg_enhancer.rs:298 — one flatten helper, or fold into an M40 CgReading{lemma,tags} struct), dead FST shell-command constants (:30-33), labelled-block try/catch, bool params. Folding deletes most of the file. Also H7: cg_enhancer.rs:373 clones the whole cg_tokens store per topic pass to appease borrowck — mem::take or accumulate-then-extend. Depends on hd-mode so the string-compare sites are already enum matches when folding."
+                    }
+
+                    {
+                        at 2026-09-11T09:32:22.59444Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
