@@ -15,8 +15,10 @@ use dioxus::prelude::*;
 
 use teaksta_web::api::parse_blocks;
 use teaksta_web::ui::exercise::click::{ClickMode, ClickModeProps, ClickToken, Verdict};
-use teaksta_web::ui::exercise::cloze::{ClozeMode, ClozeModeProps, ClozeToken, Slot as Written};
-use teaksta_web::ui::exercise::colorize::{ColorizeMode, ColorizeModeProps};
+use teaksta_web::ui::exercise::cloze::{
+    ClozeMode, ClozeModeProps, ClozeToken, Slot as Written, State, slot_width,
+};
+use teaksta_web::ui::exercise::colorize::{ColorizeMode, ColorizeModeProps, HIT_CLASS};
 use teaksta_web::ui::exercise::markup::{Markup, TokenSpan, parse};
 use teaksta_web::ui::exercise::mc::{self, McMode, McModeProps, McToken, Slot as Chosen};
 use teaksta_web::ui::exercise::{EnhancedText, EnhancedTextProps};
@@ -77,6 +79,7 @@ fn colorize_page() -> String {
         ColorizeModeProps {
             markup: Rc::new(read(COLORIZE)),
             topic: TOPIC.to_string(),
+            prompt: "Geahča ivdnejuvvon sániid.".to_string(),
         },
     )
 }
@@ -87,6 +90,7 @@ fn click_page() -> String {
         ClickModeProps {
             markup: Rc::new(read(CLICK)),
             topic: TOPIC.to_string(),
+            prompt: "Coahkkal rivttes sániid!".to_string(),
         },
     )
 }
@@ -97,6 +101,7 @@ fn mc_page() -> String {
         McModeProps {
             markup: Rc::new(read(MC)),
             topic: TOPIC.to_string(),
+            prompt: "Vállje rivttes sániid!".to_string(),
         },
     )
 }
@@ -107,6 +112,7 @@ fn cloze_page() -> String {
         ClozeModeProps {
             markup: Rc::new(read(CLOZE)),
             topic: TOPIC.to_string(),
+            prompt: "Čále rivttes sániid!".to_string(),
         },
     )
 }
@@ -126,11 +132,40 @@ fn the_mode_parameter_picks_the_exercise() {
                 blocks: blocks(COLORIZE),
                 topic: TOPIC.to_string(),
                 mode: mode.to_string(),
+                prompt: "Geahča ivdnejuvvon sániid.".to_string(),
             },
         );
 
         assert!(html.contains(rendered), "{mode} did not render {rendered}");
     }
+}
+
+/// Interactive modes ride a looser leading so the controls in the lines never
+/// push them apart unevenly; the two that only read keep the reading default.
+#[test]
+fn only_the_inline_modes_loosen_the_leading() {
+    for (mode, inline) in [
+        ("colorize", false),
+        ("click", false),
+        ("mc", true),
+        ("cloze", true),
+    ] {
+        let html = render(
+            EnhancedText,
+            EnhancedTextProps {
+                blocks: blocks(COLORIZE),
+                topic: TOPIC.to_string(),
+                mode: mode.to_string(),
+                prompt: String::new(),
+            },
+        );
+
+        assert!(html.contains("tk-prose"), "{mode}");
+        assert_eq!(html.contains("tk-prose--inline"), inline, "{mode}");
+    }
+    // Only the chooser opens over the text, so only it keeps room underneath.
+    assert!(mc_page().contains("tk-reading--menus"));
+    assert!(!cloze_page().contains("tk-reading--menus"));
 }
 
 #[test]
@@ -212,8 +247,8 @@ fn every_block_is_rendered_where_it_arrived() {
 
     assert_eq!(blocks(COLORIZE).len(), 4);
     assert_eq!(markup.blocks().len(), 4);
-    assert_eq!(html.matches("class=\"enhanced-head\"").count(), 1);
-    assert_eq!(html.matches("class=\"enhanced-line\"").count(), 3);
+    assert_eq!(html.matches("class=\"enhanced-head").count(), 1);
+    assert_eq!(html.matches("class=\"enhanced-line").count(), 3);
 
     let heading = html.find("enhanced-head").expect("the heading is rendered");
     let first = html.find("Mun oidnen").expect("the first paragraph");
@@ -250,10 +285,13 @@ fn colorize_styles_every_topic_word() {
     let hits = markup.hits(TOPIC);
     let html = colorize_page();
 
-    assert_eq!(html.matches("class=\"token token-hit\"").count(), hits);
+    assert_eq!(html.matches(HIT_CLASS).count(), hits);
     for form in ["Teakstabihttá", "viesu", "Viesut", "skuvllas", "Beana"] {
         assert!(html.contains(&format!(">{form}</span>")), "missing {form}");
     }
+    // The enhancer's own classes ride along, and the highlight sits on top of
+    // them rather than replacing them.
+    assert!(html.contains(&format!("teaksta-token teaksta-Substantive {HIT_CLASS}")));
 }
 
 #[test]
@@ -271,20 +309,23 @@ fn click_leaves_every_word_unmarked() {
     let html = click_page();
 
     // Every word is offered, hits and decoys alike, and none gives away which
-    // it is before it is picked.
+    // it is before it is picked — not in what it looks like, and not in what
+    // the markup is made of either.
     assert_eq!(
-        html.matches("class=\"token token-pick\"").count(),
+        html.matches("class=\"teaksta-token tk-pick\"").count(),
         markup.tokens().len()
     );
     assert_eq!(
-        html.matches("class=\"token token-pick\"").count(),
+        html.matches("class=\"teaksta-token tk-pick\"").count(),
         HITS + DECOYS
     );
-    assert!(!html.contains("pick-right"));
-    assert!(!html.contains("pick-wrong"));
-    assert!(!html.contains("token-hit"));
+    assert!(!html.contains("tk-correct"));
+    assert!(!html.contains("tk-wrong"));
+    assert!(!html.contains(HIT_CLASS));
+    assert!(!html.contains("teaksta-Substantive"));
     // Only the hits are worth finding, however many words are on offer.
-    assert!(html.contains(&format!("Rivttes: 0 / {HITS}")));
+    assert!(html.contains(&format!("0 / {HITS}")));
+    assert!(html.contains("Rivttes"));
 }
 
 #[test]
@@ -351,6 +392,8 @@ fn Picked(verdict: Option<Verdict>) -> Element {
     }
 }
 
+/// A judged word wears the band and a mark, because state is never colour
+/// alone.
 #[test]
 fn a_judged_click_shows_its_verdict() {
     let right = render(
@@ -366,10 +409,12 @@ fn a_judged_click_shows_its_verdict() {
         },
     );
 
-    assert!(right.contains("pick-right"));
+    assert!(right.contains("tk-correct"));
+    assert!(right.contains("✓"));
     assert!(right.contains("disabled"));
-    assert!(wrong.contains("pick-wrong"));
-    assert!(!wrong.contains("pick-right"));
+    assert!(wrong.contains("tk-wrong"));
+    assert!(wrong.contains("✕"));
+    assert!(!wrong.contains("tk-correct"));
 }
 
 #[test]
@@ -388,19 +433,109 @@ fn mc_offers_the_servers_distractor_forms() {
     assert_eq!(offered, sent);
 }
 
+/// One chooser per slot, and not a `<select>` anywhere — a native select
+/// cannot be set in the reading, and its option list is exactly what this
+/// markup replaces.
 #[test]
-fn mc_renders_a_select_per_hit() {
+fn mc_renders_a_chooser_per_hit() {
     let markup = read(MC);
     let html = mc_page();
 
-    assert_eq!(html.matches("<select").count(), markup.hits(TOPIC));
+    assert_eq!(html.matches("class=\"tk-mc\"").count(), markup.hits(TOPIC));
+    assert_eq!(
+        html.matches("aria-haspopup=\"listbox\"").count(),
+        markup.hits(TOPIC)
+    );
+    assert!(!html.contains("<select"));
+    assert!(!html.contains("<option"));
+    assert!(html.contains("Rivttes"));
+    // Nothing is open until a learner opens something, so no menu stands on
+    // the page and no form has been given away.
+    assert!(!html.contains("tk-mc-menu"));
     for form in ["viessu", "vissui", "viesus", "viesuin"] {
-        assert!(
-            html.contains(&format!(">{form}</option>")),
-            "missing {form}"
-        );
+        assert!(!html.contains(form), "{form} was on the page unasked");
     }
-    assert!(html.contains("Rivttes: 0 / 8"));
+}
+
+/// One chooser on its own, at whatever point in its own life a test needs.
+#[component]
+fn Chose(choices: Vec<String>, cursor: Option<usize>, slot: Chosen) -> Element {
+    rsx! {
+        McToken {
+            id: "teaksta-slot-0".to_string(),
+            choices,
+            slot,
+            cursor,
+            onmove: move |_| {},
+        }
+    }
+}
+
+fn open_menu(choices: &[String]) -> String {
+    render(
+        Chose,
+        ChoseProps {
+            choices: choices.to_vec(),
+            cursor: Some(0),
+            slot: Chosen::default(),
+        },
+    )
+}
+
+/// Every form the backend sent reaches the open menu. The count is taken from
+/// `choices` rather than written out here, so a menu that renders one option
+/// where five were offered fails in this suite rather than in a browser.
+#[test]
+fn an_open_menu_offers_every_form() {
+    let markup = read(MC);
+    let offered = mc::choices(&token_reading(&markup, "viesu"));
+    let html = open_menu(&offered);
+
+    assert_eq!(offered.len(), mc::MAX_CHOICES);
+    assert_eq!(html.matches("role=\"option\"").count(), offered.len());
+    assert_eq!(
+        html.matches("class=\"tk-mc-option\"").count(),
+        offered.len()
+    );
+    for form in &offered {
+        assert!(html.contains(&format!(">{form}</span>")), "missing {form}");
+    }
+    assert!(html.contains("role=\"listbox\""));
+    assert!(html.contains("aria-expanded=\"true\""));
+}
+
+/// The menu lives inside the paragraph it belongs to, and a list there would
+/// close that paragraph out from under it. So it is spans, and stays spans.
+#[test]
+fn an_open_menu_is_not_a_list() {
+    let markup = read(MC);
+    let html = open_menu(&mc::choices(&token_reading(&markup, "viesu")));
+
+    for element in ["<ul", "</ul>", "<li", "</li>", "<select", "<option"] {
+        assert!(!html.contains(element), "the menu holds {element}");
+    }
+}
+
+/// Focus stays on the chooser the whole time its menu is open — there is
+/// nothing inside the menu to move it to — so the option the keyboard is on
+/// has to be named rather than focused.
+#[test]
+fn an_open_menu_names_its_active_option() {
+    let html = render(
+        Chose,
+        ChoseProps {
+            choices: vec!["Viesu".to_string(), "Viesut".to_string()],
+            cursor: Some(1),
+            slot: Chosen::default(),
+        },
+    );
+
+    assert!(html.contains("aria-activedescendant=\"teaksta-slot-0-opt-1\""));
+    assert!(html.contains("id=\"teaksta-slot-0-opt-1\""));
+    assert!(html.contains("aria-controls=\"teaksta-slot-0-menu\""));
+    assert!(html.contains("id=\"teaksta-slot-0-menu\""));
+    assert_eq!(html.matches("aria-selected=\"true\"").count(), 1);
+    assert_eq!(html.matches("aria-selected=\"false\"").count(), 1);
 }
 
 #[test]
@@ -439,22 +574,16 @@ fn an_ungenerable_form_stays_answerable() {
     assert!(token.accepts("teakstabihttá"));
 }
 
-#[component]
-fn Chose(slot: Chosen) -> Element {
-    rsx! {
-        McToken {
-            choices: vec!["Viesut".to_string(), "Viesuid".to_string()],
-            slot,
-            onchoose: move |_| {},
-        }
-    }
-}
-
+/// A slot that settles stops being a control and becomes green text, so the
+/// sentence gets shorter as the learner gets further.
 #[test]
 fn a_right_choice_fixes_the_slot() {
+    let offered = vec!["Viesut".to_string(), "Viesuid".to_string()];
     let right = render(
         Chose,
         ChoseProps {
+            choices: offered.clone(),
+            cursor: None,
             slot: Chosen {
                 chosen: "Viesut".to_string(),
                 settled: true,
@@ -465,6 +594,8 @@ fn a_right_choice_fixes_the_slot() {
     let wrong = render(
         Chose,
         ChoseProps {
+            choices: offered,
+            cursor: None,
             slot: Chosen {
                 chosen: "Viesuid".to_string(),
                 settled: false,
@@ -473,10 +604,16 @@ fn a_right_choice_fixes_the_slot() {
         },
     );
 
-    assert!(right.contains("pick-right"));
-    assert!(!right.contains("<select"));
-    assert!(wrong.contains("mc-wrong"));
-    assert!(wrong.contains("<select"));
+    assert!(right.contains("tk-slot tk-correct"));
+    assert!(right.contains("✓"));
+    assert!(!right.contains("tk-mc"));
+    assert!(!right.contains("<button"));
+
+    // A form that did not fit leaves the slot answerable, says so in red, and
+    // holds on to what was tried.
+    assert!(wrong.contains("class=\"tk-mc tk-wrong\""));
+    assert!(wrong.contains(">Viesuid</span>"));
+    assert!(wrong.contains("aria-expanded=\"false\""));
 }
 
 #[test]
@@ -516,16 +653,37 @@ fn cloze_rejects_a_form_off_the_paradigm() {
     assert!(!token_of_lemma(&markup, "girji").accepts("girji"));
 }
 
+/// What a learner who asks for help is given is the base form, and only that.
+/// Where the text inflected the word, the hint therefore stops short of the
+/// answer — including on the parallel-form slots, where it gives up neither of
+/// the several forms the exercise exists to teach.
+///
+/// `beana` is the exception the rule survives: its nominative singular *is*
+/// its lemma, so there the hint and the answer are the same word. The hint
+/// still gives up no more than the base form — the word simply has only one.
 #[test]
-fn the_hint_shows_the_parallel_forms() {
+fn the_hint_shows_the_lemma_alone() {
     let markup = read(CLOZE);
 
-    assert_eq!(
-        token_of_lemma(&markup, "skuvla").hint(),
-        "skuvllas/skuvllain"
-    );
-    assert_eq!(token_of_lemma(&markup, "viessu").hint(), "viesu/viesuid");
-    assert_eq!(token_of_lemma(&markup, "beana").hint(), "beana");
+    for lemma in ["skuvla", "viessu", "beana", "girji"] {
+        let token = token_of_lemma(&markup, lemma);
+
+        assert_eq!(token.hint(), Some(lemma));
+    }
+
+    for token in markup.tokens() {
+        let lemma = token.hint().expect("every hit carries a lemma");
+        if lemma == token.text.to_lowercase() {
+            continue;
+        }
+        for form in token.accepted_forms() {
+            assert_ne!(lemma, form, "{lemma} handed over an accepted form");
+        }
+    }
+
+    let parallel = token_of_lemma(&markup, "skuvla");
+    assert_eq!(parallel.possible_forms, ["skuvllas", "skuvllain"]);
+    assert_eq!(parallel.hint(), Some("skuvla"));
 }
 
 #[test]
@@ -535,11 +693,39 @@ fn cloze_renders_a_box_per_hit() {
     let hits = markup.hits(TOPIC);
 
     assert_eq!(hits, 7);
-    assert_eq!(html.matches("class=\"cloze-box\"").count(), hits);
-    assert_eq!(html.matches("class=\"cloze-hint\"").count(), hits);
-    assert!(html.contains("(viessu)"));
+    assert_eq!(html.matches("class=\"tk-cloze-input\"").count(), hits);
+    assert_eq!(html.matches("class=\"tk-hint-btn\"").count(), hits);
     assert!(html.contains("Mun oidnen"));
+    // Every slot is drawn as wide as the form it expects, in characters of
+    // the reading serif rather than in a fixed few pixels.
+    for token in markup.tokens() {
+        let width = slot_width(&token.text);
+        assert!(
+            html.contains(&format!("width: {width}ch")),
+            "{}",
+            token.text
+        );
+    }
+}
+
+/// Nothing the slot wants is on the page before it is answered — neither the
+/// form the text had nor the base form it came from. The hint is a press
+/// away, and until it is pressed it gives up nothing.
+#[test]
+fn cloze_keeps_the_form_and_the_lemma_back() {
+    let markup = read(CLOZE);
+    let html = cloze_page();
+
     assert!(!html.contains("skuvllas"));
+    for token in markup.tokens() {
+        let lemma = token.lemma.as_deref().expect("every hit carries a lemma");
+        assert!(!html.contains(lemma), "{lemma} was on the page unasked");
+        assert!(
+            !html.contains(&token.text),
+            "{} was on the page",
+            token.text
+        );
+    }
 }
 
 #[component]
@@ -547,6 +733,7 @@ fn Wrote(slot: Written) -> Element {
     rsx! {
         ClozeToken {
             lemma: Some("skuvla".to_string()),
+            width: 10,
             slot,
             onwrite: move |_| {},
             onhint: move |()| {},
@@ -554,46 +741,59 @@ fn Wrote(slot: Written) -> Element {
     }
 }
 
+fn wrote(slot: Written) -> String {
+    render(Wrote, WroteProps { slot })
+}
+
 #[test]
 fn a_written_form_shows_how_it_went() {
-    use teaksta_web::ui::exercise::cloze::State;
+    let right = wrote(Written {
+        written: "skuvllain".to_string(),
+        state: State::Right,
+        tries: 1,
+        hinted: false,
+    });
+    let wrong = wrote(Written {
+        written: "skuvla".to_string(),
+        state: State::Wrong,
+        tries: 1,
+        hinted: false,
+    });
 
-    let right = render(
-        Wrote,
-        WroteProps {
-            slot: Written {
-                written: "skuvllain".to_string(),
-                state: State::Right,
-                tries: 1,
-            },
-        },
-    );
-    let wrong = render(
-        Wrote,
-        WroteProps {
-            slot: Written {
-                written: "skuvla".to_string(),
-                state: State::Wrong,
-                tries: 1,
-            },
-        },
-    );
-    let shown = render(
-        Wrote,
-        WroteProps {
-            slot: Written {
-                written: "skuvllas/skuvllain".to_string(),
-                state: State::Shown,
-                tries: 0,
-            },
-        },
-    );
-
-    assert!(right.contains("pick-right"));
+    assert!(right.contains("tk-cloze-input tk-correct"));
     assert!(right.contains("skuvllain"));
-    assert!(!right.contains("<input"));
-    assert!(wrong.contains("cloze-miss"));
-    assert!(wrong.contains("<input"));
-    assert!(shown.contains("cloze-shown"));
-    assert!(shown.contains("skuvllas/skuvllain"));
+    assert!(right.contains("✓"));
+    // A settled slot stops asking: it keeps the form, and the hint goes with
+    // the question it answered.
+    assert!(right.contains("readonly"));
+    assert!(!right.contains("tk-hint"));
+
+    // A form that did not fit leaves the slot editable, so it can be
+    // corrected where it stands.
+    assert!(wrong.contains("tk-cloze-input tk-wrong"));
+    assert!(wrong.contains("✕"));
+    assert!(!wrong.contains("readonly"));
+    assert!(wrong.contains("tk-hint-btn"));
+}
+
+/// The hint that was asked for gives back the lemma, in the yellow that means
+/// help, and the slot stays open to be answered from it.
+#[test]
+fn a_hinted_slot_shows_the_lemma() {
+    let hinted = wrote(Written {
+        written: String::new(),
+        state: State::Open,
+        tries: 0,
+        hinted: true,
+    });
+
+    assert!(hinted.contains("class=\"tk-hint\""));
+    assert!(hinted.contains("class=\"tk-hint-mark\""));
+    assert!(hinted.contains(">skuvla</em>"));
+    // The button has done its work and is gone, and nothing that would have
+    // been accepted came with the lemma.
+    assert!(!hinted.contains("tk-hint-btn"));
+    assert!(!hinted.contains("skuvllas"));
+    assert!(!hinted.contains("skuvllain"));
+    assert!(hinted.contains("<input"));
 }

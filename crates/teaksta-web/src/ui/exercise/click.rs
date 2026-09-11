@@ -1,14 +1,24 @@
 //! The click exercise: nothing is coloured in, and the learner picks out the
 //! word forms they believe belong to the topic. A pick is judged at once and
 //! stands, so the page fills in with the learner's own reading of it.
+//!
+//! Every word of the text is a target, and a word that has not been pressed
+//! carries no state at all — not in what it looks like and not in what it is
+//! made of. The topic's class stays off the page here, unlike every other
+//! mode, because on this page it would be the answer key.
 
 use std::collections::HashMap;
 use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use super::enhanced_text;
 use super::markup::{Markup, TokenSpan};
+use super::score::{Dots, RESULT_LABEL, Review, Score, ScoreChip, review_of};
+use super::{Setting, enhanced_text};
+use crate::ui::choices::mode_gloss;
+
+/// The mode this file is, as the backend and the mode switch name it.
+const MODE: &str = "click";
 
 /// How one pick was judged.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,12 +37,20 @@ pub fn judge(token: &TokenSpan, topic: &str) -> Verdict {
     }
 }
 
-/// The classes a token carries, before and after it has been judged.
+/// The classes a word carries, before and after it has been judged.
 pub fn token_class(verdict: Option<Verdict>) -> &'static str {
     match verdict {
-        None => "token token-pick",
-        Some(Verdict::Right) => "token token-pick pick-right",
-        Some(Verdict::Wrong) => "token token-pick pick-wrong",
+        None => "teaksta-token tk-pick",
+        Some(Verdict::Right) => "teaksta-token tk-pick tk-correct",
+        Some(Verdict::Wrong) => "teaksta-token tk-pick tk-wrong",
+    }
+}
+
+/// The mark that rides along with a verdict, so state is never colour alone.
+pub fn verdict_mark(verdict: Verdict) -> &'static str {
+    match verdict {
+        Verdict::Right => "✓",
+        Verdict::Wrong => "✕",
     }
 }
 
@@ -47,16 +65,21 @@ pub fn ClickToken(
         button {
             r#type: "button",
             class: token_class(verdict),
+            lang: "se",
             disabled: verdict.is_some(),
             onclick: move |event| onchoose.call(event),
             "{text}"
+            if let Some(verdict) = verdict {
+                span { class: "tk-mark", "aria-hidden": "true", "{verdict_mark(verdict)}" }
+            }
         }
     }
 }
 
 #[component]
-pub fn ClickMode(markup: Rc<Markup>, topic: String) -> Element {
+pub fn ClickMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
     let mut picks = use_signal(HashMap::<String, Verdict>::new);
+    let mut showing = use_signal(|| false);
 
     let wanted = markup.hits(&topic);
     let right = picks
@@ -65,17 +88,29 @@ pub fn ClickMode(markup: Rc<Markup>, topic: String) -> Element {
         .filter(|verdict| **verdict == Verdict::Right)
         .count();
     let wrong = picks.read().len() - right;
+    let rows: Vec<Review> = review_of(&markup, &topic, |token| {
+        (picks.read().contains_key(&token.id), None)
+    });
 
     rsx! {
         section { class: "mode mode-click",
-            p { class: "score",
-                "Rivttes: {right} / {wanted}"
-                span { class: "gloss", "{wrong} words picked that the topic does not mark" }
+            div { class: "tk-exhead",
+                p { class: "tk-prompt", lang: "se",
+                    "{prompt}"
+                    span { class: "tk-gloss", "{mode_gloss(MODE)}" }
+                }
+                ScoreChip {
+                    label: "Rivttes".to_string(),
+                    count: "{right} / {wanted}",
+                    gloss: format!("{wrong} words picked that the topic does not mark"),
+                    dots: Dots::Settled { right, total: wanted },
+                }
             }
             {
                 enhanced_text(
                     &markup,
-                    |token| {
+                    Setting::Reading,
+                    |_, token| {
                         let verdict = picks.read().get(&token.id).copied();
                         let id = token.id.clone();
                         let judged = judge(token, &topic);
@@ -90,6 +125,25 @@ pub fn ClickMode(markup: Rc<Markup>, topic: String) -> Element {
                         }
                     },
                 )
+            }
+            if showing() {
+                Score {
+                    right,
+                    total: wanted,
+                    gloss: format!("{right} of the {wanted} marked words found"),
+                    rows,
+                }
+            } else {
+                div { class: "actions",
+                    button {
+                        r#type: "button",
+                        class: "tk-btn tk-btn--primary",
+                        lang: "se",
+                        onclick: move |_| showing.set(true),
+                        "{RESULT_LABEL}"
+                        span { class: "tk-gloss", "See how it went" }
+                    }
+                }
             }
         }
     }
@@ -126,12 +180,16 @@ mod tests {
         assert_eq!(judge(&plain, "Substantive"), Verdict::Wrong);
     }
 
+    /// Every word on the page is made of the same thing until it is pressed:
+    /// no state class, and no class of the topic's either, which on this page
+    /// would name the answers in the markup.
     #[test]
     fn an_unpicked_word_gives_nothing_away() {
         let unpicked = token_class(None);
 
-        assert!(!unpicked.contains("right"));
-        assert!(!unpicked.contains("wrong"));
+        assert_eq!(unpicked, "teaksta-token tk-pick");
+        assert!(!unpicked.contains("tk-correct"));
+        assert!(!unpicked.contains("tk-wrong"));
     }
 
     #[test]
@@ -140,8 +198,9 @@ mod tests {
         let wrong = token_class(Some(Verdict::Wrong));
 
         assert_ne!(right, wrong);
-        assert!(right.contains("pick-right"));
-        assert!(wrong.contains("pick-wrong"));
+        assert!(right.contains("tk-correct"));
+        assert!(wrong.contains("tk-wrong"));
         assert!(right.starts_with(token_class(None)));
+        assert_ne!(verdict_mark(Verdict::Right), verdict_mark(Verdict::Wrong));
     }
 }

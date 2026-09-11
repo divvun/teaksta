@@ -1,5 +1,10 @@
 //! The site chrome every view sits inside, and the one registry fetch the
 //! views beneath it share.
+//!
+//! A quiet bar over a centred column, and nothing else. The wordmark holds
+//! the only weight up there and the two ways into an exercise sit beside it
+//! as plain links, so the analysed text below is the heaviest thing on any
+//! page of the app.
 
 use dioxus::prelude::*;
 
@@ -16,18 +21,14 @@ pub fn Chrome() -> Element {
     use_context_provider(|| registry);
 
     rsx! {
-        div { class: "shell",
-            header { class: "chrome",
-                Link { to: Route::Home {}, class: "wordmark", "Teaksta" }
-                p { class: "chrome-lead",
-                    "Hárjehala sámegiela neahttasiidduin maid ieš válljet."
-                    span { class: "gloss",
-                        "Practise North Sámi grammar on web pages you choose yourself."
-                    }
-                }
+        header { class: "bar",
+            Link { to: Route::Home {}, class: "tk-wordmark", "teaksta" }
+            nav { class: "bar-right",
+                Link { to: Route::Home {}, class: "bar-link", lang: "se", "Vállje neahttasiiddu" }
+                Link { to: Route::Upload {}, class: "bar-link", lang: "se", "Vállje fiilla" }
             }
-            main { class: "chrome-main", Outlet::<Route> {} }
-            footer { class: "chrome-foot", "Teaksta · Divvun · Giellatekno" }
         }
+        main { class: "col chrome-main", Outlet::<Route> {} }
+        p { class: "foot", lang: "se", "Divvun · UiT Norgga árktalaš universitehta" }
     }
 }

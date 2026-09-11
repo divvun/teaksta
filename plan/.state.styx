@@ -62,4 +62,5 @@ assertions (
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
     {id hd-hints, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T10:24:20.52247Z}
     {id hd-idioms, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T11:05:43.849642Z}
+    {id ux-design, kind @doing, author "brendan@bbqsrc.net", at 2026-09-11T12:02:14.812054Z}
 )

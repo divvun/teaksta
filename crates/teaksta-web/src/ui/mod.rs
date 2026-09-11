@@ -1,7 +1,7 @@
 //! The app's views: the site chrome, the two entry forms and the exercise
 //! view.
 
-mod choices;
+pub mod choices;
 mod chrome;
 pub mod exercise;
 mod home;
@@ -12,7 +12,8 @@ use dioxus::prelude::*;
 use crate::api::{ApiError, Registry};
 
 pub use choices::{
-    Choice, ChoiceProps, Modes, ModesProps, Named, Topics, TopicsProps, first_topic,
+    Choice, ChoiceProps, Modes, ModesProps, Named, Topics, TopicsProps, first_topic, mode_gloss,
+    mode_hint, topic_subtitle,
 };
 pub use chrome::Chrome;
 pub use exercise::Exercise;
@@ -66,8 +67,12 @@ mod tests {
         ] {
             let html = render_at(path);
 
-            assert!(html.contains("Teaksta"), "{path}");
-            assert!(html.contains("class=\"chrome-main\""), "{path}");
+            // The wordmark is lowercase everywhere, and the bar carries the
+            // two ways into an exercise whichever view is under it.
+            assert!(html.contains("class=\"tk-wordmark\""), "{path}");
+            assert!(html.contains(">teaksta<"), "{path}");
+            assert_eq!(html.matches("class=\"bar-link\"").count(), 2, "{path}");
+            assert!(html.contains("chrome-main"), "{path}");
         }
     }
 
@@ -107,7 +112,11 @@ mod tests {
 
         assert!(html.contains("NegVerbs"));
         assert!(html.contains("http://a.example/artihkal"));
-        assert!(html.contains("class=\"instruction\">mc<"));
+        // The mode is named on the chip beside the title. With no registry to
+        // read a North Sámi instruction from, the chip falls back to the
+        // parameter value, so the name appears twice.
+        assert!(html.contains("class=\"tk-chip\""));
+        assert_eq!(html.matches(">mc<").count(), 2);
     }
 
     #[test]
