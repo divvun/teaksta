@@ -614,4 +614,25 @@ children (
             }
         )
     }
+
+    {
+        id ux
+        title "UX: the learner-facing experience beyond the port"
+        kind @feat
+        children (
+            {
+                id ux-reader
+                title "Reader-mode extraction: fetched pages reduce to their main content before analysis"
+                kind @feat
+                log (
+                    {
+                        at 2026-09-11T11:46:23.472394Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator request (2026-09-11): exercises over fetched URLs currently include the whole page — menu bars, nav, footers all become exercise text. Apply a Readability-style main-content reduction. Scope rule: a page fetched over http(s) is reduced to its main content; a page the caller provided deliberately (inline html POST, file: upload) is taken as given — this keeps the block fixtures and upload flow byte-stable. Fallback: if extraction yields nothing usable, use the full page. Candidate crates: dom_smoothie (modern Readability.js port), readability — evaluate for maintenance and fit. Integration point: the fetch seam (server/fetch.rs / page_source in api.rs), as a pure html→html step. Bump CACHE_FORMAT_VERSION (analysis of fetched pages changes). Spec: teaksta-native divergence on the fetch behavior rules."
+                    }
+                )
+            }
+        )
+    }
 )
