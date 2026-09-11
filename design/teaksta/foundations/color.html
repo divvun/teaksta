@@ -1,0 +1,780 @@
+<!-- @dsCard name="Colour tokens" group="Foundations" subtitle="The Sámi flag palette used functionally, on warm paper" width="900" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>teaksta · colour</title>
+<style>
+:root {
+    /* ── Paper & ink · warm neutrals ─────────────────────────────── */
+    --tk-paper: #FBF8F3;
+    --tk-paper-raised: #FFFDF9;
+    --tk-paper-sunken: #F4EFE7;
+    --tk-ink: #1A1613;
+    --tk-ink-muted: #5B5249;
+    --tk-ink-faint: #766E63;
+    --tk-line: #E7DFD2;
+    --tk-line-strong: #D3C8B7;
+    --tk-line-control: #8E8375;
+
+    /* ── Blue · primary, interactive, topic highlight ─────────────── */
+    --tk-blue: #0035AD;
+    --tk-blue-strong: #002A8A;
+    --tk-blue-soft: #2B58C4;
+    --tk-blue-tint: #E3E9F8;
+    --tk-blue-tint-strong: #CBD8F4;
+
+    /* ── Green · correct ──────────────────────────────────────────── */
+    --tk-green: #007229;
+    --tk-green-strong: #04581F;
+    --tk-green-tint: #DFEFE2;
+
+    /* ── Red · wrong, refused ─────────────────────────────────────── */
+    --tk-red: #D0402D;
+    --tk-red-strong: #A32A1A;
+    --tk-red-tint: #FAE4DF;
+
+    /* ── Yellow · hint ────────────────────────────────────────────── */
+    --tk-yellow: #FFCE00;
+    --tk-yellow-strong: #7A5400;
+    --tk-yellow-tint: #FFF0C4;
+
+    /* ── Type ─────────────────────────────────────────────────────── */
+    --tk-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --tk-font-serif: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --tk-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --tk-text-xs: 11.5px;
+    --tk-text-sm: 13px;
+    --tk-text-base: 15px;
+    --tk-text-md: 17px;
+    --tk-text-lg: 21px;
+    --tk-text-xl: 27px;
+    --tk-text-2xl: 34px;
+    --tk-prose-size: 19px;
+    --tk-prose-leading: 1.7;
+    --tk-prose-leading-inline: 2.15;
+    --tk-measure: 68ch;
+
+    /* ── Space · 8px grid ─────────────────────────────────────────── */
+    --tk-space-1: 4px;
+    --tk-space-2: 8px;
+    --tk-space-3: 12px;
+    --tk-space-4: 16px;
+    --tk-space-5: 24px;
+    --tk-space-6: 32px;
+    --tk-space-7: 48px;
+    --tk-space-8: 64px;
+
+    /* ── Radii · shadow · focus ───────────────────────────────────── */
+    --tk-radius-sm: 6px;
+    --tk-radius: 10px;
+    --tk-radius-lg: 14px;
+    --tk-radius-pill: 999px;
+    --tk-shadow: 0 1px 2px rgba(26, 22, 19, 0.04), 0 10px 28px -16px rgba(26, 22, 19, 0.28);
+    --tk-focus: #0035AD;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: var(--tk-space-6);
+    background: var(--tk-paper);
+    color: var(--tk-ink);
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-base);
+    line-height: 1.5;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+/* ── Wordmark ─────────────────────────────────────────────────────── */
+.tk-wordmark {
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--tk-ink);
+    text-decoration: none;
+}
+
+/* ── Small text roles ─────────────────────────────────────────────── */
+.tk-eyebrow {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.tk-gloss {
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.tk-note {
+    margin: var(--tk-space-4) 0 0;
+    max-width: 62ch;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.6;
+}
+
+.tk-sme {
+    font-weight: 600;
+}
+
+code,
+.tk-mono {
+    font-family: var(--tk-font-mono);
+    font-size: 0.86em;
+    letter-spacing: -0.01em;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: var(--tk-text-xl);
+}
+
+h2 {
+    font-size: var(--tk-text-md);
+}
+
+h3 {
+    font-size: var(--tk-text-base);
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────── */
+.tk-panel {
+    padding: var(--tk-space-6);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.tk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tk-space-2);
+    padding: 10px var(--tk-space-5);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-btn:hover {
+    border-color: var(--tk-blue);
+    color: var(--tk-blue-strong);
+}
+
+.tk-btn--primary {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue);
+    color: #FFFFFF;
+}
+
+.tk-btn--primary:hover {
+    border-color: var(--tk-blue-strong);
+    background: var(--tk-blue-strong);
+    color: #FFFFFF;
+}
+
+.tk-btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--tk-blue);
+}
+
+.tk-btn--quiet:hover {
+    background: var(--tk-blue-tint);
+    border-color: transparent;
+}
+
+.tk-btn[disabled] {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    cursor: not-allowed;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────── */
+.tk-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--tk-space-2);
+    padding: 5px var(--tk-space-3);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    font-size: var(--tk-text-sm);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.tk-chip--topic {
+    border-color: var(--tk-blue-tint-strong);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-chip--topic .tk-gloss {
+    color: var(--tk-blue-strong);
+    opacity: 0.72;
+}
+
+.tk-chip .tk-sme {
+    font-weight: 600;
+}
+
+/* ── Score chip ───────────────────────────────────────────────────── */
+.tk-score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    padding: 7px var(--tk-space-4) 7px var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    box-shadow: 0 1px 2px rgba(26, 22, 19, 0.04);
+}
+
+.tk-score-label {
+    font-size: var(--tk-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+}
+
+.tk-score-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.tk-dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.tk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tk-line-strong);
+}
+
+.tk-dot--on {
+    background: var(--tk-green);
+}
+
+.tk-dot--miss {
+    background: var(--tk-red);
+}
+
+.tk-dot--topic {
+    background: var(--tk-blue);
+}
+
+/* ── Divider ──────────────────────────────────────────────────────── */
+.tk-rule {
+    height: 1px;
+    margin: var(--tk-space-6) 0;
+    border: 0;
+    background: var(--tk-line);
+}
+
+/* ══ The analysed text ═════════════════════════════════════════════ */
+.tk-reading {
+    max-width: var(--tk-measure);
+}
+
+.tk-prose {
+    margin: 0;
+    color: var(--tk-ink);
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-prose-size);
+    line-height: var(--tk-prose-leading);
+    hanging-punctuation: first;
+}
+
+/* Inline controls add to the line box, so interactive modes ride a
+   slightly looser leading and the rhythm holds. */
+.tk-prose--inline {
+    line-height: var(--tk-prose-leading-inline);
+}
+
+/* A word the enhancer wrapped. It carries nothing of its own: an exercise
+   gives it whatever state it has, so nothing is given away before the
+   learner answers. */
+.teaksta-token {
+    border-radius: 4px;
+}
+
+/* A word-sized band an exercise can put a state on without disturbing the
+   line it sits in. The negative margin cancels the padding exactly, so a
+   banded word takes the same horizontal advance as the bare word and the
+   prose keeps its rhythm. */
+.tk-slot {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    border-radius: 4px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Highlight · colorize ─────────────────────────────────────────── */
+.teaksta-Substantive.tk-hit {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: inset 0 -0.09em 0 rgba(0, 42, 138, 0.22);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Pickable word · click ────────────────────────────────────────── */
+.tk-pick {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tk-pick:hover,
+.tk-pick.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-pick.tk-correct,
+.tk-pick.tk-wrong {
+    cursor: default;
+}
+
+.tk-correct {
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
+}
+
+.tk-wrong {
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+/* State is never colour alone: a mark rides along with it. */
+.tk-mark {
+    margin-left: 0.22em;
+    font-family: var(--tk-font-sans);
+    font-size: 0.62em;
+    font-weight: 700;
+    vertical-align: 0.35em;
+    opacity: 0.75;
+}
+
+/* ── Chooser · mc ─────────────────────────────────────────────────── */
+.tk-mc-wrap {
+    position: relative;
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+.tk-mc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 4.6em;
+    padding: 0.1em 0.5em 0.14em 0.55em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
+}
+
+.tk-mc:hover {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+}
+
+.tk-mc[aria-expanded="true"] {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: 0 0 0 3px rgba(0, 53, 173, 0.16);
+}
+
+.tk-mc-value {
+    flex: 1;
+}
+
+.tk-mc-value--empty {
+    color: var(--tk-ink-faint);
+}
+
+.tk-caret {
+    flex: none;
+    color: var(--tk-ink-faint);
+}
+
+.tk-mc[aria-expanded="true"] .tk-caret {
+    color: var(--tk-blue);
+    transform: rotate(180deg);
+}
+
+.tk-mc-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    padding: var(--tk-space-1);
+    border: 1px solid var(--tk-line-strong);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+    font-family: var(--tk-font-serif);
+    font-size: 0.92em;
+    line-height: 1.3;
+}
+
+/* Spans, not a list: the menu lives inside the paragraph it belongs to, and
+   a <ul> there would close the <p> out from under it. */
+.tk-mc-option {
+    display: block;
+    padding: 0.32em 0.7em;
+    border-radius: var(--tk-radius-sm);
+    color: var(--tk-ink);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tk-mc-option:hover,
+.tk-mc-option.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+/* ── Slot · cloze ─────────────────────────────────────────────────── */
+.tk-cloze {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28em;
+    vertical-align: baseline;
+}
+
+.tk-cloze-input {
+    padding: 0.1em 0.4em 0.14em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+}
+
+.tk-cloze-input::placeholder {
+    color: var(--tk-ink-faint);
+    opacity: 1;
+}
+
+.tk-cloze-input.tk-is-focus {
+    border-color: var(--tk-blue);
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+.tk-cloze-input.tk-correct {
+    border-color: var(--tk-green);
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
+}
+
+.tk-cloze-input.tk-wrong {
+    border-color: var(--tk-red);
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+.tk-hint-btn {
+    flex: none;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0;
+    border: 1px solid var(--tk-line-control);
+    border-radius: 50%;
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink-muted);
+    font-family: var(--tk-font-sans);
+    font-size: 0.68em;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    align-self: center;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-hint-btn:hover,
+.tk-hint-btn.tk-is-hover {
+    border-color: var(--tk-yellow-strong);
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+}
+
+.tk-hint {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0.08em 0.5em 0.12em;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-yellow-tint);
+    color: var(--tk-yellow-strong);
+    font-family: var(--tk-font-sans);
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    vertical-align: 0.1em;
+}
+
+.tk-hint em {
+    font-family: var(--tk-font-serif);
+    font-size: 1.24em;
+    font-style: normal;
+    font-weight: 400;
+}
+
+.tk-hint-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35em;
+    height: 1.35em;
+    border-radius: 50%;
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    align-self: center;
+}
+
+/* ── Exercise head ────────────────────────────────────────────────── */
+.tk-exhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--tk-space-5);
+}
+
+.tk-prompt {
+    margin: 0;
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.tk-prompt .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+body {
+    padding: var(--tk-space-7);
+}
+
+.tk-head {
+    max-width: 62ch;
+    margin-bottom: var(--tk-space-7);
+}
+
+.tk-head h1 {
+    margin-bottom: var(--tk-space-3);
+}
+
+.tk-lede {
+    margin: 0;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-md);
+    line-height: 1.6;
+}
+
+.grp {
+    margin-bottom: var(--tk-space-7);
+}
+
+.grp-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--tk-space-3);
+    margin-bottom: var(--tk-space-4);
+    padding-bottom: var(--tk-space-2);
+    border-bottom: 1px solid var(--tk-line);
+}
+
+.grp-head h2 {
+    font-size: var(--tk-text-base);
+    letter-spacing: 0.01em;
+}
+
+.grp-role {
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.sw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(188px, 1fr));
+    gap: var(--tk-space-4);
+}
+
+.sw {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tk-space-3);
+}
+
+.sw-chip {
+    height: 64px;
+    border: 1px solid rgba(26, 22, 19, 0.1);
+    border-radius: var(--tk-radius);
+    box-shadow: inset 0 -1px 0 rgba(26, 22, 19, 0.06);
+}
+
+.sw-name {
+    display: block;
+    color: var(--tk-ink);
+    font-family: var(--tk-font-mono);
+    font-size: var(--tk-text-sm);
+}
+
+.sw-hex {
+    display: block;
+    margin-top: 2px;
+    color: var(--tk-ink-faint);
+    font-family: var(--tk-font-mono);
+    font-size: var(--tk-text-xs);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.sw-role {
+    display: block;
+    margin-top: var(--tk-space-2);
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.45;
+}
+
+.sw-ratio {
+    display: inline-block;
+    margin-top: var(--tk-space-2);
+    padding: 2px 7px;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    font-family: var(--tk-font-mono);
+    font-size: var(--tk-text-xs);
+}
+
+/* ── Functional mapping ───────────────────────────────────────────── */
+.map {
+    display: grid;
+    gap: var(--tk-space-2);
+}
+
+.map-row {
+    display: grid;
+    grid-template-columns: 20px 132px minmax(230px, 1fr) minmax(210px, 1.1fr);
+    align-items: center;
+    gap: var(--tk-space-4);
+    padding: var(--tk-space-4);
+    border-radius: var(--tk-radius);
+}
+
+.map-row:nth-child(odd) {
+    background: var(--tk-paper-sunken);
+}
+
+.map-key {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid rgba(26, 22, 19, 0.12);
+}
+
+.map-name {
+    font-weight: 600;
+}
+
+.map-name span {
+    display: block;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    font-weight: 400;
+}
+
+.map-what {
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.5;
+}
+
+.map-demo {
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-text-md);
+    text-align: right;
+}
+</style>
+</head>
+<body>
+<div class="tk-head"><p class="tk-eyebrow">Foundations</p><h1>Colour</h1><p class="tk-lede">Four colours of the Sámi flag, each carrying exactly one meaning, over a warm paper neutral. Nothing here is decorative: if a word is blue it belongs to the topic, if it is green the learner got it right. No flag graphics anywhere.</p></div><section class="grp"><div class="grp-head"><h2>Paper &amp; ink</h2><span class="grp-role">Warm neutrals. The reading surface and everything set on it.</span></div><div class="sw-grid"><div class="sw"><div class="sw-chip" style="background: var(--tk-paper)"></div><div><code class="sw-name">--tk-paper</code><span class="sw-hex">#FBF8F3</span><span class="sw-role">Page. Warm paper-white, the default surface under all prose.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-paper-raised)"></div><div><code class="sw-name">--tk-paper-raised</code><span class="sw-hex">#FFFDF9</span><span class="sw-role">Panels, menus, inputs, chips. One step toward the light.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-paper-sunken)"></div><div><code class="sw-name">--tk-paper-sunken</code><span class="sw-hex">#F4EFE7</span><span class="sw-role">Segmented-control tracks, table stripes, quiet wells.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-ink)"></div><div><code class="sw-name">--tk-ink</code><span class="sw-hex">#1A1613</span><span class="sw-role">Prose and headings.</span><span class="sw-ratio">17.0 : 1 on paper</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-ink-muted)"></div><div><code class="sw-name">--tk-ink-muted</code><span class="sw-hex">#5B5249</span><span class="sw-role">Secondary UI text, descriptors, help.</span><span class="sw-ratio">7.2 : 1 on paper</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-ink-faint)"></div><div><code class="sw-name">--tk-ink-faint</code><span class="sw-hex">#766E63</span><span class="sw-role">English glosses, hex labels, placeholders.</span><span class="sw-ratio">4.7 : 1 on paper</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-line)"></div><div><code class="sw-name">--tk-line</code><span class="sw-hex">#E7DFD2</span><span class="sw-role">Hairlines between sections and around panels.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-line-strong)"></div><div><code class="sw-name">--tk-line-strong</code><span class="sw-hex">#D3C8B7</span><span class="sw-role">Dividers that need to be seen, empty score dots.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-line-control)"></div><div><code class="sw-name">--tk-line-control</code><span class="sw-hex">#8E8375</span><span class="sw-role">Borders of real controls — inputs, buttons, slots.</span><span class="sw-ratio">3.5 : 1 · non-text AA</span></div></div></div></section><section class="grp"><div class="grp-head"><h2>Blue</h2><span class="grp-role">Primary, interactive, and the topic itself.</span></div><div class="sw-grid"><div class="sw"><div class="sw-chip" style="background: var(--tk-blue)"></div><div><code class="sw-name">--tk-blue</code><span class="sw-hex">#0035AD</span><span class="sw-role">Flag blue, unaltered. Primary buttons, focus ring, selection.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-blue-strong)"></div><div><code class="sw-name">--tk-blue-strong</code><span class="sw-hex">#002A8A</span><span class="sw-role">Blue ink: highlighted words, text on any blue tint.</span><span class="sw-ratio">10.2 : 1 on tint</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-blue-soft)"></div><div><code class="sw-name">--tk-blue-soft</code><span class="sw-hex">#2B58C4</span><span class="sw-role">The softened blue for quiet links and secondary marks.</span><span class="sw-ratio">6.0 : 1 on paper</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-blue-tint)"></div><div><code class="sw-name">--tk-blue-tint</code><span class="sw-hex">#E3E9F8</span><span class="sw-role">Blue at ~12% on paper. The topic highlight band, hover.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-blue-tint-strong)"></div><div><code class="sw-name">--tk-blue-tint-strong</code><span class="sw-hex">#CBD8F4</span><span class="sw-role">Selected rows, pressed segments, chip borders.</span></div></div></div></section><section class="grp"><div class="grp-head"><h2>Green</h2><span class="grp-role">Correct. Nothing else is ever green.</span></div><div class="sw-grid"><div class="sw"><div class="sw-chip" style="background: var(--tk-green)"></div><div><code class="sw-name">--tk-green</code><span class="sw-hex">#007229</span><span class="sw-role">Flag green. Score dots, correct-slot borders, solid fills.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-green-strong)"></div><div><code class="sw-name">--tk-green-strong</code><span class="sw-hex">#04581F</span><span class="sw-role">Green ink for a word answered right.</span><span class="sw-ratio">7.3 : 1 on tint</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-green-tint)"></div><div><code class="sw-name">--tk-green-tint</code><span class="sw-hex">#DFEFE2</span><span class="sw-role">The band under a correct word or slot.</span></div></div></div></section><section class="grp"><div class="grp-head"><h2>Red</h2><span class="grp-role">Wrong, and refused. Used sparingly and never alone.</span></div><div class="sw-grid"><div class="sw"><div class="sw-chip" style="background: var(--tk-red)"></div><div><code class="sw-name">--tk-red</code><span class="sw-hex">#D0402D</span><span class="sw-role">Flag red. Marks and borders only — too light for small text.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-red-strong)"></div><div><code class="sw-name">--tk-red-strong</code><span class="sw-hex">#A32A1A</span><span class="sw-role">Red ink: wrong answers, refusal messages.</span><span class="sw-ratio">6.8 : 1 on paper</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-red-tint)"></div><div><code class="sw-name">--tk-red-tint</code><span class="sw-hex">#FAE4DF</span><span class="sw-role">The band under a wrong pick, the refusal panel.</span></div></div></div></section><section class="grp"><div class="grp-head"><h2>Yellow</h2><span class="grp-role">Hint. The only warm accent, and it means help.</span></div><div class="sw-grid"><div class="sw"><div class="sw-chip" style="background: var(--tk-yellow)"></div><div><code class="sw-name">--tk-yellow</code><span class="sw-hex">#FFCE00</span><span class="sw-role">Flag yellow. The hint button when it is being pressed.</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-yellow-strong)"></div><div><code class="sw-name">--tk-yellow-strong</code><span class="sw-hex">#7A5400</span><span class="sw-role">Hint ink. Yellow is never legible as text, so it darkens.</span><span class="sw-ratio">6.0 : 1 on tint</span></div></div><div class="sw"><div class="sw-chip" style="background: var(--tk-yellow-tint)"></div><div><code class="sw-name">--tk-yellow-tint</code><span class="sw-hex">#FFF0C4</span><span class="sw-role">The revealed-lemma chip.</span></div></div></div></section><hr class="tk-rule"><section class="grp"><div class="grp-head"><h2>The mapping, at work</h2><span class="grp-role">One colour, one meaning, everywhere in the app.</span></div><div class="map"><div class="map-row"><span class="map-key" style="background: var(--tk-blue)"></span><span class="map-name">Blue<span>#0035AD</span></span><span class="map-what">Interactive, and the topic. A word the grammar matched wears blue before the learner touches it.</span><span class="map-demo" lang="se">Mun oidnen <span class="teaksta-token teaksta-Substantive tk-hit">viesu</span> ikte.</span></div><div class="map-row"><span class="map-key" style="background: var(--tk-green)"></span><span class="map-name">Green<span>#007229</span></span><span class="map-what">Correct. A pick that landed, a slot filled right, a dot on the score.</span><span class="map-demo" lang="se"><span class="teaksta-token tk-slot tk-correct">Bárdni<span class="tk-mark">✓</span></span> lea skuvllas.</span></div><div class="map-row"><span class="map-key" style="background: var(--tk-red)"></span><span class="map-name">Red<span>#D0402D</span></span><span class="map-what">Wrong, and refused. Always carries a mark or a sentence, never colour alone.</span><span class="map-demo" lang="se">viesu <span class="teaksta-token tk-slot tk-wrong">ikte<span class="tk-mark">✕</span></span>.</span></div><div class="map-row"><span class="map-key" style="background: var(--tk-yellow)"></span><span class="map-name">Yellow<span>#FFCE00</span></span><span class="map-what">Hint. The base form the learner asked for, offered without judgement.</span><span class="map-demo"><span class="tk-hint" style="font-size: 13px;"><span class="tk-hint-mark">?</span><em lang="se">viessu</em></span></span></div></div><p class="tk-note">Every ink token above clears WCAG AA (4.5 : 1) against the surface it is specified for; <code>--tk-line-control</code> clears the 3 : 1 floor for control boundaries. <code>--tk-red</code> and <code>--tk-yellow</code> are deliberately <em>not</em> text tokens — they fill and outline, and their <code>-strong</code> siblings do the writing.</p></section>
+</body>
+</html>

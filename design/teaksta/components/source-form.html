@@ -1,0 +1,515 @@
+<!-- @dsCard name="Source form" group="Controls" subtitle="Name a page or send a file — the composed start panel" width="560" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>teaksta · source form</title>
+<style>
+:root {
+    /* ── Paper & ink · warm neutrals ─────────────────────────────── */
+    --tk-paper: #FBF8F3;
+    --tk-paper-raised: #FFFDF9;
+    --tk-paper-sunken: #F4EFE7;
+    --tk-ink: #1A1613;
+    --tk-ink-muted: #5B5249;
+    --tk-ink-faint: #766E63;
+    --tk-line: #E7DFD2;
+    --tk-line-strong: #D3C8B7;
+    --tk-line-control: #8E8375;
+
+    /* ── Blue · primary, interactive, topic highlight ─────────────── */
+    --tk-blue: #0035AD;
+    --tk-blue-strong: #002A8A;
+    --tk-blue-soft: #2B58C4;
+    --tk-blue-tint: #E3E9F8;
+    --tk-blue-tint-strong: #CBD8F4;
+
+    /* ── Green · correct ──────────────────────────────────────────── */
+    --tk-green: #007229;
+    --tk-green-strong: #04581F;
+    --tk-green-tint: #DFEFE2;
+
+    /* ── Red · wrong, refused ─────────────────────────────────────── */
+    --tk-red: #D0402D;
+    --tk-red-strong: #A32A1A;
+    --tk-red-tint: #FAE4DF;
+
+    /* ── Yellow · hint ────────────────────────────────────────────── */
+    --tk-yellow: #FFCE00;
+    --tk-yellow-strong: #7A5400;
+    --tk-yellow-tint: #FFF0C4;
+
+    /* ── Type ─────────────────────────────────────────────────────── */
+    --tk-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --tk-font-serif: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --tk-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --tk-text-xs: 11.5px;
+    --tk-text-sm: 13px;
+    --tk-text-base: 15px;
+    --tk-text-md: 17px;
+    --tk-text-lg: 21px;
+    --tk-text-xl: 27px;
+    --tk-text-2xl: 34px;
+    --tk-prose-size: 19px;
+    --tk-prose-leading: 1.7;
+    --tk-prose-leading-inline: 2.15;
+    --tk-measure: 68ch;
+
+    /* ── Space · 8px grid ─────────────────────────────────────────── */
+    --tk-space-1: 4px;
+    --tk-space-2: 8px;
+    --tk-space-3: 12px;
+    --tk-space-4: 16px;
+    --tk-space-5: 24px;
+    --tk-space-6: 32px;
+    --tk-space-7: 48px;
+    --tk-space-8: 64px;
+
+    /* ── Radii · shadow · focus ───────────────────────────────────── */
+    --tk-radius-sm: 6px;
+    --tk-radius: 10px;
+    --tk-radius-lg: 14px;
+    --tk-radius-pill: 999px;
+    --tk-shadow: 0 1px 2px rgba(26, 22, 19, 0.04), 0 10px 28px -16px rgba(26, 22, 19, 0.28);
+    --tk-focus: #0035AD;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: var(--tk-space-6);
+    background: var(--tk-paper);
+    color: var(--tk-ink);
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-base);
+    line-height: 1.5;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+/* ── Wordmark ─────────────────────────────────────────────────────── */
+.tk-wordmark {
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--tk-ink);
+    text-decoration: none;
+}
+
+/* ── Small text roles ─────────────────────────────────────────────── */
+.tk-eyebrow {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.tk-gloss {
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.tk-note {
+    margin: var(--tk-space-4) 0 0;
+    max-width: 62ch;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.6;
+}
+
+.tk-sme {
+    font-weight: 600;
+}
+
+code,
+.tk-mono {
+    font-family: var(--tk-font-mono);
+    font-size: 0.86em;
+    letter-spacing: -0.01em;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: var(--tk-text-xl);
+}
+
+h2 {
+    font-size: var(--tk-text-md);
+}
+
+h3 {
+    font-size: var(--tk-text-base);
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────── */
+.tk-panel {
+    padding: var(--tk-space-6);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.tk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tk-space-2);
+    padding: 10px var(--tk-space-5);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-btn:hover {
+    border-color: var(--tk-blue);
+    color: var(--tk-blue-strong);
+}
+
+.tk-btn--primary {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue);
+    color: #FFFFFF;
+}
+
+.tk-btn--primary:hover {
+    border-color: var(--tk-blue-strong);
+    background: var(--tk-blue-strong);
+    color: #FFFFFF;
+}
+
+.tk-btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--tk-blue);
+}
+
+.tk-btn--quiet:hover {
+    background: var(--tk-blue-tint);
+    border-color: transparent;
+}
+
+.tk-btn[disabled] {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    cursor: not-allowed;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────── */
+.tk-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--tk-space-2);
+    padding: 5px var(--tk-space-3);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    font-size: var(--tk-text-sm);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.tk-chip--topic {
+    border-color: var(--tk-blue-tint-strong);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-chip--topic .tk-gloss {
+    color: var(--tk-blue-strong);
+    opacity: 0.72;
+}
+
+.tk-chip .tk-sme {
+    font-weight: 600;
+}
+
+/* ── Score chip ───────────────────────────────────────────────────── */
+.tk-score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    padding: 7px var(--tk-space-4) 7px var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    box-shadow: 0 1px 2px rgba(26, 22, 19, 0.04);
+}
+
+.tk-score-label {
+    font-size: var(--tk-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+}
+
+.tk-score-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.tk-dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.tk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tk-line-strong);
+}
+
+.tk-dot--on {
+    background: var(--tk-green);
+}
+
+.tk-dot--miss {
+    background: var(--tk-red);
+}
+
+.tk-dot--topic {
+    background: var(--tk-blue);
+}
+
+/* ── Divider ──────────────────────────────────────────────────────── */
+.tk-rule {
+    height: 1px;
+    margin: var(--tk-space-6) 0;
+    border: 0;
+    background: var(--tk-line);
+}
+
+.start {
+    padding: var(--tk-space-6);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+.start-head {
+    margin-bottom: var(--tk-space-5);
+}
+
+.start-head h2 {
+    font-size: var(--tk-text-lg);
+    letter-spacing: -0.008em;
+}
+
+.start-head p {
+    margin: var(--tk-space-2) 0 0;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.55;
+}
+
+.field {
+    display: block;
+    margin-bottom: var(--tk-space-2);
+    font-weight: 600;
+}
+
+.field .tk-gloss {
+    margin-left: var(--tk-space-2);
+    font-weight: 400;
+}
+
+.row {
+    display: flex;
+    gap: var(--tk-space-2);
+}
+
+.input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px var(--tk-space-4);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+}
+
+.input::placeholder {
+    color: var(--tk-ink-faint);
+    opacity: 1;
+}
+
+.input:focus {
+    border-color: var(--tk-blue);
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+.row .tk-btn {
+    flex: none;
+}
+
+/* ── The seam between the two ways in ─────────────────────────────── */
+.or {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-4);
+    margin: var(--tk-space-6) 0;
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.or::before,
+.or::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--tk-line);
+}
+
+/* ── Upload ───────────────────────────────────────────────────────── */
+.drop {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-4);
+    padding: var(--tk-space-5);
+    border: 1px dashed var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-sunken);
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
+}
+
+.drop:hover {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+}
+
+.drop-icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    border: 1px solid var(--tk-line);
+    color: var(--tk-blue);
+}
+
+.drop-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.drop-label {
+    display: block;
+    font-weight: 600;
+}
+
+.drop-sub {
+    display: block;
+    margin-top: 2px;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.keep {
+    margin-top: var(--tk-space-5);
+}
+
+.keep-lead {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.55;
+}
+
+.opts {
+    display: grid;
+    gap: var(--tk-space-2);
+}
+
+.opt {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: var(--tk-space-3);
+    padding: var(--tk-space-3) var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    cursor: pointer;
+}
+
+.opt:hover {
+    border-color: var(--tk-blue-soft);
+}
+
+.opt input {
+    margin: 3px 0 0;
+    accent-color: var(--tk-blue);
+    width: 15px;
+    height: 15px;
+}
+
+.opt-text {
+    font-size: var(--tk-text-sm);
+    line-height: 1.5;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--tk-space-3);
+    margin-top: var(--tk-space-5);
+}
+
+.chosen-ctx {
+    display: flex;
+    gap: var(--tk-space-2);
+    flex-wrap: wrap;
+    margin: 0 0 var(--tk-space-6);
+    padding-bottom: var(--tk-space-5);
+    border-bottom: 1px solid var(--tk-line);
+}
+</style>
+</head>
+<body>
+<div class="start"><div class="start-head"><h2>Start an exercise</h2><p>Any North Sámi page will do. Name one, or send a file of your own — either way the text is analysed once and every mode plays over it.</p></div><div class="chosen-ctx"><span class="tk-chip tk-chip--topic"><span class="tk-sme" lang="se">Substantiivvat</span><span class="tk-gloss">Substantive</span></span><span class="tk-chip"><span class="tk-sme" lang="se">Vállje rivttes sániid!</span><span class="tk-gloss">mc</span></span></div><div><label class="field" for="tk-url" lang="se">Vállje neahttasiiddu<span class="tk-gloss">Choose a web page</span></label><div class="row"><input class="input" id="tk-url" type="url" inputmode="url" placeholder="https://oahpa.no/…" value=""><button type="button" class="tk-btn tk-btn--primary" lang="se">Sádde</button></div></div><div class="or">dahje / or</div><div><label class="field" for="tk-file" lang="se">Vállje fiilla maid háliidat geavahit<span class="tk-gloss">Choose a file to use</span></label><label class="drop" for="tk-file"><span class="drop-icon"><svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 14V3.5M10 3.5L6.2 7.3M10 3.5l3.8 3.8M3 13v2.5A1.5 1.5 0 004.5 17h11a1.5 1.5 0 001.5-1.5V13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="drop-body"><span class="drop-label" lang="se">Vállje fiilla</span><span class="drop-sub" lang="se">Teaksta ferte leat .html formáhtas. <span class="tk-gloss">· max 5 MB</span></span></span><input id="tk-file" type="file" accept=".html" hidden></label><div class="keep"><p class="keep-lead" lang="se">Sáhtát addit hárjehusa liŋkka ohppiide. Vállje nuppi molssaeavttu:</p><div class="opts"><label class="opt"><input type="radio" name="keep" checked><span class="opt-text" lang="se">Fiila vurkejuvvo nu ahte sáhtát geavahit liŋkka ođđasit eará háve.<br><span class="tk-gloss">The file is kept, so the link works again later.</span></span></label><label class="opt"><input type="radio" name="keep"><span class="opt-text" lang="se">Fiila sihkkojuvvo gaskaija áigge.<br><span class="tk-gloss">The file is deleted overnight.</span></span></label></div></div></div><div class="actions"><button type="button" class="tk-btn tk-btn--primary" lang="se">Sádde</button></div></div><p class="tk-note">One panel, two ways in — and they really are two forms, so each ends in its own <span lang="se">Sádde</span>. The topic and mode already chosen sit at the top, under the heading, because they apply to whichever route the teacher takes. The file route carries the extra question the URL route does not have: whether the upload is kept so the link can be handed to a class.</p>
+</body>
+</html>

@@ -1,0 +1,781 @@
+<!-- @dsCard name="Score" group="Exercise" subtitle="Completion: the count, the meter, and word-by-word review" width="760" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>teaksta · score</title>
+<style>
+:root {
+    /* ── Paper & ink · warm neutrals ─────────────────────────────── */
+    --tk-paper: #FBF8F3;
+    --tk-paper-raised: #FFFDF9;
+    --tk-paper-sunken: #F4EFE7;
+    --tk-ink: #1A1613;
+    --tk-ink-muted: #5B5249;
+    --tk-ink-faint: #766E63;
+    --tk-line: #E7DFD2;
+    --tk-line-strong: #D3C8B7;
+    --tk-line-control: #8E8375;
+
+    /* ── Blue · primary, interactive, topic highlight ─────────────── */
+    --tk-blue: #0035AD;
+    --tk-blue-strong: #002A8A;
+    --tk-blue-soft: #2B58C4;
+    --tk-blue-tint: #E3E9F8;
+    --tk-blue-tint-strong: #CBD8F4;
+
+    /* ── Green · correct ──────────────────────────────────────────── */
+    --tk-green: #007229;
+    --tk-green-strong: #04581F;
+    --tk-green-tint: #DFEFE2;
+
+    /* ── Red · wrong, refused ─────────────────────────────────────── */
+    --tk-red: #D0402D;
+    --tk-red-strong: #A32A1A;
+    --tk-red-tint: #FAE4DF;
+
+    /* ── Yellow · hint ────────────────────────────────────────────── */
+    --tk-yellow: #FFCE00;
+    --tk-yellow-strong: #7A5400;
+    --tk-yellow-tint: #FFF0C4;
+
+    /* ── Type ─────────────────────────────────────────────────────── */
+    --tk-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --tk-font-serif: "Source Serif 4", "Source Serif Pro", Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --tk-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --tk-text-xs: 11.5px;
+    --tk-text-sm: 13px;
+    --tk-text-base: 15px;
+    --tk-text-md: 17px;
+    --tk-text-lg: 21px;
+    --tk-text-xl: 27px;
+    --tk-text-2xl: 34px;
+    --tk-prose-size: 19px;
+    --tk-prose-leading: 1.7;
+    --tk-prose-leading-inline: 2.15;
+    --tk-measure: 68ch;
+
+    /* ── Space · 8px grid ─────────────────────────────────────────── */
+    --tk-space-1: 4px;
+    --tk-space-2: 8px;
+    --tk-space-3: 12px;
+    --tk-space-4: 16px;
+    --tk-space-5: 24px;
+    --tk-space-6: 32px;
+    --tk-space-7: 48px;
+    --tk-space-8: 64px;
+
+    /* ── Radii · shadow · focus ───────────────────────────────────── */
+    --tk-radius-sm: 6px;
+    --tk-radius: 10px;
+    --tk-radius-lg: 14px;
+    --tk-radius-pill: 999px;
+    --tk-shadow: 0 1px 2px rgba(26, 22, 19, 0.04), 0 10px 28px -16px rgba(26, 22, 19, 0.28);
+    --tk-focus: #0035AD;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: var(--tk-space-6);
+    background: var(--tk-paper);
+    color: var(--tk-ink);
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-base);
+    line-height: 1.5;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+/* ── Wordmark ─────────────────────────────────────────────────────── */
+.tk-wordmark {
+    font-family: var(--tk-font-sans);
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--tk-ink);
+    text-decoration: none;
+}
+
+/* ── Small text roles ─────────────────────────────────────────────── */
+.tk-eyebrow {
+    margin: 0 0 var(--tk-space-3);
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.tk-gloss {
+    color: var(--tk-ink-faint);
+    font-size: var(--tk-text-sm);
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.tk-note {
+    margin: var(--tk-space-4) 0 0;
+    max-width: 62ch;
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+    line-height: 1.6;
+}
+
+.tk-sme {
+    font-weight: 600;
+}
+
+code,
+.tk-mono {
+    font-family: var(--tk-font-mono);
+    font-size: 0.86em;
+    letter-spacing: -0.01em;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────── */
+h1,
+h2,
+h3 {
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+}
+
+h1 {
+    font-size: var(--tk-text-xl);
+}
+
+h2 {
+    font-size: var(--tk-text-md);
+}
+
+h3 {
+    font-size: var(--tk-text-base);
+}
+
+/* ── Surfaces ─────────────────────────────────────────────────────── */
+.tk-panel {
+    padding: var(--tk-space-6);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.tk-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tk-space-2);
+    padding: 10px var(--tk-space-5);
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-btn:hover {
+    border-color: var(--tk-blue);
+    color: var(--tk-blue-strong);
+}
+
+.tk-btn--primary {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue);
+    color: #FFFFFF;
+}
+
+.tk-btn--primary:hover {
+    border-color: var(--tk-blue-strong);
+    background: var(--tk-blue-strong);
+    color: #FFFFFF;
+}
+
+.tk-btn--quiet {
+    border-color: transparent;
+    background: transparent;
+    color: var(--tk-blue);
+}
+
+.tk-btn--quiet:hover {
+    background: var(--tk-blue-tint);
+    border-color: transparent;
+}
+
+.tk-btn[disabled] {
+    border-color: var(--tk-line);
+    background: var(--tk-paper-sunken);
+    color: var(--tk-ink-muted);
+    cursor: not-allowed;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────── */
+.tk-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--tk-space-2);
+    padding: 5px var(--tk-space-3);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    font-size: var(--tk-text-sm);
+    line-height: 1.35;
+    white-space: nowrap;
+}
+
+.tk-chip--topic {
+    border-color: var(--tk-blue-tint-strong);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-chip--topic .tk-gloss {
+    color: var(--tk-blue-strong);
+    opacity: 0.72;
+}
+
+.tk-chip .tk-sme {
+    font-weight: 600;
+}
+
+/* ── Score chip ───────────────────────────────────────────────────── */
+.tk-score {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    padding: 7px var(--tk-space-4) 7px var(--tk-space-4);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-paper-raised);
+    box-shadow: 0 1px 2px rgba(26, 22, 19, 0.04);
+}
+
+.tk-score-label {
+    font-size: var(--tk-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    white-space: nowrap;
+}
+
+.tk-score-count {
+    font-variant-numeric: tabular-nums;
+}
+
+.tk-dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.tk-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--tk-line-strong);
+}
+
+.tk-dot--on {
+    background: var(--tk-green);
+}
+
+.tk-dot--miss {
+    background: var(--tk-red);
+}
+
+.tk-dot--topic {
+    background: var(--tk-blue);
+}
+
+/* ── Divider ──────────────────────────────────────────────────────── */
+.tk-rule {
+    height: 1px;
+    margin: var(--tk-space-6) 0;
+    border: 0;
+    background: var(--tk-line);
+}
+
+/* ══ The analysed text ═════════════════════════════════════════════ */
+.tk-reading {
+    max-width: var(--tk-measure);
+}
+
+.tk-prose {
+    margin: 0;
+    color: var(--tk-ink);
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-prose-size);
+    line-height: var(--tk-prose-leading);
+    hanging-punctuation: first;
+}
+
+/* Inline controls add to the line box, so interactive modes ride a
+   slightly looser leading and the rhythm holds. */
+.tk-prose--inline {
+    line-height: var(--tk-prose-leading-inline);
+}
+
+/* A word the enhancer wrapped. It carries nothing of its own: an exercise
+   gives it whatever state it has, so nothing is given away before the
+   learner answers. */
+.teaksta-token {
+    border-radius: 4px;
+}
+
+/* A word-sized band an exercise can put a state on without disturbing the
+   line it sits in. The negative margin cancels the padding exactly, so a
+   banded word takes the same horizontal advance as the bare word and the
+   prose keeps its rhythm. */
+.tk-slot {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    border-radius: 4px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Highlight · colorize ─────────────────────────────────────────── */
+.teaksta-Substantive.tk-hit {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: inset 0 -0.09em 0 rgba(0, 42, 138, 0.22);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+
+/* ── Pickable word · click ────────────────────────────────────────── */
+.tk-pick {
+    padding: 0.12em 0.2em;
+    margin: 0 -0.2em;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-color 120ms ease, color 120ms ease;
+}
+
+.tk-pick:hover,
+.tk-pick.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+.tk-pick.tk-correct,
+.tk-pick.tk-wrong {
+    cursor: default;
+}
+
+.tk-correct {
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
+}
+
+.tk-wrong {
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+/* State is never colour alone: a mark rides along with it. */
+.tk-mark {
+    margin-left: 0.22em;
+    font-family: var(--tk-font-sans);
+    font-size: 0.62em;
+    font-weight: 700;
+    vertical-align: 0.35em;
+    opacity: 0.75;
+}
+
+/* ── Chooser · mc ─────────────────────────────────────────────────── */
+.tk-mc-wrap {
+    position: relative;
+    display: inline-block;
+    vertical-align: baseline;
+}
+
+.tk-mc {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    min-width: 4.6em;
+    padding: 0.1em 0.5em 0.14em 0.55em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 130ms ease, background-color 130ms ease;
+}
+
+.tk-mc:hover {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+}
+
+.tk-mc[aria-expanded="true"] {
+    border-color: var(--tk-blue);
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+    box-shadow: 0 0 0 3px rgba(0, 53, 173, 0.16);
+}
+
+.tk-mc-value {
+    flex: 1;
+}
+
+.tk-mc-value--empty {
+    color: var(--tk-ink-faint);
+}
+
+.tk-caret {
+    flex: none;
+    color: var(--tk-ink-faint);
+}
+
+.tk-mc[aria-expanded="true"] .tk-caret {
+    color: var(--tk-blue);
+    transform: rotate(180deg);
+}
+
+.tk-mc-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 100%;
+    padding: var(--tk-space-1);
+    border: 1px solid var(--tk-line-strong);
+    border-radius: var(--tk-radius);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+    font-family: var(--tk-font-serif);
+    font-size: 0.92em;
+    line-height: 1.3;
+}
+
+/* Spans, not a list: the menu lives inside the paragraph it belongs to, and
+   a <ul> there would close the <p> out from under it. */
+.tk-mc-option {
+    display: block;
+    padding: 0.32em 0.7em;
+    border-radius: var(--tk-radius-sm);
+    color: var(--tk-ink);
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.tk-mc-option:hover,
+.tk-mc-option.tk-is-hover {
+    background: var(--tk-blue-tint);
+    color: var(--tk-blue-strong);
+}
+
+/* ── Slot · cloze ─────────────────────────────────────────────────── */
+.tk-cloze {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.28em;
+    vertical-align: baseline;
+}
+
+.tk-cloze-input {
+    padding: 0.1em 0.4em 0.14em;
+    border: 1px solid var(--tk-line-control);
+    border-radius: var(--tk-radius-sm);
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink);
+    font: inherit;
+    font-family: var(--tk-font-serif);
+    line-height: 1.25;
+}
+
+.tk-cloze-input::placeholder {
+    color: var(--tk-ink-faint);
+    opacity: 1;
+}
+
+.tk-cloze-input.tk-is-focus {
+    border-color: var(--tk-blue);
+    outline: 2px solid var(--tk-focus);
+    outline-offset: 2px;
+}
+
+.tk-cloze-input.tk-correct {
+    border-color: var(--tk-green);
+    background: var(--tk-green-tint);
+    color: var(--tk-green-strong);
+}
+
+.tk-cloze-input.tk-wrong {
+    border-color: var(--tk-red);
+    background: var(--tk-red-tint);
+    color: var(--tk-red-strong);
+}
+
+.tk-hint-btn {
+    flex: none;
+    width: 1.5em;
+    height: 1.5em;
+    padding: 0;
+    border: 1px solid var(--tk-line-control);
+    border-radius: 50%;
+    background: var(--tk-paper-raised);
+    color: var(--tk-ink-muted);
+    font-family: var(--tk-font-sans);
+    font-size: 0.68em;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    align-self: center;
+    transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+}
+
+.tk-hint-btn:hover,
+.tk-hint-btn.tk-is-hover {
+    border-color: var(--tk-yellow-strong);
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+}
+
+.tk-hint {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35em;
+    padding: 0.08em 0.5em 0.12em;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-yellow-tint);
+    color: var(--tk-yellow-strong);
+    font-family: var(--tk-font-sans);
+    font-size: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    vertical-align: 0.1em;
+}
+
+.tk-hint em {
+    font-family: var(--tk-font-serif);
+    font-size: 1.24em;
+    font-style: normal;
+    font-weight: 400;
+}
+
+.tk-hint-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.35em;
+    height: 1.35em;
+    border-radius: 50%;
+    background: var(--tk-yellow);
+    color: var(--tk-ink);
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    align-self: center;
+}
+
+/* ── Exercise head ────────────────────────────────────────────────── */
+.tk-exhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--tk-space-5);
+}
+
+.tk-prompt {
+    margin: 0;
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.tk-prompt .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.tk-stage {
+    padding: var(--tk-space-6) var(--tk-space-7) var(--tk-space-7);
+    border: 1px solid var(--tk-line);
+    border-radius: var(--tk-radius-lg);
+    background: var(--tk-paper-raised);
+    box-shadow: var(--tk-shadow);
+}
+
+.res {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--tk-space-6);
+    flex-wrap: wrap;
+}
+
+.res-figure {
+    display: flex;
+    align-items: baseline;
+    gap: var(--tk-space-3);
+}
+
+.res-num {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--tk-green-strong);
+    font-variant-numeric: tabular-nums;
+}
+
+.res-of {
+    font-size: var(--tk-text-lg);
+    font-weight: 600;
+    color: var(--tk-ink-muted);
+}
+
+.res-label {
+    margin: var(--tk-space-3) 0 0;
+    font-size: var(--tk-text-md);
+    font-weight: 600;
+}
+
+.res-label .tk-gloss {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+}
+
+.res-ctx {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--tk-space-2);
+}
+
+.meter {
+    display: flex;
+    gap: 3px;
+    height: 8px;
+    margin: var(--tk-space-5) 0 var(--tk-space-6);
+    overflow: hidden;
+    border-radius: var(--tk-radius-pill);
+}
+
+.meter span {
+    flex: 1;
+    border-radius: var(--tk-radius-pill);
+    background: var(--tk-line-strong);
+}
+
+.meter .on { background: var(--tk-green); }
+.meter .miss { background: var(--tk-red); }
+
+/* ── What the learner got ─────────────────────────────────────────── */
+.review {
+    display: grid;
+    gap: var(--tk-space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rev {
+    display: grid;
+    grid-template-columns: 20px minmax(120px, 1fr) minmax(150px, 1.4fr);
+    align-items: baseline;
+    gap: var(--tk-space-4);
+    padding: 9px var(--tk-space-3);
+    border-radius: var(--tk-radius-sm);
+}
+
+.rev:nth-child(odd) {
+    background: var(--tk-paper-sunken);
+}
+
+.rev-mark {
+    font-size: var(--tk-text-sm);
+    font-weight: 700;
+    text-align: center;
+}
+
+.rev-mark.ok { color: var(--tk-green-strong); }
+.rev-mark.no { color: var(--tk-red-strong); }
+
+.rev-word {
+    font-family: var(--tk-font-serif);
+    font-size: var(--tk-text-md);
+}
+
+.rev-word.no {
+    color: var(--tk-red-strong);
+}
+
+.rev-meta {
+    color: var(--tk-ink-muted);
+    font-size: var(--tk-text-sm);
+}
+
+.rev-meta em {
+    font-family: var(--tk-font-serif);
+    font-size: 1.08em;
+    font-style: normal;
+    color: var(--tk-ink);
+}
+
+.res-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tk-space-5);
+    flex-wrap: wrap;
+    margin-top: var(--tk-space-6);
+    padding-top: var(--tk-space-5);
+    border-top: 1px solid var(--tk-line);
+}
+
+.res-actions .tk-gloss {
+    flex: 1 1 14rem;
+}
+
+.res-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--tk-space-3);
+    margin-left: auto;
+}
+</style>
+</head>
+<body>
+<div class="tk-stage"><div class="res"><div><div class="res-figure"><span class="res-num">6</span><span class="res-of">/ 7</span></div><p class="res-label" lang="se">Rivttes<span class="tk-gloss">Six of the seven nouns answered right</span></p></div><div class="res-ctx"><span class="tk-chip tk-chip--topic"><span class="tk-sme" lang="se">Substantiivvat</span><span class="tk-gloss">Substantive</span></span><span class="tk-chip"><span class="tk-sme" lang="se">Čále rivttes sániid!</span><span class="tk-gloss">cloze</span></span></div></div><div class="meter" aria-hidden="true"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="miss"></span><span class="on"></span></div><p class="tk-eyebrow">Word by word</p><ul class="review"><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">viesu</span><span class="rev-meta">← <em lang="se">viessu</em></span></li><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">Viesut</span><span class="rev-meta">← <em lang="se">viessu</em></span></li><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">Bárdni</span><span class="rev-meta">← <em lang="se">bárdni</em></span></li><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">skuvllas</span><span class="rev-meta">← <em lang="se">skuvla</em></span></li><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">Nieida</span><span class="rev-meta">← <em lang="se">nieida</em></span></li><li class="rev"><span class="rev-mark no">✕</span><span class="rev-word no" lang="se">girjji</span><span class="rev-meta">wrote <em lang="se">girji</em> · ← <em lang="se">girji</em></span></li><li class="rev"><span class="rev-mark ok">✓</span><span class="rev-word" lang="se">Beana</span><span class="rev-meta">← <em lang="se">beana</em></span></li></ul><div class="res-actions"><span class="tk-gloss">The same text is still loaded — switch mode to read it again.</span><span class="res-buttons"><button type="button" class="tk-btn tk-btn--quiet" lang="se">Fáddá</button><button type="button" class="tk-btn tk-btn--primary" lang="se">Vállje neahttasiiddu</button></span></div></div><p class="tk-note">The number is green because it is a count of right answers, not a grade — there is no pass mark and nothing turns red for being low. Underneath it the seven words are listed with the lemma each came from, which is the thing worth taking away; the one that was missed shows what was written next to what was wanted. Both actions reuse labels the app already has.</p>
+</body>
+</html>
