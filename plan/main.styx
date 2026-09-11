@@ -764,6 +764,21 @@ children (
                     }
                 )
             }
+
+            {
+                id native-purge
+                title "Delete the Java trees from the repo in one commit"
+                kind @chore
+                deps (native-naming)
+                log (
+                    {
+                        at 2026-09-11T14:51:50.80378Z
+                        author "brendan@bbqsrc.net"
+                        kind @decision
+                        text "Operator directive (2026-09-11): at the end, delete ALL old Java code from the repo in ONE commit — sme/, rus/, rusVIEW/. Sequencing: strictly last, after native-registry, native-naming, and ux-offsets have merged (they carry the final Java source-impl pin updates; after the purge there are no Java pins to maintain). The same commit must flip the spec model to single-impl: drop the source-impl block from .config/nspec/config.styx (the dual-impl porting contract is fulfilled and closed), leaving rust target-impl coverage as the whole truth — nplan_spec_status must stay all-covered/0-stale after the drop. The docs/spec/port/sme/... markdown paths and rule ids remain as-is (they are historical anchors, not file references). Nothing is lost: the full SVN lineage lives on the svn/teaksta and svn/view branches pushed to origin, and the Java's port-annotated final state is in main's history. Check for stray runtime/test/doc references to the deleted trees before committing (README at repo root describes legacy Konteaksta problems — update or note it)."
+                    }
+                )
+            }
         )
     }
 )
