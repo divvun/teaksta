@@ -552,6 +552,81 @@ async fn no_block_carries_retired_hint_markup() {
     }
 }
 
+/// The sentences the long page is built from, each one complete in itself
+/// and each carrying at least one noun for the topic to find.
+const LONG_PAGE_SENTENCES: &[&str] = &[
+    "Mun oidnen viesu ikte.",
+    "Viesut leat stuorr\u{e1}t.",
+    "B\u{e1}rdni lea skuvllas.",
+    "Nieida logai girjji.",
+    "Beana viehk\u{e1} olgun.",
+    "Boazu lea guohtumin duoddaris.",
+];
+
+/// A page of sixty sentences, three to a paragraph.
+fn long_page() -> String {
+    let mut page = String::from(concat!(
+        "<!DOCTYPE html><html lang=\"se\"><head><meta charset=\"utf-8\">\n",
+        "<title>Guhkes siidu</title></head><body>\n"
+    ));
+    for paragraph in 0..20 {
+        page.push_str("<p>");
+        for i in 0..3 {
+            if i > 0 {
+                page.push(' ');
+            }
+            page.push_str(LONG_PAGE_SENTENCES[(paragraph * 3 + i) % LONG_PAGE_SENTENCES.len()]);
+        }
+        page.push_str("</p>\n");
+    }
+    page.push_str("</body></html>\n");
+    page
+}
+
+/// The endpoint-level acceptance test for the chunked feed. A document of
+/// sixty sentences bursts far more values out of the sentence-splitting
+/// stage than the 16-event channels divvun-runtime wires its stages with,
+/// so handing it to a pipeline in one `forward` answered this request with
+/// a 500 reading `channel lagged by 45`. The seam now feeds each pipeline
+/// in ordered chunks, and the page is enhanced.
+#[tokio::test]
+async fn a_sixty_sentence_page_is_enhanced() {
+    if !models_available() {
+        return;
+    }
+    let page = long_page();
+    let blocks = blocks_of(&page, "Substantive", "colorize").await;
+
+    assert_eq!(blocks.len(), 20, "{blocks:#?}");
+    let markup = blocks.join("");
+    assert_eq!(markup.matches("<p>").count(), 20, "{markup}");
+    // Every sentence of the page is answered for, in the order the page put
+    // them in: the chunk seams neither drop a sentence nor reorder one.
+    let mut cursor = 0usize;
+    for paragraph in 0..20 {
+        for i in 0..3 {
+            let sentence = LONG_PAGE_SENTENCES[(paragraph * 3 + i) % LONG_PAGE_SENTENCES.len()];
+            // The full stop stands outside the span the last word may be
+            // wrapped in, so it is no part of what is looked for.
+            let word = sentence
+                .split(' ')
+                .next_back()
+                .expect("a last word")
+                .trim_end_matches('.');
+            let at = markup[cursor..]
+                .find(word)
+                .unwrap_or_else(|| panic!("{word} is missing after {cursor}:\n{markup}"));
+            cursor += at + word.len();
+        }
+    }
+    // and the topic's own nouns are marked up throughout, not only at the head.
+    assert!(
+        markup.matches("teaksta-Substantive").count() >= 20,
+        "{markup}"
+    );
+    assert!(blocks[19].contains("teaksta-Substantive"), "{}", blocks[19]);
+}
+
 /// A page with a menu and a footer on it, as an uploaded one might have.
 const CHROME_LADEN_PAGE: &str = concat!(
     "<!DOCTYPE html><html lang=\"se\"><head><meta charset=\"utf-8\">\n",
