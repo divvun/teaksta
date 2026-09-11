@@ -741,6 +741,7 @@ children (
                 id native-registry
                 title "Topics are Rust: delete the descriptor XML, activity tree, and classpath machinery"
                 kind @refactor
+                sealed true
                 log (
                     {
                         at 2026-09-11T14:43:25.610539Z
@@ -754,6 +755,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @decision
                         text "Operator design ruling (2026-09-11): the topic definitions port to TOML, not hardcoded Rust. Shape: topics.toml — one [[topic]] per entry carrying name, North Sámi label (absorb html_enhancer::SAMI_LABELS), enabled, which enhancer it drives, and its tag parameters (the values living today in sme/desc descriptor XML + activity.xml, extracted ONCE with provenance comments in the TOML). Compiled-in default via include_str! so the server boots with zero external files; TEAKSTA_TOPICS env var overrides with a path for deployments that tune without recompiling. The shared pre/post pipeline STRUCTURE stays Rust (architecture, not config). Everything else in the earlier note stands: delete activity_configuration.rs, the descriptor parsing in processors.rs, activities.rs scanning, Config.{classpath_root, activities_dir, webapp_root} + env vars; fetch file: roots shrink to upload dirs; zero runtime/test reads from sme/; spec rules for the dead machinery retire with CasUtils-style excludes; registry/context rules bumped; topic_classes invariant walks the TOML-backed registry."
+                    }
+
+                    {
+                        at 2026-09-11T16:00:43.412179Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
