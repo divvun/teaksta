@@ -18,6 +18,17 @@
 //! Every method blocks on an internally owned single-thread tokio runtime;
 //! callers on an async executor must reach this seam through a blocking
 //! section (e.g. `spawn_blocking`), never directly from a worker thread.
+//!
+//! Input reaches a pipeline in ordered chunks rather than as one document.
+//! divvun-runtime wires each pipeline stage to the next through a 16-event
+//! `tokio::sync::broadcast` channel, and a stage that fans one input out
+//! into a batch — the sentence splitter emits one value per sentence — sends
+//! that whole batch before the consumer on this seam's single-threaded
+//! runtime is scheduled to read any of it. A document with more sentences
+//! than the buffer holds therefore lost the overflow, and the run failed
+//! with `channel lagged by N`. Chunking is confined to this module: every
+//! method still takes a whole document and answers for the whole document,
+//! with the per-chunk outputs concatenated in input order.
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
@@ -63,6 +74,128 @@ pub enum GeneratorError {
 /// through concurrently, so each one keeps its own lock instead.
 type HandleSlot = Arc<Mutex<Option<PipelineHandle>>>;
 
+/// How many sentence boundaries one chunk of pipeline input carries. The
+/// widest burst a stage can answer one chunk with is one value per sentence
+/// in it, so this is what keeps a burst inside the 16-event channels the
+/// stages are wired with — with room left over for the stages that answer
+/// more than one value per sentence.
+const CHUNK_BOUNDARY_BUDGET: usize = 6;
+
+/// The byte ceiling a chunk is cut at when it reaches no sentence boundary
+/// before this much input. It is generous because it is not what bounds a
+/// burst: a single oversized value is forwarded and answered without
+/// trouble, and only a burst of many values overflows a channel. Text is
+/// therefore never cut at this ceiling mid-sentence — a pathological
+/// sentence longer than it goes through whole rather than mid-word — while
+/// the one-token-per-line stream, where every line is already a whole
+/// token, is cut at the nearest line boundary.
+const CHUNK_BYTE_BUDGET: usize = 8192;
+
+/// The byte offsets raw text may be cut at: one past a newline, or one past
+/// sentence-final punctuation that whitespace or the end of the text
+/// follows. Each boundary then runs on past the whitespace trailing it, so
+/// a chunk closes over the space between two sentences rather than opening
+/// with it, and no boundary can fall inside a word. The end of the text is
+/// not listed — the remainder after the last cut is the last chunk.
+fn text_boundaries(text: &str) -> Vec<usize> {
+    let mut boundaries = Vec::new();
+    let mut chars = text.char_indices().peekable();
+
+    while let Some((at, c)) = chars.next() {
+        let after = at + c.len_utf8();
+        let follows_sentence = matches!(c, '.' | '!' | '?')
+            && chars.peek().is_none_or(|&(_, next)| next.is_whitespace());
+        if c != '\n' && !follows_sentence {
+            continue;
+        }
+
+        let mut end = after;
+        while let Some(&(at, c)) = chars.peek() {
+            if !c.is_whitespace() {
+                break;
+            }
+            end = at + c.len_utf8();
+            chars.next();
+        }
+        if end < text.len() {
+            boundaries.push(end);
+        }
+    }
+
+    boundaries
+}
+
+/// Raw text as ordered chunks whose concatenation is the input again. A
+/// chunk is closed at the first boundary past either budget, and a chunk
+/// carrying nothing but whitespace is never closed on its own — a masked
+/// document is mostly spaces, and a chunk of them asks the pipeline a
+/// question about nothing.
+fn text_chunks(text: &str) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut start = 0usize;
+    let mut boundaries = 0usize;
+
+    for end in text_boundaries(text) {
+        boundaries += 1;
+        let pending = &text[start..end];
+        if boundaries < CHUNK_BOUNDARY_BUDGET && pending.len() < CHUNK_BYTE_BUDGET {
+            continue;
+        }
+        if pending.trim().is_empty() {
+            continue;
+        }
+        chunks.push(pending.to_string());
+        start = end;
+        boundaries = 0;
+    }
+
+    if start < text.len() || chunks.is_empty() {
+        chunks.push(text[start..].to_string());
+    }
+    chunks
+}
+
+/// Whether a line of the one-token-per-line stream is nothing but
+/// sentence-final punctuation — the stream's own sentence boundary, and the
+/// token the vislcg3 stage injects to close a heading.
+fn is_sentence_final_line(line: &str) -> bool {
+    let trimmed = line.trim();
+    !trimmed.is_empty() && trimmed.chars().all(|c| matches!(c, '.' | '!' | '?'))
+}
+
+/// The one-token-per-line stream as ordered chunks, each rejoined with
+/// newlines, together carrying every line in order. Cuts land after a
+/// sentence-final line: constraint-grammar disambiguation windows are
+/// sentence-local, so a seam there leaves every window whole. A stretch
+/// that reaches the byte ceiling without one is cut at that line's end
+/// instead, which is still never inside a token.
+fn token_line_chunks(tokens: &[String]) -> Vec<String> {
+    let mut chunks = Vec::new();
+    let mut start = 0usize;
+    let mut enders = 0usize;
+    let mut bytes = 0usize;
+
+    for (at, token) in tokens.iter().enumerate() {
+        bytes += token.len() + 1;
+        let ender = is_sentence_final_line(token);
+        if ender {
+            enders += 1;
+        }
+        if !(ender && enders >= CHUNK_BOUNDARY_BUDGET) && bytes < CHUNK_BYTE_BUDGET {
+            continue;
+        }
+        chunks.push(tokens[start..=at].join("\n"));
+        start = at + 1;
+        enders = 0;
+        bytes = 0;
+    }
+
+    if start < tokens.len() || chunks.is_empty() {
+        chunks.push(tokens[start..].join("\n"));
+    }
+    chunks
+}
+
 pub struct MorphoPipeline {
     runtime: tokio::runtime::Runtime,
     handles: Mutex<HashMap<&'static str, HandleSlot>>,
@@ -86,12 +219,16 @@ impl MorphoPipeline {
         })
     }
 
-    /// Runs the named bundle pipeline over `input` and returns every value
-    /// it streams (batch producers like sentence splitting emit one value
-    /// per element). Handles are created lazily per pipeline name and
-    /// reused; the bundle is reopened per handle, which keeps creation
-    /// simple at the cost of a slower first call per pipeline.
-    fn run(&self, pipeline: &'static str, input: String) -> Result<Vec<PipelineValue>> {
+    /// Runs the named bundle pipeline over `chunks`, one `forward` per chunk
+    /// in input order, and returns every value they streamed in that same
+    /// order (batch producers like sentence splitting emit one value per
+    /// element). The whole run holds the pipeline's slot for its length, so
+    /// a request's chunks reach the handle as one uninterrupted sequence and
+    /// no second caller's chunk lands between two of them. Handles are
+    /// created lazily per pipeline name and reused; the bundle is reopened
+    /// per handle, which keeps creation simple at the cost of a slower first
+    /// call per pipeline.
+    fn run(&self, pipeline: &'static str, chunks: Vec<String>) -> Result<Vec<PipelineValue>> {
         let bundle_path = std::env::var(BUNDLE_ENV)
             .map_err(|_| anyhow!("{BUNDLE_ENV} is not set; point it at the sme .drb bundle"))?;
         let slot = self.slot(pipeline);
@@ -114,10 +251,16 @@ impl MorphoPipeline {
                 *slot = Some(handle);
             }
             let handle = slot.as_mut().expect("pipeline handle created above");
-            let mut stream = handle.forward(PipelineValue::String(input)).await;
             let mut values = Vec::new();
-            while let Some(item) = stream.next().await {
-                values.push(item.map_err(|e| anyhow!("pipeline {pipeline:?} failed: {e}"))?);
+            for chunk in chunks {
+                // Each chunk's stream is drained to its end before the next
+                // chunk is forwarded. The handle carries one input channel
+                // and one output channel, so output a forward left unread
+                // would be delivered to whichever forward reads next.
+                let mut stream = handle.forward(PipelineValue::String(chunk)).await;
+                while let Some(item) = stream.next().await {
+                    values.push(item.map_err(|e| anyhow!("pipeline {pipeline:?} failed: {e}"))?);
+                }
             }
             if values.is_empty() {
                 bail!("pipeline {pipeline:?} produced no output");
@@ -138,30 +281,47 @@ impl MorphoPipeline {
         Arc::clone(registry.entry(pipeline).or_default())
     }
 
-    /// Runs a pipeline whose result is a single value and renders it as a
-    /// string.
-    fn run_to_string(&self, pipeline: &'static str, input: String) -> Result<String> {
-        let mut values = self.run(pipeline, input)?;
-        if values.len() != 1 {
+    /// Runs a pipeline that answers one value per chunk and renders those
+    /// values, in input order, as one string. The values are line streams,
+    /// so a value that does not end its last line is given the terminator
+    /// the next value's first line would otherwise be glued onto; one chunk
+    /// is one value and nothing is inserted at all.
+    fn run_to_string(&self, pipeline: &'static str, chunks: Vec<String>) -> Result<String> {
+        let expected = chunks.len();
+        let values = self.run(pipeline, chunks)?;
+        if values.len() != expected {
             bail!(
-                "pipeline {pipeline:?} returned {} values where one was expected",
+                "pipeline {pipeline:?} returned {} values for {expected} chunk(s) of input, \
+                 where one value per chunk was expected",
                 values.len()
             );
         }
-        match values.remove(0) {
-            PipelineValue::String(s) => Ok(s),
-            PipelineValue::Json(j) => Ok(serde_json::to_string(&j)?),
-            other => bail!("pipeline {pipeline:?} returned an unsupported value kind: {other:?}"),
+        let mut out = String::new();
+        for value in values {
+            let rendered = match value {
+                PipelineValue::String(s) => s,
+                PipelineValue::Json(j) => serde_json::to_string(&j)?,
+                other => {
+                    bail!("pipeline {pipeline:?} returned an unsupported value kind: {other:?}")
+                }
+            };
+            if !out.is_empty() && !out.ends_with('\n') {
+                out.push('\n');
+            }
+            out.push_str(&rendered);
         }
+        Ok(out)
     }
 
     /// North Sámi tokenisation. Replaces `cat <file> | preprocess
     /// --abbr=abbr.txt`: takes raw text, returns one surface token per
     /// element exactly as the preprocess output had one token per line.
     /// The bundle's `tokenize` pipeline emits a CG cohort stream; the
-    /// surface forms are lifted from the `"<form>"` cohort lines.
+    /// surface forms are lifted from the `"<form>"` cohort lines. The text
+    /// is fed in chunks cut at sentence boundaries, and the cohort streams
+    /// they answer are read as the one stream their concatenation is.
     pub fn tokenize(&self, text: &str) -> Result<Vec<String>> {
-        let out = self.run_to_string("tokenize", text.to_string())?;
+        let out = self.run_to_string("tokenize", text_chunks(text))?;
         Ok(out
             .lines()
             .filter_map(|line| {
@@ -179,9 +339,12 @@ impl MorphoPipeline {
     /// cohort lines followed by tab-indented reading lines). The bundle's
     /// `analyze` pipeline tokenises internally, so the tokens are re-joined
     /// with newlines; the pmhfst tokeniser treats each line as one unit,
-    /// matching the legacy one-token-per-line input contract.
+    /// matching the legacy one-token-per-line input contract. The lines are
+    /// fed in chunks cut after sentence-final ones, which is where a
+    /// disambiguation window closes, and the answered cohort streams
+    /// concatenate into the one stream the reader parses.
     pub fn analyze_disambiguate(&self, tokens: &[String]) -> Result<String> {
-        self.run_to_string("analyze", tokens.join("\n"))
+        self.run_to_string("analyze", token_line_chunks(tokens))
     }
 
     /// Word-form generation through the normative generator. Replaces
@@ -227,9 +390,11 @@ impl MorphoPipeline {
     /// the OpenNLP English sentence detector the legacy pipeline ran over
     /// North Sámi text. The bundle's `sentences` pipeline returns sentence
     /// surface texts; each is mapped back to a byte span by locating its
-    /// words sequentially in the input.
+    /// words sequentially in the input. The text is fed in chunks cut at
+    /// sentence boundaries, so the sentences come back in document order
+    /// and the cursor walking them across the text only ever moves forward.
     pub fn sentence_spans(&self, text: &str) -> Result<Vec<(usize, usize)>> {
-        let values = self.run("sentences", text.to_string())?;
+        let values = self.run("sentences", text_chunks(text))?;
         let mut sentences: Vec<String> = Vec::new();
         for value in values {
             match value {
@@ -365,4 +530,213 @@ fn find_from(text: &str, cursor: usize, needle: &str) -> Option<usize> {
     text.get(cursor..)
         .and_then(|rest| rest.find(needle))
         .map(|pos| cursor + pos)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `count` sentences of five words each, separated by single spaces.
+    fn sentences(count: usize) -> String {
+        (0..count)
+            .map(|i| format!("Mun oidnen viesu ikte nummir {i}. "))
+            .collect::<String>()
+            .trim_end()
+            .to_string()
+    }
+
+    fn lines(tokens: &[&str]) -> Vec<String> {
+        tokens.iter().map(|t| t.to_string()).collect()
+    }
+
+    /// Nothing smaller than one budget is chunked at all, so the seam keeps
+    /// asking the pipelines exactly the question it asked before chunking
+    /// existed.
+    #[test]
+    fn a_small_text_is_one_chunk_of_itself() {
+        for text in [
+            "",
+            " ",
+            "Mun oidnen viesu ikte.",
+            "Mun oidnen viesu ikte. Dat lei buorre.",
+            "Mun oidnen viesu ikte.\nDat lei buorre.\n",
+            "                ",
+        ] {
+            assert_eq!(text_chunks(text), vec![text.to_string()], "{text:?}");
+        }
+    }
+
+    #[test]
+    fn a_small_token_stream_is_one_chunk() {
+        for tokens in [
+            vec![],
+            lines(&["viessu"]),
+            lines(&[
+                "Mun", "oidnen", "viesu", "ikte", ".", "Dat", "lei", "buorre", ".",
+            ]),
+        ] {
+            assert_eq!(
+                token_line_chunks(&tokens),
+                vec![tokens.join("\n")],
+                "{tokens:?}"
+            );
+        }
+    }
+
+    /// Chunking loses nothing and adds nothing: the chunks of a text are a
+    /// partition of it, in order.
+    #[test]
+    fn text_chunks_concatenate_to_the_text() {
+        for count in [1, 6, 7, 13, 60, 200] {
+            let text = sentences(count);
+            let chunks = text_chunks(&text);
+            assert_eq!(chunks.concat(), text, "{count} sentences");
+            assert!(chunks.iter().all(|chunk| !chunk.is_empty()));
+        }
+    }
+
+    /// The same for the token stream, where a chunk is a run of whole lines
+    /// and the chunks together carry every line once, in order.
+    #[test]
+    fn token_chunks_carry_every_line_in_order() {
+        let tokens: Vec<String> = (0..200)
+            .flat_map(|i| [format!("sátni{i}"), ".".to_string()])
+            .collect();
+        let chunks = token_line_chunks(&tokens);
+
+        let carried: Vec<&str> = chunks.iter().flat_map(|chunk| chunk.lines()).collect();
+        assert_eq!(
+            carried,
+            tokens.iter().map(String::as_str).collect::<Vec<_>>()
+        );
+        assert!(chunks.len() > 1, "{} chunks", chunks.len());
+    }
+
+    /// A chunk is closed at a sentence boundary, never in the middle of one,
+    /// and carries no more sentences than the budget allows.
+    #[test]
+    fn a_text_chunk_ends_at_a_sentence_boundary() {
+        let text = sentences(13);
+        let chunks = text_chunks(&text);
+
+        assert_eq!(chunks.len(), 3, "{chunks:#?}");
+        for chunk in &chunks {
+            assert!(chunk.trim_end().ends_with('.'), "{chunk:?}");
+            assert!(
+                chunk.matches('.').count() <= CHUNK_BOUNDARY_BUDGET,
+                "{chunk:?}"
+            );
+        }
+        // The cut takes the space after the full stop with it, so the next
+        // chunk opens on the sentence rather than on the space.
+        assert!(chunks[1].starts_with("Mun"), "{:?}", chunks[1]);
+    }
+
+    /// Paragraph breaks are boundaries too, and the newline closes the chunk
+    /// it ends rather than opening the next one.
+    #[test]
+    fn a_paragraph_break_is_a_boundary() {
+        let text = "a\nb\nc\nd\ne\nf\ng\n";
+        let chunks = text_chunks(text);
+
+        assert_eq!(
+            chunks,
+            vec!["a\nb\nc\nd\ne\nf\n".to_string(), "g\n".to_string()]
+        );
+        assert_eq!(chunks.concat(), text);
+    }
+
+    /// Sentence-final punctuation inside a word — a decimal point, an
+    /// abbreviating full stop with no space after it — is not a boundary, so
+    /// no cut can fall inside a token.
+    #[test]
+    fn punctuation_inside_a_word_is_no_boundary() {
+        assert!(text_boundaries("3.5 ja 4.5").is_empty());
+        assert!(text_boundaries("a.b.c.d.e.f.g.h").is_empty());
+        assert_eq!(text_boundaries("Mun. Dat"), vec![5]);
+    }
+
+    /// One sentence longer than the byte ceiling goes through as a single
+    /// oversized chunk rather than being cut inside a word: a lone large
+    /// value is forwarded without trouble, and only a burst of many values
+    /// overflows a channel.
+    #[test]
+    fn one_giant_sentence_is_never_cut_mid_word() {
+        let giant = format!("{}.", "sátni ".repeat(4000));
+        assert!(giant.len() > CHUNK_BYTE_BUDGET);
+
+        assert_eq!(text_chunks(&giant), vec![giant.clone()]);
+
+        // and it closes its chunk once it ends, rather than dragging the
+        // rest of the document along with it.
+        let text = format!("{giant} Dat lei buorre. Mun oidnen viesu.");
+        let chunks = text_chunks(&text);
+        assert_eq!(chunks.len(), 2, "{}", chunks.len());
+        assert_eq!(chunks[0], format!("{giant} "));
+        assert_eq!(chunks.concat(), text);
+    }
+
+    /// A masked document is mostly spaces, and a run of them is never a
+    /// chunk of its own — it joins the text that follows it.
+    #[test]
+    fn a_whitespace_run_is_never_its_own_chunk() {
+        let text = format!(
+            "{}\nMun oidnen viesu ikte.",
+            " ".repeat(CHUNK_BYTE_BUDGET * 2)
+        );
+        let chunks = text_chunks(&text);
+
+        assert_eq!(chunks, vec![text.clone()]);
+        assert!(chunks.iter().all(|chunk| !chunk.trim().is_empty()));
+    }
+
+    /// The token stream is cut after a line that is sentence-final
+    /// punctuation, which is where a disambiguation window closes.
+    #[test]
+    fn a_token_chunk_ends_at_a_sentence_line() {
+        let mut tokens = Vec::new();
+        for _ in 0..8 {
+            tokens.extend(lines(&["Mun", "oidnen", "viesu", "."]));
+        }
+        let chunks = token_line_chunks(&tokens);
+
+        assert_eq!(chunks.len(), 2, "{chunks:#?}");
+        assert!(chunks[0].ends_with("\n."), "{:?}", chunks[0]);
+        assert_eq!(chunks[0].lines().filter(|l| *l == ".").count(), 6);
+        assert_eq!(chunks[1], "Mun\noidnen\nviesu\n.\nMun\noidnen\nviesu\n.");
+    }
+
+    #[test]
+    fn only_punctuation_only_lines_end_a_sentence() {
+        assert!(is_sentence_final_line("."));
+        assert!(is_sentence_final_line("!"));
+        assert!(is_sentence_final_line("?!"));
+        assert!(is_sentence_final_line("..."));
+        assert!(!is_sentence_final_line(""));
+        assert!(!is_sentence_final_line(" "));
+        assert!(!is_sentence_final_line(","));
+        assert!(!is_sentence_final_line("ikte."));
+    }
+
+    /// A stream of lines that never ends a sentence is still cut, at a line
+    /// boundary, once it reaches the byte ceiling — the one place a whole
+    /// line is what stands in for a whole sentence.
+    #[test]
+    fn token_lines_without_enders_cut_on_a_line() {
+        let tokens: Vec<String> = (0..4000).map(|i| format!("sátni{i}")).collect();
+        let chunks = token_line_chunks(&tokens);
+
+        assert!(chunks.len() > 1, "{} chunks", chunks.len());
+        for chunk in &chunks {
+            assert!(
+                !chunk.starts_with('\n') && !chunk.ends_with('\n'),
+                "{chunk:?}"
+            );
+        }
+        let carried: Vec<&str> = chunks.iter().flat_map(|chunk| chunk.lines()).collect();
+        assert_eq!(
+            carried,
+            tokens.iter().map(String::as_str).collect::<Vec<_>>()
+        );
+    }
 }
