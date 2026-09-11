@@ -10,10 +10,10 @@
 > session attribute name, because it is never stashed in a session: there are
 > no sessions.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+2]
 > pub fn new(act_dir: &Path, classpath_root: &Path) -> Result<Activities>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2]
 > Scans a directory of activity folders and builds the registry. Initialises
 > `configMap` to an empty string-keyed sorted map, and `ignoredActivities` to a set
 > holding exactly one name, the literal `"Conditionals"`.
@@ -42,6 +42,10 @@
 > aborts construction with the registry partially built. If `actDir` does not exist
 > or is not a readable directory the listing yields nothing to iterate and a
 > null-pointer error is raised. Nothing is logged and nothing is written to disk.
+>
+> Port divergence: the ignore list is a constant. The Java builds a set per
+> instance and puts one name in it; the set never grows, never varies and is
+> read nowhere else, so it is the constant it always was.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.get-activity-fn]
 > public ActivityConfiguration getActivity(String key)

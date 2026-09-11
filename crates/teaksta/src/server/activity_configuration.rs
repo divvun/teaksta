@@ -288,9 +288,9 @@ impl ActivityConfiguration {
         )?;
 
         // The activity XML is not validated against its DTD or a schema.
-        // enter client configuration: find config branch and read it in
-        //let n = first_descendant_element(&doc, "client-cfg");
-        //self.client_config = self.read_xml_conf_entries(n)?;
+        // Reading the `client-cfg` branch into `client_config` is commented
+        // out at the source, so the client configuration stays empty however
+        // much of it the activity XML carries.
 
         // languages
         let n = first_descendant_element(&doc, "server-cfg")
@@ -390,11 +390,7 @@ impl ActivityConfiguration {
     // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-pre-desc-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-pre-desc-fn]
     pub fn get_pre_desc(&self, lang: &str) -> Option<String> {
-        if let Some(desc) = self.pre_desc.get(lang) {
-            return desc.clone();
-        }
-
-        None
+        self.pre_desc.get(lang)?.clone()
     }
 
     /// The location of the post pipeline descriptor or **null** if the
@@ -402,11 +398,7 @@ impl ActivityConfiguration {
     // [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-post-desc-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.get-post-desc-fn]
     pub fn get_post_desc(&self, lang: &str) -> Option<String> {
-        if let Some(desc) = self.post_desc.get(lang) {
-            return desc.clone();
-        }
-
-        None
+        self.post_desc.get(lang)?.clone()
     }
 
     /// Private helper for obtaining config values as strings.
@@ -417,11 +409,7 @@ impl ActivityConfiguration {
         key: &str,
         conf: &HashMap<String, HashMap<String, ConfigValue>>,
     ) -> Option<String> {
-        if conf.contains_key(lang) && conf[lang].contains_key(key) {
-            return Some(conf[lang][key].get_value().to_string());
-        }
-
-        None
+        Some(conf.get(lang)?.get(key)?.get_value().to_string())
     }
 
     /// Obtains a value from the client configuration and returns it, or
@@ -457,19 +445,18 @@ impl ActivityConfiguration {
         value: &str,
         conf: &mut HashMap<String, HashMap<String, ConfigValue>>,
     ) -> bool {
-        if let Some(m) = conf.get_mut(lang) {
-            if m.contains_key(key) {
-                let v = &m[key];
-                if v.is_read_only() {
-                    return false;
-                }
-
-                m.insert(key.to_string(), ConfigValue::new(value.to_string(), false));
-                return true;
-            }
+        // A key the language does not declare is not created, and one marked
+        // read-only is left as it stands; only a declared overridable key is
+        // written, and the write clears the mark.
+        let Some(held) = conf.get_mut(lang).and_then(|m| m.get_mut(key)) else {
+            return false;
+        };
+        if held.is_read_only() {
+            return false;
         }
 
-        false
+        *held = ConfigValue::new(value.to_string(), false);
+        true
     }
 
     /// Sets a **server-side pre-pipeline** configuration key-value pair if the
@@ -506,15 +493,11 @@ impl ActivityConfiguration {
         lang: &str,
         conf: &HashMap<String, HashMap<String, ConfigValue>>,
     ) -> Properties {
-        let mut res = Properties::new();
-        if conf.contains_key(lang) {
-            let m = &conf[lang];
-            for key in m.keys() {
-                res.insert(key.clone(), m[key].get_value().to_string());
-            }
-        }
-
-        res
+        conf.get(lang)
+            .into_iter()
+            .flatten()
+            .map(|(key, held)| (key.clone(), held.get_value().to_string()))
+            .collect()
     }
 
     /// Returns the server configuration **pre pipeline** as a whole in a
@@ -533,13 +516,9 @@ impl ActivityConfiguration {
         ActivityConfiguration::config2_props(lang, &self.server_post_config)
     }
 
-    /*
-     * Returns the client configuration as a whole in a properties object.
-     *
-     * pub fn get_client_config_as_prop(&self) -> Properties {
-     *     ActivityConfiguration::config2_props(&self.client_config)
-     * }
-     */
+    // The client configuration as a whole, and its key set, are commented out
+    // at the source alongside the branch that would have filled the map, so
+    // neither is ported.
 
     /// All keys in the server pre config stored in a set. The Java version
     /// hands out the map's live key-set view; removing from that view drops
@@ -557,14 +536,6 @@ impl ActivityConfiguration {
     pub fn get_server_post_keys(&self) -> HashSet<String> {
         self.server_post_config.keys().cloned().collect()
     }
-
-    /*
-     * All keys in the server client config stored in a set.
-     *
-     * pub fn get_client_keys(&self) -> HashSet<String> {
-     *     self.client_config.keys().cloned().collect()
-     * }
-     */
 
     /// All language codes that are in the server pre and server post config.
     ///
@@ -605,27 +576,25 @@ impl ActivityConfiguration {
 impl fmt::Display for ActivityConfiguration {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let nl = &self.nl;
-        let mut res = String::new();
-        res += &format!("enabled:{}{}", self.is_enabled, nl);
-        res += &format!("name:{}{}", self.name, nl);
-        res += &format!(
-            "client-cfg:{}{}",
-            render_config_map(&self.client_config),
-            nl
-        );
-        res += &format!("pipeline pre:{}{}", render_desc_map(&self.pre_desc), nl);
-        res += &format!(
-            "server-cfg pre:{}{}",
-            render_config_map(&self.server_pre_config),
-            nl
-        );
-        res += &format!("pipeline post:{}{}", render_desc_map(&self.post_desc), nl);
-        res += &format!(
-            "server-cfg post:{}{}",
-            render_config_map(&self.server_post_config),
-            nl
-        );
-        f.write_str(&res)
+        write!(f, "enabled:{}{nl}", self.is_enabled)?;
+        write!(f, "name:{}{nl}", self.name)?;
+        write!(
+            f,
+            "client-cfg:{}{nl}",
+            render_config_map(&self.client_config)
+        )?;
+        write!(f, "pipeline pre:{}{nl}", render_desc_map(&self.pre_desc))?;
+        write!(
+            f,
+            "server-cfg pre:{}{nl}",
+            render_config_map(&self.server_pre_config)
+        )?;
+        write!(f, "pipeline post:{}{nl}", render_desc_map(&self.post_desc))?;
+        write!(
+            f,
+            "server-cfg post:{}{nl}",
+            render_config_map(&self.server_post_config)
+        )
     }
 }
 
@@ -668,10 +637,18 @@ impl fmt::Display for ConfigValue {
     }
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+/// The class's own entry point: read one activity descriptor and print what
+/// it parsed to. Nothing in this binary calls it — it is the ported
+/// counterpart of a `main` whose whole purpose is to be run by hand — so the
+/// argument it reads is checked rather than indexed: a caller that passes
+/// none is told so instead of ending the process on an out-of-bounds index.
+// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
 pub fn main(args: &[String], classpath_root: &Path) -> Result<()> {
-    let ac = ActivityConfiguration::new(Path::new(&args[0]), classpath_root)?;
+    let descriptor = args.first().ok_or_else(|| {
+        anyhow!("ArrayIndexOutOfBoundsException: Index 0 out of bounds for length 0")
+    })?;
+    let ac = ActivityConfiguration::new(Path::new(descriptor), classpath_root)?;
     println!("{ac}");
 
     Ok(())

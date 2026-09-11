@@ -40,8 +40,8 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 	private static final Pattern trailingSpacePattern = Pattern.compile("\\s+$");
 	private static final Pattern sentenceBeginPattern = Pattern.compile("[\\p{L}\\p{N}\\p{P}]");
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
 	@Override
 	public void initialize(UimaContext aContext)
 			throws ResourceInitializationException {
@@ -55,8 +55,8 @@ public class OpenNlpSentenceDetector extends JCasAnnotator_ImplBase {
 		}
 	}
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {

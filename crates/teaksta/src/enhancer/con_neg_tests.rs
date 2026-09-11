@@ -3,8 +3,8 @@
 //! is exercised in `cg_enhancer_tests`.
 
 use super::*;
+use crate::types::CgToken;
 use crate::types::PIPELINE_LANGUAGE;
-use crate::types::{CgToken, EnhancementId};
 
 fn tags(tags: &[&str]) -> Vec<String> {
     tags.iter().map(|t| t.to_string()).collect()
@@ -60,23 +60,7 @@ fn initialize_without_the_parameter_fails() {
     assert_eq!(enhancer.conneg_tags, None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
-#[test]
-fn process_leaves_a_cancelled_document_untouched() {
-    let enhancer = Vislcg3ConNegEnhancer::default();
-    let mut doc = Document::new("in boahtán deike", PIPELINE_LANGUAGE);
-    doc.cg_tokens = vec![conneg_token(3, 10)];
-    doc.enhancement_ids = vec![EnhancementId {
-        enh_id: -1,
-        ..EnhancementId::default()
-    }];
-
-    enhancer.process(&mut doc, Mode::Colorize).expect("process");
-
-    assert!(doc.enhancements.is_empty());
-}
-
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7/test]
 #[test]
 fn process_wraps_each_conneg_token_in_numbered_span() {
     let enhancer = Vislcg3ConNegEnhancer::default();

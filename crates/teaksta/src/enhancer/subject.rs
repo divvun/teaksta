@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
-use tracing::info;
+use tracing::{debug, trace};
 
 use crate::enhancer::syntactic;
 use crate::server::api::Mode;
@@ -27,27 +27,17 @@ impl Vislcg3SubjectEnhancer {
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2]
-    pub fn initialize(&mut self, context: &HashMap<String, String>) -> Result<()> {
-        info!("Subject tags {:?}", self.subject_tags);
-        let subj_tags = context
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+3]
+    pub fn new(context: &HashMap<String, String>) -> Result<Self> {
+        let configured = context
             .get("SubjTags")
             .ok_or_else(|| anyhow!("configuration parameter SubjTags is not set"))?;
-        // Java's String.split(",") drops trailing empty fields, but leaves the
-        // whole input as the single element when the separator never matches.
-        let mut tags: Vec<String> = subj_tags.split(',').map(str::to_string).collect();
-        if subj_tags.contains(',') {
-            while tags.last().is_some_and(|t| t.is_empty()) {
-                tags.pop();
-            }
-        }
-        self.subject_tags = tags;
-        Ok(())
+        debug!("Subject tags {:?}", configured);
+
+        Ok(Vislcg3SubjectEnhancer {
+            subject_tags: syntactic::split_tags(configured),
+        })
     }
 
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+3]
@@ -83,7 +73,7 @@ impl Vislcg3SubjectEnhancer {
         // Tag string contains the given tag sequence as a substring, plus it
         // should be in the nominative case.
         if reading_str.contains(tag) {
-            info!("{:?} contains {}", cgr, tag);
+            trace!("{:?} contains {}", cgr, tag);
             return true;
         }
 
@@ -103,35 +93,30 @@ mod tests {
         HashMap::from([("SubjTags".to_string(), subj_tags.to_string())])
     }
 
-    /// Apply one `SubjTags` value and report the tags the enhancer stored.
-    fn configured(enhancer: &mut Vislcg3SubjectEnhancer, subj_tags: &str) -> Vec<String> {
-        enhancer
-            .initialize(&context(subj_tags))
-            .expect("SubjTags is set");
-        enhancer.subject_tags.clone()
+    /// Build an enhancer from one `SubjTags` value and report the tags it
+    /// holds.
+    fn configured(value: &str) -> Vec<String> {
+        Vislcg3SubjectEnhancer::new(&context(value))
+            .expect("SubjTags is set")
+            .subject_tags
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_splits_subj_tags_on_commas_without_trimming() {
-        let mut enhancer = Vislcg3SubjectEnhancer::new();
-        assert!(enhancer.subject_tags.is_empty());
-
         assert_splits_tags(
             &[
                 ("SUBJ", &["SUBJ"]),
                 (" SUBJ ,@<SUBJ", &[" SUBJ ", "@<SUBJ"]),
                 ("SUBJ,,@SUBJ→", &["SUBJ", "", "@SUBJ→"]),
             ],
-            |subj_tags| configured(&mut enhancer, subj_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_drops_trailing_empties_only_with_comma() {
-        let mut enhancer = Vislcg3SubjectEnhancer::new();
-
         assert_splits_tags(
             &[
                 ("SUBJ,,", &["SUBJ"]),
@@ -139,27 +124,22 @@ mod tests {
                 ("", &[""]),
                 (",SUBJ", &["", "SUBJ"]),
             ],
-            |subj_tags| configured(&mut enhancer, subj_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.initialize-fn+3/test]
     #[test]
-    fn initialize_fails_absent_subj_tags_keeps_field() {
-        let mut enhancer = Vislcg3SubjectEnhancer::new();
-        enhancer.subject_tags = vec!["SUBJ".to_string()];
+    fn no_enhancer_is_built_without_subj_tags() {
+        let err = Vislcg3SubjectEnhancer::new(&HashMap::new()).expect_err("SubjTags is mandatory");
 
-        let err = enhancer
-            .initialize(&HashMap::new())
-            .expect_err("SubjTags is mandatory");
         assert!(err.to_string().contains("SubjTags"), "{err}");
-        assert_eq!(enhancer.subject_tags, ["SUBJ"]);
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.is-safe-fn/test]
     #[test]
     fn is_safe_holds_only_for_exactly_one_reading() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
 
         assert_safe_only_single_reading(
             0,
@@ -176,7 +156,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_substring_of_flattened_reading() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
         let nominative = reading(&["\"mun\"", "Pron", "Pers", "Sg1", "Nom", "@SUBJ→"]);
 
         assert!(enhancer.contains_tag(&nominative, "SUBJ"));
@@ -191,7 +171,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_ignores_case_despite_nominative_comment() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
         let accusative = reading(&["\"mánná\"", "N", "Sg", "Acc", "@SUBJ→"]);
 
         assert!(enhancer.contains_tag(&accusative, "SUBJ"));
@@ -200,7 +180,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_lemma_embedding_tag_text() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
         let object_with_telling_lemma = reading(&["\"SUBJEAKTA\"", "N", "Sg", "Acc", "@OBJ→"]);
 
         assert!(enhancer.contains_tag(&object_with_telling_lemma, "SUBJ"));
@@ -209,7 +189,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_flattens_empty_reading_to_empty_string() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
         let empty = reading(&[]);
 
         assert!(!enhancer.contains_tag(&empty, "SUBJ"));
@@ -221,7 +201,6 @@ mod tests {
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3SubjectEnhancer {
             subject_tags: vec!["SUBJ".to_string(), "OBJ".to_string()],
-            ..Default::default()
         };
 
         assert_process_keeps_existing_enhancements("Mun oainnán mánáid.", |doc| {
@@ -232,7 +211,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-subject-enhancer.vislcg3-subject-enhancer.process-fn+3/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
-        let enhancer = Vislcg3SubjectEnhancer::new();
+        let enhancer = Vislcg3SubjectEnhancer::default();
 
         assert_process_ignores_token_without_tags(
             "Mun oainnán mánáid.",

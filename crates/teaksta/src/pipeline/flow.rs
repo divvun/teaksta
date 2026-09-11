@@ -94,19 +94,11 @@ impl Stage {
 /// A key outside this set names a delegate with no counterpart here.
 pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
     let stage = match key {
-        "GenericRelevanceAnnotator" => Stage::Relevance(GenericRelevanceAnnotator::new()),
-        "GiellateknoTokenizer" => {
-            let mut tokenizer = GiellateknoTokenizer::new();
-            tokenizer.initialize()?;
-            Stage::Tokenizer(tokenizer)
-        }
-        "OpenNlpSentenceDetector" => {
-            let mut detector = OpenNlpSentenceDetector::new();
-            detector.initialize()?;
-            Stage::SentenceDetector(detector)
-        }
-        "HTMLSentenceAnnotator" => Stage::HtmlSentences(HtmlSentenceAnnotator::new()),
-        "vislcg3Annotator" => Stage::Vislcg3(Box::new(Vislcg3Annotator::new())),
+        "GenericRelevanceAnnotator" => Stage::Relevance(GenericRelevanceAnnotator),
+        "GiellateknoTokenizer" => Stage::Tokenizer(GiellateknoTokenizer),
+        "OpenNlpSentenceDetector" => Stage::SentenceDetector(OpenNlpSentenceDetector),
+        "HTMLSentenceAnnotator" => Stage::HtmlSentences(HtmlSentenceAnnotator),
+        "vislcg3Annotator" => Stage::Vislcg3(Box::default()),
         "TokenEnhancer" => Stage::Token(token_enhancer(parameters)?),
         "vislcg3NounEnhancer" => {
             Stage::Noun(Vislcg3NounEnhancer::new(tag_list(parameters, "NTags"))?)
@@ -127,26 +119,12 @@ pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
         "vislcg3InfiniteVerbEnhancer" => Stage::InfiniteVerb(Vislcg3InfiniteVerbEnhancer::new(
             tag_list(parameters, "infiniteverbTags"),
         )?),
-        "vislcg3AdverbialEnhancer" => {
-            let mut enhancer = Vislcg3AdverbialEnhancer::new();
-            enhancer.initialize(parameters)?;
-            Stage::Adverbial(enhancer)
-        }
+        "vislcg3AdverbialEnhancer" => Stage::Adverbial(Vislcg3AdverbialEnhancer::new(parameters)?),
         "vislcg3ConjunctionEnhancer" => {
-            let mut enhancer = Vislcg3ConjunctionEnhancer::new();
-            enhancer.initialize(parameters)?;
-            Stage::Conjunction(enhancer)
+            Stage::Conjunction(Vislcg3ConjunctionEnhancer::new(parameters)?)
         }
-        "vislcg3ObjectEnhancer" => {
-            let mut enhancer = Vislcg3ObjectEnhancer::new();
-            enhancer.initialize(parameters)?;
-            Stage::Object(enhancer)
-        }
-        "vislcg3SubjectEnhancer" => {
-            let mut enhancer = Vislcg3SubjectEnhancer::new();
-            enhancer.initialize(parameters)?;
-            Stage::Subject(enhancer)
-        }
+        "vislcg3ObjectEnhancer" => Stage::Object(Vislcg3ObjectEnhancer::new(parameters)?),
+        "vislcg3SubjectEnhancer" => Stage::Subject(Vislcg3SubjectEnhancer::new(parameters)?),
         other => bail!("no annotator is registered for delegate {other:?}"),
     };
     Ok(stage)
@@ -164,9 +142,7 @@ fn token_enhancer(parameters: &Parameters) -> Result<TokenEnhancer> {
     context
         .entry("UseLemmaFilter".to_string())
         .or_insert_with(|| "false".to_string());
-    let mut enhancer = TokenEnhancer::new();
-    enhancer.initialize(&context)?;
-    Ok(enhancer)
+    TokenEnhancer::new(&context)
 }
 
 /// A descriptor's fixed flow, ready to run over a document.

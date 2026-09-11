@@ -124,10 +124,10 @@
 > parameter has no effect on behaviour. The informational log statement
 > that would have printed it is commented out.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6]
 > Consumes `CGToken` annotations produced by the vislcg3 analysis stage and
 > produces `Enhancement` annotations wrapping every finite North Sámi verb
 > form in an HTML `<span>`.
@@ -226,6 +226,12 @@
 > against, and two requests asking for different exercises never observe each
 > other's. The mc and cloze branches are selected from it exactly as the
 > equality tests above select them.
+>
+> Port divergence: the cancellation guard is gone. Nothing in the tree ever
+> calls `makeInvalid` or `addEnhId`, so no enhancement ID is ever written and
+> `isValid` answers true for every CAS that reaches here — the guard is an
+> unconditional branch over a marker the deployment has no way to set. The
+> whole of `CasUtils` and the `EnhancementId` marker it wrote go with it.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

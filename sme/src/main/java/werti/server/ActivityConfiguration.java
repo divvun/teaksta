@@ -487,8 +487,8 @@ public class ActivityConfiguration {
 		
 	}
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
-	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+	// [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
 	public static void main(String[] args) throws IOException {
 		
 		ActivityConfiguration ac = new ActivityConfiguration(new File(args[0]));

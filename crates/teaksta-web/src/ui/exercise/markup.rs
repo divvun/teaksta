@@ -123,13 +123,15 @@ pub struct TokenSpan {
 impl TokenSpan {
     /// Whether this token is one of the topic's hits rather than a plain word
     /// the learner is offered alongside them.
+    ///
+    /// The topic's class is read off the class rather than written out and
+    /// compared, because every token of every block asks this on every
+    /// render and the name it would build is the same every time.
     pub fn is_hit(&self, topic: &str) -> bool {
-        let named = format!("{TOPIC_PREFIX}{topic}");
         !topic.is_empty()
-            && self
-                .classes
-                .iter()
-                .any(|class| class == &named || class == GENERIC_HIT_CLASS)
+            && self.classes.iter().any(|class| {
+                class.strip_prefix(TOPIC_PREFIX) == Some(topic) || class == GENERIC_HIT_CLASS
+            })
     }
 
     /// Every form that counts as the right answer, lowercased. Parallel forms
@@ -158,8 +160,7 @@ impl TokenSpan {
     /// Whether a written or chosen form is one of the accepted ones, which
     /// ignores case exactly as the legacy engine did.
     pub fn accepts(&self, guess: &str) -> bool {
-        let guess = guess.trim().to_lowercase();
-        !guess.is_empty() && self.accepted_forms().contains(&guess)
+        accepts(&self.accepted_forms(), guess)
     }
 
     /// The forms to show when a learner gives up on a token, separated the way
@@ -197,6 +198,18 @@ impl TokenSpan {
             possible_forms: split_forms(value("possibleforms")),
         }
     }
+}
+
+/// Whether a guess is one of `accepted`, ignoring case and surrounding space
+/// exactly as the legacy engine did.
+///
+/// The accepted forms are taken as an argument so that an exercise whose
+/// slots judge what a learner types can read them off the token once, rather
+/// than carrying a copy of the whole token into every event handler and
+/// rebuilding the list on every keystroke.
+pub fn accepts(accepted: &[String], guess: &str) -> bool {
+    let guess = guess.trim().to_lowercase();
+    !guess.is_empty() && accepted.contains(&guess)
 }
 
 /// The analysed text, ready to render.

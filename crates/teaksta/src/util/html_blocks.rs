@@ -12,7 +12,6 @@
 //! once and only the text a learner reads comes out, wrapped in the element
 //! the page held it in.
 
-use anyhow::Result;
 use ego_tree::NodeId;
 use scraper::{Html, Node};
 
@@ -37,9 +36,9 @@ const DEFAULT_BLOCK_TAG: &str = "p";
 
 /// The analysed text block by block, in document order, with every
 /// enhancement placed into it.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
-pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<Vec<String>> {
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
+pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Vec<String> {
     let mut page = Html::parse_document(&map.html);
     place_enhancements(&mut page, map, doc, mode);
 
@@ -48,7 +47,7 @@ pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Resul
     let mut open: Vec<Inline> = Vec::new();
     write_node(&page, root, DEFAULT_BLOCK_TAG, &mut open, &mut blocks);
 
-    Ok(blocks.finish())
+    blocks.finish()
 }
 
 /// One inline element open where the walk stands, kept so a block boundary
@@ -227,10 +226,10 @@ mod tests {
         let (mut doc, map) = extract(html);
         doc.enhancements = spans;
 
-        render_blocks(&map, &doc, mode).expect("the blocks render")
+        render_blocks(&map, &doc, mode)
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn blocks_carry_the_prose_around_a_span() {
         assert_eq!(
@@ -248,7 +247,7 @@ mod tests {
 
     /// Every block is written as the element that held it, and text held by
     /// no block box of its own is still a block.
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn a_block_is_written_as_its_element() {
         let source = concat!(
@@ -268,7 +267,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn blocks_keep_the_pages_own_inline_markup() {
         let source = "<html><body><p>Mun <em>oidnen</em> viesu<br>ikte.</p></body></html>";
@@ -279,7 +278,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn an_inline_element_reopens_past_a_boundary() {
         let source = "<html><body><em>Mun<div>oidnen</div>viesu</em></body></html>";
@@ -297,7 +296,7 @@ mod tests {
     /// The title, the script and the style are never analysed, and neither a
     /// blank paragraph nor one holding only an image is a block the page
     /// shows.
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn nothing_the_page_never_shows_reaches_a_block() {
         let source = concat!(
@@ -309,7 +308,7 @@ mod tests {
         assert_eq!(blocks_of(source, Vec::new(), None), ["<p>Mun</p>"]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn text_a_block_carries_is_escaped_once() {
         let source = "<html><body><p>Tom &amp; Jerry &lt;b&gt;</p></body></html>";
@@ -320,7 +319,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn blocks_keep_irrelevant_spans_for_click_alone() {
         let mut decoy = span(0, 3, "<span id=\"a\">");
@@ -336,7 +335,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1/test]
     #[test]
     fn unanalysable_text_yields_no_blocks() {
         let source = "<html><head><title>t</title></head><body></body></html>";

@@ -11,7 +11,7 @@
 >
 > pub fn routes(config: &Config) -> impl Endpoint
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
 > pub enum Mode { Colorize, Click, Mc, Cloze }
 >
 > impl Mode {
@@ -19,8 +19,15 @@
 >   pub fn parse(value: &str) -> Option<Mode>;
 >   pub fn name(self) -> &'static str;
 > }
+>
+> Port divergence: the Java nests the enum in the servlet, because the servlet
+> was the only place that named it. Here it is defined beside `Document` in
+> `crate::types` and re-exported from the HTTP module: the pipeline stages and
+> every topic enhancer take one as an argument, and none of them knows the
+> HTTP surface. The endpoints still parse a request's exercise; they no longer
+> own the concept.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
 > The exercise an enhancement pass is producing: exactly one of `colorize`,
 > `click`, `mc` and `cloze`, and nothing else. `parse` reads the wire name a
 > request carries, matching the four exactly and case-sensitively and
@@ -253,7 +260,7 @@
 > The answer is a JSON array, one entry per block of the analysed text in
 > document order, each an object whose `html` member is that block's markup
 > as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]`
 > renders it: the prose the page shows, punctuation and all, with the
 > enhancement spans the whole-page render would have placed already in it.
 > The member is named rather than the block being a bare string, so what the

@@ -11,7 +11,7 @@
 //! Authors: Niels Ott, Adriane Boyd, Heli Uibo, Eduard Schaf.
 
 use anyhow::{Result, bail};
-use tracing::info;
+use tracing::debug;
 
 use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
 use crate::server::api::Mode;
@@ -51,7 +51,7 @@ impl Vislcg3ConNegEnhancer {
     pub fn initialize(&mut self, conneg_tags: Option<&str>) -> Result<()> {
         // the log statement runs before the assignment, so on a freshly
         // constructed instance it always logs null
-        info!("ConNeg tags {:?}", self.conneg_tags);
+        debug!("ConNeg tags {:?}", self.conneg_tags);
         let param = match conneg_tags {
             Some(p) => p,
             None => bail!("connegTags configuration parameter is not set"),
@@ -66,8 +66,8 @@ impl Vislcg3ConNegEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+6]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-con-neg-enhancer.vislcg3-con-neg-enhancer.process-fn+7]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);

@@ -24,10 +24,18 @@
 > exactly "CS" matches; decorated variants and the quoted lemma element never
 > match.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
-> @Override public void initialize(UimaContext context) throws ResourceInitializationException
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn+1]
+> pub fn new(context: &HashMap<String, String>) -> Result<Vislcg3ConjunctionEnhancer>
+>
+> Port divergence: there is no lifecycle pair. The delegate key names a
+> constructor that reads the parameter table and either answers a configured
+> enhancer or fails, so a half-built one with the parameter unset is not a
+> state the type has — where the Java left the field as it stood when the
+> parameter was missing, the port builds nothing at all. The tag list is
+> split by the helper the tag-driven topics share, which splits it exactly
+> as `String.split(",")` does.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn+1]
 > Called once by the UIMA framework when the analysis engine instance is
 > created. Logs "Conjunction tags {}" at debug (not info, unlike the sibling
 > enhancers) with the current value of the conjunctionTags field, then
@@ -47,6 +55,11 @@
 >
 > Quirk: the log call reads conjunctionTags before it is assigned, so it always
 > reports null.
+>
+> Port divergence: the log line records the value the parameter carries
+> rather than the field as it stood before the assignment — there is no
+> before — and it is written at debug, because what a topic was configured
+> with is not news a deployment reads its log for.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.is-safe-fn]
 > private boolean isSafe(CGToken t)

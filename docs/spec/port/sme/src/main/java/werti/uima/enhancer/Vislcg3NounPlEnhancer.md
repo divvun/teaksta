@@ -123,10 +123,10 @@
 > class; likewise the fields `CHUNK_BEGIN_SUFFIX` (`"-B"`), `CHUNK_INSIDE_SUFFIX`
 > (`"-I"`) and `FST` (Constants.an_FST) are dead.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
 > Consumes `CGToken` annotations (each carrying an FSArray of `CGReading`
 > string-lists) and produces `Enhancement` annotations wrapping every token
 > whose analysis is a plural North Sámi noun.
@@ -217,6 +217,12 @@
 > against, and two requests asking for different exercises never observe each
 > other's. The mc and cloze branches are selected from it exactly as the
 > equality tests above select them.
+>
+> Port divergence: the cancellation guard is gone. Nothing in the tree ever
+> calls `makeInvalid` or `addEnhId`, so no enhancement ID is ever written and
+> `isValid` answers true for every CAS that reaches here — the guard is an
+> unconditional branch over a marker the deployment has no way to set. The
+> whole of `CasUtils` and the `EnhancementId` marker it wrote go with it.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

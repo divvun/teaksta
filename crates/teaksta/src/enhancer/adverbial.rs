@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
-use tracing::info;
+use tracing::{debug, trace};
 
 use crate::enhancer::syntactic;
 use crate::server::api::Mode;
@@ -27,27 +27,17 @@ impl Vislcg3AdverbialEnhancer {
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2]
-    pub fn initialize(&mut self, context: &HashMap<String, String>) -> Result<()> {
-        info!("Adverbial tags {:?}", self.adv_tags);
-        let adv_tags = context
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+3]
+    pub fn new(context: &HashMap<String, String>) -> Result<Self> {
+        let configured = context
             .get("AdvTags")
             .ok_or_else(|| anyhow!("configuration parameter AdvTags is not set"))?;
-        // Java's String.split(",") drops trailing empty fields, but leaves the
-        // whole input as the single element when the separator never matches.
-        let mut tags: Vec<String> = adv_tags.split(',').map(str::to_string).collect();
-        if adv_tags.contains(',') {
-            while tags.last().is_some_and(|t| t.is_empty()) {
-                tags.pop();
-            }
-        }
-        self.adv_tags = tags;
-        Ok(())
+        debug!("Adverbial tags {:?}", configured);
+
+        Ok(Vislcg3AdverbialEnhancer {
+            adv_tags: syntactic::split_tags(configured),
+        })
     }
 
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3]
@@ -100,7 +90,7 @@ impl Vislcg3AdverbialEnhancer {
         for rtag in cgr {
             if rtag.starts_with('"') {
                 lemma = rtag[1..rtag.len() - 1].to_string();
-                info!("{:?} lemma: {}", cgr, lemma);
+                trace!("{:?} lemma: {}", cgr, lemma);
             }
         }
         // The lemma needs no conversion to UTF-8: the whole CG input and output
@@ -121,35 +111,30 @@ mod tests {
         HashMap::from([("AdvTags".to_string(), adv_tags.to_string())])
     }
 
-    /// Apply one `AdvTags` value and report the tags the enhancer stored.
-    fn configured(enhancer: &mut Vislcg3AdverbialEnhancer, adv_tags: &str) -> Vec<String> {
-        enhancer
-            .initialize(&context(adv_tags))
-            .expect("AdvTags is set");
-        enhancer.adv_tags.clone()
+    /// Build an enhancer from one `AdvTags` value and report the tags it
+    /// holds.
+    fn configured(value: &str) -> Vec<String> {
+        Vislcg3AdverbialEnhancer::new(&context(value))
+            .expect("AdvTags is set")
+            .adv_tags
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_splits_adv_tags_on_commas_without_trimming() {
-        let mut enhancer = Vislcg3AdverbialEnhancer::new();
-        assert!(enhancer.adv_tags.is_empty());
-
         assert_splits_tags(
             &[
                 ("ADVL", &["ADVL"]),
                 (" ADVL ,@<ADVL", &[" ADVL ", "@<ADVL"]),
                 ("ADVL,,@ADVL>", &["ADVL", "", "@ADVL>"]),
             ],
-            |adv_tags| configured(&mut enhancer, adv_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_drops_trailing_empties_only_with_comma() {
-        let mut enhancer = Vislcg3AdverbialEnhancer::new();
-
         assert_splits_tags(
             &[
                 ("ADVL,,", &["ADVL"]),
@@ -157,27 +142,22 @@ mod tests {
                 ("", &[""]),
                 (",ADVL", &["", "ADVL"]),
             ],
-            |adv_tags| configured(&mut enhancer, adv_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.initialize-fn+3/test]
     #[test]
-    fn initialize_fails_absent_adv_tags_keeps_paths() {
-        let mut enhancer = Vislcg3AdverbialEnhancer::new();
-        enhancer.adv_tags = vec!["ADVL".to_string()];
+    fn no_enhancer_is_built_without_adv_tags() {
+        let err = Vislcg3AdverbialEnhancer::new(&HashMap::new()).expect_err("AdvTags is mandatory");
 
-        let err = enhancer
-            .initialize(&HashMap::new())
-            .expect_err("AdvTags is mandatory");
         assert!(err.to_string().contains("AdvTags"), "{err}");
-        assert_eq!(enhancer.adv_tags, ["ADVL"]);
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.is-safe-fn/test]
     #[test]
     fn is_safe_holds_only_for_exactly_one_reading() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
 
         assert_safe_only_single_reading(
             0,
@@ -191,7 +171,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_substring_of_flattened_reading() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
         let locative = reading(&["\"viessu\"", "N", "Sg", "Loc", "@ADVL>"]);
 
         assert!(enhancer.contains_tag(&locative, "ADVL"));
@@ -206,7 +186,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_lemma_embedding_tag_text() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
         let subject_with_telling_lemma = reading(&["\"ADVLijk\"", "N", "Sg", "Nom", "@SUBJ→"]);
 
         assert!(enhancer.contains_tag(&subject_with_telling_lemma, "ADVL"));
@@ -215,7 +195,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_flattens_empty_reading_to_empty_string() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
         let empty = reading(&[]);
 
         assert!(!enhancer.contains_tag(&empty, "ADVL"));
@@ -225,7 +205,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.get-lemma-fn/test]
     #[test]
     fn get_lemma_strips_quotes_keeps_last_quoted() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
 
         assert_eq!(
             enhancer.get_lemma(&reading(&["\"viessu\"", "N", "Sg", "Loc"])),
@@ -243,7 +223,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "starts at 1 but ends at 0")]
     fn get_lemma_panics_on_lone_double_quote() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
         let _ = enhancer.get_lemma(&reading(&["\""]));
     }
 
@@ -252,7 +232,6 @@ mod tests {
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3AdverbialEnhancer {
             adv_tags: vec!["ADVL".to_string(), "SUBJ".to_string()],
-            ..Default::default()
         };
 
         assert_process_keeps_existing_enhancements("Mun oidnen viesus ikte.", |doc| {
@@ -263,7 +242,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-adverbial-enhancer.vislcg3-adverbial-enhancer.process-fn+3/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
-        let enhancer = Vislcg3AdverbialEnhancer::new();
+        let enhancer = Vislcg3AdverbialEnhancer::default();
 
         assert_process_ignores_token_without_tags(
             "Mun oidnen viesus ikte.",

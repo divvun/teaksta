@@ -34,8 +34,8 @@ public class PageHandler {
 	String url;
 	String path;
 
-	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
 	public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang) {
 		processors = aProcessors;
 		topic = aTopic;

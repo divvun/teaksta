@@ -51,10 +51,15 @@
 > empty `page`, because the caller decides where the map lives. A page with
 > no analysable text yields an empty document text and no records at all.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
-> pub fn render_page(map: &PageMap, doc: &Document, mode: Option<Mode>, base_url: Option<&str>) -> Result<String>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]
+> pub fn render_page(map: &PageMap, doc: &Document, mode: Option<Mode>, base_url: Option<&str>) -> String
+>
+> Port divergence: nothing in the render can fail. Parsing a page always
+> yields a tree, an enhancement that does not fit the node it names is
+> dropped rather than reported, and serialising is total — so the `Result`
+> is gone and with it the propagation above it, which had nothing to carry.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]
 > Parses the page the map holds, places every enhancement of `doc` into it,
 > and serialises it once.
 >
@@ -103,13 +108,17 @@
 > exactly once. A page with no `head`, or a call with no base URL, gets no
 > base element.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
-> pub fn render_spans(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<BTreeMap<String, String>>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3]
+> pub fn render_spans(map: &PageMap, doc: &Document, mode: Option<Mode>) -> BTreeMap<String, String>
+>
+> Port divergence: as for `render_page`, nothing here can fail, so no
+> `Result` is returned. The JSON encoding of what comes back still can, and
+> that is the enhancer's own failure rather than the renderer's.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3]
 > The enhanced fragments alone, for a client that already has the page and
 > only wants what changed. Enhancements are placed exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]`
 > places them — the click exercise's decoys among them, and a decoy the
 > topic also marked dropped in favour of the topic's own span — no base URL
 > is added, and each enhancement that reached the page contributes one
@@ -123,10 +132,13 @@
 > enhancement that reached no wrapper — one covering no segment, or one
 > dropped as overlapping — contributes no entry.
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
-> pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Result<Vec<String>>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
+> pub fn render_blocks(map: &PageMap, doc: &Document, mode: Option<Mode>) -> Vec<String>
+>
+> Port divergence: as for `render_page`, nothing here can fail, so no
+> `Result` is returned.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-blocks-fn+1]
 > The analysed text of the page, one entry per block of it, in document
 > order, with every enhancement placed into it.
 >
@@ -140,7 +152,7 @@
 > it, with the topic's spans already in place — which is what this answers.
 >
 > Enhancements are placed exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]`
 > places them, over the same parsed page and by the same code: the click
 > exercise's decoys among them, a decoy the topic also marked dropped in
 > favour of the topic's own span, and each enhancement wrapped in the element

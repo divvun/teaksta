@@ -5,10 +5,10 @@
 >   private static final Logger log = LogManager.GetLogger(HTMLSentenceAnnotator.class);
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+3]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.html-sentence-annotator.html-sentence-annotator.process-fn+3]
 > Logs at info that HTML sentence detection is starting.
 >
 > Reads two CAS annotation indexes: `PlainTextSentenceAnnotation` (the
@@ -55,4 +55,19 @@
 > Quirk: `lastS` is assigned `s` inside the inner loop and is therefore
 > either `null` or the very `s` being processed; the variable carries no
 > information beyond "the inner loop ran at least once".
+>
+> Port divergence: `currentSentStart` and `lastAddedSentEnd` are `Option`s
+> rather than offsets sentinelled with `-1`, so "no sentence has started yet"
+> and "no break has been emitted yet" are states of the value rather than an
+> offset no span could hold. The two after-the-loop branches read as one
+> match over them, and nothing is cast.
+>
+> Port divergence: the outer loop windows one ordering of the relevant texts
+> rather than ordering them again for every sentence. The store is put in
+> index order once and each sentence's stretch of it is found by bisecting
+> on the ascending begins, which yields the same annotations in the same
+> order.
+>
+> Port divergence: the start and the end of the pass are logged at debug
+> rather than at info.
 

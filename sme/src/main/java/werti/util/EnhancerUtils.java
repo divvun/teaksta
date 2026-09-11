@@ -27,8 +27,8 @@ public class EnhancerUtils {
 	public static final String addedSpanStyle = "display: inline; background-image: none; padding: 0px; margin: 0px; color: inherit; font: inherit; font-size: 100%; position: relative; top: 0px; left: 0px;";
 	
 	// need those two to supply JS-annotations with IDs.
-	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.enhancer-utils.enhancer-utils.get-id-fn+3]
 	public static String get_id(String spanClass, int id) {
 		return spanClass + "-" + id;
 	}

@@ -50,6 +50,12 @@ use crate::util::html_enhancer::{HtmlEnhancer, sami_label};
 use crate::util::json_enhancer::JsonEnhancer;
 use crate::util::page_handler::PageHandler;
 
+/// The exercise a request asks for. It is defined beside the document it is
+/// analysed for, because the pipeline stages and every topic enhancer read
+/// one and none of them knows this module; it is re-exported here because
+/// the endpoints below are where a request's exercise is parsed.
+pub use crate::types::Mode;
+
 /// What the upload body may weigh, counting the multipart framing around the
 /// file the cap in [`MAX_UPLOAD_BYTES`] applies to.
 const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
@@ -58,34 +64,6 @@ const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 /// carried inline is the largest thing either holds, so it weighs what an
 /// upload may, with the same room for the framing around it.
 const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
-
-/// The exercise a request asks for.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+1]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mode {
-    Colorize,
-    Click,
-    Mc,
-    Cloze,
-}
-
-impl Mode {
-    pub const ALL: [Mode; 4] = [Mode::Colorize, Mode::Click, Mode::Mc, Mode::Cloze];
-
-    pub fn parse(value: &str) -> Option<Mode> {
-        Mode::ALL.into_iter().find(|mode| mode.name() == value)
-    }
-
-    pub fn name(self) -> &'static str {
-        match self {
-            Mode::Colorize => "colorize",
-            Mode::Click => "click",
-            Mode::Mc => "mc",
-            Mode::Cloze => "cloze",
-        }
-    }
-}
 
 /// One topic the registry offers, with its North Sámi name.
 #[derive(Debug, Clone, Serialize)]
@@ -283,7 +261,7 @@ async fn enhance_page(
     let source = fetch::fetch(target).await.map_err(failure)?;
     let page = blocking(move || {
         let document = state.analyse(&activity, mode, &source, &key)?;
-        HtmlEnhancer::new(&document).enhance(Some(mode), url.as_str())
+        Ok(HtmlEnhancer::new(&document).enhance(Some(mode), url.as_str()))
     })
     .await?;
 
@@ -443,7 +421,7 @@ async fn enhance_blocks(
     let blocks = blocking(move || {
         let document = state.analyse(&activity, mode, &page, &key)?;
         let blocks: Vec<TextBlock> =
-            html_blocks::render_blocks(&document.page, &document, Some(mode))?
+            html_blocks::render_blocks(&document.page, &document, Some(mode))
                 .into_iter()
                 .map(|html| TextBlock { html })
                 .collect();

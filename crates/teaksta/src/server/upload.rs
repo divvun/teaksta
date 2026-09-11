@@ -127,7 +127,9 @@ pub fn is_page(content: &[u8], file_name: &str) -> bool {
     }
 }
 
-fn detect_content_type(content: &[u8], resource_name: &str) -> Option<String> {
+/// The media type the bytes announce, which is always one of six fixed
+/// answers — nothing here is read off the content, only chosen by it.
+fn detect_content_type(content: &[u8], resource_name: &str) -> Option<&'static str> {
     if content.is_empty() {
         return None;
     }
@@ -137,29 +139,29 @@ fn detect_content_type(content: &[u8], resource_name: &str) -> Option<String> {
     let name = resource_name.to_lowercase();
 
     if head.contains("<?xml") && head.contains("xhtml") {
-        return Some("application/xhtml+xml".to_string());
+        return Some("application/xhtml+xml");
     }
     if head.contains("<!doctype html")
         || head.contains("<html")
         || head.contains("<head")
         || head.contains("<body")
     {
-        return Some("text/html; charset=UTF-8".to_string());
+        return Some("text/html; charset=UTF-8");
     }
     if name.ends_with(".xhtml") {
-        return Some("application/xhtml+xml".to_string());
+        return Some("application/xhtml+xml");
     }
     if name.ends_with(".html") || name.ends_with(".htm") {
-        return Some("text/html".to_string());
+        return Some("text/html");
     }
     if head.starts_with("<?xml") {
-        return Some("application/xml".to_string());
+        return Some("application/xml");
     }
     if std::str::from_utf8(content).is_ok() {
-        return Some("text/plain; charset=UTF-8".to_string());
+        return Some("text/plain; charset=UTF-8");
     }
 
-    Some("application/octet-stream".to_string())
+    Some("application/octet-stream")
 }
 
 /// The share of a page's alphabetic tokens the analyser gives a North Sámi

@@ -75,10 +75,14 @@
 > Java's `String.split`, but the buffer itself is not byte-identical to
 > the process output.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
 > @Override public void initialize(UimaContext aContext) throws ResourceInitializationException
+>
+> Port divergence: there is no counterpart to call. The stage has nothing to
+> initialise, so it has neither an `initialize` nor a constructor, and this
+> rule is carried by the type itself.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
 > Runs the base `JCasAnnotator_ImplBase` initialisation with the supplied
 > `UimaContext`, then assigns the class-level static field `tokenizers` a
 > brand-new empty `HashMap` from language code to `TokenizerME` and puts
@@ -100,11 +104,19 @@
 > Quirk: `tokenizers` is static but reassigned on every instance
 > initialisation, so each new instance replaces the map shared with all
 > other live instances.
+>
+> Port divergence: nothing of this survives. The registry was dead weight the
+> Java loaded anyway; here the morphological pipeline is process-global and
+> loads its models once on first use, so there is no per-language registry, no
+> process-wide mutable map to reassign, and no initialisation call at all —
+> the stage is a unit value the flow constructs directly. What the registry
+> made observable was that the document's language decided nothing, and that
+> is what is tested in its place.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
 > Tokenises the relevant portions of the document by shelling out to the
 > Giellatekno `preprocess` script and mapping its one-token-per-line
 > output back onto character offsets in the document. Consumes
@@ -232,4 +244,20 @@
 > Quirk: `getDocumentLanguage()` and the `tokenizers` map built in
 > `initialize` are both unused; the OpenNLP tokenisation path they served
 > is commented out.
+>
+> Port divergence: nothing that only reached the log survives. There is no
+> input file, so no fixed `/tmp` path to be overwritten by a concurrent
+> request; no shell string, so no dependency on `/bin/sh`, `/bin/cat` or a
+> `preprocess` script at an absolute path; and no unused read of the document
+> language. The start of the pass is logged once at debug, and the tokeniser
+> output and the per-token offsets — a page's worth of records on every
+> request — at trace rather than at info.
+>
+> Port divergence: the cursor and the recovered offset are `usize`, and the
+> search answers `Option<usize>` rather than `-1`. What the sentinel could
+> leak is unrepresentable, so the guard against annotating from a negative
+> begin offset is gone with it: the repair branch names the syllable it could
+> not find instead. The syllable is by construction the stretch of the masked
+> text starting at the cursor, so that search answers the cursor itself and
+> the failure is unreachable rather than merely unhandled.
 

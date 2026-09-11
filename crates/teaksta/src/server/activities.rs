@@ -4,8 +4,8 @@
 //! The registry is built once at startup and shared by every request, so a
 //! topic added on disk is picked up when the server is restarted.
 
+use std::collections::BTreeMap;
 use std::collections::btree_map::Keys;
-use std::collections::{BTreeMap, HashSet};
 use std::path::{MAIN_SEPARATOR, Path};
 
 use anyhow::Result;
@@ -18,19 +18,20 @@ use crate::server::activity_configuration::ActivityConfiguration;
 // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities+1]
 pub struct Activities {
     config_map: BTreeMap<String, ActivityConfiguration>,
-    ignored_activities: HashSet<String>,
 }
 
+/// Activity directories the scan passes over. The Java builds a set per
+/// instance and puts one name in it; the set never grows and never varies,
+/// so it is the constant it always was.
+const IGNORED_ACTIVITIES: &[&str] = &["Conditionals"];
+
 impl Activities {
-    // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.activities.activities.activities-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2]
     pub fn new(act_dir: &Path, classpath_root: &Path) -> Result<Self> {
         let mut this = Activities {
             config_map: BTreeMap::new(),
-            ignored_activities: HashSet::new(),
         };
-
-        this.ignored_activities.insert("Conditionals".to_string());
 
         for f in std::fs::read_dir(act_dir)? {
             let f = f?.path();
@@ -39,7 +40,7 @@ impl Activities {
                 None => continue,
             };
 
-            if f.is_dir() && !this.ignored_activities.contains(&name) {
+            if f.is_dir() && !IGNORED_ACTIVITIES.contains(&name.as_str()) {
                 let absolute_path = std::path::absolute(&f)?;
                 let activity_xml = format!(
                     "{}{}{}",
@@ -132,7 +133,7 @@ mod tests {
         fs::write(dir.join("activity.xml"), xml).expect("write activity.xml");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_registers_one_config_per_directory() {
         let dir = TempDir::new().expect("temp dir");
@@ -157,7 +158,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_skips_conditionals_and_plain_files() {
         let dir = TempDir::new().expect("temp dir");
@@ -176,7 +177,7 @@ mod tests {
         assert!(activities.get_activity("Nouns").is_some());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_scans_one_level_deep_only() {
         let dir = TempDir::new().expect("temp dir");
@@ -191,7 +192,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_registers_activities_marked_disabled() {
         let dir = TempDir::new().expect("temp dir");
@@ -203,7 +204,7 @@ mod tests {
         assert!(!config.is_enabled());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_propagates_a_configuration_parse_failure() {
         let dir = TempDir::new().expect("temp dir");
@@ -222,7 +223,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.activities.activities.activities-fn+2/test]
     #[test]
     fn activities_fails_when_the_directory_cannot_be_listed() {
         let dir = TempDir::new().expect("temp dir");

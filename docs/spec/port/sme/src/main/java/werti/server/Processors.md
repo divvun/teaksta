@@ -94,10 +94,10 @@
 > is attempted. Nothing is cached; each call re-reads and re-parses the resource,
 > yielding a fresh mutable description object.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn+3]
 > public Processors(Activities activities) throws IOException, ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+3]
 > Eagerly builds every UIMA pipeline instance the server will ever use, so model
 > files are loaded once at startup rather than per request. Initialises `preMap`
 > and `postMap` to empty string-keyed sorted maps, then iterates the activity names
@@ -148,4 +148,12 @@
 > only on a delegate falls back to that delegate's own default. A delegate key
 > naming an annotator the port does not carry fails as a resource-initialization
 > error, which is one of the four kinds caught and rethrown above.
+>
+> Port divergence: a language's slot in each map is reached once through the
+> entry API rather than tested for and then inserted into.
+>
+> Port divergence: the whole engine map is `Debug`-rendered at trace rather
+> than at info, so an activity no longer writes every engine registered so far
+> to the log twice over; the activity, its configuration and its two
+> descriptors are logged at debug.
 

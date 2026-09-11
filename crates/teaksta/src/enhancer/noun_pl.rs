@@ -12,7 +12,7 @@
 //! Authors: Niels Ott, Adriane Boyd, Heli Uibo, Eduard Schaf.
 
 use anyhow::{Result, bail};
-use tracing::info;
+use tracing::debug;
 
 use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
 use crate::server::api::Mode;
@@ -83,7 +83,7 @@ impl Vislcg3NounPlEnhancer {
     pub fn initialize(&mut self, n_pl_tags: Option<&str>) -> Result<()> {
         // the log statement runs before the assignment, so it always reports
         // the field's previous value
-        info!("Noun Pl tags {:?}", self.n_pl_tags);
+        debug!("Noun Pl tags {:?}", self.n_pl_tags);
         let param = match n_pl_tags {
             Some(p) => p,
             None => bail!("NPlTags configuration parameter is not set"),
@@ -98,8 +98,8 @@ impl Vislcg3NounPlEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
@@ -122,7 +122,9 @@ impl Vislcg3NounPlEnhancer {
                 reading_str = cg_enhancer::substring_to_index_of(&reading_str, a_case)?;
                 // Assign distractorforms from the array
                 for elem in DISTRACT_FORMS_CASE {
-                    generation_input = generation_input + &reading_str + elem + "\n";
+                    generation_input.push_str(&reading_str);
+                    generation_input.push_str(elem);
+                    generation_input.push('\n');
                 }
                 break;
             }
@@ -130,7 +132,8 @@ impl Vislcg3NounPlEnhancer {
 
         // add reading_str as last element in generationInput which will be
         // used as correct_answer
-        generation_input = generation_input + &reading_str_input + "\n";
+        generation_input.push_str(&reading_str_input);
+        generation_input.push('\n');
 
         // if generationInput contains tags_tbr, remove it
         Ok(cg_enhancer::remove_tags(&generation_input))

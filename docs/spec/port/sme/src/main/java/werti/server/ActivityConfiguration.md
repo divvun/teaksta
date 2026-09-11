@@ -331,10 +331,10 @@
 > a `<lang>` element with no `code` attribute. The caller wraps all of these.
 > The stream is not closed.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
 > pub fn main(args: &[String], classpath_root: &Path) -> Result<()>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2]
 > Command-line debug entry point. Treats `args[0]` as the path to an activity
 > XML file, constructs an `ActivityConfiguration` from it against the
 > classpath root it is handed, and prints the object's `toString` rendering to
@@ -350,6 +350,11 @@
 > `ArrayIndexOutOfBoundsException`. A parse or IO failure propagates as the
 > `IOException` the constructor throws, terminating the JVM with a stack trace.
 > Nothing is written to disk and no processes are spawned.
+>
+> Port divergence: the argument is read rather than indexed. Nothing in this
+> binary calls it — it is an entry point whose whole purpose is to be run by
+> hand — so being invoked with no arguments reports the same failure the JVM
+> would name rather than ending the process on an out-of-bounds index.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.activity-configuration.activity-configuration.read-xml-conf-entries-fn]
 > private HashMap<String,ConfigValue> readXmlConfEntries(Node n)

@@ -5,7 +5,6 @@
 use super::*;
 use crate::types::CgToken;
 use crate::types::PIPELINE_LANGUAGE;
-use crate::util::cas_utils;
 
 fn reading(tags: &[&str]) -> Vec<String> {
     tags.iter().map(|t| t.to_string()).collect()
@@ -32,7 +31,7 @@ fn initialize_splits_the_parameter_on_commas_without_trimming() {
     assert!(err.to_string().contains("finverbTags"), "{err}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6/test]
 #[test]
 fn process_wraps_finite_verbs_in_numbered_spans() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -84,7 +83,7 @@ fn process_wraps_finite_verbs_in_numbered_spans() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6/test]
 #[test]
 fn process_skips_readings_missing_verb_or_person_tag() {
     let enhancer = Vislcg3VerbConjugationEnhancer::default();
@@ -104,18 +103,6 @@ fn process_skips_readings_missing_verb_or_person_tag() {
 
     enhancer.process(&mut doc, Mode::Colorize).unwrap();
     assert!(doc.enhancements.is_empty());
-
-    // An invalidated CAS is left untouched even when a reading matches.
-    let mut cancelled = Document::new("Mun boadán.", PIPELINE_LANGUAGE);
-    cancelled.cg_tokens = vec![CgToken {
-        begin: 4,
-        end: 10,
-        readings: vec![reading(&["\"boahtit\"", "V", "IV", "Ind", "Prs", "Sg1"])],
-    }];
-    cas_utils::add_enh_id(&mut cancelled, -1);
-
-    enhancer.process(&mut cancelled, Mode::Colorize).unwrap();
-    assert!(cancelled.enhancements.is_empty());
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.write-morphological-forms-fn+2/test]

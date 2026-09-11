@@ -54,10 +54,18 @@
 > Quirk: this method is dead code — every call site in the class is commented
 > out, so it is never invoked.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
-> @Override public void initialize(UimaContext context) throws ResourceInitializationException
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
+> pub fn new(context: &HashMap<String, String>) -> Result<Vislcg3ObjectEnhancer>
+>
+> Port divergence: there is no lifecycle pair. The delegate key names a
+> constructor that reads the parameter table and either answers a configured
+> enhancer or fails, so a half-built one with the parameter unset is not a
+> state the type has — where the Java left the field as it stood when the
+> parameter was missing, the port builds nothing at all. The tag list is
+> split by the helper the tag-driven topics share, which splits it exactly
+> as `String.split(",")` does.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
 > Called once by the UIMA framework when the analysis engine instance is
 > created. Logs "Object tags {}" at info with the current value of the
 > ObjectTags field, then delegates to the superclass initialize(context), then
@@ -77,6 +85,11 @@
 > Quirk: the log call reads ObjectTags before it is assigned, so it always
 > reports null. The lookup binary and flag paths the Java class carried as
 > instance fields and never read are not held at all.
+>
+> Port divergence: the log line records the value the parameter carries
+> rather than the field as it stood before the assignment — there is no
+> before — and it is written at debug, because what a topic was configured
+> with is not news a deployment reads its log for.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.is-safe-fn]
 > private boolean isSafe(CGToken t)

@@ -8,10 +8,10 @@
 >   private static final Pattern sentenceBeginPattern = Pattern.compile("[\\p{L}\\p{N}\\p{P}]");
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
 > @Override public void initialize(UimaContext aContext) throws ResourceInitializationException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.initialize-fn+1]
 > Runs the base `JCasAnnotator_ImplBase` initialisation with the supplied
 > `UimaContext` first, then builds the model registry.
 >
@@ -32,11 +32,20 @@
 > Quirk: only `"en"` is ever registered, even though the deployment
 > processes North Sámi; `process` therefore fails for any document whose
 > language is not exactly `"en"`.
+>
+> Port divergence: a one-entry registry decides exactly one thing, and the
+> port says that thing directly. There is no map from language to detector,
+> no process-wide mutable state for a fresh instance to replace, and no
+> initialisation call at all — the stage is a unit value the flow constructs.
+> What the map decided lives in `process`, which refuses any language but the
+> key the pipelines are registered under and otherwise takes the shared
+> morphological pipeline; that refusal is what is tested in place of the
+> map's contents.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
 > @SuppressWarnings("unchecked") @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.open-nlp-sentence-detector.open-nlp-sentence-detector.process-fn+1]
 > Logs at info that sentence detection is starting.
 >
 > Reads the document text and builds a scratch buffer `rtext` of exactly
@@ -85,4 +94,10 @@
 > Quirk: sentence detection runs over the token-masked buffer, not the
 > real text, so the model sees runs of spaces wherever the document had
 > non-token content.
+>
+> Port divergence: the detector lookup is a comparison against the key the
+> pipelines are registered under rather than a hit in a registry, so it
+> refuses the same languages without the registry existing. The start and end
+> of the pass are logged at debug rather than at info, since neither says
+> anything a deployment reads a log for.
 

@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 
 use anyhow::{Result, anyhow};
-use tracing::info;
+use tracing::{debug, trace};
 
 use crate::enhancer::syntactic;
 use crate::server::api::Mode;
@@ -27,27 +27,17 @@ impl Vislcg3ObjectEnhancer {
     pub const CHUNK_BEGIN_SUFFIX: &'static str = "-B";
     pub const CHUNK_INSIDE_SUFFIX: &'static str = "-I";
 
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
-    pub fn initialize(&mut self, context: &HashMap<String, String>) -> Result<()> {
-        info!("Object tags {:?}", self.object_tags);
-        let obj_tags = context
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
+    pub fn new(context: &HashMap<String, String>) -> Result<Self> {
+        let configured = context
             .get("ObjTags")
             .ok_or_else(|| anyhow!("configuration parameter ObjTags is not set"))?;
-        // Java's String.split(",") drops trailing empty fields, but leaves the
-        // whole input as the single element when the separator never matches.
-        let mut tags: Vec<String> = obj_tags.split(',').map(str::to_string).collect();
-        if obj_tags.contains(',') {
-            while tags.last().is_some_and(|t| t.is_empty()) {
-                tags.pop();
-            }
-        }
-        self.object_tags = tags;
-        Ok(())
+        debug!("Object tags {:?}", configured);
+
+        Ok(Vislcg3ObjectEnhancer {
+            object_tags: syntactic::split_tags(configured),
+        })
     }
 
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+3]
@@ -83,7 +73,7 @@ impl Vislcg3ObjectEnhancer {
         // Tag string contains the given tag sequence as a substring, plus it is
         // in the accusative case if it is the phrase nucleus.
         if reading_str.contains(tag) {
-            info!("{:?} contains {}", cgr, tag);
+            trace!("{:?} contains {}", cgr, tag);
             return true;
         }
 
@@ -101,7 +91,7 @@ impl Vislcg3ObjectEnhancer {
         for rtag in cgr {
             if rtag.starts_with('"') {
                 lemma = rtag[1..rtag.len() - 1].to_string();
-                info!("{:?} lemma: {}", cgr, lemma);
+                trace!("{:?} lemma: {}", cgr, lemma);
             }
         }
         // The lemma needs no conversion to UTF-8: the whole CG input and output
@@ -122,35 +112,30 @@ mod tests {
         HashMap::from([("ObjTags".to_string(), obj_tags.to_string())])
     }
 
-    /// Apply one `ObjTags` value and report the tags the enhancer stored.
-    fn configured(enhancer: &mut Vislcg3ObjectEnhancer, obj_tags: &str) -> Vec<String> {
-        enhancer
-            .initialize(&context(obj_tags))
-            .expect("ObjTags is set");
-        enhancer.object_tags.clone()
+    /// Build an enhancer from one `ObjTags` value and report the tags it
+    /// holds.
+    fn configured(value: &str) -> Vec<String> {
+        Vislcg3ObjectEnhancer::new(&context(value))
+            .expect("ObjTags is set")
+            .object_tags
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_splits_obj_tags_on_commas_without_trimming() {
-        let mut enhancer = Vislcg3ObjectEnhancer::new();
-        assert!(enhancer.object_tags.is_empty());
-
         assert_splits_tags(
             &[
                 ("OBJ", &["OBJ"]),
                 (" OBJ ,@OBJ→", &[" OBJ ", "@OBJ→"]),
                 ("OBJ,,SUBJ", &["OBJ", "", "SUBJ"]),
             ],
-            |obj_tags| configured(&mut enhancer, obj_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3/test]
     #[test]
     fn initialize_drops_trailing_empties_only_with_comma() {
-        let mut enhancer = Vislcg3ObjectEnhancer::new();
-
         assert_splits_tags(
             &[
                 ("OBJ,,", &["OBJ"]),
@@ -158,27 +143,22 @@ mod tests {
                 ("", &[""]),
                 (",OBJ", &["", "OBJ"]),
             ],
-            |obj_tags| configured(&mut enhancer, obj_tags),
+            configured,
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3/test]
     #[test]
-    fn initialize_fails_absent_obj_tags_keeps_field() {
-        let mut enhancer = Vislcg3ObjectEnhancer::new();
-        enhancer.object_tags = vec!["OBJ".to_string()];
+    fn no_enhancer_is_built_without_obj_tags() {
+        let err = Vislcg3ObjectEnhancer::new(&HashMap::new()).expect_err("ObjTags is mandatory");
 
-        let err = enhancer
-            .initialize(&HashMap::new())
-            .expect_err("ObjTags is mandatory");
         assert!(err.to_string().contains("ObjTags"), "{err}");
-        assert_eq!(enhancer.object_tags, ["OBJ"]);
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.is-safe-fn/test]
     #[test]
     fn is_safe_holds_only_for_exactly_one_reading() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
 
         assert_safe_only_single_reading(
             0,
@@ -192,7 +172,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_substring_of_flattened_reading() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
         let accusative = reading(&["\"mánná\"", "N", "Sg", "Acc", "@OBJ→"]);
 
         assert!(enhancer.contains_tag(&accusative, "OBJ"));
@@ -207,7 +187,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_matches_lemma_embedding_tag_text() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
         let subject_with_telling_lemma = reading(&["\"OBJEKTA\"", "N", "Sg", "Nom", "@SUBJ→"]);
 
         assert!(enhancer.contains_tag(&subject_with_telling_lemma, "OBJ"));
@@ -216,7 +196,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.contains-tag-fn/test]
     #[test]
     fn contains_tag_flattens_empty_reading_to_empty_string() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
         let empty = reading(&[]);
 
         assert!(!enhancer.contains_tag(&empty, "OBJ"));
@@ -226,7 +206,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.get-lemma-fn/test]
     #[test]
     fn get_lemma_strips_quotes_keeps_last_quoted() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
 
         assert_eq!(
             enhancer.get_lemma(&reading(&["\"mánná\"", "N", "Sg", "Acc"])),
@@ -244,7 +224,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "starts at 1 but ends at 0")]
     fn get_lemma_panics_on_lone_double_quote() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
         let _ = enhancer.get_lemma(&reading(&["\""]));
     }
 
@@ -253,7 +233,6 @@ mod tests {
     fn process_walks_tags_but_adds_nothing_without_tokens() {
         let enhancer = Vislcg3ObjectEnhancer {
             object_tags: vec!["OBJ".to_string(), "SUBJ".to_string()],
-            ..Default::default()
         };
 
         assert_process_keeps_existing_enhancements("Mun oainnán mánáid.", |doc| {
@@ -264,7 +243,7 @@ mod tests {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.process-fn+3/test]
     #[test]
     fn process_without_configured_tags_never_inspects_a_token() {
-        let enhancer = Vislcg3ObjectEnhancer::new();
+        let enhancer = Vislcg3ObjectEnhancer::default();
 
         assert_process_ignores_token_without_tags(
             "Mun oainnán mánáid.",

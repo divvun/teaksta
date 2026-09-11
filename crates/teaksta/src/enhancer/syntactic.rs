@@ -26,6 +26,20 @@ use crate::util::enhancer_utils;
 /// reach the markup.
 pub type Attributes<'a> = &'a dyn Fn(&CgReading) -> Result<Vec<(&'static str, String)>>;
 
+/// One activity's configured tag list, split the way `String.split(",")`
+/// splits it: trailing empty fields are dropped, but an input the separator
+/// never matches stays whole as the single element. Every tag-driven topic
+/// reads its own parameter and splits it exactly this way.
+pub fn split_tags(configured: &str) -> Vec<String> {
+    let mut tags: Vec<String> = configured.split(',').map(str::to_string).collect();
+    if configured.contains(',') {
+        while tags.last().is_some_and(|tag| tag.is_empty()) {
+            tags.pop();
+        }
+    }
+    tags
+}
+
 /// Everything one tag-driven topic changes about the shared pass.
 pub struct FunctionSpec<'a> {
     /// Names the topic in the opening log line.
@@ -88,7 +102,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
     let mut class_counts: HashMap<String, i32> = HashMap::new();
     for con_t in spec.tags {
         class_counts.insert(con_t.clone(), 0);
-        info!("Tag: {}", con_t);
+        debug!("Tag: {}", con_t);
     }
 
     // iterating over the configured tags instead of the class-count key set
@@ -143,7 +157,7 @@ pub fn run(doc: &mut Document, spec: &FunctionSpec<'_>, mode: Mode) -> Result<()
 
                 // increment id
                 let new_id = class_counts[con_t] + 1;
-                let id = enhancer_utils::get_id(&format!("teaksta-span-{con_t}"), new_id);
+                let id = enhancer_utils::get_id("teaksta-span-", con_t, new_id);
                 let mut span_tag = match &tag_class {
                     Some(tag_class) => SpanTag::new(id, &[TOKEN_CLASS, spec.span_class, tag_class]),
                     None => SpanTag::new(id, &[TOKEN_CLASS, spec.span_class]),

@@ -711,7 +711,7 @@ fn config_value_display_appends_flag_suffix() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2/test]
 #[test]
 fn main_loads_activity_named_by_first_argument() {
     let dir = tempfile::tempdir().unwrap();
@@ -730,13 +730,18 @@ fn main_loads_activity_named_by_first_argument() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+1/test]
+/// The Java indexes `args[0]` and ends the process on an empty array. The
+/// argument is read here instead, so the same failure is reported.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.activity-configuration.activity-configuration.main-fn+2/test]
 #[test]
-fn main_panics_when_no_argument_is_given() {
-    let outcome = std::panic::catch_unwind(|| {
-        let no_args: Vec<String> = Vec::new();
-        main(&no_args, Path::new(NO_DESCRIPTORS))
-    });
+fn main_reports_a_missing_argument() {
+    let no_args: Vec<String> = Vec::new();
 
-    assert!(outcome.is_err());
+    let err = main(&no_args, Path::new(NO_DESCRIPTORS))
+        .expect_err("no argument names no activity descriptor");
+
+    assert_eq!(
+        err.to_string(),
+        "ArrayIndexOutOfBoundsException: Index 0 out of bounds for length 0"
+    );
 }

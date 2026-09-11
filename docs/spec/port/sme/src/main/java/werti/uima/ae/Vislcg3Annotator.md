@@ -195,10 +195,10 @@
 > which keeps a compound's whole tag sequence in one flat reading, as the
 > `lookup2cg` stream delivered it.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
 > @Override public void process(JCas jcas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.process-fn+3]
 > The UIMA annotator entry point. Consumes `Token` and `SentenceAnnotation`
 > annotations from the CAS and replaces every `Token` with a `CGToken` carrying the
 > constraint-grammar readings for that position.
@@ -263,6 +263,14 @@
 > A cohort without readings no longer reaches this walk: `parseCGOutput` drops
 > it, so the first-reading access that the Java let fail with an out-of-bounds
 > error over a malformed stream has nothing to fail on.
+>
+> Port divergence: the tokens the walk replaced are taken out of the store in
+> place rather than copied into a second one, and the map from a CG token to
+> where it sits is reached through one lookup per token rather than two.
+>
+> Port divergence: the CG input, the CG output and the per-token records — a
+> page's worth of lines on every request — are logged at trace rather than at
+> info, and the cohort and token counts at debug as one line rather than two.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.ae.vislcg3-annotator.vislcg3-annotator.run-fst-cg-fn+2]
 > private String runFST_CG(String input) throws IOException,InterruptedException

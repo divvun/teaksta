@@ -46,8 +46,8 @@ public class Vislcg3ObjectEnhancer extends JCasAnnotator_ImplBase {
 	private final String lookupLoc = Constants.lookup_Loc;
   private final String lookupFlags = Constants.lookup_Flags;
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-object-enhancer.vislcg3-object-enhancer.initialize-fn+3]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {

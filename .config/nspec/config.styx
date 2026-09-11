@@ -39,6 +39,13 @@ specs ({
                 sme/src/main/java/werti/uima/enhancer/WordEnhancer.java
                 sme/src/main/java/werti/uima/enhancer/Vislcg3ChunkEnhancer.java
                 sme/src/main/java/werti/uima/enhancer/Vislcg3NounSingularEnhancer.java
+                // Inert: `isValid` is the only entry point anything calls,
+                // `makeInvalid` and `addEnhId` are called from nowhere in the
+                // tree, and the `EnhancementId` type they write is itself
+                // excluded above. The guard at every caller is therefore
+                // unconditionally true, so neither the class nor the
+                // enhancement-id marker is ported.
+                sme/src/main/java/werti/util/CasUtils.java
                 sme/src/main/java/werti/util/RunDriver.java
                 sme/src/main/java/werti/util/HTMLFeatureExtractor.java
                 sme/src/main/java/werti/util/Transformer.java

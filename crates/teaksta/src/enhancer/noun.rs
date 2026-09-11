@@ -14,7 +14,7 @@ use std::sync::LazyLock;
 
 use anyhow::{Result, bail};
 use regex::Regex;
-use tracing::info;
+use tracing::trace;
 
 use crate::enhancer::cg_enhancer::{self, TopicSpec, Trace, Unchecked};
 use crate::server::api::Mode;
@@ -184,7 +184,9 @@ fn discarded_case_sweep(reading_str: &str, answer_line: &str) -> Result<String> 
             reading_str = cg_enhancer::substring_to_index_of(&reading_str, a_case)?;
             // Assign distractorforms from the array
             for elem in distract_forms_case {
-                generation_input = generation_input + &reading_str + elem + "\n";
+                generation_input.push_str(&reading_str);
+                generation_input.push_str(elem);
+                generation_input.push('\n');
             }
             break;
         }
@@ -245,8 +247,8 @@ impl Vislcg3NounEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
@@ -275,7 +277,7 @@ impl Vislcg3NounEnhancer {
             sweep_cases(&mut reading_str2, &mut generation_input2, &PL_CASES)?;
         }
 
-        info!("generationInput2={}", generation_input2);
+        trace!("generationInput2={}", generation_input2);
 
         discarded_case_sweep(reading_str, &answer_line)?;
 
@@ -301,7 +303,9 @@ impl Vislcg3NounEnhancer {
                 continue;
             }
             let temp_str = cg_enhancer::substring_to_index_of(&lem_and_an, probe)?;
-            lem_and_an = lem_and_an + &temp_str + counterpart + "\n";
+            lem_and_an.push_str(&temp_str);
+            lem_and_an.push_str(counterpart);
+            lem_and_an.push('\n');
         }
 
         Ok(lem_and_an)

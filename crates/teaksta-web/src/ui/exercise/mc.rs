@@ -7,7 +7,7 @@ use std::rc::Rc;
 use dioxus::prelude::*;
 
 use super::enhanced_text;
-use super::markup::{Markup, TokenSpan};
+use super::markup::{Markup, TokenSpan, accepts};
 
 /// How many forms one slot offers, which is what the legacy engine offered.
 pub const MAX_CHOICES: usize = 5;
@@ -147,7 +147,7 @@ pub fn McMode(markup: Rc<Markup>, topic: String) -> Element {
                         }
                         let slot = slots.read().get(&token.id).cloned().unwrap_or_default();
                         let id = token.id.clone();
-                        let judged = token.clone();
+                        let accepted = token.accepted_forms();
                         rsx! {
                             McToken {
                                 choices: choices(token),
@@ -160,7 +160,7 @@ pub fn McMode(markup: Rc<Markup>, topic: String) -> Element {
                                         return;
                                     }
                                     slot.tries += 1;
-                                    slot.settled = judged.accepts(&form);
+                                    slot.settled = accepts(&accepted, &form);
                                 },
                             }
                         }

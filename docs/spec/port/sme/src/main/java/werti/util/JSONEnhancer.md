@@ -6,12 +6,15 @@
 >   mode: Mode,
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+5]
 > public String enhance()
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.json-enhancer.json-enhancer.enhance-fn+5]
+> Port divergence: rendering the fragments cannot fail, so the only failure
+> this reports is the JSON encoding of what came back.
+>
 > Renders the enhanced fragments of the stored document, per
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]`,
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3]`,
 > against the page map the document carries and with the stored `mode` as the
 > exercise, and serialises the resulting map as JSON.
 >

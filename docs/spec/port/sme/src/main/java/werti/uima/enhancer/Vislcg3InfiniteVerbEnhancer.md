@@ -120,10 +120,10 @@
 > instead — so the parameter is effectively inert. The one log statement that would have printed it is
 > commented out, and would in any case have logged the field before it was assigned.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+7]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.process-fn+7]
 > Consumes `CGToken` annotations (with their `CGReading` feature-structure array) and produces
 > `Enhancement` annotations wrapping every token whose morphological reading is an infinite verb form.
 >
@@ -207,6 +207,12 @@
 > against, and two requests asking for different exercises never observe each
 > other's. The mc and cloze branches are selected from it exactly as the
 > equality tests above select them.
+>
+> Port divergence: the cancellation guard is gone. Nothing in the tree ever
+> calls `makeInvalid` or `addEnhId`, so no enhancement ID is ever written and
+> `isValid` answers true for every CAS that reaches here — the guard is an
+> unconditional branch over a marker the deployment has no way to set. The
+> whole of `CasUtils` and the `EnhancementId` marker it wrote go with it.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-infinite-verb-enhancer.vislcg3-infinite-verb-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)

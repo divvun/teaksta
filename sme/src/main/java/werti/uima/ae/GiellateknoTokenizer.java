@@ -124,8 +124,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 
 	}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
 	@Override
 	public void initialize(UimaContext aContext)
 			throws ResourceInitializationException {
@@ -140,8 +140,8 @@ public class GiellateknoTokenizer extends JCasAnnotator_ImplBase {
 	}
 
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
 	@SuppressWarnings("unchecked")
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {

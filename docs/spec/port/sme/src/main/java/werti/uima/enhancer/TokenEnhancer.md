@@ -7,10 +7,18 @@
 >   private boolean useLemmaFilter;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
-> @Override public void initialize(UimaContext context) throws ResourceInitializationException
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
+> pub fn new(context: &HashMap<String, String>) -> Result<TokenEnhancer>
+>
+> Port divergence: there is no lifecycle pair. The delegate key names a
+> constructor that reads the parameter table and either answers a configured
+> enhancer or fails, so a half-built one with the parameter unset is not a
+> state the type has — where the Java left the field as it stood when the
+> parameter was missing, the port builds nothing at all. The tag list is
+> split by the helper the tag-driven topics share, which splits it exactly
+> as `String.split(",")` does.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
 > Annotator initialisation. Delegates to the base-class initialiser
 > first, propagating any initialisation failure it raises.
 >

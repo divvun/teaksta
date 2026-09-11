@@ -11,7 +11,7 @@ use std::rc::Rc;
 use dioxus::prelude::*;
 
 use super::enhanced_text;
-use super::markup::Markup;
+use super::markup::{Markup, accepts};
 
 /// How far one slot has got.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -108,7 +108,7 @@ pub fn ClozeMode(markup: Rc<Markup>, topic: String) -> Element {
                         }
                         let slot = slots.read().get(&token.id).cloned().unwrap_or_default();
                         let id = token.id.clone();
-                        let judged = token.clone();
+                        let accepted = token.accepted_forms();
                         let shown = token.hint();
                         let hinted = token.id.clone();
                         rsx! {
@@ -124,8 +124,7 @@ pub fn ClozeMode(markup: Rc<Markup>, topic: String) -> Element {
                                         return;
                                     }
                                     slot.tries += 1;
-                                    slot
-                                        .state = if judged.accepts(&written) {
+                                    slot.state = if accepts(&accepted, &written) {
                                         State::Right
                                     } else {
                                         State::Wrong

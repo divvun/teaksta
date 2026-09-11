@@ -94,8 +94,8 @@ public class Vislcg3NounPlEnhancer extends JCasAnnotator_ImplBase {
 			NPlTags = Arrays.asList(((String)context.getConfigParameterValue("NPlTags")).split(","));
 		}
 
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+5]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-pl-enhancer.vislcg3-noun-pl-enhancer.process-fn+6]
 	@Override
 	public void process(JCas cas) throws AnalysisEngineProcessException {
     // stop processing if the client has requested it

@@ -8,9 +8,20 @@
 use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 
-/// One morphological reading of a token, as produced by the analyser +
-/// CG3 disambiguation. The first element is the lemma line content; the
-/// remaining elements are the tag strings of the reading.
+/// One morphological reading of a token, as produced by the analyser + CG3
+/// disambiguation: the whitespace-separated fields of a CG-3 reading line, in
+/// the order the stream wrote them.
+///
+/// It is a flat list of fields and not a base form paired with its tags,
+/// because a reading does not reliably have exactly one base form. A
+/// subreading is one level further indented and qualifies the reading above
+/// it, so its fields — its own quoted base form among them — are appended to
+/// that reading, and a reading built that way carries several quoted fields
+/// among its tags. Every topic that wants a base form therefore scans the
+/// whole list and keeps the *last* quoted field rather than reading a
+/// position, and every topic that matches tags flattens the list and matches
+/// against the flattening. Splitting the first field off as a `lemma` would
+/// name a field that is not always the base form the topics use.
 pub type CgReading = Vec<String>;
 
 /// How a topic reads a reading's tags as one string. Every enhancer matches
@@ -54,15 +65,77 @@ pub fn flatten_reading(cgr: &CgReading, join: ReadingJoin) -> String {
     out
 }
 
+/// The exercise a request asks for.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Mode {
+    Colorize,
+    Click,
+    Mc,
+    Cloze,
+}
+
+impl Mode {
+    pub const ALL: [Mode; 4] = [Mode::Colorize, Mode::Click, Mode::Mc, Mode::Cloze];
+
+    pub fn parse(value: &str) -> Option<Mode> {
+        Mode::ALL.into_iter().find(|mode| mode.name() == value)
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Mode::Colorize => "colorize",
+            Mode::Click => "click",
+            Mode::Mc => "mc",
+            Mode::Cloze => "cloze",
+        }
+    }
+}
+
+/// A half-open `[begin, end)` byte span into a document's text: what every
+/// annotation store below is a list of. The pipeline stages order and window
+/// their annotations through this one trait, so the index order is written
+/// once rather than per store.
+pub trait Spanned {
+    fn begin(&self) -> usize;
+    fn end(&self) -> usize;
+}
+
+macro_rules! spanned {
+    ($($t:ty),* $(,)?) => {
+        $(impl Spanned for $t {
+            fn begin(&self) -> usize {
+                self.begin
+            }
+            fn end(&self) -> usize {
+                self.end
+            }
+        })*
+    };
+}
+
+/// Positions of the annotations in index order: ascending `begin`, then
+/// descending `end`. Positions rather than references, because a caller that
+/// replaces annotations has to name exactly these entries in the store
+/// afterwards; one that only reads them maps back over the slice.
+pub fn index_order<T: Spanned>(items: &[T]) -> Vec<usize> {
+    let mut ordered: Vec<usize> = (0..items.len()).collect();
+    ordered.sort_by(|&a, &b| {
+        items[a]
+            .begin()
+            .cmp(&items[b].begin())
+            .then(items[b].end().cmp(&items[a].end()))
+    });
+    ordered
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Token {
     pub begin: usize,
     pub end: usize,
     pub tag: Option<String>,
-    pub detailedtag: Option<String>,
     pub lemma: Option<String>,
-    pub chunk: Option<String>,
-    pub mltag: Option<String>,
 }
 
 /// Token bearing the full set of CG3 readings that survived disambiguation.
@@ -109,6 +182,14 @@ pub struct TextSegment {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PageMap {
     pub html: String,
+    /// In document order, which is also ascending `begin`, and disjoint: each
+    /// segment covers a whole text node and the next one starts past the end
+    /// of this one. [`crate::util::html_utils::extract`] is the only thing
+    /// that builds this list and builds it that way, and the encoding the
+    /// analysis cache round-trips preserves the order. The renderer bisects
+    /// on it rather than scanning it per enhancement, so a list that was not
+    /// in that order would place fewer enhancements — the same outcome as a
+    /// segment naming a node the page no longer has.
     pub segments: Vec<TextSegment>,
 }
 
@@ -128,16 +209,14 @@ pub struct SentenceAnnotation {
     pub end: usize,
 }
 
-/// Document-wide enhancement-id marker (`werti.uima.types.global.
-/// EnhancementId`): a `DocumentAnnotation` subtype carrying one long-valued
-/// `enhId` feature, used as a whole-document validity marker rather than a
-/// span, so `begin` and `end` stay 0.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub struct EnhancementId {
-    pub begin: usize,
-    pub end: usize,
-    pub enh_id: i64,
-}
+spanned!(
+    Token,
+    CgToken,
+    RelevantText,
+    TextSegment,
+    Enhancement,
+    SentenceAnnotation,
+);
 
 /// The key the shipped activity descriptors register their pipelines under,
 /// and so what [`Document::language`] carries in a running deployment.
@@ -156,9 +235,7 @@ pub struct Document {
     pub text: String,
     /// The registry key the pipelines processing this document are looked up
     /// under — [`PIPELINE_LANGUAGE`] in a running deployment — and not the
-    /// language the text is written in, which nothing here records. Empty
-    /// means the document was reset, which is what
-    /// [`crate::util::cas_utils::has_been_reset`] reads it for.
+    /// language the text is written in, which nothing here records.
     pub language: String,
     pub page: PageMap,
     pub tokens: Vec<Token>,
@@ -166,7 +243,6 @@ pub struct Document {
     pub relevant_texts: Vec<RelevantText>,
     pub enhancements: Vec<Enhancement>,
     pub sentences: Vec<SentenceAnnotation>,
-    pub enhancement_ids: Vec<EnhancementId>,
 }
 
 impl Document {
@@ -188,21 +264,12 @@ impl Document {
     /// before a stage indexes the text with them.
     pub fn invalid_span(&self) -> Option<InvalidSpan> {
         let mut spans = std::iter::empty()
-            .chain(spans_of("tokens", &self.tokens, |t| (t.begin, t.end)))
-            .chain(spans_of("cg_tokens", &self.cg_tokens, |t| (t.begin, t.end)))
-            .chain(spans_of("relevant_texts", &self.relevant_texts, |t| {
-                (t.begin, t.end)
-            }))
-            .chain(spans_of("enhancements", &self.enhancements, |e| {
-                (e.begin, e.end)
-            }))
-            .chain(spans_of("sentences", &self.sentences, |s| (s.begin, s.end)))
-            .chain(spans_of("enhancement_ids", &self.enhancement_ids, |i| {
-                (i.begin, i.end)
-            }))
-            .chain(spans_of("page.segments", &self.page.segments, |s| {
-                (s.begin, s.end)
-            }));
+            .chain(spans_of("tokens", &self.tokens))
+            .chain(spans_of("cg_tokens", &self.cg_tokens))
+            .chain(spans_of("relevant_texts", &self.relevant_texts))
+            .chain(spans_of("enhancements", &self.enhancements))
+            .chain(spans_of("sentences", &self.sentences))
+            .chain(spans_of("page.segments", &self.page.segments));
 
         spans.find(|span| covered_text(&self.text, span.begin, span.end).is_err())
     }
@@ -239,14 +306,11 @@ impl std::fmt::Display for InvalidSpan {
     }
 }
 
-fn spans_of<T>(
-    store: &'static str,
-    items: &[T],
-    span: impl Fn(&T) -> (usize, usize),
-) -> impl Iterator<Item = InvalidSpan> {
-    items.iter().map(move |item| {
-        let (begin, end) = span(item);
-        InvalidSpan { store, begin, end }
+fn spans_of<T: Spanned>(store: &'static str, items: &[T]) -> impl Iterator<Item = InvalidSpan> {
+    items.iter().map(move |item| InvalidSpan {
+        store,
+        begin: item.begin(),
+        end: item.end(),
     })
 }
 
@@ -366,14 +430,6 @@ mod tests {
         assert_eq!(
             reported_store(|doc| doc.sentences.push(SentenceAnnotation { begin: 0, end: 2 })),
             Some("sentences")
-        );
-        assert_eq!(
-            reported_store(|doc| doc.enhancement_ids.push(EnhancementId {
-                begin: 0,
-                end: 2,
-                enh_id: 1,
-            })),
-            Some("enhancement_ids")
         );
         assert_eq!(
             reported_store(|doc| doc.page.segments.push(TextSegment {

@@ -40,8 +40,8 @@ public class Vislcg3ConjunctionEnhancer extends JCasAnnotator_ImplBase {
 	private static String CHUNK_BEGIN_SUFFIX = "-B";
 	private static String CHUNK_INSIDE_SUFFIX = "-I";
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-conjunction-enhancer.vislcg3-conjunction-enhancer.initialize-fn+1]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {

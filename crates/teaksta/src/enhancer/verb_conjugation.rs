@@ -165,8 +165,8 @@ impl Vislcg3VerbConjugationEnhancer {
         Ok(this)
     }
 
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-verb-conjugation-enhancer.vislcg3-verb-conjugation-enhancer.process-fn+6]
     pub fn process(&self, doc: &mut Document, mode: Mode) -> Result<()> {
         let forms = |reading: &str| self.write_morphological_forms(reading);
         let analyses = |reading: &str| self.write_lemma_and_analyses(reading);
@@ -191,7 +191,10 @@ impl Vislcg3VerbConjugationEnhancer {
         for (name, distract_forms) in MOOD_TABLES {
             if mood == name {
                 for form in distract_forms {
-                    generation_input = generation_input + lemma + "+" + form + "\n";
+                    generation_input.push_str(lemma);
+                    generation_input.push('+');
+                    generation_input.push_str(form);
+                    generation_input.push('\n');
                 }
             }
         }

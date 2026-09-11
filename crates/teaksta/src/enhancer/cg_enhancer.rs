@@ -24,13 +24,13 @@ use std::time::Instant;
 
 use anyhow::{Result, anyhow, bail};
 use regex::Regex;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, trace};
 
 pub use crate::enhancer::cg_span::{SpanTag, TOKEN_CLASS, Word};
 use crate::morpho::MorphoPipeline;
 use crate::server::api::Mode;
 use crate::types::{CgToken, Document, Enhancement, ReadingJoin, flatten_reading_into};
-use crate::util::{cas_utils, enhancer_utils};
+use crate::util::enhancer_utils;
 
 /// Separates one token's generator input (and, in the generator output, one
 /// token's generated forms) from the next.
@@ -211,7 +211,10 @@ pub fn lemma_distractors(reading_str: &str, distract_forms: &[&str]) -> Result<S
     let mut generation_input = String::new();
     // Assign distractorforms from the array
     for form in distract_forms {
-        generation_input = generation_input + lemma + "+" + form + "\n";
+        generation_input.push_str(lemma);
+        generation_input.push('+');
+        generation_input.push_str(form);
+        generation_input.push('\n');
     }
     // add reading_str as last element in generationInput which will be used
     // as correct_answer
@@ -375,7 +378,7 @@ impl Run<'_> {
     /// queue the token for the generator.
     fn enhance_token(&self, doc: &mut Document, cgt: &CgToken, found: &Selection, scan: &mut Scan) {
         if self.spec.log_chosen_reading {
-            info!("This reading will be used={}", found.reading);
+            trace!("This reading will be used={}", found.reading);
         }
         // id's with the "+" symbol have to be escaped, thats why we use a
         // "-" instead. The "<" and ">" symbols also cause problems because
@@ -390,7 +393,7 @@ impl Run<'_> {
         // create a word with begin and end of the current CGToken
         let word = Word::new(cgt.begin, cgt.end);
 
-        let id = enhancer_utils::get_id(&format!("teaksta-span-{}", span_reading_string), count);
+        let id = enhancer_utils::get_id("teaksta-span-", &span_reading_string, count);
         let mut span_tag = SpanTag::new(id, &[TOKEN_CLASS, self.spec.span_class]);
         span_tag.add_attribute("lemma", &found.lemma);
 
@@ -446,10 +449,6 @@ pub fn run(
     morphological_forms: &dyn Fn(&str) -> Result<String>,
     lemma_and_analyses: &dyn Fn(&str) -> Result<String>,
 ) -> Result<()> {
-    // stop processing if the client has requested it
-    if !cas_utils::is_valid(doc) {
-        return Ok(());
-    }
     info!("Starting {} enhancement {}.", spec.label, mode.name());
 
     let mut elapsed_generating: f64 = 0.0;
@@ -525,13 +524,13 @@ pub fn attach_distractors(
                 let word = word_record(line)?;
                 let span_tag = span_for(word_to_span_map, &word)?;
                 if trace.span_tag {
-                    info!("spantag before adding distractors:{}", span_tag);
+                    trace!("spantag before adding distractors:{}", span_tag);
                 }
                 span_tag.add_attribute("distractors", &distractforms);
                 span_tag.add_attribute("answer", &answer);
                 let e = push_enhancement(doc, word.begin, word.end, span_tag);
                 if trace.enhancement {
-                    info!("Enhancement={:?}", e);
+                    trace!("Enhancement={:?}", e);
                 }
                 // the block belongs to this token alone: a further Word
                 // record before the next marker has no forms of its own
@@ -559,7 +558,8 @@ pub fn attach_distractors(
         // the generator output for the current token is not fully extracted
         // from the stream yet
         else {
-            generator_output = generator_output + line + " ";
+            generator_output.push_str(line);
+            generator_output.push(' ');
         }
     }
 
@@ -600,7 +600,7 @@ pub fn attach_possible_forms(
                 let word = word_record(line)?;
                 let span_tag = span_for(word_to_span_map, &word)?;
                 if trace.possible_forms {
-                    info!("possibleforms= {}", possible_forms);
+                    trace!("possibleforms= {}", possible_forms);
                 }
                 span_tag.add_attribute("possibleforms", &possible_forms);
                 push_enhancement(doc, word.begin, word.end, span_tag);
@@ -618,7 +618,8 @@ pub fn attach_possible_forms(
         // the generator output for the current token is not fully extracted
         // from the stream yet
         else {
-            generator_output = generator_output + line + " ";
+            generator_output.push_str(line);
+            generator_output.push(' ');
         }
     }
 

@@ -6,10 +6,13 @@
 >   private JCas cas;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5]
-> pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> Result<String>
+> [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6]
+> pub fn enhance(&self, mode: Option<Mode>, base_url: &str) -> String
+>
+> Port divergence: the page render it forwards to cannot fail, so neither
+> can this; the `Result` and the propagation above it are gone.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.html-enhancer.html-enhancer.enhance-fn+6]
 > Renders the stored document into a complete enhanced HTML page string.
 >
 > The exercise is taken as an argument rather than dug out of a request:
@@ -19,7 +22,7 @@
 > parameters at all.
 >
 > Renders the page the document's own map holds, per
-> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]`,
+> `[spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]`,
 > passing `mode` on unchanged — which is what lets the click exercise keep
 > the decoys the other exercises drop, the words the topic did not mark but
 > the learner is offered alongside the ones it did — and `base_url` as the

@@ -1,21 +1,14 @@
 //! Wrapper for the "Giellatekno tokenizer" (tokenisation that is specially
 //! adapted to North Sámi).
 
-use anyhow::{Context as _, Result, anyhow, bail};
+use anyhow::{Context as _, Result, anyhow};
 use regex::Regex;
-use std::collections::HashMap;
-use std::sync::{LazyLock, Mutex, MutexGuard};
-use tracing::{debug, info, trace};
+use std::sync::LazyLock;
+use tracing::{debug, trace};
 
 use crate::morpho::MorphoPipeline;
-use crate::types::{Document, RelevantText, Token};
-
-/// Annotation index order: ascending `begin`, then descending `end`.
-fn index_order(spans: &[RelevantText]) -> Vec<&RelevantText> {
-    let mut ordered: Vec<&RelevantText> = spans.iter().collect();
-    ordered.sort_by(|a, b| a.begin.cmp(&b.begin).then(b.end.cmp(&a.end)));
-    ordered
-}
+use crate::pipeline::mask_to_spans;
+use crate::types::{Document, Token};
 
 /// Splits on `'\n'` the way `String.split` does: an input without a single
 /// separator yields the whole input, and trailing empty segments are dropped.
@@ -31,69 +24,36 @@ fn split_lines(input: &str) -> Vec<&str> {
     parts
 }
 
-/// Index of the first occurrence of `needle` at or after `from`, or `-1`.
-/// Mirrors `String.indexOf(String, int)`: a negative `from` is clamped to
-/// zero, and an empty needle answers `min(from, len)`.
-fn index_of_from(haystack: &str, needle: &str, from: i64) -> i64 {
-    let from = from.max(0) as usize;
-
+/// Index of the first occurrence of `needle` at or after the byte offset
+/// `from`, or `None`. An empty needle answers `min(from, len)`.
+fn index_of_from(haystack: &str, needle: &str, from: usize) -> Option<usize> {
     if from >= haystack.len() {
-        if needle.is_empty() {
-            return haystack.len() as i64;
-        }
-        if from > haystack.len() {
-            return -1;
-        }
+        return needle.is_empty().then_some(haystack.len());
     }
-
     if needle.is_empty() {
-        return from as i64;
+        return Some(from);
     }
 
     let hay = haystack.as_bytes();
     let ned = needle.as_bytes();
-
     if ned.len() > hay.len() {
-        return -1;
+        return None;
     }
 
-    // UTF-8 is self-synchronising, so a byte-wise scan can only ever land on
-    // a character boundary and matches the character-index search.
-    for i in from..=(hay.len() - ned.len()) {
-        if &hay[i..i + ned.len()] == ned {
-            return i as i64;
-        }
-    }
-
-    -1
+    // UTF-8 is self-synchronising, so a byte-wise scan can only ever match at
+    // a character boundary and agrees with a character-index search. The scan
+    // is written out rather than deferred to `str::find` because the cursor
+    // the repair branch advances need not land on one.
+    (from..=(hay.len() - ned.len())).find(|&i| &hay[i..i + ned.len()] == ned)
 }
 
-/// Byte index of the character immediately preceding `idx`, or `-1` when
+/// Byte index of the character immediately preceding `idx`, or `None` when
 /// `idx` is the start of the string.
-fn prev_char_index(haystack: &str, idx: usize) -> i64 {
-    match haystack[..idx].chars().next_back() {
-        Some(c) => (idx - c.len_utf8()) as i64,
-        None => -1,
-    }
-}
-
-/// The document text with everything outside the relevant spans blanked to
-/// spaces, at byte-for-byte identical offsets.
-fn mask_to_relevant_text(text: &str, spans: &[RelevantText]) -> Result<String> {
-    let mut rtext = vec![b' '; text.len()];
-
-    for t in index_order(spans) {
-        let covered = text.get(t.begin..t.end).ok_or_else(|| {
-            anyhow!(
-                "relevant text {}..{} is not within the document",
-                t.begin,
-                t.end
-            )
-        })?;
-        rtext[t.begin..t.end].copy_from_slice(covered.as_bytes());
-    }
-
-    Ok(String::from_utf8(rtext)?)
+fn prev_char_index(haystack: &str, idx: usize) -> Option<usize> {
+    haystack[..idx]
+        .chars()
+        .next_back()
+        .map(|c| idx - c.len_utf8())
 }
 
 /// A token is annotated only when it holds at least one character outside the
@@ -102,52 +62,19 @@ fn mask_to_relevant_text(text: &str, spans: &[RelevantText]) -> Result<String> {
 static NON_SEPARATOR_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(?:.*?[^\p{Z}].*)$").expect("non separator pattern"));
 
-/// The deployment locations the Java concatenated the preprocessing command
-/// from, kept only because that command reaches the log.
-const TOOLS_DIR: &str = "/opt/smi/sme/bin/";
-const ABBR_DIR: &str = "/opt/smi/sme/bin/";
-
-static PREPROCESS_CMD: LazyLock<String> =
-    LazyLock::new(|| format!("{}preprocess --abbr={}abbr.txt", TOOLS_DIR, ABBR_DIR));
-
-/// Language code to tokeniser. Replaced wholesale on every initialisation,
-/// so the last initialised instance owns the registry.
-static TOKENIZERS: LazyLock<Mutex<HashMap<String, &'static MorphoPipeline>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-
-fn tokenizers() -> MutexGuard<'static, HashMap<String, &'static MorphoPipeline>> {
-    TOKENIZERS
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner())
-}
-
 // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer]
+// [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct GiellateknoTokenizer;
 
 impl GiellateknoTokenizer {
-    pub fn new() -> Self {
-        GiellateknoTokenizer
-    }
-
-    /// The registry built here is never consulted by [`Self::process`], which
-    /// tokenises through the morphological pipeline instead.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn]
-    pub fn initialize(&mut self) -> Result<()> {
-        let mut registry = HashMap::new();
-        registry.insert("en".to_string(), MorphoPipeline::shared());
-        *tokenizers() = registry;
-
-        Ok(())
-    }
-
     /// Tokenises the relevant portions of the document and maps the
     /// one-token-per-line result back onto offsets in the document. The
     /// stdout-consumer plumbing the external `preprocess` command needed is
     /// subsumed by the morphological pipeline seam.
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string]
     // [spec:teaksta:def:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.ext-command-consume2-string-fn]
@@ -159,17 +86,9 @@ impl GiellateknoTokenizer {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.get-buffer-fn]
     pub fn process(&self, jcas: &mut Document) -> Result<()> {
         debug!("Starting token annotation");
-        info!("Starting token annotation");
 
         // put relevant text spans in their proper positions in an empty document
-        let text_string = mask_to_relevant_text(&jcas.text, &jcas.relevant_texts)?;
-
-        let file_path = "/tmp/konteakstaInput.txt";
-
-        let _lang = jcas.language.clone();
-
-        let tokenisation_pipeline = format!("/bin/cat \"{}\" | {}", file_path, *PREPROCESS_CMD);
-        info!("Preprocessing command: {}", tokenisation_pipeline);
+        let text_string = mask_to_spans(&jcas.text, &jcas.relevant_texts)?;
 
         // Every line of the tokeniser output carries a trailing newline, as
         // the stdout consumer appended one per line read. A tokenisation that
@@ -183,57 +102,49 @@ impl GiellateknoTokenizer {
             .map(|line| format!("{line}\n"))
             .collect();
 
-        info!("tokenised_text={}", tokenised_text);
+        trace!("tokenised_text={}", tokenised_text);
 
         let tokens = split_lines(&tokenised_text);
 
-        let mut skew: i64 = 0;
+        let mut skew: usize = 0;
 
         for token in tokens {
             // include all tokens that don't consist of whitespace, i.e., prevent
             // unicode non-breaking space from becoming a token
-            info!("next token: {}", token);
-            let mut token_start = index_of_from(&text_string, token, skew);
-            info!("Token {}}} starts at {}", token, token_start);
-
-            if token_start == -1 {
+            let start = match index_of_from(&text_string, token, skew) {
+                Some(start) => {
+                    skew = start + token.len(); // This is the normal case!
+                    start
+                }
                 // Handle the hyphenated words that are "repaired" by preprocess
                 // and thus not found in the original text.
-                let hyphen = index_of_from(&text_string, "-", skew);
-                if hyphen != -1 {
-                    let from = skew.max(0) as usize;
-                    // the character immediately preceding the hyphen is dropped
-                    let to = prev_char_index(&text_string, hyphen as usize);
-                    let candidate = if to < 0 {
-                        None
-                    } else {
-                        text_string.get(from..to as usize)
+                None => {
+                    let Some(hyphen) = index_of_from(&text_string, "-", skew) else {
+                        // restarts the scan at the head of the document, so
+                        // later tokens can match at earlier, wrong positions
+                        skew = 0;
+                        continue;
                     };
-                    let syllable = candidate
-                        .ok_or_else(|| anyhow!("string index out of range: {}..{}", from, to))?;
+
+                    // the character immediately preceding the hyphen is dropped
+                    let syllable = prev_char_index(&text_string, hyphen)
+                        .and_then(|to| text_string.get(skew..to))
+                        .ok_or_else(|| {
+                            anyhow!("string index out of range: {}..{}", skew, hyphen)
+                        })?;
 
                     // search the part of the word preceding the hyphen instead
-                    // of the whole word
-                    token_start = index_of_from(&text_string, syllable, skew);
-                    skew = token_start + token.len() as i64 + 1; // 1 = length of the hyphen
-                } else {
-                    // restarts the scan at the head of the document, so later
-                    // tokens can match at earlier, wrong positions
-                    skew = 0;
-                    continue;
+                    // of the whole word. The syllable is the stretch of the
+                    // text at `skew`, so the search answers `skew` itself.
+                    let start = index_of_from(&text_string, syllable, skew)
+                        .ok_or_else(|| anyhow!("syllable {syllable:?} is not at {skew}"))?;
+                    skew = start + token.len() + 1; // 1 = length of the hyphen
+                    start
                 }
-            } else {
-                skew = token_start + token.len() as i64; // This is the normal case!
-            }
+            };
+            trace!("Token {} starts at {}", token, start);
 
             if NON_SEPARATOR_PATTERN.is_match(token) {
-                // The repair branch never re-checks the search, so a failed
-                // lookup would otherwise annotate from a negative offset.
-                if token_start < 0 {
-                    bail!("token {:?} resolved to a negative begin offset", token);
-                }
-
-                let start = token_start as usize;
                 let mut t = Token {
                     begin: start,
                     end: start + token.len(),
@@ -313,7 +224,7 @@ fn ends_with_possessive(covered: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::PIPELINE_LANGUAGE;
+    use crate::types::{PIPELINE_LANGUAGE, RelevantText};
 
     fn relevant(begin: usize, end: usize) -> RelevantText {
         RelevantText {
@@ -344,7 +255,7 @@ mod tests {
     /// the models in place the call succeeds; without them it names the step
     /// that failed, which is the only other outcome the pass has.
     fn processed(doc: &mut Document) -> bool {
-        match GiellateknoTokenizer::new().process(doc) {
+        match GiellateknoTokenizer.process(doc) {
             Ok(()) => true,
             Err(e) => {
                 let message = format!("{e:#}");
@@ -357,29 +268,26 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn/test]
+    /// The registry the Java built here keyed a tokeniser by language and was
+    /// never read back, so the stage has no initialisation step at all and
+    /// the document's language reaches nothing the pass does.
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.initialize-fn+1/test]
     #[test]
-    fn initialize_registers_english_and_process_never_consults_it() {
-        GiellateknoTokenizer::new().initialize().unwrap();
+    fn the_pass_needs_no_setup_and_no_language() {
+        let mut registered = document("mun boran", &[(0, 9)]);
+        let mut foreign = document("mun boran", &[(0, 9)]);
+        foreign.language = "de".to_string();
 
-        {
-            let registry = tokenizers();
-            assert_eq!(registry.len(), 1);
-            assert!(registry.contains_key("en"));
-            assert!(!registry.contains_key("de"));
-        }
-
-        let mut doc = document("mun boran", &[(0, 9)]);
-        doc.language = "de".to_string();
-        processed(&mut doc);
+        assert_eq!(processed(&mut registered), processed(&mut foreign));
+        assert_eq!(registered.tokens.len(), foreign.tokens.len());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
     #[test]
     fn process_rejects_a_relevant_span_outside_the_document() {
         let mut doc = document("mun", &[(0, 99)]);
 
-        let err = GiellateknoTokenizer::new()
+        let err = GiellateknoTokenizer
             .process(&mut doc)
             .expect_err("the relevant span runs off the end of the document");
 
@@ -387,7 +295,7 @@ mod tests {
         assert!(doc.tokens.is_empty());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
     #[test]
     fn process_annotates_only_spans_slicing_document_text() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);
@@ -444,12 +352,12 @@ mod tests {
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.ext-command-consume2-string.is-done-fn/test]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.ae.giellatekno-tokenizer.giellatekno-tokenizer.process-fn+3/test]
     #[test]
     fn a_failed_tokenisation_is_reported_not_swallowed() {
         let mut doc = document("mun boran guoli.", &[(0, 16)]);
 
-        match GiellateknoTokenizer::new().process(&mut doc) {
+        match GiellateknoTokenizer.process(&mut doc) {
             // with the models in place the relevant text is tokenised
             Ok(()) => assert!(!doc.tokens.is_empty()),
             // and without them the pass reports the failure, rather than
@@ -468,7 +376,7 @@ mod tests {
 
     #[test]
     fn masking_blanks_everything_outside_the_relevant_spans() {
-        let masked = mask_to_relevant_text("Mun boran guoli.", &[relevant(4, 9)]).unwrap();
+        let masked = mask_to_spans("Mun boran guoli.", &[relevant(4, 9)]).unwrap();
 
         assert_eq!(masked, "    boran       ");
         assert_eq!(masked.len(), "Mun boran guoli.".len());
@@ -477,7 +385,7 @@ mod tests {
     #[test]
     fn masking_keeps_multibyte_offsets_intact() {
         let text = "áigi guolli";
-        let masked = mask_to_relevant_text(text, &[relevant(0, 5)]).unwrap();
+        let masked = mask_to_spans(text, &[relevant(0, 5)]).unwrap();
 
         assert_eq!(masked, "áigi       ");
         assert_eq!(masked.len(), text.len());
@@ -485,7 +393,7 @@ mod tests {
 
     #[test]
     fn masking_rejects_a_span_that_splits_a_character() {
-        let err = mask_to_relevant_text("áigi", &[relevant(0, 1)]).unwrap_err();
+        let err = mask_to_spans("áigi", &[relevant(0, 1)]).unwrap_err();
 
         assert!(err.to_string().contains("is not within the document"));
     }
@@ -499,23 +407,25 @@ mod tests {
     }
 
     #[test]
-    fn searching_from_cursor_matches_java_index_of() {
-        assert_eq!(index_of_from("guolli guolli", "guolli", 0), 0);
-        assert_eq!(index_of_from("guolli guolli", "guolli", 1), 7);
-        assert_eq!(index_of_from("guolli", "boran", 0), -1);
-        assert_eq!(index_of_from("guolli", "guollit", 0), -1);
-        assert_eq!(index_of_from("áigi", "igi", 0), 2);
-        assert_eq!(index_of_from("guolli", "g", -5), 0);
-        assert_eq!(index_of_from("guolli", "", 3), 3);
-        assert_eq!(index_of_from("guolli", "", 99), 6);
-        assert_eq!(index_of_from("guolli", "g", 99), -1);
+    fn searching_from_cursor_finds_the_next_occurrence() {
+        assert_eq!(index_of_from("guolli guolli", "guolli", 0), Some(0));
+        assert_eq!(index_of_from("guolli guolli", "guolli", 1), Some(7));
+        assert_eq!(index_of_from("guolli", "boran", 0), None);
+        assert_eq!(index_of_from("guolli", "guollit", 0), None);
+        assert_eq!(index_of_from("áigi", "igi", 0), Some(2));
+        assert_eq!(index_of_from("guolli", "", 3), Some(3));
+        assert_eq!(index_of_from("guolli", "", 99), Some(6));
+        assert_eq!(index_of_from("guolli", "g", 99), None);
+        // A cursor the repair branch left inside a character still searches
+        // rather than panicking, because the scan is byte-wise.
+        assert_eq!(index_of_from("áigi", "igi", 1), Some(2));
     }
 
     #[test]
     fn character_before_index_found_by_its_width() {
-        assert_eq!(prev_char_index("mun-boran", 3), 2);
-        assert_eq!(prev_char_index("mun-boran", 0), -1);
-        assert_eq!(prev_char_index("á-boran", 2), 0);
+        assert_eq!(prev_char_index("mun-boran", 3), Some(2));
+        assert_eq!(prev_char_index("mun-boran", 0), None);
+        assert_eq!(prev_char_index("á-boran", 2), Some(0));
     }
 
     #[test]

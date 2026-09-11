@@ -76,29 +76,37 @@ fn write_xmi(cas: &Document, casfile: &Path) -> std::io::Result<()> {
     std::fs::write(casfile, encoded)
 }
 
+/// One request's analysis: the page, where to cache it and which pipeline
+/// pair to run over it.
+///
+/// Everything but the exercise is borrowed for the life of the handler. The
+/// Java copied each argument into a field because a servlet request's strings
+/// outlive nothing in particular; here the handler is built, used and dropped
+/// inside the call that assembled its arguments, so a copy of the page would
+/// be a copy of the whole page for nothing.
 // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler]
 pub struct PageHandler<'a> {
     processors: &'a Processors,
-    topic: String,
-    text: String,
-    lang: String,
-    url: String,
-    path: String,
+    topic: &'a str,
+    text: &'a str,
+    lang: &'a str,
+    url: &'a str,
+    path: &'a str,
     /// The exercise the request asked for, carried to the postprocessing
     /// enhancers that decide what to attach to a token from it.
     mode: Mode,
 }
 
 impl<'a> PageHandler<'a> {
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
     pub fn new(
         a_processors: &'a Processors,
-        a_topic: &str,
-        a_url: &str,
-        a_path: &str,
-        a_text: &str,
-        a_lang: &str,
+        a_topic: &'a str,
+        a_url: &'a str,
+        a_path: &'a str,
+        a_text: &'a str,
+        a_lang: &'a str,
         a_mode: Mode,
     ) -> Self {
         // The assignment order differs from the parameter order: `url` and
@@ -106,11 +114,11 @@ impl<'a> PageHandler<'a> {
         // assignments.
         PageHandler {
             processors: a_processors,
-            topic: a_topic.to_string(),
-            text: a_text.to_string(),
-            lang: a_lang.to_string(),
-            url: a_url.to_string(),
-            path: a_path.to_string(),
+            topic: a_topic,
+            text: a_text,
+            lang: a_lang,
+            url: a_url,
+            path: a_path,
             mode: a_mode,
         }
         // A disabled branch here would have forced `lang` to `sme` whenever
@@ -122,78 +130,82 @@ impl<'a> PageHandler<'a> {
     // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
     // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
     pub fn process(&self) -> Result<Option<Document>> {
-        let preprocessor = self.processors.get_preprocessor(&self.lang, &self.topic);
-        let postprocessor = self.processors.get_postprocessor(&self.lang, &self.topic);
-        if let (Some(preprocessor), Some(postprocessor)) = (preprocessor, postprocessor) {
-            // to process
-            let processed = (|| -> std::result::Result<Document, EngineError> {
-                let mut cas = new_jcas(preprocessor)?;
-                // convert HTML entities to characters, if there are any
-                let normalised_text = html_escape::decode_html_entities(&self.text).into_owned();
-                // add the normalised text to cas
-                cas.text = normalised_text;
-                cas.language = self.lang.clone();
-                let casfile_path = PathBuf::from(&self.path);
-                if !casfile_path.exists()
-                    && let Err(e) = std::fs::create_dir_all(&casfile_path)
-                {
-                    // The cache is an optimisation, so a directory that
-                    // cannot be made costs this request nothing beyond its
-                    // cache — but it costs every later one the same, which is
-                    // a deployment fault worth naming rather than discarding.
-                    warn!(
-                        "Failed to create the cas directory {}! {}",
-                        casfile_path.display(),
-                        e
-                    );
-                }
-                let casfile = casfile_path.join(format!("cas_{}.xmi", self.url));
-                let cached = match casfile.is_file() {
-                    true => read_xmi(&casfile)
-                        .inspect_err(|cas_read| {
-                            info!("Failed to load cas from file! {}", cas_read);
-                        })
-                        .ok(),
-                    false => None,
-                };
+        let preprocessor = self.processors.get_preprocessor(self.lang, self.topic);
+        let postprocessor = self.processors.get_postprocessor(self.lang, self.topic);
+        let (Some(preprocessor), Some(postprocessor)) = (preprocessor, postprocessor) else {
+            return Ok(None);
+        };
 
-                match cached {
-                    // The cached document is the preprocessor's output, so
-                    // the preprocessor is not run over it again.
-                    Some(cached) => cas = cached,
-                    // A file that could not be read is rewritten from this
-                    // run's analysis, so a cache the deployment cannot decode
-                    // costs one request rather than every later one.
-                    None => {
-                        analysis_engine_process(preprocessor, &mut cas, self.mode)?;
-                        if let Err(cas_write) = write_xmi(&cas, &casfile) {
-                            info!("Failed to write cas to file! {}", cas_write);
-                        }
-                    }
-                }
+        match self.analysed(preprocessor, postprocessor) {
+            Ok(cas) => Ok(Some(cas)),
+            Err(aepe @ EngineError::AnalysisEngineProcess(_)) => {
+                error!("Analysis Engine encountered errors! {}", aepe);
+                Err(anyhow::Error::new(aepe).context("Text analysis failed."))
+            }
+            Err(rie @ EngineError::ResourceInitialization(_)) => {
+                error!("Resource Initialization Engine encountered errors! {}", rie);
+                Err(anyhow::Error::new(rie).context("Text analysis failed."))
+            }
+        }
+    }
 
-                // Whichever branch produced the document, the request is
-                // answered from the postprocessor's output: a cache that
-                // cannot be read or written costs the request its cache, not
-                // its enhancement.
-                analysis_engine_process(postprocessor, &mut cas, self.mode)?;
-                Ok(cas)
-            })();
+    /// The body of the `try` block: everything that can raise one of the two
+    /// engine failures the caller above tells apart.
+    fn analysed(
+        &self,
+        preprocessor: &AnalysisEngine,
+        postprocessor: &AnalysisEngine,
+    ) -> std::result::Result<Document, EngineError> {
+        let mut cas = new_jcas(preprocessor)?;
+        // convert HTML entities to characters, if there are any
+        // add the normalised text to cas
+        cas.text = html_escape::decode_html_entities(self.text).into_owned();
+        cas.language = self.lang.to_string();
 
-            return match processed {
-                Ok(cas) => Ok(Some(cas)),
-                Err(aepe @ EngineError::AnalysisEngineProcess(_)) => {
-                    error!("Analysis Engine encountered errors! {}", aepe);
-                    Err(anyhow::Error::new(aepe).context("Text analysis failed."))
+        let casfile_path = PathBuf::from(self.path);
+        if !casfile_path.exists()
+            && let Err(e) = std::fs::create_dir_all(&casfile_path)
+        {
+            // The cache is an optimisation, so a directory that cannot be
+            // made costs this request nothing beyond its cache — but it
+            // costs every later one the same, which is a deployment fault
+            // worth naming rather than discarding.
+            warn!(
+                "Failed to create the cas directory {}! {}",
+                casfile_path.display(),
+                e
+            );
+        }
+        let casfile = casfile_path.join(format!("cas_{}.xmi", self.url));
+        let cached = match casfile.is_file() {
+            true => read_xmi(&casfile)
+                .inspect_err(|cas_read| {
+                    info!("Failed to load cas from file! {}", cas_read);
+                })
+                .ok(),
+            false => None,
+        };
+
+        match cached {
+            // The cached document is the preprocessor's output, so the
+            // preprocessor is not run over it again.
+            Some(cached) => cas = cached,
+            // A file that could not be read is rewritten from this run's
+            // analysis, so a cache the deployment cannot decode costs one
+            // request rather than every later one.
+            None => {
+                analysis_engine_process(preprocessor, &mut cas, self.mode)?;
+                if let Err(cas_write) = write_xmi(&cas, &casfile) {
+                    info!("Failed to write cas to file! {}", cas_write);
                 }
-                Err(rie @ EngineError::ResourceInitialization(_)) => {
-                    error!("Resource Initialization Engine encountered errors! {}", rie);
-                    Err(anyhow::Error::new(rie).context("Text analysis failed."))
-                }
-            };
+            }
         }
 
-        Ok(None)
+        // Whichever branch produced the document, the request is answered
+        // from the postprocessor's output: a cache that cannot be read or
+        // written costs the request its cache, not its enhancement.
+        analysis_engine_process(postprocessor, &mut cas, self.mode)?;
+        Ok(cas)
     }
 }
 
@@ -245,7 +257,7 @@ mod tests {
     }
 
     /// A handler over [`PAGE`] caching under `cache_dir`.
-    fn handler_over<'a>(processors: &'a Processors, cache_dir: &Path) -> PageHandler<'a> {
+    fn handler_over<'a>(processors: &'a Processors, cache_dir: &'a Path) -> PageHandler<'a> {
         PageHandler::new(
             processors,
             "Nouns",
@@ -289,7 +301,7 @@ mod tests {
         .expect("the cache file");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2/test]
     #[test]
     fn constructor_maps_third_fourth_args_to_url_path() {
         let processors = empty_processors();
@@ -313,7 +325,7 @@ mod tests {
         assert_eq!(handler.mode, Mode::Colorize);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2/test]
     #[test]
     fn constructor_stores_every_argument_untouched() {
         let processors = empty_processors();

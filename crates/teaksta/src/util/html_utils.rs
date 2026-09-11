@@ -15,7 +15,6 @@
 
 use std::collections::BTreeMap;
 
-use anyhow::Result;
 use ego_tree::NodeId;
 use scraper::node::Text;
 use scraper::{ElementRef, Html, Node, StrTendril};
@@ -128,33 +127,29 @@ pub fn extract(html: &str) -> (Document, PageMap) {
 /// The whole page as HTML, with every enhancement wrapped around the text it
 /// covers. `base_url`, when given, is recorded in the page's `head` so the
 /// relative links of the page as fetched still resolve where it is served.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3]
 pub fn render_page(
     map: &PageMap,
     doc: &Document,
     mode: Option<Mode>,
     base_url: Option<&str>,
-) -> Result<String> {
+) -> String {
     let mut page = Html::parse_document(&map.html);
     place_enhancements(&mut page, map, doc, mode);
     if let Some(base_url) = base_url {
         set_base_url(&mut page, base_url);
     }
 
-    Ok(page.html())
+    page.html()
 }
 
 /// One entry per enhancement that reached the page, keyed by its position in
 /// the document text, holding the enhanced fragment wrapped in a span that
 /// preserves the layout of wherever the client puts it.
-// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2]
-pub fn render_spans(
-    map: &PageMap,
-    doc: &Document,
-    mode: Option<Mode>,
-) -> Result<BTreeMap<String, String>> {
+// [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3]
+pub fn render_spans(map: &PageMap, doc: &Document, mode: Option<Mode>) -> BTreeMap<String, String> {
     let mut page = Html::parse_document(&map.html);
     let placed = place_enhancements(&mut page, map, doc, mode);
     let mut spans: BTreeMap<String, String> = BTreeMap::new();
@@ -178,7 +173,7 @@ pub fn render_spans(
         );
     }
 
-    Ok(spans)
+    spans
 }
 
 /// One stretch of a single text node an enhancement covers.
@@ -202,9 +197,21 @@ pub(super) fn place_enhancements(
     let order = text_nodes(page);
     let selected = selected_enhancements(doc, mode);
 
+    // The segments cover the document text in ascending order and do not
+    // overlap, and the enhancements arrive in ascending begin order, so each
+    // one meets a contiguous run of segments: the walk starts at the first
+    // segment reaching past the enhancement's begin — found by bisection, not
+    // by rescanning from the front — and stops at the first beginning past its
+    // end.
     let mut by_node: BTreeMap<usize, Vec<Piece>> = BTreeMap::new();
     for (slot, enhancement) in selected.iter().enumerate() {
-        for segment in &map.segments {
+        let from = map
+            .segments
+            .partition_point(|segment| segment.end <= enhancement.begin);
+        for segment in &map.segments[from..] {
+            if segment.begin >= enhancement.end {
+                break;
+            }
             let begin = enhancement.begin.max(segment.begin);
             let end = enhancement.end.min(segment.end);
             if begin >= end {
@@ -555,12 +562,12 @@ mod tests {
         assert_eq!(doc.text, "Tom & caf\u{e9}");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_wraps_the_covered_text_only() {
         let (doc, map) = enhanced(PAGE, vec![enhancement(11, 16, "<span class=\"t\">")]);
 
-        let html = render_page(&map, &doc, Some(Mode::Colorize), None).unwrap();
+        let html = render_page(&map, &doc, Some(Mode::Colorize), None);
 
         assert!(
             html.contains("<p>Mun oidnen <span class=\"t\">viesu</span>.</p>"),
@@ -574,13 +581,13 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_escapes_text_it_moves_around() {
         let source = "<html><body><p>Tom &amp; Jerry</p></body></html>";
         let (doc, map) = enhanced(source, vec![enhancement(0, 3, "<span id=\"a\">")]);
 
-        let html = render_page(&map, &doc, None, None).unwrap();
+        let html = render_page(&map, &doc, None, None);
 
         assert!(
             html.contains("<p><span id=\"a\">Tom</span> &amp; Jerry</p>"),
@@ -589,31 +596,25 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_keeps_irrelevant_spans_for_click() {
         let mut irrelevant = enhancement(0, 3, "<span id=\"a\">");
         irrelevant.relevant = false;
         let (doc, map) = enhanced(PAGE, vec![irrelevant]);
 
+        assert!(!render_page(&map, &doc, Some(Mode::Colorize), None).contains("id=\"a\""));
         assert!(
-            !render_page(&map, &doc, Some(Mode::Colorize), None)
-                .unwrap()
-                .contains("id=\"a\"")
-        );
-        assert!(
-            render_page(&map, &doc, Some(Mode::Click), None)
-                .unwrap()
-                .contains("<span id=\"a\">Mun</span>")
+            render_page(&map, &doc, Some(Mode::Click), None).contains("<span id=\"a\">Mun</span>")
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_hands_back_the_whole_page() {
         let (doc, map) = enhanced(PAGE, vec![enhancement(0, 3, "<span id=\"a\">")]);
 
-        let html = render_page(&map, &doc, None, Some("http://example.org/p?a=\"1\"&b=2")).unwrap();
+        let html = render_page(&map, &doc, None, Some("http://example.org/p?a=\"1\"&b=2"));
 
         assert!(html.starts_with("<html>"), "{}", html);
         assert!(
@@ -630,25 +631,21 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_adds_no_base_without_a_url() {
         let (doc, map) = enhanced(PAGE, Vec::new());
 
-        assert!(
-            !render_page(&map, &doc, None, None)
-                .unwrap()
-                .contains("<base")
-        );
+        assert!(!render_page(&map, &doc, None, None).contains("<base"));
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_splits_a_span_crossing_two_nodes() {
         let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
         let (doc, map) = enhanced(source, vec![enhancement(0, 11, "<span id=\"a\">")]);
 
-        let html = render_page(&map, &doc, None, None).unwrap();
+        let html = render_page(&map, &doc, None, None);
 
         assert!(
             html.contains("<p><span id=\"a\">Mun </span><b><span id=\"a\">oidnen</span></b></p>"),
@@ -657,7 +654,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-page-fn+3/test]
     #[test]
     fn render_drops_an_overlapping_second_span() {
         let (doc, map) = enhanced(
@@ -668,7 +665,7 @@ mod tests {
             ],
         );
 
-        let html = render_page(&map, &doc, None, None).unwrap();
+        let html = render_page(&map, &doc, None, None);
 
         assert!(
             html.contains("<span id=\"a\">Mun oidnen</span>"),
@@ -678,7 +675,7 @@ mod tests {
         assert!(!html.contains("id=\"b\""), "{}", html);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3/test]
     #[test]
     fn spans_are_keyed_by_document_position() {
         let (doc, map) = enhanced(
@@ -689,7 +686,7 @@ mod tests {
             ],
         );
 
-        let spans = render_spans(&map, &doc, Some(Mode::Colorize)).unwrap();
+        let spans = render_spans(&map, &doc, Some(Mode::Colorize));
 
         assert_eq!(
             spans.keys().cloned().collect::<Vec<String>>(),
@@ -709,13 +706,13 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3/test]
     #[test]
     fn spans_join_the_pieces_of_one_enhancement() {
         let source = "<html><body><p>Mun <b>oidnen</b></p></body></html>";
         let (doc, map) = enhanced(source, vec![enhancement(0, 11, "<span id=\"a\">")]);
 
-        let spans = render_spans(&map, &doc, None).unwrap();
+        let spans = render_spans(&map, &doc, None);
 
         assert_eq!(spans.len(), 1);
         assert!(
@@ -725,16 +722,12 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.html-utils.html-utils.render-spans-fn+3/test]
     #[test]
     fn spans_are_empty_without_enhancements() {
         let (doc, map) = enhanced(PAGE, Vec::new());
 
-        assert!(
-            render_spans(&map, &doc, Some(Mode::Click))
-                .unwrap()
-                .is_empty()
-        );
+        assert!(render_spans(&map, &doc, Some(Mode::Click)).is_empty());
     }
 
     #[test]

@@ -25,7 +25,7 @@ use std::path::PathBuf;
 
 use anyhow::{Result, anyhow};
 use reqwest::Url;
-use tracing::{debug, error, info};
+use tracing::{debug, error, trace};
 
 use crate::pipeline::flow::{Flow, Parameters};
 use crate::server::activities::Activities;
@@ -102,14 +102,6 @@ pub struct AnalysisEngineMetaData {
     pub fixed_flow: Vec<String>,
 }
 
-impl AnalysisEngineMetaData {
-    /// A live view onto the settings: writes through it mutate the description
-    /// that owns this metadata.
-    pub fn get_configuration_parameter_settings(&mut self) -> &mut ConfigurationParameterSettings {
-        &mut self.configuration_parameter_settings
-    }
-}
-
 /// Stand-in for `AnalysisEngineDescription`: a parsed, still-mutable descriptor.
 #[derive(Debug, Clone, Default)]
 pub struct AnalysisEngineDescription {
@@ -121,12 +113,6 @@ pub struct AnalysisEngineDescription {
     /// specifier. Imports are not followed at parse time.
     pub delegate_analysis_engine_specifiers: Vec<(String, String)>,
     pub analysis_engine_meta_data: AnalysisEngineMetaData,
-}
-
-impl AnalysisEngineDescription {
-    pub fn get_analysis_engine_meta_data(&mut self) -> &mut AnalysisEngineMetaData {
-        &mut self.analysis_engine_meta_data
-    }
 }
 
 /// Stand-in for a produced `AnalysisEngine`: the descriptor frozen after its
@@ -141,9 +127,6 @@ impl AnalysisEngineDescription {
 pub struct AnalysisEngine {
     pub name: String,
     pub source_url: String,
-    pub primitive: bool,
-    pub annotator_implementation_name: Option<String>,
-    pub delegate_analysis_engine_specifiers: Vec<(String, String)>,
     pub fixed_flow: Vec<String>,
     pub settings: ConfigurationParameterSettings,
     pub flow: Flow,
@@ -206,9 +189,6 @@ fn produce_analysis_engine(
     Ok(AnalysisEngine {
         name: description.analysis_engine_meta_data.name,
         source_url: description.source_url,
-        primitive: description.primitive,
-        annotator_implementation_name: description.annotator_implementation_name,
-        delegate_analysis_engine_specifiers: description.delegate_analysis_engine_specifiers,
         fixed_flow,
         settings,
         flow,
@@ -356,8 +336,8 @@ pub struct Processors {
 }
 
 impl Processors {
-    // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.processors-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+3]
     pub fn new(activities: &mut Activities) -> Result<Self> {
         let mut pre_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
         let mut post_map: BTreeMap<String, BTreeMap<String, AnalysisEngine>> = BTreeMap::new();
@@ -374,27 +354,19 @@ impl Processors {
                     "NullPointerException: no configuration registered for activity {activity}"
                 ));
             };
-            info!("Config:{}", config);
-            info!("Activity:{}", activity);
+            debug!("Activity {activity}: {config}");
 
             let langs = config.get_languages();
 
             for l in &langs {
-                if !pre_map.contains_key(l) {
-                    pre_map.insert(l.clone(), BTreeMap::new());
-                }
-                if !post_map.contains_key(l) {
-                    post_map.insert(l.clone(), BTreeMap::new());
-                }
+                pre_map.entry(l.clone()).or_default();
+                post_map.entry(l.clone()).or_default();
 
                 let pre_desc = config.get_pre_desc(l);
                 let post_desc = config.get_post_desc(l);
-                info!(
-                    "Preprocess descriptor {}",
-                    pre_desc.as_deref().unwrap_or("null")
-                );
-                info!(
-                    "Postprocess descriptor {}",
+                debug!(
+                    "Descriptors for {l}: pre {} post {}",
+                    pre_desc.as_deref().unwrap_or("null"),
                     post_desc.as_deref().unwrap_or("null")
                 );
 
@@ -408,7 +380,7 @@ impl Processors {
                         .get_mut(l)
                         .ok_or_else(|| UimaError::NullPointer("preMap".to_string()))?
                         .insert(activity.clone(), pre_engine);
-                    info!("preMap {:?}", pre_map);
+                    trace!("preMap {:?}", pre_map);
 
                     let post_engine = Self::init_ae(
                         Self::load_descriptor(post_desc.as_deref())?,
@@ -418,7 +390,7 @@ impl Processors {
                         .get_mut(l)
                         .ok_or_else(|| UimaError::NullPointer("postMap".to_string()))?
                         .insert(activity.clone(), post_engine);
-                    info!("postMap {:?}", post_map);
+                    trace!("postMap {:?}", post_map);
 
                     Ok(())
                 })();
@@ -459,21 +431,13 @@ impl Processors {
     // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.get-preprocessor-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-preprocessor-fn]
     pub fn get_preprocessor(&self, lang: &str, key: &str) -> Option<&AnalysisEngine> {
-        if let Some(engines) = self.pre_map.get(lang) {
-            return engines.get(key);
-        }
-
-        None
+        self.pre_map.get(lang)?.get(key)
     }
 
     // [spec:teaksta:def:sme.src.main.java.werti.server.processors.processors.get-postprocessor-fn]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.get-postprocessor-fn]
     pub fn get_postprocessor(&self, lang: &str, key: &str) -> Option<&AnalysisEngine> {
-        if let Some(engines) = self.post_map.get(lang) {
-            return engines.get(key);
-        }
-
-        None
+        self.post_map.get(lang)?.get(key)
     }
 
     /// One engine pair registered under one (language, activity), for tests
@@ -560,9 +524,9 @@ impl Processors {
         // read descriptor from disk and initialize a new annotator
         // adjust configuration in the AE description by setting all parameters
         // from config
-        let settings = description
-            .get_analysis_engine_meta_data()
-            .get_configuration_parameter_settings();
+        let settings = &mut description
+            .analysis_engine_meta_data
+            .configuration_parameter_settings;
         for (key, value) in config {
             // auto-adjust type of the parameter according to the type found in
             // the description
@@ -892,8 +856,8 @@ mod tests {
 
         let mut first = Processors::load_descriptor(Some(url.as_str())).expect("first parse");
         first
-            .get_analysis_engine_meta_data()
-            .get_configuration_parameter_settings()
+            .analysis_engine_meta_data
+            .configuration_parameter_settings
             .set_parameter_value("MaxLength", ParameterValue::Integer(99));
 
         let second = Processors::load_descriptor(Some(url.as_str())).expect("second parse");
@@ -949,10 +913,6 @@ mod tests {
             ]
         );
         assert_eq!(engine.flow.len(), 2);
-        assert_eq!(
-            engine.annotator_implementation_name.as_deref(),
-            Some("werti.uima.ae.Vislcg3Annotator")
-        );
     }
 
     // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.init-ae-fn/test]
@@ -1042,7 +1002,7 @@ mod tests {
         assert!(processors.get_postprocessor("fin", "Nouns").is_none());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+3/test]
     #[test]
     fn processors_registers_nothing_without_languages() {
         let dir = TempDir::new().expect("temp dir");
@@ -1059,7 +1019,7 @@ mod tests {
         assert!(processors.get_postprocessor("sme", "Nouns").is_none());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.processors.processors.processors-fn+3/test]
     #[test]
     fn processors_aborts_when_a_descriptor_url_is_missing() {
         let dir = TempDir::new().expect("temp dir");

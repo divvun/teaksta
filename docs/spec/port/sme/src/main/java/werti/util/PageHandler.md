@@ -11,10 +11,15 @@
 >   String path;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn]
-> public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang)
+> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+> pub fn new(a_processors: &'a Processors, a_topic: &'a str, a_url: &'a str, a_path: &'a str, a_text: &'a str, a_lang: &'a str, a_mode: Mode) -> Self
+>
+> Port divergence: every argument but the exercise is borrowed for the life
+> of the handler rather than copied into a field. The handler is built, used
+> and dropped inside the call that assembled its arguments, so copying the
+> page would copy the whole page for nothing.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
 > Plain field assignment: `processors = aProcessors`, `topic = aTopic`,
 > `text = aText`, `lang = aLang`, `url = aUrl`, `path = aPath`. Note the
 > parameter order is (processors, topic, url, path, text, lang) while the

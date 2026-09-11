@@ -10,7 +10,7 @@
 //! Authors: Niels Ott, Adriane Boyd, Heli Uibo.
 
 use anyhow::{Result, bail};
-use tracing::info;
+use tracing::{debug, trace};
 
 use crate::enhancer::cg_enhancer::GeneratorFailure;
 use crate::enhancer::syntactic;
@@ -41,7 +41,7 @@ impl Vislcg3NounSgEnhancer {
     // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1]
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.initialize-fn+1]
     pub fn initialize(&mut self, n_sg_tags: Option<&str>) -> Result<()> {
-        info!("Noun Sg tags {:?}", self.n_sg_tags);
+        debug!("Noun Sg tags {:?}", self.n_sg_tags);
         let param = match n_sg_tags {
             Some(p) => p,
             None => bail!("NSgTags configuration parameter is not set"),
@@ -145,7 +145,7 @@ impl Vislcg3NounSgEnhancer {
                     bail!("begin 1, end {}, length {}", len as i64 - 1, len);
                 }
                 lemma = rtag.chars().skip(1).take(len - 2).collect();
-                info!("{:?} lemma: {}", cgr, lemma);
+                trace!("{:?} lemma: {}", cgr, lemma);
             }
         }
 
@@ -173,7 +173,7 @@ impl Vislcg3NounSgEnhancer {
     // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-sg-enhancer.vislcg3-noun-sg-enhancer.ext-command-consume2-string.get-buffer-fn]
     fn get_distractors(&self, lemma: &str, stemtype: &str, propernoun: bool) -> Result<String> {
         let result = self.generated_forms(lemma, stemtype, propernoun)?;
-        info!("Generated forms read from the outputfile: {}", result);
+        trace!("Generated forms read from the outputfile: {}", result);
         Ok(result)
     }
 
@@ -209,27 +209,22 @@ impl Vislcg3NounSgEnhancer {
                 bail!("Index 1 out of bounds for length {}", fields.len());
             }
             lemma = fields[1].replace("Sg+Nom", "");
-            info!("lemma of the compound word: {}", lemma);
+            trace!("lemma of the compound word: {}", lemma);
 
             for form in DISTRACT_FORMS {
-                generation_input = generation_input + &lemma + form + "\n";
+                generation_input.push_str(&lemma);
+                generation_input.push_str(form);
+                generation_input.push('\n');
             }
         } else {
             for form in DISTRACT_FORMS {
+                use std::fmt::Write as _;
                 if !stemtype.is_empty() {
-                    generation_input = format!(
-                        "{}{}{}+N+{}+{}\n",
-                        generation_input, lemma, prop_n, stemtype, form
-                    );
-                    generation_input = format!(
-                        "{}{}{}+v1+N+{}+{}\n",
-                        generation_input, lemma, prop_n, stemtype, form
-                    );
+                    let _ = writeln!(generation_input, "{lemma}{prop_n}+N+{stemtype}+{form}");
+                    let _ = writeln!(generation_input, "{lemma}{prop_n}+v1+N+{stemtype}+{form}");
                 } else {
-                    generation_input =
-                        format!("{}{}{}+N+{}\n", generation_input, lemma, prop_n, form);
-                    generation_input =
-                        format!("{}{}{}+v1+N+{}\n", generation_input, lemma, prop_n, form);
+                    let _ = writeln!(generation_input, "{lemma}{prop_n}+N+{form}");
+                    let _ = writeln!(generation_input, "{lemma}{prop_n}+v1+N+{form}");
                 }
             }
         }
@@ -244,11 +239,12 @@ impl Vislcg3NounSgEnhancer {
             .split(|c| matches!(c, ' ' | '\t' | '\n' | '\r' | '\x0C'))
             .filter(|w| !w.is_empty())
         {
-            info!("ifst output:{}", word);
+            trace!("ifst output:{}", word);
             // forms that could not be generated are excluded, as well as
             // input strings of the iFST
             if !word.contains('+') && !word.contains('-') {
-                result = result + word + " ";
+                result.push_str(word);
+                result.push(' ');
             }
         }
 
@@ -265,14 +261,14 @@ fn tag_in_reading(cgr: &CgReading, reading_str: &str, tag: &str, mode: Mode) -> 
     if (reading_str.contains("Der/") || reading_str.contains("Qst"))
         && matches!(mode, Mode::Cloze | Mode::Mc)
     {
-        info!("derived form or form with clitics");
+        trace!("derived form or form with clitics");
         return false;
     }
 
     // Tag string contains the given tag sequence as a substring, plus the
     // POS tag 'N'.
     if reading_str.contains(tag) && reading_str.contains(" N ") {
-        info!("{:?} contains {}", cgr, tag);
+        trace!("{:?} contains {}", cgr, tag);
         return true;
     }
 

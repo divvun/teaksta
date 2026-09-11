@@ -40,8 +40,8 @@ public class TokenEnhancer extends JCasAnnotator_ImplBase {
 	private List<String> tags;
 	private boolean useLemmaFilter;
 	
-	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
-	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
+	// [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
+	// [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
 	@Override
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {

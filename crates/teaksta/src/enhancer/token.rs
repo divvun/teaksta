@@ -35,13 +35,9 @@ pub struct TokenEnhancer {
 }
 
 impl TokenEnhancer {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn]
-    pub fn initialize(&mut self, context: &HashMap<String, String>) -> Result<()> {
+    // [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1]
+    pub fn new(context: &HashMap<String, String>) -> Result<Self> {
         let tags = context
             .get("Tags")
             .ok_or_else(|| anyhow!("NullPointerException: configuration parameter Tags"))?;
@@ -53,19 +49,20 @@ impl TokenEnhancer {
                 split.pop();
             }
         }
-        self.tags = split;
 
         let use_lemma_filter = context.get("UseLemmaFilter").ok_or_else(|| {
             anyhow!("NullPointerException: configuration parameter UseLemmaFilter")
         })?;
-        self.use_lemma_filter = use_lemma_filter.parse::<bool>().map_err(|_| {
-            anyhow!(
-                "configuration parameter UseLemmaFilter is not a boolean: {}",
-                use_lemma_filter
-            )
-        })?;
 
-        Ok(())
+        Ok(TokenEnhancer {
+            tags: split,
+            use_lemma_filter: use_lemma_filter.parse::<bool>().map_err(|_| {
+                anyhow!(
+                    "configuration parameter UseLemmaFilter is not a boolean: {}",
+                    use_lemma_filter
+                )
+            })?,
+        })
     }
 
     /// Every annotation the UIMA index over `Token.type` would hand out, in
@@ -160,7 +157,8 @@ impl TokenEnhancer {
                     true => &[TOKEN_CLASS, HIT_CLASS],
                     false => &[TOKEN_CLASS],
                 };
-                let span_tag = SpanTag::new(enhancer_utils::get_id("teaksta-span", id), classes);
+                let span_tag =
+                    SpanTag::new(enhancer_utils::get_id("teaksta-span", "", id), classes);
                 e.enhance_start = span_tag.start_tag();
                 e.enhance_end = span_tag.end_tag().to_string();
 
@@ -215,7 +213,6 @@ mod tests {
             end,
             tag: tag.map(str::to_string),
             lemma: lemma.map(str::to_string),
-            ..Token::default()
         }
     }
 
@@ -230,65 +227,50 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1/test]
     #[test]
     fn tags_are_split_on_commas_without_trimming() {
-        let mut enhancer = TokenEnhancer::new();
-
-        enhancer
-            .initialize(&context(&[
-                ("Tags", "in, to ,"),
-                ("UseLemmaFilter", "true"),
-            ]))
-            .unwrap();
+        let enhancer = TokenEnhancer::new(&context(&[
+            ("Tags", "in, to ,"),
+            ("UseLemmaFilter", "true"),
+        ]))
+        .unwrap();
 
         assert_eq!(enhancer.tags, vec!["in", " to "]);
         assert!(enhancer.use_lemma_filter);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1/test]
     #[test]
     fn a_separator_free_tag_string_stays_one_element() {
-        let mut enhancer = TokenEnhancer::new();
-
-        enhancer
-            .initialize(&context(&[("Tags", ""), ("UseLemmaFilter", "false")]))
-            .unwrap();
+        let enhancer =
+            TokenEnhancer::new(&context(&[("Tags", ""), ("UseLemmaFilter", "false")])).unwrap();
 
         assert_eq!(enhancer.tags, vec![""]);
         assert!(!enhancer.use_lemma_filter);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1/test]
     #[test]
     fn interior_empty_fields_survive_trailing_ones_dropped() {
-        let mut enhancer = TokenEnhancer::new();
-
-        enhancer
-            .initialize(&context(&[("Tags", "a,,b,,"), ("UseLemmaFilter", "false")]))
-            .unwrap();
+        let enhancer =
+            TokenEnhancer::new(&context(&[("Tags", "a,,b,,"), ("UseLemmaFilter", "false")]))
+                .unwrap();
 
         assert_eq!(enhancer.tags, vec!["a", "", "b"]);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.token-enhancer.token-enhancer.initialize-fn+1/test]
     #[test]
-    fn missing_or_bad_config_parameters_fail_initialisation() {
-        let mut enhancer = TokenEnhancer::new();
-
-        let err = enhancer
-            .initialize(&context(&[("UseLemmaFilter", "false")]))
-            .unwrap_err();
+    fn missing_or_bad_config_parameters_build_no_enhancer() {
+        let err = TokenEnhancer::new(&context(&[("UseLemmaFilter", "false")])).unwrap_err();
         assert!(err.to_string().contains("Tags"), "{}", err);
 
-        let err = enhancer
-            .initialize(&context(&[("Tags", "in")]))
-            .unwrap_err();
+        let err = TokenEnhancer::new(&context(&[("Tags", "in")])).unwrap_err();
         assert!(err.to_string().contains("UseLemmaFilter"), "{}", err);
 
-        let err = enhancer
-            .initialize(&context(&[("Tags", "in"), ("UseLemmaFilter", "yes")]))
-            .unwrap_err();
+        let err =
+            TokenEnhancer::new(&context(&[("Tags", "in"), ("UseLemmaFilter", "yes")])).unwrap_err();
         assert!(err.to_string().contains("not a boolean"), "{}", err);
     }
 

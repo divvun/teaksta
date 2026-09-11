@@ -120,10 +120,10 @@
 > Quirk: `NTags` is never read anywhere else in the class — `process` hard-codes
 > its own tag patterns — so this parameter has no observable effect on output.
 
-> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7]
 > @Override public void process(JCas cas) throws AnalysisEngineProcessException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.process-fn+7]
 > The annotator entry point. Consumes `CGToken` annotations (each carrying an
 > `FSArray` of `CGReading`, where a `CGReading` is a `NonEmptyStringList` of
 > morphological tags) and produces `Enhancement` annotations wrapping the matched
@@ -280,6 +280,12 @@
 > Nothing else changes with the pass gone. An adposition was never enhanced —
 > `excludePattern` drops it on the `Adv` in its own function tag — so the spans
 > a topic produces, and the attributes they carry, are exactly what they were.
+>
+> Port divergence: the cancellation guard is gone. Nothing in the tree ever
+> calls `makeInvalid` or `addEnhId`, so no enhancement ID is ever written and
+> `isValid` answers true for every CAS that reaches here — the guard is an
+> unconditional branch over a marker the deployment has no way to set. The
+> whole of `CasUtils` and the `EnhancementId` marker it wrote go with it.
 
 > [spec:teaksta:def:sme.src.main.java.werti.uima.enhancer.vislcg3-noun-enhancer.vislcg3-noun-enhancer.remove-tags-fn]
 > private String removeTags(String input_str)
