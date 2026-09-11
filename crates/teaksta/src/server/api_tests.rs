@@ -9,10 +9,6 @@ use std::path::{Path, PathBuf};
 use poem::Endpoint;
 use poem::test::{TestClient, TestResponse};
 
-/// The smallest activity descriptor the registry loads. It declares no
-/// language, so no pipeline is built for it.
-const DESCRIPTOR: &str = "<activity enabled=\"yes\"><server-cfg></server-cfg></activity>";
-
 /// The two files a built web client is recognised by: the document every
 /// client route is answered with, and one asset it loads. The real bundle is
 /// what `dx bundle --platform web` leaves behind; nothing here builds it.
@@ -20,25 +16,40 @@ const CLIENT_INDEX: &str =
     "<!DOCTYPE html><html><head><title>Teaksta</title></head><body></body></html>";
 const CLIENT_ASSET: &str = ".teaksta-page { color: rebeccapurple; }";
 
-fn webapp_with(names: &[&str]) -> tempfile::TempDir {
+/// A deployment root holding a topics file that declares the named topics,
+/// with the labels and enhancers the shipped registry gives them, so what
+/// these endpoints answer has the shape a real registry answers.
+///
+/// A named file rather than the compiled-in registry, because what is under
+/// test here is the endpoint layer over a registry the test chose.
+fn topics_with(names: &[&str]) -> tempfile::TempDir {
     let root = tempfile::tempdir().expect("temp dir");
+    let mut written = String::new();
     for name in names {
-        let directory = root.path().join("activities").join(name);
-        std::fs::create_dir_all(&directory).expect("activity directory");
-        std::fs::write(directory.join("activity.xml"), DESCRIPTOR).expect("activity.xml");
+        let (label, enhancer, tags) = match *name {
+            "Substantive" => ("Substantiivvat", "noun", "Sg Nom"),
+            "Adverbial" => ("Adverbi\u{e1}la", "adverbial", "ADVL"),
+            other => panic!("{other} is not a topic these tests declare"),
+        };
+        written.push_str(&format!(
+            "[[topic]]\n\
+             name = \"{name}\"\n\
+             label = \"{label}\"\n\
+             enabled = true\n\
+             enhancer = \"{enhancer}\"\n\
+             tags = \"{tags}\"\n\
+             token_tags = \"N\"\n"
+        ));
     }
+    std::fs::write(root.path().join("topics.toml"), written).expect("the topics file");
     root
 }
 
 fn config_for(root: &Path) -> Config {
     Config {
         listen: "127.0.0.1:0".to_string(),
-        webapp_root: root.to_path_buf(),
         webapp_dist: None,
-        // The descriptors these activities name are absent anyway, so no
-        // pipeline is built and nothing reaches the tree.
-        classpath_root: root.join("desc"),
-        activities_dir: root.join("activities"),
+        topics: Some(root.join("topics.toml")),
         analysis_dir: root.join("analysed"),
         upload_keep_dir: root.join("keep"),
         upload_temp_dir: root.join("temp"),
@@ -76,7 +87,7 @@ fn modes_are_the_four_exercise_names() {
     assert_eq!(Mode::parse(""), None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[test]
 fn a_bare_host_is_taken_as_http() {
     assert_eq!(
@@ -130,31 +141,33 @@ fn the_key_of_a_page_is_fixed() {
     );
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
 #[test]
-fn the_registry_lists_each_activity_directory() {
-    let root = webapp_with(&["Substantive", "Adverbial"]);
+fn the_registry_lists_each_declared_topic() {
+    let root = topics_with(&["Substantive", "Adverbial"]);
 
     let state = AppState::new(config_for(root.path())).expect("the state boots");
 
     let names: Vec<&str> = state
-        .topics
+        .registry
+        .topics()
         .iter()
         .map(|topic| topic.name.as_str())
         .collect();
+    // Ascending by name, whichever order the file declared them in.
     assert_eq!(names, vec!["Adverbial", "Substantive"]);
     assert_eq!(
-        state.topics[0].label.as_deref(),
-        Some("Adverbi\u{e1}la"),
+        state.registry.topics()[0].label,
+        "Adverbi\u{e1}la",
         "the North Sámi name reaches the picker"
     );
     assert!(state.knows_topic("Substantive"));
     assert!(!state.knows_topic("Verbs"));
 }
 
-/// A router over a deployment holding two topics and no pipeline, which is
-/// every decision an endpoint makes before it reaches the analyser.
+/// A router over a deployment holding the named topics, which is every
+/// decision an endpoint makes before it reaches the analyser.
 fn served(config: Config) -> TestClient<impl Endpoint> {
     let state = Arc::new(AppState::new(config).expect("the state boots"));
     TestClient::new(routes(&state.config).data(state))
@@ -190,7 +203,7 @@ async fn blocks<E: Endpoint>(client: &TestClient<E>, body: &serde_json::Value) -
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn the_index_lists_every_endpoint() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
 
     let response = served(config_for(root.path())).get("/").send().await;
 
@@ -210,7 +223,7 @@ async fn the_index_lists_every_endpoint() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn a_configured_client_answers_the_root() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let mut config = config_for(root.path());
     config.webapp_dist = Some(client_bundle_under(root.path()));
 
@@ -224,7 +237,7 @@ async fn a_configured_client_answers_the_root() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn a_client_route_is_answered_by_the_document() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let mut config = config_for(root.path());
     config.webapp_dist = Some(client_bundle_under(root.path()));
     let client = served(config);
@@ -243,7 +256,7 @@ async fn a_client_route_is_answered_by_the_document() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn an_asset_is_served_from_the_bundle() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let mut config = config_for(root.path());
     config.webapp_dist = Some(client_bundle_under(root.path()));
 
@@ -254,10 +267,10 @@ async fn an_asset_is_served_from_the_bundle() {
     assert_eq!(body, CLIENT_ASSET);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
 #[tokio::test]
 async fn the_api_answers_before_the_client() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let mut config = config_for(root.path());
     config.webapp_dist = Some(client_bundle_under(root.path()));
 
@@ -268,10 +281,10 @@ async fn the_api_answers_before_the_client() {
     assert!(body.contains("\"Substantive\""), "{body}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
 #[tokio::test]
 async fn the_registry_answers_topics_and_modes() {
-    let root = webapp_with(&["Substantive", "Adverbial"]);
+    let root = topics_with(&["Substantive", "Adverbial"]);
 
     let response = served(config_for(root.path()))
         .get("/api/activities")
@@ -295,10 +308,10 @@ async fn the_registry_answers_topics_and_modes() {
         .await;
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[tokio::test]
 async fn the_page_endpoint_needs_all_three() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for query in [
@@ -320,7 +333,7 @@ async fn the_page_endpoint_needs_all_three() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn the_span_endpoint_needs_one_source() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for body in [
@@ -352,7 +365,7 @@ fn span_body_of(page_bytes: usize) -> String {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn an_oversized_span_body_is_refused() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
     let body = span_body_of(MAX_ENHANCE_BODY);
 
@@ -381,7 +394,7 @@ async fn an_oversized_span_body_is_refused() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn a_body_under_the_cap_reaches_the_handler() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let body = span_body_of(1024 * 1024);
 
     let response = served(config_for(root.path()))
@@ -400,7 +413,7 @@ async fn a_body_under_the_cap_reaches_the_handler() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn a_body_that_is_not_json_is_refused() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
     let body = "html=%3Cp%3Ea%3C%2Fp%3E&activity=Substantive&mode=colorize";
 
@@ -418,7 +431,7 @@ async fn a_body_that_is_not_json_is_refused() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1/test]
 #[tokio::test]
 async fn the_block_endpoint_needs_one_source() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for body in [
@@ -443,7 +456,7 @@ async fn the_block_endpoint_needs_one_source() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1/test]
 #[tokio::test]
 async fn an_oversized_block_body_is_refused() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
     let body = span_body_of(MAX_ENHANCE_BODY);
 
@@ -481,7 +494,7 @@ async fn an_oversized_block_body_is_refused() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1/test]
 #[tokio::test]
 async fn a_block_body_must_announce_json() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
     let body = "html=%3Cp%3Ea%3C%2Fp%3E&activity=Substantive&mode=colorize";
 
@@ -499,7 +512,7 @@ async fn a_block_body_must_announce_json() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1/test]
 #[tokio::test]
 async fn the_block_endpoint_refuses_them_too() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for address in ["http://169.254.169.254/", "file:///etc/passwd"] {
@@ -521,7 +534,7 @@ async fn the_block_endpoint_refuses_them_too() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1/test]
 #[tokio::test]
 async fn the_block_path_is_its_own() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     client
@@ -542,7 +555,7 @@ async fn the_block_path_is_its_own() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2/test]
 #[tokio::test]
 async fn a_panicking_handler_is_answered_rather_than_dropped() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
 
     let response = served(config_for(root.path()))
         .get("/api/panic")
@@ -556,10 +569,10 @@ async fn a_panicking_handler_is_answered_rather_than_dropped() {
 /// socket to turn away: each names its IP or its path outright, so no name is
 /// looked up and no connection is tried. A 400 rather than the 502 a
 /// connection that was made and failed would answer with is what says so.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[tokio::test]
 async fn a_refused_address_reaches_nothing() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let elsewhere = tempfile::tempdir().expect("temp dir");
     let planted = elsewhere.path().join("secret.html");
     std::fs::write(&planted, "<p>secret</p>").expect("the secret");
@@ -599,7 +612,7 @@ async fn a_refused_address_reaches_nothing() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn the_span_endpoint_refuses_them_too() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for address in ["http://169.254.169.254/", "file:///etc/passwd"] {
@@ -616,12 +629,13 @@ async fn the_span_endpoint_refuses_them_too() {
 }
 
 /// The counterpart: a stored upload clears the confinement and reaches the
-/// analyser, which this deployment has no pipeline for. A 500 rather than a
-/// 400 is what says the address was accepted.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+/// analyser. Anything but a 400 says the address was accepted — the page is
+/// enhanced when this build has the models beside it and the analysis fails
+/// when it does not, and neither outcome is a refusal of the address.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[tokio::test]
 async fn a_stored_upload_clears_the_confinement() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let config = config_for(root.path());
     let address = stored_upload(
         &config,
@@ -631,18 +645,20 @@ async fn a_stored_upload_clears_the_confinement() {
 
     let response = enhanced(&client, &address).await;
 
-    response.assert_status(StatusCode::INTERNAL_SERVER_ERROR);
-    let body = response.0.into_body().into_string().await.expect("a body");
-    assert!(body.contains("no pipeline is registered"), "{body}");
+    assert_ne!(
+        response.0.status(),
+        StatusCode::BAD_REQUEST,
+        "a stored upload is an address this deployment serves"
+    );
 }
 
 /// A path this deployment serves that holds nothing is unreadable, not
 /// forbidden: the caller is told the far end failed rather than that they
 /// asked for something they may not have.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[tokio::test]
 async fn a_swept_upload_is_unreadable_rather_than_refused() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let config = config_for(root.path());
     std::fs::create_dir_all(&config.upload_temp_dir).expect("the upload directory");
     let address = upload::file_url(&config.upload_temp_dir.join("swept")).expect("a file url");
@@ -653,10 +669,10 @@ async fn a_swept_upload_is_unreadable_rather_than_refused() {
         .assert_status(StatusCode::BAD_GATEWAY);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5/test]
 #[tokio::test]
 async fn the_retired_paths_answer_nothing() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let client = served(config_for(root.path()));
 
     for path in [
@@ -674,7 +690,7 @@ async fn the_retired_paths_answer_nothing() {
 // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3/test]
 #[tokio::test]
 async fn an_upload_without_a_file_is_refused() {
-    let root = webapp_with(&["Substantive"]);
+    let root = topics_with(&["Substantive"]);
     let boundary = "teaksta-unit-boundary";
     let body = format!(
         "--{boundary}\r\n\
@@ -697,17 +713,35 @@ async fn an_upload_without_a_file_is_refused() {
         .await;
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3/test]
 #[test]
-fn a_missing_activity_tree_fails_the_boot() {
+fn an_absent_topics_file_fails_the_boot() {
     let root = tempfile::tempdir().expect("temp dir");
+    let config = config_for(root.path());
 
-    let Err(error) = AppState::new(config_for(root.path())) else {
-        panic!("an absent activity tree must abort the boot");
+    let Err(error) = AppState::new(config) else {
+        panic!("a topics file that is not there must abort the boot");
     };
 
     assert!(
-        format!("{error:#}").contains("scanning activities"),
+        format!("{error:#}").contains(&root.path().join("topics.toml").display().to_string()),
         "{error:#}"
     );
+}
+
+/// A deployment that names no topics file is served the registry compiled
+/// into the binary, so a build with nothing beside it still offers the ten
+/// shipped topics.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3/test]
+#[test]
+fn no_topics_file_gets_the_compiled_in_registry() {
+    let root = tempfile::tempdir().expect("temp dir");
+    let mut config = config_for(root.path());
+    config.topics = None;
+
+    let state = AppState::new(config).expect("the state boots with no file beside it");
+
+    assert_eq!(state.registry.topics().len(), 10);
+    assert!(state.knows_topic("Substantive"));
+    assert!(state.knows_topic("Conjunctions"));
 }

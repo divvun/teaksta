@@ -34,8 +34,8 @@ public class PageHandler {
 	String url;
 	String path;
 
-	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
 	public PageHandler(Processors aProcessors, String aTopic, String aUrl, String aPath, String aText, String aLang) {
 		processors = aProcessors;
 		topic = aTopic;
@@ -56,8 +56,8 @@ public class PageHandler {
 	 * @return CAS containing annotation
 	 * @throws ServletException
 	 */
-	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
-	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
+	// [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
+	// [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
 	public JCas process() throws ServletException {
 		AnalysisEngine preprocessor = processors.getPreprocessor(lang, topic);
 		AnalysisEngine postprocessor = processors.getPostprocessor(lang, topic);

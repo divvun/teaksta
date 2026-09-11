@@ -1,6 +1,5 @@
-//! One topic-class scheme: every shipped topic's enhancer marks its hits with
-//! `teaksta-` followed by the name the activity registry serves that topic
-//! under.
+//! One topic-class scheme: every topic's enhancer marks its hits with
+//! `teaksta-` followed by the name the registry serves that topic under.
 //!
 //! The client is handed those names by `/api/activities` and derives the class
 //! it looks for from the name it was given, so a topic whose enhancer marks
@@ -9,113 +8,82 @@
 //! is therefore a contract between the registry and the enhancers, and this is
 //! where the two are read against each other.
 //!
-//! The walk is over the deployment's own activity tree and loads no models: an
-//! `activity.xml` carries exactly the tag parameter of its own enhancer, so the
-//! one delegate that builds from a topic's post configuration is that topic's.
+//! The walk is over the registry compiled into the binary, and loads no
+//! models: a topic declares exactly one enhancer, so the enhancer that stands
+//! for a topic is the one that topic named.
 
-use std::path::{Path, PathBuf};
-
-use teaksta::pipeline::flow::{Parameters, stage_named};
-use teaksta::server::activities::Activities;
+use teaksta::server::registry::{Enhancer, Registry};
 use teaksta::types::PIPELINE_LANGUAGE;
 
-/// Every delegate key a shipped post-processing descriptor names for a topic,
-/// paired with the parameter its activity configures it through. The generic
-/// `TokenEnhancer` that runs alongside them stands for no topic.
-const TOPIC_DELEGATES: &[(&str, &str)] = &[
-    ("vislcg3AdverbialEnhancer", "AdvTags"),
-    ("vislcg3ConNegEnhancer", "connegTags"),
-    ("vislcg3ConjunctionEnhancer", "conjunctionTags"),
-    ("vislcg3InfiniteVerbEnhancer", "infiniteverbTags"),
-    ("vislcg3NounEnhancer", "NTags"),
-    ("vislcg3NounPlEnhancer", "NPlTags"),
-    ("vislcg3NounSgEnhancer", "NSgTags"),
-    ("vislcg3ObjectEnhancer", "ObjTags"),
-    ("vislcg3SubjectEnhancer", "SubjTags"),
-    ("vislcg3VerbConjugationEnhancer", "finverbTags"),
-];
-
-/// The deployment's activity tree, which is what a running server scans.
-fn shipped_activities() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sme/src/main/webapp/activities")
-}
-
-/// The descriptor tree the activity expressions resolve against.
-fn shipped_descriptors() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../sme/desc")
-}
-
-/// The names the registry serves, in the order it serves them.
-fn registered_topics() -> Vec<String> {
-    Activities::new(&shipped_activities(), &shipped_descriptors())
-        .expect("the shipped activity tree is a registry")
-        .iterator()
-        .cloned()
-        .collect()
-}
-
-/// The class the topic behind this post configuration marks its hits with.
-fn span_class_of(post: &Parameters) -> Option<&'static str> {
-    let mut found: Option<(&str, &'static str)> = None;
-
-    for (delegate, _) in TOPIC_DELEGATES {
-        let Ok(stage) = stage_named(delegate, post) else {
-            continue;
-        };
-        let class = stage
-            .topic_span_class()
-            .expect("a topic delegate names its topic");
-        if let Some((earlier, _)) = found {
-            panic!("{earlier} and {delegate} both build from one activity's configuration");
-        }
-        found = Some((delegate, class));
-    }
-
-    found.map(|(_, class)| class)
+/// The registry a deployment naming no topics file is served.
+fn shipped() -> Registry {
+    Registry::from_config(None).expect("the compiled-in topics are a registry")
 }
 
 #[test]
 fn every_topic_marks_hits_with_its_registry_name() {
-    let mut activities = Activities::new(&shipped_activities(), &shipped_descriptors())
-        .expect("the shipped activity tree is a registry");
-    let names = registered_topics();
-    assert_eq!(names.len(), TOPIC_DELEGATES.len(), "{names:?}");
+    let registry = shipped();
+    let names: Vec<&str> = registry
+        .topics()
+        .iter()
+        .map(|topic| topic.name.as_str())
+        .collect();
+    // One topic per enhancer this build carries: an enhancer no topic names
+    // is dead code, and a topic is the only way one is reached.
+    assert_eq!(names.len(), Enhancer::ALL.len(), "{names:?}");
 
     for name in names {
-        let config = activities
-            .get_activity(&name)
+        let post = registry
+            .get_postprocessor(PIPELINE_LANGUAGE, name)
             .expect("a name the registry just handed out");
-        let post = config.get_server_post_config_as_prop(PIPELINE_LANGUAGE);
 
-        let class = span_class_of(&post)
-            .unwrap_or_else(|| panic!("{name} configures no topic enhancer of its own"));
-
+        let classes = post.topic_span_classes();
         assert_eq!(
-            class,
+            classes.len(),
+            1,
+            "the {name} topic runs {} enhancers that stand for a topic",
+            classes.len()
+        );
+        assert_eq!(
+            classes[0],
             format!("teaksta-{name}"),
-            "the {name} topic marks its hits {class}, which the client — deriving \
-             the class from the registry name it was served — never looks for"
+            "the {name} topic marks its hits {}, which the client — deriving \
+             the class from the registry name it was served — never looks for",
+            classes[0]
         );
     }
 }
 
 #[test]
 fn no_enhancer_marks_a_class_no_topic_names() {
-    let named: Vec<String> = registered_topics()
+    let registry = shipped();
+    let named: Vec<String> = registry
+        .topics()
         .iter()
-        .map(|name| format!("teaksta-{name}"))
+        .map(|topic| format!("teaksta-{}", topic.name))
         .collect();
 
-    for (delegate, parameter) in TOPIC_DELEGATES {
-        let parameters = Parameters::from([(parameter.to_string(), "A,B".to_string())]);
-        let class = stage_named(delegate, &parameters)
-            .expect("a topic delegate builds from its own parameter")
-            .topic_span_class()
-            .expect("a topic delegate names its topic");
+    for enhancer in Enhancer::ALL {
+        let class = enhancer.span_class();
 
         assert!(
             named.contains(&class.to_string()),
-            "{delegate} marks its hits {class}, which no shipped topic is named by"
+            "{enhancer:?} marks its hits {class}, which no topic is named by"
         );
+    }
+}
+
+/// The preprocessing flow stands for no topic, so one cached analysis of a
+/// page answers every topic's request for it.
+#[test]
+fn the_preprocessor_stands_for_no_topic() {
+    let registry = shipped();
+
+    for topic in registry.topics() {
+        let pre = registry
+            .get_preprocessor(PIPELINE_LANGUAGE, &topic.name)
+            .expect("a name the registry just handed out");
+
+        assert!(pre.topic_span_classes().is_empty(), "{}", topic.name);
     }
 }

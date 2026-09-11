@@ -1,21 +1,21 @@
-//! The fixed flow of an analysis-engine descriptor, executed as concrete
-//! Rust stages.
+//! The two pipelines a topic runs, built as concrete Rust stages.
 //!
-//! UIMA resolved each `<delegateAnalysisEngine>` import to a descriptor and
-//! that descriptor to an annotator class name, which the framework loaded
-//! reflectively. Every one of those annotator classes is a type in this
-//! crate, so the import chain carries no information the binary needs: the
-//! delegate key from `<fixedFlow>` names the stage directly, and the
-//! aggregate's configuration-parameter settings — the descriptor defaults
-//! with the activity's `server-cfg` entries laid over them — supply each
-//! stage's parameters.
+//! Which stages run and in which order is architecture, not configuration.
+//! Every topic preprocesses identically — relevance, tokenizer, sentence
+//! detection, HTML sentences, constraint grammar — and postprocesses the same
+//! shape: the generic token enhancer that wraps every word, then the one
+//! enhancer that marks the topic's own hits. What varies between topics is
+//! the tags those two enhancers read, and that is what
+//! [`crate::server::registry`] carries.
 //!
-//! Stage order is therefore still the descriptor's; only the indirection
-//! between a delegate key and the code it runs is gone.
+//! The order is the one the UIMA aggregate descriptors fixed, because it is
+//! the order the stages need: nothing can be tokenised before the relevant
+//! text is known, and nothing can be enhanced before the constraint grammar
+//! has read the sentences.
 
 use std::collections::HashMap;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 use crate::enhancer::adverbial::Vislcg3AdverbialEnhancer;
 use crate::enhancer::con_neg::Vislcg3ConNegEnhancer;
@@ -35,13 +35,10 @@ use crate::pipeline::sentences::{
 use crate::pipeline::tokenizer::GiellateknoTokenizer;
 use crate::pipeline::vislcg3::Vislcg3Annotator;
 use crate::server::api::Mode;
+use crate::server::registry::{Enhancer, TopicConfig};
 use crate::types::Document;
 
-/// The parameter table a stage is initialised from: the aggregate
-/// descriptor's `configurationParameterSettings`, rendered as strings.
-pub type Parameters = HashMap<String, String>;
-
-/// One delegate of a fixed flow.
+/// One stage of a flow.
 pub enum Stage {
     Relevance(GenericRelevanceAnnotator),
     Tokenizer(GiellateknoTokenizer),
@@ -90,76 +87,99 @@ impl Stage {
     }
 }
 
-/// The delegate keys the shipped `sme` descriptors use in their fixed flows.
-/// A key outside this set names a delegate with no counterpart here.
-pub fn stage_named(key: &str, parameters: &Parameters) -> Result<Stage> {
-    let stage = match key {
-        "GenericRelevanceAnnotator" => Stage::Relevance(GenericRelevanceAnnotator),
-        "GiellateknoTokenizer" => Stage::Tokenizer(GiellateknoTokenizer),
-        "OpenNlpSentenceDetector" => Stage::SentenceDetector(OpenNlpSentenceDetector),
-        "HTMLSentenceAnnotator" => Stage::HtmlSentences(HtmlSentenceAnnotator),
-        "vislcg3Annotator" => Stage::Vislcg3(Box::default()),
-        "TokenEnhancer" => Stage::Token(token_enhancer(parameters)?),
-        "vislcg3NounEnhancer" => {
-            Stage::Noun(Vislcg3NounEnhancer::new(tag_list(parameters, "NTags"))?)
+/// The enhancer a topic's postprocessing flow ends in, built from the topic's
+/// own tag list.
+///
+/// Each enhancer reads its tags under a parameter name of its own — the name
+/// its UIMA delegate declared, which its `initialize` still reads — so the
+/// one tag list a topic carries is handed over under the name that enhancer
+/// expects.
+fn topic_stage(config: &TopicConfig) -> Result<Stage> {
+    let tags = Some(config.tags.as_str());
+    let named = |parameter: &str| HashMap::from([(parameter.to_string(), config.tags.clone())]);
+
+    let stage = match config.enhancer {
+        Enhancer::Noun => Stage::Noun(Vislcg3NounEnhancer::new(tags)?),
+        Enhancer::NounSg => Stage::NounSg(Box::new(Vislcg3NounSgEnhancer::new(tags)?)),
+        Enhancer::NounPl => Stage::NounPl(Vislcg3NounPlEnhancer::new(tags)?),
+        Enhancer::VerbConjugation => {
+            Stage::VerbConjugation(Vislcg3VerbConjugationEnhancer::new(tags)?)
         }
-        "vislcg3NounSgEnhancer" => Stage::NounSg(Box::new(Vislcg3NounSgEnhancer::new(tag_list(
-            parameters, "NSgTags",
-        ))?)),
-        "vislcg3NounPlEnhancer" => {
-            Stage::NounPl(Vislcg3NounPlEnhancer::new(tag_list(parameters, "NPlTags"))?)
+        Enhancer::ConNeg => Stage::ConNeg(Vislcg3ConNegEnhancer::new(tags)?),
+        Enhancer::InfiniteVerb => Stage::InfiniteVerb(Vislcg3InfiniteVerbEnhancer::new(tags)?),
+        Enhancer::Adverbial => Stage::Adverbial(Vislcg3AdverbialEnhancer::new(&named("AdvTags"))?),
+        Enhancer::Conjunction => {
+            Stage::Conjunction(Vislcg3ConjunctionEnhancer::new(&named("conjunctionTags"))?)
         }
-        "vislcg3VerbConjugationEnhancer" => Stage::VerbConjugation(
-            Vislcg3VerbConjugationEnhancer::new(tag_list(parameters, "finverbTags"))?,
-        ),
-        "vislcg3ConNegEnhancer" => Stage::ConNeg(Vislcg3ConNegEnhancer::new(tag_list(
-            parameters,
-            "connegTags",
-        ))?),
-        "vislcg3InfiniteVerbEnhancer" => Stage::InfiniteVerb(Vislcg3InfiniteVerbEnhancer::new(
-            tag_list(parameters, "infiniteverbTags"),
-        )?),
-        "vislcg3AdverbialEnhancer" => Stage::Adverbial(Vislcg3AdverbialEnhancer::new(parameters)?),
-        "vislcg3ConjunctionEnhancer" => {
-            Stage::Conjunction(Vislcg3ConjunctionEnhancer::new(parameters)?)
-        }
-        "vislcg3ObjectEnhancer" => Stage::Object(Vislcg3ObjectEnhancer::new(parameters)?),
-        "vislcg3SubjectEnhancer" => Stage::Subject(Vislcg3SubjectEnhancer::new(parameters)?),
-        other => bail!("no annotator is registered for delegate {other:?}"),
+        Enhancer::Object => Stage::Object(Vislcg3ObjectEnhancer::new(&named("ObjTags"))?),
+        Enhancer::Subject => Stage::Subject(Vislcg3SubjectEnhancer::new(&named("SubjTags"))?),
     };
     Ok(stage)
 }
 
-fn tag_list<'a>(parameters: &'a Parameters, key: &str) -> Option<&'a str> {
-    parameters.get(key).map(String::as_str)
+/// The generic enhancer that wraps every word of the page, so the topic's own
+/// hits have something to be picked out from.
+fn token_stage(config: &TopicConfig) -> Result<TokenEnhancer> {
+    TokenEnhancer::new(&HashMap::from([
+        ("Tags".to_string(), config.token_tags.clone()),
+        (
+            "UseLemmaFilter".to_string(),
+            config.use_lemma_filter.to_string(),
+        ),
+    ]))
 }
 
-/// `UseLemmaFilter` is declared on the delegate rather than on the
-/// aggregate, and delegate imports are not followed, so the delegate's own
-/// default stands in when the aggregate does not carry the parameter.
-fn token_enhancer(parameters: &Parameters) -> Result<TokenEnhancer> {
-    let mut context = parameters.clone();
-    context
-        .entry("UseLemmaFilter".to_string())
-        .or_insert_with(|| "false".to_string());
-    TokenEnhancer::new(&context)
-}
-
-/// A descriptor's fixed flow, ready to run over a document.
+/// A pipeline, ready to run over a document.
 #[derive(Default)]
 pub struct Flow {
     stages: Vec<Stage>,
 }
 
 impl Flow {
-    /// Builds one stage per delegate key, in flow order, initialising each
-    /// from `parameters`.
-    pub fn new(fixed_flow: &[String], parameters: &Parameters) -> Result<Self> {
-        let mut stages = Vec::with_capacity(fixed_flow.len());
-        for key in fixed_flow {
-            stages.push(stage_named(key, parameters)?);
+    /// The preprocessing flow, which every topic shares: find the text worth
+    /// reading, tokenise it, find its sentences, map those onto the page, and
+    /// run the constraint grammar over them.
+    ///
+    /// It takes no parameters. Nothing in it varies with the topic, and its
+    /// output is what the analysis cache holds — one cached document answers
+    /// every topic's request for the same page.
+    pub fn preprocessor() -> Self {
+        Flow {
+            stages: vec![
+                Stage::Relevance(GenericRelevanceAnnotator),
+                Stage::Tokenizer(GiellateknoTokenizer),
+                Stage::SentenceDetector(OpenNlpSentenceDetector),
+                Stage::HtmlSentences(HtmlSentenceAnnotator),
+                Stage::Vislcg3(Box::default()),
+            ],
         }
-        Ok(Flow { stages })
+    }
+
+    /// The postprocessing flow for one topic: the generic token enhancer,
+    /// then the enhancer that marks this topic's hits.
+    ///
+    /// The token enhancer runs first because the topic's enhancer adds its
+    /// own class to spans the token enhancer already wrote.
+    pub fn postprocessor(config: &TopicConfig) -> Result<Self> {
+        Ok(Flow {
+            stages: vec![Stage::Token(token_stage(config)?), topic_stage(config)?],
+        })
+    }
+
+    /// A flow of exactly these stages, for tests that need a pipeline whose
+    /// stages load no models.
+    #[cfg(test)]
+    pub(crate) fn of_stages(stages: Vec<Stage>) -> Self {
+        Flow { stages }
+    }
+
+    /// The classes the stages of this flow mark their topic's hits with. A
+    /// postprocessing flow carries exactly one; a preprocessing flow none.
+    pub fn topic_span_classes(&self) -> Vec<&'static str> {
+        self.stages
+            .iter()
+            .filter_map(Stage::topic_span_class)
+            .collect()
     }
 
     pub fn len(&self) -> usize {
@@ -208,87 +228,111 @@ mod tests {
     use super::*;
     use crate::types::PIPELINE_LANGUAGE;
 
-    fn parameters(pairs: &[(&str, &str)]) -> Parameters {
-        pairs
-            .iter()
-            .map(|(key, value)| (key.to_string(), value.to_string()))
-            .collect()
-    }
-
-    #[test]
-    fn the_preprocessor_flow_builds_every_stage() {
-        let flow = Flow::new(
-            &[
-                "GenericRelevanceAnnotator".to_string(),
-                "GiellateknoTokenizer".to_string(),
-                "OpenNlpSentenceDetector".to_string(),
-                "HTMLSentenceAnnotator".to_string(),
-                "vislcg3Annotator".to_string(),
-            ],
-            &parameters(&[]),
-        )
-        .expect("the shipped preprocessor flow");
-
-        assert_eq!(flow.len(), 5);
-        assert!(!flow.is_empty());
-        let Some(Stage::Vislcg3(annotator)) = flow.stages.last() else {
-            panic!("the flow ends in the CG annotator");
-        };
-        assert_eq!(annotator.cg_sentence_boundary_token, ".");
-    }
-
-    #[test]
-    fn each_topic_delegate_takes_its_own_parameter() {
-        for (key, parameter) in [
-            ("vislcg3NounEnhancer", "NTags"),
-            ("vislcg3NounSgEnhancer", "NSgTags"),
-            ("vislcg3NounPlEnhancer", "NPlTags"),
-            ("vislcg3VerbConjugationEnhancer", "finverbTags"),
-            ("vislcg3ConNegEnhancer", "connegTags"),
-            ("vislcg3InfiniteVerbEnhancer", "infiniteverbTags"),
-            ("vislcg3AdverbialEnhancer", "AdvTags"),
-            ("vislcg3ConjunctionEnhancer", "conjunctionTags"),
-            ("vislcg3ObjectEnhancer", "ObjTags"),
-            ("vislcg3SubjectEnhancer", "SubjTags"),
-        ] {
-            assert!(
-                stage_named(key, &parameters(&[(parameter, "A,B")])).is_ok(),
-                "{key} rejected its own parameter"
-            );
-            assert!(
-                stage_named(key, &parameters(&[])).is_err(),
-                "{key} accepted a missing parameter"
-            );
+    /// A topic carrying whatever the caller wants to vary, with the rest of
+    /// the fields at a value no test reads.
+    fn topic(enhancer: Enhancer, tags: &str, token_tags: &str) -> TopicConfig {
+        TopicConfig {
+            name: "Topic".to_string(),
+            label: "Fáddá".to_string(),
+            enabled: true,
+            enhancer,
+            tags: tags.to_string(),
+            token_tags: token_tags.to_string(),
+            use_lemma_filter: false,
         }
     }
 
     #[test]
-    fn the_token_enhancer_defaults_the_lemma_filter() {
-        let Ok(Stage::Token(enhancer)) =
-            stage_named("TokenEnhancer", &parameters(&[("Tags", "N,V")]))
-        else {
-            panic!("the token enhancer builds from Tags alone");
-        };
+    fn the_preprocessor_is_five_shared_stages() {
+        let flow = Flow::preprocessor();
 
-        assert_eq!(enhancer.tags, vec!["N".to_string(), "V".to_string()]);
-        assert!(!enhancer.use_lemma_filter);
+        assert_eq!(flow.len(), 5);
+        assert!(!flow.is_empty());
+        assert!(matches!(flow.stages.first(), Some(Stage::Relevance(_))));
+        let Some(Stage::Vislcg3(annotator)) = flow.stages.last() else {
+            panic!("the flow ends in the CG annotator");
+        };
+        assert_eq!(annotator.cg_sentence_boundary_token, ".");
+        // Nothing in it stands for a topic, so a cached preprocessing output
+        // answers every topic's request for the same page.
+        assert!(flow.topic_span_classes().is_empty());
     }
 
     #[test]
-    fn an_unknown_delegate_key_is_rejected() {
-        let Err(err) = stage_named("MaltParser", &parameters(&[])) else {
-            panic!("a delegate with no counterpart must be rejected");
-        };
+    fn a_postprocessor_is_token_then_topic() {
+        let flow = Flow::postprocessor(&topic(Enhancer::Noun, "Sg Nom", "N"))
+            .expect("the noun topic builds");
 
+        assert_eq!(flow.len(), 2);
+        let Some(Stage::Token(token)) = flow.stages.first() else {
+            panic!("the flow opens with the token enhancer");
+        };
+        assert_eq!(token.tags, vec!["N".to_string()]);
+        assert!(!token.use_lemma_filter);
         assert_eq!(
-            err.to_string(),
-            "no annotator is registered for delegate \"MaltParser\""
+            flow.topic_span_classes(),
+            vec![Vislcg3NounEnhancer::SPAN_CLASS]
         );
     }
 
     #[test]
+    fn every_enhancer_marks_exactly_one_class() {
+        for enhancer in Enhancer::ALL {
+            let flow = Flow::postprocessor(&topic(enhancer, "A,B", "N"))
+                .unwrap_or_else(|e| panic!("{enhancer:?} rejected its tag list: {e:#}"));
+
+            assert_eq!(
+                flow.topic_span_classes(),
+                vec![enhancer.span_class()],
+                "{enhancer:?} built a stage marking another topic's class"
+            );
+        }
+    }
+
+    /// Each enhancer reads its tags under the parameter name its UIMA
+    /// delegate declared, and refuses to build without it. The one tag list a
+    /// topic carries therefore has to reach each of them under a different
+    /// name, which is what makes the mapping in `topic_stage` load-bearing
+    /// rather than decorative.
+    #[test]
+    fn each_enhancer_reads_its_own_parameter() {
+        use crate::enhancer::object::Vislcg3ObjectEnhancer;
+
+        assert!(
+            Vislcg3ObjectEnhancer::new(&HashMap::from([(
+                "SubjTags".to_string(),
+                "OBJ".to_string(),
+            )]))
+            .is_err(),
+            "the object enhancer built from another enhancer's parameter"
+        );
+        assert!(
+            Vislcg3ObjectEnhancer::new(&HashMap::from([(
+                "ObjTags".to_string(),
+                "OBJ".to_string(),
+            )]))
+            .is_ok()
+        );
+        // And the token enhancer refuses to build without its own two.
+        assert!(TokenEnhancer::new(&HashMap::new()).is_err());
+    }
+
+    #[test]
+    fn the_token_enhancer_carries_the_lemma_filter() {
+        let mut config = topic(Enhancer::Noun, "Sg Nom", "N,V");
+        config.use_lemma_filter = true;
+        let flow = Flow::postprocessor(&config).expect("the topic builds");
+
+        let Some(Stage::Token(token)) = flow.stages.first() else {
+            panic!("the flow opens with the token enhancer");
+        };
+        assert_eq!(token.tags, vec!["N".to_string(), "V".to_string()]);
+        assert!(token.use_lemma_filter);
+    }
+
+    #[test]
     fn an_empty_flow_runs_and_changes_nothing() {
-        let flow = Flow::new(&[], &parameters(&[])).expect("an empty flow");
+        let flow = Flow::default();
         let mut cas = Document::new("<p>Mun oidnen viesu.</p>", PIPELINE_LANGUAGE);
 
         flow.run(&mut cas, Mode::Colorize)

@@ -40,13 +40,12 @@ use serde_json::json;
 use tracing::{info, warn};
 
 use crate::context::Config;
-use crate::server::activities::Activities;
 use crate::server::fetch::{self, Overloaded, Refusal, Unreachable};
-use crate::server::processors::Processors;
+use crate::server::registry::Registry;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::{Document, PIPELINE_LANGUAGE};
 use crate::util::html_blocks;
-use crate::util::html_enhancer::{HtmlEnhancer, sami_label};
+use crate::util::html_enhancer::{HtmlEnhancer, mode_label};
 use crate::util::json_enhancer::JsonEnhancer;
 use crate::util::page_handler::PageHandler;
 
@@ -65,65 +64,36 @@ const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 /// upload may, with the same room for the framing around it.
 const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
-/// One topic the registry offers, with its North Sámi name.
-#[derive(Debug, Clone, Serialize)]
-pub struct Topic {
-    pub name: String,
-    pub label: Option<String>,
-    pub enabled: bool,
-}
-
-/// Everything a request is served from: the deployment configuration, the
-/// per-topic pipelines, and the topic list they were built from.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+3]
+/// Everything a request is served from: the deployment configuration and the
+/// topic registry, with the pipeline pair each topic runs.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+4]
 pub struct AppState {
     pub config: Config,
-    pub processors: Processors,
-    pub topics: Vec<Topic>,
+    pub registry: Registry,
 }
 
 impl AppState {
-    /// Scans the activity tree and builds every topic's pipeline pair once,
+    /// Reads the topic registry and builds every topic's pipeline pair once,
     /// so no request pays for a model load.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3]
     pub fn new(config: Config) -> Result<Self> {
         let started = Instant::now();
-        let mut activities = Activities::new(&config.activities_dir, &config.classpath_root)
-            .with_context(|| {
-                format!(
-                    "scanning activities under {}",
-                    config.activities_dir.display()
-                )
-            })?;
-
-        let names: Vec<String> = activities.iterator().cloned().collect();
-        let topics = names
-            .into_iter()
-            .map(|name| {
-                let enabled = activities
-                    .get_activity(&name)
-                    .is_some_and(|activity| activity.is_enabled());
-                Topic {
-                    label: sami_label(&name).map(str::to_string),
-                    name,
-                    enabled,
-                }
-            })
-            .collect();
-
-        let processors = Processors::new(&mut activities)?;
-        info!("Loaded every topic pipeline ({:?})", started.elapsed());
+        let loaded = Registry::from_config(config.topics.as_deref())?;
+        info!(
+            "Loaded {} topic pipelines ({:?})",
+            loaded.topics().len(),
+            started.elapsed()
+        );
 
         Ok(AppState {
             config,
-            processors,
-            topics,
+            registry: loaded,
         })
     }
 
     pub fn knows_topic(&self, name: &str) -> bool {
-        self.topics.iter().any(|topic| topic.name == name)
+        self.registry.knows(name)
     }
 
     /// Runs one topic pipeline over a page for the requested exercise and
@@ -131,7 +101,7 @@ impl AppState {
     fn analyse(&self, activity: &str, mode: Mode, page: &str, key: &str) -> Result<Document> {
         let cache = self.config.analysis_dir.to_string_lossy().into_owned();
         let handler = PageHandler::new(
-            &self.processors,
+            &self.registry,
             activity,
             key,
             &cache,
@@ -221,16 +191,16 @@ async fn index() -> Response {
         .body(body)
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
 #[handler]
 async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value> {
     let modes: Vec<serde_json::Value> = Mode::ALL
         .into_iter()
-        .map(|mode| json!({ "name": mode.name(), "label": sami_label(mode.name()) }))
+        .map(|mode| json!({ "name": mode.name(), "label": mode_label(mode) }))
         .collect();
 
-    Json(json!({ "activities": &state.0.topics, "modes": modes }))
+    Json(json!({ "activities": state.0.registry.topics(), "modes": modes }))
 }
 
 /// The query the whole-page endpoint takes. A missing member is a malformed
@@ -242,8 +212,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,

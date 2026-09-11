@@ -1,0 +1,166 @@
+# The topic registry.
+#
+# One `[[topic]]` per topic the server offers. This file is compiled into the
+# binary with `include_str!`, so a build carries a working registry with no
+# tree beside it; `TEAKSTA_TOPICS` names a file to read instead, for a
+# deployment that wants to retune without a rebuild.
+#
+# Every value below was extracted from the Java deployment this server
+# replaces, where a topic was spread over three files: `activity.xml` under
+# `sme/src/main/webapp/activities/<name>/`, the UIMA aggregate descriptor it
+# named under `sme/desc/operators/`, and the delegate descriptor under
+# `sme/desc/enhancers/`. The `sme/` tree is still in the repository as the
+# spec's source-impl reference, and nothing reads it at runtime. Each value
+# carries the file it came from.
+#
+# Fields:
+#   name       the registry name. `/api/activities` serves it, an enhancement
+#              request names the topic by it, and the enhancer marks its hits
+#              `teaksta-<name>` — the client derives that class from the name
+#              it was served, so the two cannot drift apart.
+#              From `<meta><name>` in `activity.xml`, which the Java also
+#              required to equal the activity's directory name.
+#   label      the North Sámi name, shown to the learner. From the
+#              `SAMI_LABELS` table the port carried in `util/html_enhancer.rs`.
+#   enabled    what `activity.xml`'s `<activity enabled="...">` declared. Every
+#              shipped topic declares `yes`. Served as-is; the server does not
+#              yet refuse a request for a disabled topic, exactly as it did not
+#              before.
+#   enhancer   which enhancer drives the topic — the delegate the aggregate
+#              descriptor's `<fixedFlow>` ran after `TokenEnhancer`.
+#   tags       that enhancer's own tag list. Each enhancer declares the
+#              parameter under a name of its own (`NTags`, `connegTags`, ...);
+#              the live value is the `<entry>` the topic's `activity.xml` laid
+#              over the delegate default, which is what the running server used.
+#   token_tags the `Tags` parameter of the `TokenEnhancer` that runs ahead of
+#              the topic's enhancer, from the aggregate descriptor's
+#              `<configurationParameterSettings>`. It decides which tokens the
+#              generic enhancer marks as carrying a part of speech, and it
+#              genuinely varies per topic.
+#   use_lemma_filter
+#              the `TokenEnhancer` `UseLemmaFilter` parameter. Optional,
+#              defaulting to `false`, which is the delegate default in
+#              `sme/desc/enhancers/TokenEnhancer.xml` and the value every
+#              shipped topic ran with: no aggregate descriptor overrides it.
+#
+# Not carried over: the `<client-cfg>` block every `activity.xml` holds. It is
+# ten copies of the same inline CSS for a browser add-on that no longer
+# exists, and the Java's own reader of it was commented out, so nothing has
+# read those entries for as long as the file has had them.
+#
+# The preprocessing pipeline — relevance, tokenizer, sentence detection, HTML
+# sentences, constraint grammar — is the same for every topic and is not
+# configuration. It is built in `pipeline/flow.rs`. The `vislcg3Pipe.xml`
+# parameters that named the `vislcg3` binary and its two grammars are absent
+# for the same reason: the constraint-grammar stage is in-process now and
+# loads its grammars from the model bundle.
+
+[[topic]]
+name = "Adverbial"
+label = "Adverbiála"
+enabled = true
+enhancer = "adverbial"
+# from activities/Adverbial/activity.xml <post> entry AdvTags
+tags = "ADVL,mod_advl,compl_advl,coor_advl"
+# from desc/operators/vislcg3PostProc_Adv.xml Tags
+token_tags = "ADVL"
+
+[[topic]]
+name = "Conjunctions"
+label = "Konjunkšuvnnat"
+enabled = true
+enhancer = "conjunction"
+# from activities/Conjunctions/activity.xml <post> entry conjunctionTags
+tags = "CC,CS"
+# from desc/operators/vislcg3PostProc.xml Tags
+token_tags = "CC,CS"
+
+[[topic]]
+name = "InfiniteVerbs"
+label = "Infinihtta vearbbat"
+enabled = true
+enhancer = "infinite-verb"
+# from activities/InfiniteVerbs/activity.xml <post> entry infiniteverbTags
+tags = "PrfPrc, VGen, VAbess, Ger, Actio Ess, Inf, ConNeg"
+# from desc/operators/vislcg3PostProc_InfiniteVerb.xml Tags
+token_tags = "V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Der/PassL V Inf"
+
+[[topic]]
+name = "NegVerbs"
+label = "Biehttalanvearbbat"
+enabled = true
+enhancer = "con-neg"
+# from activities/NegVerbs/activity.xml <post> entry connegTags
+tags = "Ind Prs ConNeg, Ind Prt ConNeg"
+# from desc/operators/vislcg3PostProc_ConNeg.xml Tags
+token_tags = "ConNeg"
+
+[[topic]]
+name = "Object"
+label = "Objeakta"
+enabled = true
+enhancer = "object"
+# from activities/Object/activity.xml <post> entry ObjTags
+tags = "OBJ,mod_obj,compl_obj,coor_obj"
+# from desc/operators/vislcg3PostProc_Object.xml Tags
+token_tags = "OBJ"
+
+[[topic]]
+name = "Subject"
+label = "Subjeakta"
+enabled = true
+enhancer = "subject"
+# from activities/Subject/activity.xml <post> entry SubjTags
+tags = "SUBJ,mod_subj,compl_subj,coor_subj"
+# from desc/operators/vislcg3PostProc_Subject.xml Tags
+token_tags = "SUBJ"
+
+[[topic]]
+name = "Substantive"
+label = "Substantiivvat"
+enabled = true
+enhancer = "noun"
+# from activities/Substantive/activity.xml <post> entry NTags. The tag `N`
+# itself is not listed: the enhancer checks for it separately, because it does
+# not always immediately precede the number and case tags.
+tags = "Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Pl Nom, Pl Acc, Pl Gen, Pl Ill, Pl Loc, Pl Com, Ess, Prop Sem/Mal Attr, Prop Sem/Fem Attr, Prop Sem/Sur Attr"
+# from desc/operators/vislcg3PostProc_Noun.xml Tags. Placeholder text in the
+# original, kept verbatim because it is what the deployment ran: no North Sámi
+# reading carries either tag, so the generic enhancer marks every token it
+# wraps as carrying no part of speech, and the topic's own hits are the
+# enhancer's alone. The commented-out alternative beside it in the descriptor
+# was never in effect.
+token_tags = "blah,blubb"
+
+[[topic]]
+name = "SubstantivePlural"
+label = "Substantiivvat máŋggaidlogus"
+enabled = true
+enhancer = "noun-pl"
+# from activities/SubstantivePlural/activity.xml <post> entry NPlTags. As with
+# Substantive, `N` is checked by the enhancer rather than listed here.
+tags = "Pl Nom, Pl Acc, Pl Gen, Pl Ill, Pl Loc, Pl Com"
+# from desc/operators/vislcg3PostProc_NounPl.xml Tags
+token_tags = "N Pl Nom, N Pl Acc, N Pl Gen, N Pl Ill, N Pl Loc, N Pl Com, N Ess"
+
+[[topic]]
+name = "SubstantiveSingular"
+label = "Substantiivvat ovttaidlogus"
+enabled = true
+enhancer = "noun-sg"
+# from activities/SubstantiveSingular/activity.xml <post> entry NSgTags. As
+# with Substantive, `N` is checked by the enhancer rather than listed here.
+tags = "Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess, Prop Sem/Mal Attr, Prop Sem/Fem Attr, Prop Sem/Sur Attr"
+# from desc/operators/vislcg3PostProc_NounSg.xml Tags. Placeholder text in the
+# original, kept verbatim for the reason given under Substantive.
+token_tags = "blah,blubb"
+
+[[topic]]
+name = "VerbConjugation"
+label = "Finihtta vearbbat"
+enabled = true
+enhancer = "verb-conjugation"
+# from activities/VerbConjugation/activity.xml <post> entry finverbTags
+tags = "Ind Prs, Ind Prt, Imprt, Cond Prs, Pot Prs, Neg Ind"
+# from desc/operators/vislcg3PostProc_VerbConjugation.xml Tags
+token_tags = "Ind Prs, Ind Prt"

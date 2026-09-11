@@ -60,11 +60,12 @@ assertions (
     {id hd-upload-ui, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:53:19.129688Z}
     {id idiomatize-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:39.246331Z}
     {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
+    {id native-registry, kind @doing, author "brendan@bbqsrc.net", at 2026-09-11T14:48:37.888188Z}
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
     {id ux-design, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T12:57:13.52773Z}
     {id ux-hygiene, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:37:09.890015Z}
+    {id ux-offsets, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T15:09:34.694309Z}
     {id ux-reader, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T12:10:22.695631Z}
     {id ux-stream, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:56:56.977656Z}
-    {id ux-offsets, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T15:09:34.694309Z}
 )

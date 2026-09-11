@@ -51,6 +51,29 @@ specs ({
                 sme/src/main/java/werti/util/Transformer.java
                 sme/src/main/java/werti/util/Transformation.java
                 sme/src/main/java/werti/util/trans/**
+                // Retired with the concept, not merely unported. These three
+                // classes exist to recover ten topic definitions from a tree
+                // of XML: `Activities` scans one directory per topic,
+                // `ActivityConfiguration` reads each `activity.xml` through
+                // XPath and resolves its `<pipeline desc>` against the JVM
+                // classpath, and `Processors` parses the UIMA aggregate
+                // descriptor those expressions name and injects the
+                // activity's `server-cfg` entries into its
+                // `configurationParameterSettings`.
+                //
+                // The port carries the ten definitions in `topics.toml` and
+                // builds both flows directly, so there is no descriptor to
+                // parse, no classpath to stand in for and no directory to
+                // scan. What survived — hold one pipeline pair per topic,
+                // built once at startup, handed out by (language, name) — is
+                // the registry, and it is specified as part of the servlet's
+                // `init`, which is where the Java built it. Every parameter
+                // value these classes used to assemble at runtime is in
+                // `topics.toml` with the file it was read from recorded
+                // beside it, so nothing is lost by their going.
+                sme/src/main/java/werti/server/Activities.java
+                sme/src/main/java/werti/server/ActivityConfiguration.java
+                sme/src/main/java/werti/server/Processors.java
             ),
             mode @impl-only
         }

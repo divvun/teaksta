@@ -9,10 +9,8 @@ use std::path::Path;
 fn config_under(root: &Path) -> Config {
     Config {
         listen: "127.0.0.1:0".to_string(),
-        webapp_root: root.join("webapp"),
         webapp_dist: None,
-        classpath_root: root.join("desc"),
-        activities_dir: root.join("webapp").join("activities"),
+        topics: None,
         analysis_dir: root.join("analysed"),
         upload_keep_dir: root.join("keep"),
         upload_temp_dir: root.join("temp"),
@@ -25,8 +23,6 @@ fn deployment() -> (tempfile::TempDir, Config) {
     let root = tempfile::tempdir().expect("temp dir");
     let config = config_under(root.path());
     for directory in [
-        &config.webapp_root,
-        &config.activities_dir,
         &config.analysis_dir,
         &config.upload_keep_dir,
         &config.upload_temp_dir,
@@ -165,12 +161,9 @@ fn only_three_schemes_are_fetchable() {
 fn a_file_this_deployment_serves_is_readable() {
     let (_root, config) = deployment();
 
-    for directory in [
-        &config.upload_keep_dir,
-        &config.upload_temp_dir,
-        &config.activities_dir,
-        &config.webapp_root,
-    ] {
+    // The two upload directories are the whole list: an accepted upload is
+    // the only `file:` URL this deployment ever hands a client.
+    for directory in [&config.upload_keep_dir, &config.upload_temp_dir] {
         let page = directory.join("artihkal.html");
         std::fs::write(&page, "<p>a</p>").expect("a page");
 

@@ -10,46 +10,18 @@ use crate::server::api::Mode;
 use crate::types::Document;
 use crate::util::html_utils;
 
-/// North Sámi names for the topics and the exercise types, for a caller
-/// putting a reminder of the chosen exercise on the page.
-#[rustfmt::skip]
-static SAMI_LABELS: &[(&str, &str)] = &[
-    ("SubstantiveSingular", "Substantiivvat ovttaidlogus"),
-    ("SubstantivePlural", "Substantiivvat m\u{e1}\u{14b}ggaidlogus"),
-    ("VerbConjugation", "Finihtta vearbbat"),
-    ("NegVerbs", "Biehttalanvearbbat"),
-    ("InfiniteVerbs", "Infinihtta vearbbat"),
-    ("Conjunctions", "Konjunk\u{161}uvnnat"),
-    ("Substantive", "Substantiivvat"),
-    ("Subject", "Subjeakta"),
-    ("Object", "Objeakta"),
-    ("Adverbial", "Adverbi\u{e1}la"),
-    ("colorize", "Geah\u{10d}a ivdnejuvvon s\u{e1}niid."),
-    ("click", "Coahkkal rivttes s\u{e1}niid!"),
-    ("mc", "V\u{e1}llje rivttes s\u{e1}niid!"),
-    ("cloze", "\u{10c}\u{e1}le rivttes s\u{e1}niid!"),
-];
-
-/// The North Sámi name of a topic or exercise type, if it has one.
-pub fn sami_label(name: &str) -> Option<&'static str> {
-    SAMI_LABELS
-        .iter()
-        .find(|(key, _)| *key == name)
-        .map(|(_, label)| *label)
-}
-
-/// The chosen topic and exercise type in North Sámi, as a short reminder of
-/// what the learner is looking at. A name with no North Sámi label is used
-/// as it stands.
-pub fn topic_title(activity: &str, enhancement: Option<&str>) -> String {
-    let topic = sami_label(activity).unwrap_or(activity);
-    match enhancement {
-        Some(enhancement) => format!(
-            "{}: {}",
-            topic,
-            sami_label(enhancement).unwrap_or(enhancement)
-        ),
-        None => topic.to_string(),
+/// What the learner is asked to do, in North Sámi, for the registry endpoint
+/// to serve alongside each exercise.
+///
+/// The exercises are four and are compiled in, so every one of them has a
+/// label and the lookup cannot miss. A topic's label is not here: topics are
+/// configuration, and each one carries its own in `topics.toml`.
+pub fn mode_label(mode: Mode) -> &'static str {
+    match mode {
+        Mode::Colorize => "Geah\u{10d}a ivdnejuvvon s\u{e1}niid.",
+        Mode::Click => "Coahkkal rivttes s\u{e1}niid!",
+        Mode::Mc => "V\u{e1}llje rivttes s\u{e1}niid!",
+        Mode::Cloze => "\u{10c}\u{e1}le rivttes s\u{e1}niid!",
     }
 }
 
@@ -176,13 +148,13 @@ mod tests {
     }
 
     #[test]
-    fn north_sami_labels_are_available_to_callers() {
-        assert_eq!(sami_label("Substantive"), Some("Substantiivvat"));
-        assert_eq!(sami_label("Unknown"), None);
+    fn every_exercise_carries_a_north_sami_label() {
         assert_eq!(
-            topic_title("Substantive", Some(Mode::Colorize.name())),
-            "Substantiivvat: Geah\u{10d}a ivdnejuvvon s\u{e1}niid."
+            mode_label(Mode::Colorize),
+            "Geah\u{10d}a ivdnejuvvon s\u{e1}niid."
         );
-        assert_eq!(topic_title("Unknown", None), "Unknown");
+        for mode in Mode::ALL {
+            assert!(!mode_label(mode).is_empty(), "{}", mode.name());
+        }
     }
 }

@@ -111,25 +111,23 @@ const FIXTURES: &[(&str, &str, &str, &str)] = &[
     ),
 ];
 
-/// The deployment every test is served from: the shipped activity tree and
-/// descriptors, with the caches under a directory of their own. The model
-/// handles are process-wide, so this is built once.
+/// The deployment every test is served from: the topics compiled into the
+/// binary, with the caches under a directory of their own. Nothing here reads
+/// the `sme` tree — it stays in the repository as the spec's reference and no
+/// longer as anything a server boots from. The model handles are
+/// process-wide, so this is built once.
 fn deployment() -> &'static (Arc<AppState>, TempDir) {
     static DEPLOYMENT: OnceLock<(Arc<AppState>, TempDir)> = OnceLock::new();
     DEPLOYMENT.get_or_init(|| {
-        let root = repository_root();
         let data = TempDir::new().expect("a data directory");
-        let webapp = root.join("sme/src/main/webapp");
         // A directory carrying a space and a non-ASCII character, because a
         // deployment may sit under one and every stored upload is addressed
         // through it.
         let data_root = data.path().join("teaksta v\u{e1}rri");
         let config = Config {
             listen: "127.0.0.1:0".to_string(),
-            activities_dir: webapp.join("activities"),
-            classpath_root: root.join("sme/desc"),
-            webapp_root: webapp,
             webapp_dist: None,
+            topics: None,
             analysis_dir: data_root.join("analysed"),
             upload_keep_dir: data_root.join("keep"),
             upload_temp_dir: data_root.join("temp"),

@@ -3,20 +3,21 @@
 //!
 //! Author: Adriane Boyd
 //!
-//! The UIMA CAS is [`crate::types::Document`]. Running an engine's flow over
-//! a CAS is [`crate::pipeline::flow::Flow`]. The on-disk CAS cache is kept,
-//! but XMI — the CAS's own serialisation format, which only exists inside
-//! UIMA — is replaced by a JSON encoding of the document model; the cache
-//! file keeps its `.xmi` name so a deployment's cache directory is still
-//! recognisable.
+//! The UIMA CAS is [`crate::types::Document`]. The analysis engine a topic
+//! ran is [`crate::pipeline::flow::Flow`], handed out by
+//! [`crate::server::registry::Registry`]. The on-disk CAS cache is kept, but
+//! XMI — the CAS's own serialisation format, which only exists inside UIMA —
+//! is replaced by a JSON encoding of the document model; the cache file keeps
+//! its `.xmi` name so a deployment's cache directory is still recognisable.
 
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use tracing::{error, info, warn};
 
+use crate::pipeline::flow::Flow;
 use crate::server::api::Mode;
-use crate::server::processors::{AnalysisEngine, Processors};
+use crate::server::registry::Registry;
 use crate::types::Document;
 
 /// The two failure kinds the engine seam tells apart. They carry different
@@ -30,21 +31,20 @@ pub enum EngineError {
 }
 
 /// `AnalysisEngine#newJCas()`: an empty CAS over the engine's type system.
-/// The document model is not derived from the descriptor, so this cannot fail
+/// The document model is one type, shared by every flow, so this cannot fail
 /// and the `ResourceInitializationException` arm below never fires.
-fn new_jcas(_engine: &AnalysisEngine) -> std::result::Result<Document, EngineError> {
+fn new_jcas(_flow: &Flow) -> std::result::Result<Document, EngineError> {
     Ok(Document::default())
 }
 
-/// `AnalysisEngine#process(JCas)`: runs the engine's fixed flow over the CAS
-/// for the requested exercise.
+/// `AnalysisEngine#process(JCas)`: runs a flow's stages over the CAS for the
+/// requested exercise.
 fn analysis_engine_process(
-    engine: &AnalysisEngine,
+    flow: &Flow,
     cas: &mut Document,
     mode: Mode,
 ) -> std::result::Result<(), EngineError> {
-    engine
-        .process(cas, mode)
+    flow.run(cas, mode)
         .map_err(|e| EngineError::AnalysisEngineProcess(format!("{e:#}")))
 }
 
@@ -86,7 +86,7 @@ fn write_xmi(cas: &Document, casfile: &Path) -> std::io::Result<()> {
 /// be a copy of the whole page for nothing.
 // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler]
 pub struct PageHandler<'a> {
-    processors: &'a Processors,
+    registry: &'a Registry,
     topic: &'a str,
     text: &'a str,
     lang: &'a str,
@@ -98,10 +98,10 @@ pub struct PageHandler<'a> {
 }
 
 impl<'a> PageHandler<'a> {
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
     pub fn new(
-        a_processors: &'a Processors,
+        a_registry: &'a Registry,
         a_topic: &'a str,
         a_url: &'a str,
         a_path: &'a str,
@@ -113,7 +113,7 @@ impl<'a> PageHandler<'a> {
         // `path` are the third and fourth arguments but the fifth and sixth
         // assignments.
         PageHandler {
-            processors: a_processors,
+            registry: a_registry,
             topic: a_topic,
             text: a_text,
             lang: a_lang,
@@ -127,11 +127,11 @@ impl<'a> PageHandler<'a> {
 
     /// Creates a CAS from the text and runs the pre- and postprocessors for the
     /// topic.
-    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
     pub fn process(&self) -> Result<Option<Document>> {
-        let preprocessor = self.processors.get_preprocessor(self.lang, self.topic);
-        let postprocessor = self.processors.get_postprocessor(self.lang, self.topic);
+        let preprocessor = self.registry.get_preprocessor(self.lang, self.topic);
+        let postprocessor = self.registry.get_postprocessor(self.lang, self.topic);
         let (Some(preprocessor), Some(postprocessor)) = (preprocessor, postprocessor) else {
             return Ok(None);
         };
@@ -153,8 +153,8 @@ impl<'a> PageHandler<'a> {
     /// engine failures the caller above tells apart.
     fn analysed(
         &self,
-        preprocessor: &AnalysisEngine,
-        postprocessor: &AnalysisEngine,
+        preprocessor: &Flow,
+        postprocessor: &Flow,
     ) -> std::result::Result<Document, EngineError> {
         let mut cas = new_jcas(preprocessor)?;
         // convert HTML entities to characters, if there are any
@@ -213,8 +213,7 @@ impl<'a> PageHandler<'a> {
 mod tests {
     use super::*;
 
-    use crate::pipeline::flow::{Flow, Parameters};
-    use crate::server::activities::Activities;
+    use crate::server::registry::{Enhancer, TopicConfig};
     use crate::types::{PIPELINE_LANGUAGE, PageMap, TextSegment, Token};
 
     /// The page the cache tests analyse. Its text is North Sámi, so a token
@@ -227,44 +226,49 @@ mod tests {
     /// The cache key the handler builds its filename from.
     const KEY: &str = "http:--example.org-page";
 
-    /// A registry built over a directory holding no activities, so no engine
-    /// pair is registered for any (language, topic). Nothing resolves a
-    /// descriptor, so the root the registry is handed is never reached.
-    fn empty_processors() -> Processors {
-        let activity_dir = tempfile::tempdir().expect("temp dir");
-        let mut activities =
-            Activities::new(activity_dir.path(), activity_dir.path()).expect("activities");
-        Processors::new(&mut activities).expect("processors")
+    /// A registry offering nothing, so no flow pair is registered for any
+    /// (language, topic).
+    fn empty_registry() -> Registry {
+        Registry::empty()
     }
 
-    /// A registry whose engine pair needs no models: the preprocessor turns
-    /// the page into analysable text and the postprocessor wraps every token
+    /// A registry whose flow pair needs no models: the preprocessor turns the
+    /// page into analysable text and the postprocessor wraps every token
     /// carrying an `N` tag, so which of the two ran over a document is
     /// readable off the document itself.
-    fn model_free_processors() -> Processors {
-        let preprocessor = Flow::new(
-            &["GenericRelevanceAnnotator".to_string()],
-            &Parameters::new(),
-        )
-        .expect("the relevance annotator needs no parameters");
-        let postprocessor = Flow::new(
-            &["TokenEnhancer".to_string()],
-            &Parameters::from([("Tags".to_string(), "N".to_string())]),
-        )
+    ///
+    /// The shipped preprocessing flow tokenises and runs the constraint
+    /// grammar, which needs the models; what these tests are about is the
+    /// cache around a flow, not the flow.
+    fn model_free_registry() -> Registry {
+        use crate::pipeline::flow::Stage;
+        use crate::pipeline::relevance::GenericRelevanceAnnotator;
+
+        let preprocessor = Flow::of_stages(vec![Stage::Relevance(GenericRelevanceAnnotator)]);
+        let postprocessor = Flow::postprocessor(&TopicConfig {
+            name: "Nouns".to_string(),
+            label: "Substantiivvat".to_string(),
+            enabled: true,
+            enhancer: Enhancer::Noun,
+            tags: "Sg Nom".to_string(),
+            token_tags: "N".to_string(),
+            use_lemma_filter: false,
+        })
         .expect("the token enhancer takes its tags");
 
-        Processors::of_flows("sme", "Nouns", preprocessor, postprocessor)
+        Registry::of_flows("Nouns", preprocessor, postprocessor)
     }
 
-    /// A handler over [`PAGE`] caching under `cache_dir`.
-    fn handler_over<'a>(processors: &'a Processors, cache_dir: &'a Path) -> PageHandler<'a> {
+    /// A handler over [`PAGE`] caching under `cache_dir`. The language is the
+    /// one every topic is registered under, so a miss is the topic's.
+    fn handler_over<'a>(registry: &'a Registry, cache_dir: &'a Path) -> PageHandler<'a> {
         PageHandler::new(
-            processors,
+            registry,
             "Nouns",
             KEY,
             cache_dir.to_str().expect("utf-8 path"),
             PAGE,
-            "sme",
+            PIPELINE_LANGUAGE,
             Mode::Colorize,
         )
     }
@@ -301,13 +305,13 @@ mod tests {
         .expect("the cache file");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3/test]
     #[test]
     fn constructor_maps_third_fourth_args_to_url_path() {
-        let processors = empty_processors();
+        let registry = empty_registry();
 
         let handler = PageHandler::new(
-            &processors,
+            &registry,
             "Nouns",
             "http:--example.org-page",
             "/home/teaksta/analyzedTexts",
@@ -316,7 +320,7 @@ mod tests {
             Mode::Colorize,
         );
 
-        assert!(std::ptr::eq(handler.processors, &processors));
+        assert!(std::ptr::eq(handler.registry, &registry));
         assert_eq!(handler.topic, "Nouns");
         assert_eq!(handler.url, "http:--example.org-page");
         assert_eq!(handler.path, "/home/teaksta/analyzedTexts");
@@ -325,13 +329,13 @@ mod tests {
         assert_eq!(handler.mode, Mode::Colorize);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3/test]
     #[test]
     fn constructor_stores_every_argument_untouched() {
-        let processors = empty_processors();
+        let registry = empty_registry();
 
         let handler = PageHandler::new(
-            &processors,
+            &registry,
             "Conjunctions",
             "  ",
             "",
@@ -348,14 +352,14 @@ mod tests {
         assert_eq!(handler.mode, Mode::Cloze);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6/test]
     #[test]
     fn process_returns_nothing_when_topic_lacks_engines() {
-        let processors = empty_processors();
+        let registry = empty_registry();
         let cache_root = tempfile::tempdir().expect("temp dir");
         let cache_dir = cache_root.path().join("analyzedTexts");
         let handler = PageHandler::new(
-            &processors,
+            &registry,
             "Nouns",
             "http:--example.org-page",
             cache_dir.to_str().expect("utf-8 path"),
@@ -372,13 +376,13 @@ mod tests {
         assert!(!cache_dir.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6/test]
     #[test]
     fn process_returns_nothing_when_the_language_is_unknown() {
-        let processors = empty_processors();
+        let registry = empty_registry();
         let cache_root = tempfile::tempdir().expect("temp dir");
         let handler = PageHandler::new(
-            &processors,
+            &registry,
             "Nouns",
             "page",
             cache_root.path().to_str().expect("utf-8 path"),
@@ -395,16 +399,16 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6/test]
     #[test]
     fn an_undecodable_cache_file_is_replaced() {
-        let processors = model_free_processors();
+        let registry = model_free_registry();
         let cache_root = tempfile::tempdir().expect("temp dir");
         let cache_dir = cache_root.path().join("analyzedTexts");
         std::fs::create_dir_all(&cache_dir).expect("the cache directory");
         std::fs::write(casfile(&cache_dir), "{\"text\":").expect("a truncated cache file");
 
-        let document = handler_over(&processors, &cache_dir)
+        let document = handler_over(&registry, &cache_dir)
             .process()
             .expect("a cache file that will not decode is not an analysis failure")
             .expect("the topic has an engine pair");
@@ -419,16 +423,16 @@ mod tests {
         assert_eq!(repaired.page.html, PAGE);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6/test]
     #[test]
     fn a_readable_cache_file_is_postprocessed() {
-        let processors = model_free_processors();
+        let registry = model_free_registry();
         let cache_root = tempfile::tempdir().expect("temp dir");
         let cache_dir = cache_root.path().join("analyzedTexts");
         cache_a_document(&cache_dir, (0, "Sámegiella".len()));
         let before = std::fs::read_to_string(casfile(&cache_dir)).expect("the cache file");
 
-        let document = handler_over(&processors, &cache_dir)
+        let document = handler_over(&registry, &cache_dir)
             .process()
             .expect("analysis succeeds")
             .expect("the topic has an engine pair");
@@ -448,7 +452,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6/test]
     #[test]
     fn an_unreadable_cached_span_is_a_miss() {
         for span in [
@@ -457,12 +461,12 @@ mod tests {
             // Past the end of the text the same file carries.
             (0, 9_999),
         ] {
-            let processors = model_free_processors();
+            let registry = model_free_registry();
             let cache_root = tempfile::tempdir().expect("temp dir");
             let cache_dir = cache_root.path().join("analyzedTexts");
             cache_a_document(&cache_dir, span);
 
-            let document = handler_over(&processors, &cache_dir)
+            let document = handler_over(&registry, &cache_dir)
                 .process()
                 .unwrap_or_else(|e| panic!("the span {span:?} was not survived: {e:#}"))
                 .expect("the topic has an engine pair");

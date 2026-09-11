@@ -1,32 +1,25 @@
-//! Deployment configuration: where the activity tree, the descriptors, the
-//! analysis cache and the upload directories live, and what address the
-//! server listens on.
+//! Deployment configuration: where the analysis cache and the upload
+//! directories live, which web client to serve, which topics file to read,
+//! and what address the server listens on.
 //!
 //! Every field is read from the environment, so a deployment is configured
-//! without a descriptor file. The directories are created on startup, because
-//! a request that has to create one has already accepted work it may not be
-//! able to finish.
+//! without a file. The directories are created on startup, because a request
+//! that has to create one has already accepted work it may not be able to
+//! finish.
 
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context as _, Result};
 
-/// Names the expanded web application. The activity tree resolves against it,
-/// and so does the search for the descriptor tree when that is not named
-/// outright.
-pub const WEBAPP_ROOT_ENV: &str = "TEAKSTA_WEBAPP_ROOT";
 /// Names the built web client the browser is served. `dx bundle --platform
 /// web` leaves it at `target/dx/teaksta-web/<profile>/web/public`, where the
 /// profile is `debug` unless the bundle was built with `--release`.
 pub const WEBAPP_DIST_ENV: &str = "TEAKSTA_WEBAPP_DIST";
-/// Names the directory the activity descriptors' classpath expressions
-/// resolve against, for a deployment that keeps them somewhere the search
-/// below does not look.
-pub const CLASSPATH_ENV: &str = "TEAKSTA_CLASSPATH";
 /// Names the socket address the server binds.
 pub const LISTEN_ENV: &str = "TEAKSTA_LISTEN";
-/// Names the directory holding one subdirectory per activity.
-pub const ACTIVITIES_DIR_ENV: &str = "TEAKSTA_ACTIVITIES_DIR";
+/// Names a topics file to read instead of the one compiled into the binary,
+/// for a deployment that wants to retune its registry without a rebuild.
+pub const TOPICS_ENV: &str = "TEAKSTA_TOPICS";
 /// Names the analysed-document cache directory.
 pub const ANALYSIS_DIR_ENV: &str = "TEAKSTA_FILES_ANL_DIR";
 /// Names the directory uploads are kept in when the teacher asked for that.
@@ -39,45 +32,30 @@ const DEFAULT_ANALYSIS_DIR: &str = "./data/analyzedTexts";
 const DEFAULT_UPLOAD_KEEP_DIR: &str = "./data/fileUpload/prm";
 const DEFAULT_UPLOAD_TEMP_DIR: &str = "./data/fileUpload/tmp";
 
-/// The subdirectory of the web application root holding the activities.
-const ACTIVITIES_SUBDIR: &str = "activities";
-
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+3]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+4]
 #[derive(Debug, Clone)]
 pub struct Config {
     pub listen: String,
-    /// The expanded web application the activity tree resolves against, and
-    /// the descriptor tree is looked for under. It holds the activity
-    /// descriptors, not anything a browser is served.
-    pub webapp_root: PathBuf,
     /// The built web client, when the deployment carries one. It holds the
     /// bundle a browser is served, and a deployment without it answers the
     /// API alone.
     pub webapp_dist: Option<PathBuf>,
-    /// What a descriptor classpath expression such as
-    /// `/operators/vislcg3Pipe.xml` resolves against. There is no JVM
-    /// classpath on this platform, so the deployment names the directory that
-    /// stands in for one.
-    pub classpath_root: PathBuf,
-    pub activities_dir: PathBuf,
+    /// A topics file to read instead of the compiled-in registry, when the
+    /// deployment names one.
+    pub topics: Option<PathBuf>,
     pub analysis_dir: PathBuf,
     pub upload_keep_dir: PathBuf,
     pub upload_temp_dir: PathBuf,
 }
 
 impl Config {
-    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3]
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3]
+    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4]
     pub fn from_env() -> Result<Self> {
-        let webapp_root = path_or(WEBAPP_ROOT_ENV, ".");
         let config = Config {
             listen: string_or(LISTEN_ENV, DEFAULT_LISTEN),
-            activities_dir: path_or_else(ACTIVITIES_DIR_ENV, || {
-                webapp_root.join(ACTIVITIES_SUBDIR)
-            }),
-            classpath_root: path_or_else(CLASSPATH_ENV, || descriptor_tree(&webapp_root)),
-            webapp_root,
             webapp_dist: optional_path(WEBAPP_DIST_ENV),
+            topics: optional_path(TOPICS_ENV),
             analysis_dir: path_or(ANALYSIS_DIR_ENV, DEFAULT_ANALYSIS_DIR),
             upload_keep_dir: path_or(UPLOAD_KEEP_DIR_ENV, DEFAULT_UPLOAD_KEEP_DIR),
             upload_temp_dir: path_or(UPLOAD_TEMP_DIR_ENV, DEFAULT_UPLOAD_TEMP_DIR),
@@ -105,41 +83,14 @@ impl Config {
     }
 }
 
-/// The descriptor tree, looked for where each of the two deployments puts it:
-/// `WEB-INF/classes` under the expanded web application, which is where the
-/// build copies `desc`, and otherwise the nearest `desc` directory at or above
-/// the web application, which is where a source checkout keeps it (`sme/desc`).
-/// Falls back to the working directory, under which no descriptor resolves and
-/// every topic reports itself unavailable.
-fn descriptor_tree(webapp_root: &Path) -> PathBuf {
-    let webapp = std::path::absolute(webapp_root).unwrap_or_else(|_| webapp_root.to_path_buf());
-
-    let deployed = webapp.join("WEB-INF").join("classes");
-    if deployed.join("operators").is_dir() {
-        return deployed;
-    }
-    for ancestor in webapp.ancestors() {
-        let desc = ancestor.join("desc");
-        if desc.join("operators").is_dir() {
-            return desc;
-        }
-    }
-
-    PathBuf::from(".")
-}
-
 fn string_or(name: &str, fallback: &str) -> String {
     std::env::var(name).unwrap_or_else(|_| fallback.to_string())
 }
 
 fn path_or(name: &str, fallback: &str) -> PathBuf {
-    path_or_else(name, || PathBuf::from(fallback))
-}
-
-fn path_or_else(name: &str, fallback: impl FnOnce() -> PathBuf) -> PathBuf {
     match std::env::var_os(name) {
         Some(value) => PathBuf::from(value),
-        None => fallback(),
+        None => PathBuf::from(fallback),
     }
 }
 
@@ -164,11 +115,9 @@ mod tests {
 
     /// The variables restored when a test that set them finishes.
     const VARIABLES: &[&str] = &[
-        WEBAPP_ROOT_ENV,
         WEBAPP_DIST_ENV,
-        CLASSPATH_ENV,
         LISTEN_ENV,
-        ACTIVITIES_DIR_ENV,
+        TOPICS_ENV,
         ANALYSIS_DIR_ENV,
         UPLOAD_KEEP_DIR_ENV,
         UPLOAD_TEMP_DIR_ENV,
@@ -213,28 +162,19 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
-    #[test]
-    fn activities_resolve_under_the_webapp_root() {
-        let environment = Environment::take();
-        let root = tempfile::tempdir().expect("temp dir");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
+    /// The three directories the server writes into, pointed at a temporary
+    /// tree so no test writes into the working directory.
+    fn caches(root: &Path, environment: &Environment) {
         for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.path().join(name));
+            environment.set(name, &root.join(name));
         }
-
-        let config = Config::from_env().expect("the configuration builds");
-
-        assert_eq!(config.activities_dir, root.path().join("activities"));
-        assert_eq!(config.listen, DEFAULT_LISTEN);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
     fn every_directory_exists_once_built() {
         let environment = Environment::take();
         let root = tempfile::tempdir().expect("temp dir");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
         for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
             environment.set(name, &root.path().join("deep").join(name));
         }
@@ -248,56 +188,33 @@ mod tests {
         assert_eq!(config.upload_dir(false), config.upload_temp_dir);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
-    #[test]
-    fn an_explicit_activities_directory_wins() {
-        let environment = Environment::take();
-        let root = tempfile::tempdir().expect("temp dir");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
-        environment.set(ACTIVITIES_DIR_ENV, &root.path().join("elsewhere"));
-        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.path().join(name));
-        }
-
-        let config = Config::from_env().expect("the configuration builds");
-
-        assert_eq!(config.activities_dir, root.path().join("elsewhere"));
-        // The activity directory is the deployment's own; it is not created.
-        assert!(!config.activities_dir.exists());
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
     fn an_unset_variable_falls_back() {
         let environment = Environment::take();
         let root = tempfile::tempdir().expect("temp dir");
         // Only the directories that get created are pointed elsewhere, so the
         // fallbacks under test cannot write into the working directory.
-        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.path().join(name));
-        }
+        caches(root.path(), &environment);
 
         let config = Config::from_env().expect("the configuration builds");
 
-        assert_eq!(config.listen, "127.0.0.1:8080");
-        assert_eq!(config.webapp_root, PathBuf::from("."));
-        assert_eq!(config.activities_dir, PathBuf::from("./activities"));
-        // The web client has no fallback: a deployment without one serves
-        // the API alone rather than an empty directory.
+        assert_eq!(config.listen, DEFAULT_LISTEN);
+        // Neither the web client nor the topics file has a fallback: a
+        // deployment without the first serves the API alone, and one without
+        // the second serves the registry compiled into the binary.
         assert_eq!(config.webapp_dist, None);
+        assert_eq!(config.topics, None);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
     fn the_web_client_is_read_as_named() {
         let environment = Environment::take();
         let root = tempfile::tempdir().expect("temp dir");
         let dist = root.path().join("public");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
         environment.set(WEBAPP_DIST_ENV, &dist);
-        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.path().join(name));
-        }
+        caches(root.path(), &environment);
 
         let config = Config::from_env().expect("the configuration builds");
 
@@ -306,87 +223,24 @@ mod tests {
         assert!(!dist.exists());
     }
 
-    /// A web application root with the descriptor tree where the named
-    /// subdirectory puts it, and the caches pointed at the temporary tree.
-    fn deployment(root: &Path, environment: &Environment, descriptors: &str) -> PathBuf {
-        let webapp = root.join("webapp");
-        let descriptors = root.join(descriptors);
-        std::fs::create_dir_all(descriptors.join("operators")).expect("the descriptor tree");
-        std::fs::create_dir_all(&webapp).expect("the web application");
-        environment.set(WEBAPP_ROOT_ENV, &webapp);
-        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.join(name));
-        }
-
-        descriptors
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
-    fn the_descriptor_root_is_read_as_named() {
+    fn the_topics_file_is_read_as_named() {
         let environment = Environment::take();
         let root = tempfile::tempdir().expect("temp dir");
-        // A deployment keeping its descriptors somewhere the search does not
-        // look says so, and is believed over what the search would have found.
-        deployment(root.path(), &environment, "desc");
-        let elsewhere = root.path().join("operator-descriptors");
-        environment.set(CLASSPATH_ENV, &elsewhere);
+        let topics = root.path().join("topics.toml");
+        environment.set(TOPICS_ENV, &topics);
+        caches(root.path(), &environment);
 
         let config = Config::from_env().expect("the configuration builds");
 
-        assert_eq!(config.classpath_root, elsewhere);
-        // The descriptor tree is the deployment's own; it is not created.
-        assert!(!elsewhere.exists());
+        assert_eq!(config.topics.as_deref(), Some(topics.as_path()));
+        // The file is the deployment's own; it is not created, and whether it
+        // is there and parses is the registry's to report.
+        assert!(!topics.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
-    #[test]
-    fn the_descriptor_root_defaults_to_the_expanded_tree() {
-        let environment = Environment::take();
-        let root = tempfile::tempdir().expect("temp dir");
-        // What the build copies into the expanded web application wins over
-        // the checkout layout, so a deployed server reads its own tree.
-        let deployed = deployment(root.path(), &environment, "webapp/WEB-INF/classes");
-        std::fs::create_dir_all(root.path().join("desc").join("operators"))
-            .expect("the checkout tree");
-
-        let config = Config::from_env().expect("the configuration builds");
-
-        assert_eq!(config.classpath_root, deployed);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
-    #[test]
-    fn the_descriptor_root_defaults_to_the_checkout_tree() {
-        let environment = Environment::take();
-        let root = tempfile::tempdir().expect("temp dir");
-        // A source checkout keeps `desc` beside the web application rather
-        // than inside it, which is where `sme/desc` sits.
-        let checkout = deployment(root.path(), &environment, "desc");
-
-        let config = Config::from_env().expect("the configuration builds");
-
-        assert_eq!(config.classpath_root, checkout);
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
-    #[test]
-    fn a_deployment_without_descriptors_falls_back() {
-        let environment = Environment::take();
-        let root = tempfile::tempdir().expect("temp dir");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
-        for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
-            environment.set(name, &root.path().join(name));
-        }
-
-        let config = Config::from_env().expect("the configuration builds");
-
-        // Nothing resolves under the working directory, so every topic will
-        // report itself unavailable rather than the boot failing here.
-        assert_eq!(config.classpath_root, PathBuf::from("."));
-    }
-
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
     fn a_directory_that_cannot_exist_fails() {
         let environment = Environment::take();
@@ -395,7 +249,6 @@ mod tests {
         // A file where a directory must go: the deployment is misconfigured
         // and is told so before it serves anything.
         std::fs::write(&blocked, "not a directory").expect("the blocking file");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
         environment.set(ANALYSIS_DIR_ENV, &blocked.join("analysed"));
         for name in [UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
             environment.set(name, &root.path().join(name));
@@ -411,7 +264,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+3/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4/test]
     #[test]
     fn an_existing_directory_is_left_alone() {
         let environment = Environment::take();
@@ -420,7 +273,6 @@ mod tests {
         std::fs::create_dir_all(&analysed).expect("the cache directory");
         let cached = analysed.join("cas_1.xmi");
         std::fs::write(&cached, "{}").expect("a cached document");
-        environment.set(WEBAPP_ROOT_ENV, root.path());
         environment.set(ANALYSIS_DIR_ENV, &analysed);
         for name in [UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
             environment.set(name, &root.path().join(name));

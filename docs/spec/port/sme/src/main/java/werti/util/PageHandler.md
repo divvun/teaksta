@@ -11,15 +11,19 @@
 >   String path;
 > }
 
-> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
-> pub fn new(a_processors: &'a Processors, a_topic: &'a str, a_url: &'a str, a_path: &'a str, a_text: &'a str, a_lang: &'a str, a_mode: Mode) -> Self
+> [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
+> pub fn new(a_registry: &'a Registry, a_topic: &'a str, a_url: &'a str, a_path: &'a str, a_text: &'a str, a_lang: &'a str, a_mode: Mode) -> Self
 >
 > Port divergence: every argument but the exercise is borrowed for the life
 > of the handler rather than copied into a field. The handler is built, used
 > and dropped inside the call that assembled its arguments, so copying the
 > page would copy the whole page for nothing.
+>
+> Port divergence: the first argument is the topic registry rather than a
+> `Processors`. It answers the same two lookups by the same two keys; what it
+> hands back is a flow rather than a produced UIMA analysis engine.
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.page-handler-fn+3]
 > Plain field assignment: `processors = aProcessors`, `topic = aTopic`,
 > `text = aText`, `lang = aLang`, `url = aUrl`, `path = aPath`. Note the
 > parameter order is (processors, topic, url, path, text, lang) while the
@@ -43,7 +47,7 @@
 > [spec:teaksta:def:sme.src.main.java.werti.util.page-handler.page-handler.process-fn]
 > public JCas process() throws ServletException
 
-> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.util.page-handler.page-handler.process-fn+6]
 > Builds a CAS for the stored text and runs the topic's UIMA pipeline over it,
 > using an on-disk XMI cache keyed by URL.
 >
@@ -129,4 +133,19 @@
 > failure hands back a CAS the postprocessor never touched — from an unreadable
 > file, one holding no annotations at all, which renders as an empty page
 > answered as a success and stays that way for as long as the file does.
+>
+> Port divergence: the two lookups go to the topic registry and hand back
+> flows rather than produced UIMA analysis engines. The keys and the miss are
+> unchanged — an unknown language or an unknown topic returns nothing, with no
+> logging and no error, and the caller handles it — and so is everything the
+> cache does around them. Every topic is registered under the one language
+> this deployment has a pipeline for, so the language arm of the miss is
+> reached by any other language rather than by a language with no topics
+> configured for it.
+>
+> Port divergence: making a CAS cannot fail. The Java derived it from the
+> engine's type system, which is why a resource-initialization failure is one
+> of the two the caller tells apart; the document model here is one type shared
+> by every flow, so that arm is unreachable and is kept only because the
+> failure it names is part of what this function reports.
 

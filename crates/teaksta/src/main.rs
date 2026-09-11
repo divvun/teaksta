@@ -1,10 +1,10 @@
 //! Server binary.
 //!
 //! Everything the deployment needs is read from the environment: where the
-//! expanded web application lives, where the built web client lives, where the
-//! activity descriptors live, where uploads and analysed documents are kept,
-//! and what address to listen on. The models are named by the two variables
-//! the morpho seam reads.
+//! built web client lives, which topics file to read if not the compiled-in
+//! one, where uploads and analysed documents are kept, and what address to
+//! listen on. The models are named by the two variables the morpho seam
+//! reads.
 
 use anyhow::Result;
 use poem::listener::TcpListener;
@@ -13,8 +13,8 @@ use std::sync::Arc;
 use tracing::{info, warn};
 
 use teaksta::context::{
-    ACTIVITIES_DIR_ENV, ANALYSIS_DIR_ENV, CLASSPATH_ENV, Config, LISTEN_ENV, UPLOAD_KEEP_DIR_ENV,
-    UPLOAD_TEMP_DIR_ENV, WEBAPP_DIST_ENV, WEBAPP_ROOT_ENV,
+    ANALYSIS_DIR_ENV, Config, LISTEN_ENV, TOPICS_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV,
+    WEBAPP_DIST_ENV,
 };
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
 use teaksta::server::api::{AppState, routes};
@@ -44,14 +44,6 @@ async fn main() -> Result<()> {
 fn report(config: &Config) {
     info!("{LISTEN_ENV}: listening on {}", config.listen);
     info!(
-        "{WEBAPP_ROOT_ENV}: webapp root {}",
-        config.webapp_root.display()
-    );
-    info!(
-        "{ACTIVITIES_DIR_ENV}: activities under {}",
-        config.activities_dir.display()
-    );
-    info!(
         "{ANALYSIS_DIR_ENV}: analysed documents cached under {}",
         config.analysis_dir.display()
     );
@@ -61,16 +53,11 @@ fn report(config: &Config) {
         config.upload_temp_dir.display()
     );
 
-    // The descriptor root always has a value, so an absent tree is what is
-    // worth saying: without one every topic loads but answers unavailable.
-    let classpath = &config.classpath_root;
-    if classpath.join("operators").is_dir() {
-        info!("{CLASSPATH_ENV}: descriptors under {}", classpath.display());
-    } else {
-        warn!(
-            "{CLASSPATH_ENV}: no descriptor tree under {}; every topic will report itself unavailable",
-            classpath.display()
-        );
+    // An unset topics file is not a warning: the registry compiled into this
+    // binary is the deployment's, and a named one is the exception.
+    match &config.topics {
+        Some(topics) => info!("{TOPICS_ENV}: topics read from {}", topics.display()),
+        None => info!("{TOPICS_ENV} is not set; the compiled-in topics are served"),
     }
 
     match &config.webapp_dist {

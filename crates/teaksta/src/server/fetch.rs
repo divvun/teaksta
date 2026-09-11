@@ -24,10 +24,10 @@
 //! simply be dropped. It is confined instead: the path is resolved and must
 //! land inside one of the directories this deployment itself mints `file:`
 //! URLs under, which [`served_roots`] derives from the deployment
-//! configuration — the two upload directories, the activity tree and the
-//! expanded web application root. Anything else — `/etc/passwd`, a key under
-//! `~/.ssh`, the analysis cache — is refused with the same 400 the endpoint
-//! answers any other unusable address with.
+//! configuration — the two upload directories, and nothing else. Anything
+//! else — `/etc/passwd`, a key under `~/.ssh`, the analysis cache — is
+//! refused with the same 400 the endpoint answers any other unusable address
+//! with.
 //!
 //! Resolution walks up to the deepest ancestor that exists and canonicalises
 //! that, then appends what is left verbatim. Every symlink on the existing
@@ -190,8 +190,8 @@ impl Target {
 /// Reads the address a request points at, refusing everything this deployment
 /// will not fetch. Nothing is opened here: a refusal costs no connection and
 /// no directory listing beyond resolving the path a `file:` address names.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
 pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal> {
     let address = url.to_string();
     match url.scheme() {
@@ -224,8 +224,8 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
 /// wrote; a page off the disk is one this deployment was given — an accepted
 /// upload, or a page shipped with an activity — and is answered as it was
 /// written. Neither endpoint chooses, and an inline body never arrives here.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
 // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
@@ -256,26 +256,20 @@ pub async fn fetch(target: Target) -> Result<String> {
 
 /// The directories this deployment mints `file:` URLs under, canonicalised.
 ///
-/// The two upload directories are where an accepted upload is stored, which
-/// is the only `file:` URL a client is ever handed. The activity tree and the
-/// web application root are where the shipped pages an activity points at
-/// live; the activity tree is named separately because a deployment may put
-/// it outside the web application root.
+/// The two upload directories are the whole list, because an accepted upload
+/// is the only `file:` URL a client is ever handed. There is no shipped page
+/// tree to add to them: a topic is a handful of tag lists in `topics.toml`
+/// now, not a directory of its own with files a deployment serves out of.
 ///
 /// A directory that does not resolve is left out rather than compared
 /// against unresolved, so a deployment naming a directory that is not there
-/// confines more tightly rather than less. With none of them present nothing
-/// is servable and every `file:` address is refused.
+/// confines more tightly rather than less. With neither present nothing is
+/// servable and every `file:` address is refused.
 fn served_roots(config: &Config) -> Vec<PathBuf> {
-    [
-        &config.upload_keep_dir,
-        &config.upload_temp_dir,
-        &config.activities_dir,
-        &config.webapp_root,
-    ]
-    .into_iter()
-    .filter_map(|directory| directory.canonicalize().ok())
-    .collect()
+    [&config.upload_keep_dir, &config.upload_temp_dir]
+        .into_iter()
+        .filter_map(|directory| directory.canonicalize().ok())
+        .collect()
 }
 
 /// The resolved path, if it lands inside one of the roots. `starts_with`
