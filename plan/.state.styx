@@ -47,16 +47,17 @@ assertions (
     {id hd-click-decoys, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T23:21:33.811414Z}
     {id hd-config, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T23:23:33.6277Z}
     {id hd-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T09:32:22.59444Z}
+    {id hd-error-paths, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T10:00:26.260915Z}
     {id hd-fetch, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T23:28:23.207286Z}
     {id hd-mode, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:52:39.230061Z}
     {id hd-morpho, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:39:07.831779Z}
     {id hd-request-limits, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T23:10:58.397604Z}
     {id hd-serve, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:41:56.622582Z}
+    {id hd-span-ui, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T10:03:34.066402Z}
     {id hd-topic-classes, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T23:19:57.548742Z}
     {id hd-upload-ui, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T22:53:19.129688Z}
     {id idiomatize-enhancers, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:39.246331Z}
     {id json-api, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T14:28:46.845008Z}
     {id router-binary, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:39:31.548268Z}
     {id sme-bundle, kind @complete, author "brendan@bbqsrc.net", at 2026-09-10T13:11:33.194802Z}
-    {id hd-error-paths, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T10:00:26.260915Z}
 )

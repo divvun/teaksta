@@ -1,6 +1,12 @@
-//! The HTTP surface: a topic registry, two enhancement endpoints and an
+//! The HTTP surface: a topic registry, three enhancement endpoints and an
 //! upload endpoint, over one shared analysis state, with the built web client
 //! under them when the deployment carries one.
+//!
+//! The three enhancement endpoints answer the same analysis three ways: a
+//! whole page for a caller that wants the document back, the per-token span
+//! map the browser add-on spliced into a page it already held, and the
+//! analysed text block by block for a client that renders the exercise
+//! itself, which is what the web client asks for.
 //!
 //! Analysis is synchronous and blocking — the morpho seam owns a runtime of
 //! its own — so every endpoint that analyses hands the work to a blocking
@@ -39,6 +45,7 @@ use crate::server::fetch::{self, Overloaded, Refusal, Unreachable};
 use crate::server::processors::Processors;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::{Document, PIPELINE_LANGUAGE};
+use crate::util::html_blocks;
 use crate::util::html_enhancer::{HtmlEnhancer, sami_label};
 use crate::util::json_enhancer::JsonEnhancer;
 use crate::util::page_handler::PageHandler;
@@ -47,9 +54,9 @@ use crate::util::page_handler::PageHandler;
 /// file the cap in [`MAX_UPLOAD_BYTES`] applies to.
 const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
-/// What the span endpoint's body may weigh. A page carried inline is the
-/// largest thing it holds, so it weighs what an upload may, with the same
-/// room for the framing around it.
+/// What a POST enhancement body may weigh, span map and blocks alike. A page
+/// carried inline is the largest thing either holds, so it weighs what an
+/// upload may, with the same room for the framing around it.
 const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
 /// The exercise a request asks for.
@@ -173,6 +180,7 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
     let api = Route::new()
         .at("/api/activities", get(registry))
         .at("/api/enhance", get(enhance_page).post(enhance_spans))
+        .at("/api/enhance/blocks", post(enhance_blocks))
         .at(
             "/api/upload",
             post(upload_text).with(SizeLimit::new(MAX_UPLOAD_BODY)),
@@ -227,6 +235,7 @@ async fn index() -> Response {
         "GET  /api/activities\n",
         "GET  /api/enhance?url=&activity=&mode=\n",
         "POST /api/enhance\n",
+        "POST /api/enhance/blocks\n",
         "POST /api/upload\n",
     );
     Response::builder()
@@ -354,23 +363,7 @@ async fn enhance_spans(
     let activity = known_topic(&state, request.activity)?;
 
     let started = Instant::now();
-    // The page is keyed by its address when it is fetched and by its own
-    // content when it arrives inline, so neither is answered from the other's
-    // analysis.
-    let (page, key) = match (request.html, request.url) {
-        (Some(html), None) => {
-            let key = cache_key(&html);
-            (html, key)
-        }
-        (None, Some(raw)) => {
-            let url = page_url(&raw)?;
-            let target =
-                fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
-            let key = cache_key(url.as_str());
-            (fetch::fetch(target).await.map_err(failure)?, key)
-        }
-        _ => return Err(bad_request("give exactly one of \"html\" and \"url\"")),
-    };
+    let (page, key) = page_source(&state, request.html, request.url).await?;
 
     let spans = blocking(move || {
         let document = state.analyse(&activity, mode, &page, &key)?;
@@ -386,6 +379,87 @@ async fn enhance_spans(
     Ok(Response::builder()
         .header(CONTENT_TYPE, "application/json")
         .body(spans))
+}
+
+/// The page a request names, with the key its analysis is cached under.
+///
+/// The page is keyed by its address when it is fetched and by its own content
+/// when it arrives inline, so neither is answered from the other's analysis.
+async fn page_source(
+    state: &AppState,
+    html: Option<String>,
+    url: Option<String>,
+) -> poem::Result<(String, String)> {
+    match (html, url) {
+        (Some(html), None) => {
+            let key = cache_key(&html);
+            Ok((html, key))
+        }
+        (None, Some(raw)) => {
+            let url = page_url(&raw)?;
+            let target =
+                fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
+            let key = cache_key(url.as_str());
+            Ok((fetch::fetch(target).await.map_err(failure)?, key))
+        }
+        _ => Err(bad_request("give exactly one of \"html\" and \"url\"")),
+    }
+}
+
+/// The body the block endpoint takes: the page itself, or where to fetch it,
+/// with the topic and the exercise to analyse it for. It asks what the span
+/// endpoint's body asks and is held apart from it all the same, because one
+/// of the two mirrors a protocol that is finished and the other is ours.
+#[derive(Debug, Deserialize)]
+struct BlockRequest {
+    #[serde(default)]
+    html: Option<String>,
+    #[serde(default)]
+    url: Option<String>,
+    activity: String,
+    mode: String,
+}
+
+/// One block of the analysed text, as the client reads it.
+#[derive(Debug, Serialize)]
+struct TextBlock {
+    html: String,
+}
+
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn]
+#[handler]
+async fn enhance_blocks(
+    CappedJson(request): CappedJson<BlockRequest>,
+    state: Data<&Arc<AppState>>,
+) -> poem::Result<Response> {
+    let state = state.0.clone();
+    let mode = parse_mode(&request.mode)?;
+    let activity = known_topic(&state, request.activity)?;
+
+    let started = Instant::now();
+    let (page, key) = page_source(&state, request.html, request.url).await?;
+
+    let blocks = blocking(move || {
+        let document = state.analyse(&activity, mode, &page, &key)?;
+        let blocks: Vec<TextBlock> =
+            html_blocks::render_blocks(&document.page, &document, Some(mode))?
+                .into_iter()
+                .map(|html| TextBlock { html })
+                .collect();
+
+        Ok(serde_json::to_string(&blocks)?)
+    })
+    .await?;
+
+    info!(
+        "Enhanced blocks as {} in {:?}",
+        mode.name(),
+        started.elapsed()
+    );
+    Ok(Response::builder()
+        .header(CONTENT_TYPE, "application/json")
+        .body(blocks))
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]

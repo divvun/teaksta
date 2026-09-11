@@ -1,6 +1,8 @@
 //! The page-annotation surface: a fetched page in, analysable text plus a
 //! map back to its DOM out; enhancements plus that map in, an enhanced page
-//! or a set of enhanced fragments out.
+//! or a set of enhanced fragments out. The placement behind both is shared
+//! with [`crate::util::html_blocks`], which writes the same enhanced page out
+//! as the blocks of text a page-less client renders.
 //!
 //! Author: Adriane Boyd
 //!
@@ -25,13 +27,13 @@ use crate::util::enhancer_utils::{ADDED_SPAN_STYLE, PAGE_SPAN_CLASS};
 /// Subtrees whose text is markup, code or chrome rather than prose. `head`
 /// is among them, so a page's title and metadata are never analysed.
 // [spec:teaksta:def:sme.src.main.java.werti.util.html-utils.html-utils+1]
-static SKIPPED_TAGS: &[&str] = &[
+pub(super) static SKIPPED_TAGS: &[&str] = &[
     "script", "noscript", "style", "form", "object", "embed", "head", "template",
 ];
 
 /// Elements that open a block box. Text either side of one of these
 /// boundaries cannot belong to the same sentence.
-static BLOCK_TAGS: &[&str] = &[
+pub(super) static BLOCK_TAGS: &[&str] = &[
     "address",
     "article",
     "aside",
@@ -188,8 +190,10 @@ struct Piece {
 
 /// Places every selected enhancement into the parsed page, and reports where
 /// each one landed: its document position paired with the wrapper elements
-/// built for it, in document order.
-fn place_enhancements(
+/// built for it, in document order. Every render goes through here, the
+/// block renderer beside this module included, so they cannot disagree about
+/// what reaches the output or how it is wrapped.
+pub(super) fn place_enhancements(
     page: &mut Html,
     map: &PageMap,
     doc: &Document,
@@ -455,7 +459,7 @@ fn parent_tag(page: &Html, node: NodeId) -> Option<String> {
 /// jsoup's `TextNode.isBlank()`: empty, or made up entirely of the five
 /// characters jsoup counts as whitespace. A non-breaking space is not one of
 /// them, so a text node holding only `&nbsp;` is not blank.
-fn is_blank(text: &str) -> bool {
+pub(super) fn is_blank(text: &str) -> bool {
     text.chars()
         .all(|c| c == ' ' || c == '\t' || c == '\n' || c == '\u{000C}' || c == '\r')
 }

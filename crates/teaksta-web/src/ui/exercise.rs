@@ -1,5 +1,5 @@
 //! The exercise view: the chosen parameters, the backend request they map to,
-//! and the enhanced page itself, woven into whichever exercise was asked for.
+//! and the analysed text itself, woven into whichever exercise was asked for.
 
 pub mod click;
 pub mod cloze;
@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::api::{Backend, EnhanceRequest, fetch_enhanced};
+use crate::api::{Backend, BlockRequest, fetch_blocks};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
 
@@ -24,12 +24,12 @@ use mc::McMode;
 #[component]
 pub fn Exercise(params: ExerciseQuery) -> Element {
     let backend = use_context::<Backend>();
-    let request = EnhanceRequest::new(params.url.clone(), params.topic.clone(), &params.mode);
-    let target = backend.enhance_url(&request);
+    let request = BlockRequest::fetched(params.url.clone(), params.topic.clone(), &params.mode);
+    let target = backend.blocks_url();
 
-    let page = use_resource(use_reactive!(|request| {
+    let text = use_resource(use_reactive!(|request| {
         let backend = backend.clone();
-        async move { fetch_enhanced(&backend, &request).await }
+        async move { fetch_blocks(&backend, &request).await }
     }));
 
     let registry = use_context::<SharedRegistry>();
@@ -41,7 +41,7 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
         ),
         _ => (params.topic.clone(), params.mode.clone()),
     };
-    let value = page.value();
+    let value = text.value();
 
     rsx! {
         section { class: "exercise",
@@ -65,12 +65,12 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                     None => rsx! {
                         p { class: "state state-pending",
                             "Vuorddát…"
-                            span { class: "gloss", "Asking the backend for the enhanced page" }
+                            span { class: "gloss", "Asking the backend for the analysed text" }
                         }
                     },
-                    Some(Ok(html)) => rsx! {
-                        EnhancedPage {
-                            html: html.clone(),
+                    Some(Ok(text)) => rsx! {
+                        EnhancedText {
+                            blocks: text.iter().map(|block| block.html.clone()).collect::<Vec<String>>(),
                             topic: params.topic.clone(),
                             mode: params.mode.clone(),
                         }
@@ -89,11 +89,11 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
     }
 }
 
-/// One enhanced page, read once and handed to the exercise that was asked
+/// The analysed text, read once and handed to the exercise that was asked
 /// for. An unknown mode reads as colorize, which every topic offers.
 #[component]
-pub fn EnhancedPage(html: String, topic: String, mode: String) -> Element {
-    let parsed = use_memo(use_reactive!(|html| Rc::new(markup::parse(&html))));
+pub fn EnhancedText(blocks: Vec<String>, topic: String, mode: String) -> Element {
+    let parsed = use_memo(use_reactive!(|blocks| Rc::new(markup::parse(&blocks))));
     let markup = parsed();
 
     match mode.as_str() {
@@ -112,7 +112,7 @@ pub fn EnhancedPage(html: String, topic: String, mode: String) -> Element {
     }
 }
 
-/// Render the enhanced page, letting the caller put its own control where each
+/// Render the analysed text, letting the caller put its own control where each
 /// token stands. The page's own markup around the tokens is kept as the
 /// enhancer wrote it.
 pub fn enhanced_text(markup: &Markup, control: impl Fn(&TokenSpan) -> Element) -> Element {

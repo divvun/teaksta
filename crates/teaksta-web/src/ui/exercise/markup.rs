@@ -1,22 +1,27 @@
-//! Reading one enhanced page into the blocks and tokens an exercise renders.
+//! Reading the analysed text into the blocks and tokens an exercise renders.
 //!
-//! The enhancer hands back a whole HTML page in which the word forms a topic
-//! matched are wrapped in a span carrying the class `teaksta-token` plus, on
-//! a hit, a class naming the topic. Everything about that markup is read
-//! through element and attribute structure: the class attribute's spacing is
-//! not part of the contract, so membership of the class list decides, never
-//! the attribute's text.
+//! The backend hands back the text block by block, each block one element
+//! holding the prose of that block with the word forms a topic matched
+//! wrapped in a span carrying the class `teaksta-token` plus, on a hit, a
+//! class naming the topic. Everything about that markup is read through
+//! element and attribute structure: the class attribute's spacing is not part
+//! of the contract, so membership of the class list decides, never the
+//! attribute's text.
 //!
-//! The click exercise is served a page in which the words the topic did not
+//! The click exercise is served blocks in which the words the topic did not
 //! match are wrapped too, carrying `teaksta-token` alone. Those are its
 //! decoys, and they read as tokens here exactly as the hits do — what tells
 //! them apart is the topic's class, which only a hit carries.
 //!
-//! The page is taken apart into blocks of inline runs so an exercise can put
-//! its own controls where the tokens were. A run between two tokens is the
-//! page's own inline markup, kept verbatim; an inline element split by a
-//! token is closed and re-opened around it, which reads identically because
-//! only inline elements are ever split.
+//! Each block is taken apart into inline runs so an exercise can put its own
+//! controls where the tokens were. A run between two tokens is the block's
+//! own inline markup, kept verbatim; an inline element split by a token is
+//! closed and re-opened around it, which reads identically because only
+//! inline elements are ever split.
+//!
+//! Nothing here takes a whole page apart. The backend sends the analysed text
+//! and only that: no document scaffolding, and no subtree it never analysed,
+//! so there is no head to skip past and no script to drop.
 
 /// The class the enhancer puts on every span a learner can work on.
 pub const TOKEN_CLASS: &str = "teaksta-token";
@@ -32,9 +37,6 @@ pub const TOPIC_PREFIX: &str = "teaksta-";
 /// were moved off this class and onto the topic's. A word that does carry
 /// it is a hit all the same.
 pub const GENERIC_HIT_CLASS: &str = "teaksta-hit";
-
-/// Elements whose content never reaches the learner.
-const DROPPED_ELEMENTS: &[&str] = &["script", "style", "noscript", "template"];
 
 /// Elements that end the run of text they interrupt.
 const BLOCK_ELEMENTS: &[&str] = &[
@@ -80,7 +82,7 @@ const VOID_ELEMENTS: &[&str] = &[
     "wbr",
 ];
 
-/// How one block of the enhanced page reads.
+/// How one block of the analysed text reads.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum BlockKind {
     #[default]
@@ -90,7 +92,7 @@ pub enum BlockKind {
     Quote,
 }
 
-/// One run inside a block: either the page's own markup or a token the
+/// One run inside a block: either the block's own markup or a token the
 /// exercise replaces with a control of its own.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Piece {
@@ -98,14 +100,14 @@ pub enum Piece {
     Token(usize),
 }
 
-/// One block of the enhanced page.
+/// One block of the analysed text.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Block {
     pub kind: BlockKind,
     pub pieces: Vec<Piece>,
 }
 
-/// One enhanced span: the word form as it stands in the page, plus whatever
+/// One enhanced span: the word form as it stands in the text, plus whatever
 /// the topic's enhancer attached to it.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TokenSpan {
@@ -133,7 +135,7 @@ impl TokenSpan {
     /// Every form that counts as the right answer, lowercased. Parallel forms
     /// are why this is a list: a topic can generate several forms the learner
     /// could not tell apart from the text, and each of them is right. The
-    /// form standing in the page is always among them, because it is the one
+    /// form standing in the text is always among them, because it is the one
     /// the enhancer took the exercise from.
     pub fn accepted_forms(&self) -> Vec<String> {
         let mut forms: Vec<String> = Vec::new();
@@ -197,7 +199,7 @@ impl TokenSpan {
     }
 }
 
-/// One enhanced page, ready to render.
+/// The analysed text, ready to render.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Markup {
     blocks: Vec<Block>,
@@ -224,11 +226,24 @@ impl Markup {
     }
 }
 
-/// Read an enhanced page. Only the body is kept: the head carries the fetched
-/// page's own title and base URL, neither of which this client shows.
-pub fn parse(page: &str) -> Markup {
+/// Read the analysed text, block by block as the backend sent it. The blocks
+/// are read into one reading of the whole text, so a token is numbered once
+/// across all of them however many blocks it took to send.
+pub fn parse(blocks: &[String]) -> Markup {
     let mut reader = Reader::default();
-    let mut rest = body_of(page);
+
+    for block in blocks {
+        read_block(&mut reader, block);
+        // Each entry is one block whatever its markup says, so nothing of it
+        // can run into the block that follows.
+        reader.finish_block();
+    }
+
+    reader.finish()
+}
+
+fn read_block(reader: &mut Reader, block: &str) {
+    let mut rest = block;
 
     while let Some(at) = rest.find('<') {
         reader.push_text(&rest[..at]);
@@ -252,9 +267,7 @@ pub fn parse(page: &str) -> Markup {
                 raw,
                 closed,
             } => {
-                if DROPPED_ELEMENTS.contains(&name.as_str()) && !closed {
-                    rest = take_element(after, &name).1;
-                } else if name == "span" && is_token(&attributes) {
+                if name == "span" && is_token(&attributes) {
                     let (inner, beyond) = take_element(after, "span");
                     reader.push_token(TokenSpan::read(&attributes, inner));
                     rest = beyond;
@@ -267,7 +280,6 @@ pub fn parse(page: &str) -> Markup {
     }
 
     reader.push_text(rest);
-    reader.finish()
 }
 
 /// Whether a span's class list makes it an exercisable token. Membership of
@@ -285,25 +297,7 @@ fn split_forms(value: Option<&str>) -> Vec<String> {
         .unwrap_or_default()
 }
 
-/// The body of a page, or the whole of it when there is no body element.
-fn body_of(page: &str) -> &str {
-    let lowered = page.to_ascii_lowercase();
-    let Some(start) = lowered.find("<body") else {
-        return page;
-    };
-    let Some(open) = page[start..].find('>') else {
-        return page;
-    };
-
-    let from = start + open + 1;
-    let to = lowered[from..]
-        .rfind("</body")
-        .map_or(page.len(), |at| from + at);
-
-    &page[from..to]
-}
-
-/// One inline element still open where the page is being read, kept so a
+/// One inline element still open where the block is being read, kept so a
 /// token splitting it can close and re-open it.
 struct Level {
     name: String,
@@ -311,7 +305,7 @@ struct Level {
     html: String,
 }
 
-/// Accumulates blocks while the page is walked.
+/// Accumulates blocks while the text is read.
 #[derive(Default)]
 struct Reader {
     blocks: Vec<Block>,
@@ -552,8 +546,8 @@ fn leading_space(input: &str) -> usize {
     input.len() - input.trim_start().len()
 }
 
-/// The content of an element whose open tag has just been read, with the page
-/// beyond its close tag. Nesting of the same element is counted, so an inner
+/// The content of an element whose open tag has just been read, with the
+/// markup beyond its close tag. Nesting of the same element is counted, so an inner
 /// span never ends the outer one.
 fn take_element<'a>(input: &'a str, name: &str) -> (&'a str, &'a str) {
     let mut depth = 1usize;
@@ -666,9 +660,19 @@ mod tests {
         " possibleforms=\"viesu viesuid\">viesu</span> ikte.</p>"
     );
 
+    /// The analysed text as the backend sends it: one entry per block.
+    fn read(blocks: &[&str]) -> Markup {
+        parse(
+            &blocks
+                .iter()
+                .map(|block| block.to_string())
+                .collect::<Vec<String>>(),
+        )
+    }
+
     #[test]
     fn a_token_is_found_by_class_membership() {
-        let markup = parse(TOKEN);
+        let markup = read(&[TOKEN]);
 
         assert_eq!(markup.tokens().len(), 1);
         assert_eq!(markup.tokens()[0].text, "viesu");
@@ -677,7 +681,7 @@ mod tests {
 
     #[test]
     fn a_hit_is_named_by_its_topic_class() {
-        let markup = parse(TOKEN);
+        let markup = read(&[TOKEN]);
         let token = &markup.tokens()[0];
 
         assert!(token.is_hit("Substantive"));
@@ -687,7 +691,7 @@ mod tests {
 
     #[test]
     fn a_plain_token_belongs_to_no_topic() {
-        let markup = parse("<p><span class=\"teaksta-token\" id=\"b\">ikte</span></p>");
+        let markup = read(&["<p><span class=\"teaksta-token\" id=\"b\">ikte</span></p>"]);
 
         assert!(!markup.tokens()[0].is_hit("Substantive"));
         assert_eq!(markup.hits("Substantive"), 0);
@@ -695,14 +699,14 @@ mod tests {
 
     #[test]
     fn the_generic_hit_class_counts_as_a_hit() {
-        let markup = parse("<p><span class=\"teaksta-token teaksta-hit\">go</span></p>");
+        let markup = read(&["<p><span class=\"teaksta-token teaksta-hit\">go</span></p>"]);
 
         assert!(markup.tokens()[0].is_hit("Substantive"));
     }
 
     #[test]
-    fn the_page_around_a_token_is_kept() {
-        let markup = parse(TOKEN);
+    fn the_text_around_a_token_is_kept() {
+        let markup = read(&[TOKEN]);
         let block = &markup.blocks()[0];
 
         assert_eq!(block.kind, BlockKind::Paragraph);
@@ -713,7 +717,7 @@ mod tests {
 
     #[test]
     fn an_inline_element_split_is_reopened() {
-        let markup = parse("<p><em>a <span class=\"teaksta-token\">b</span> c</em></p>");
+        let markup = read(&["<p><em>a <span class=\"teaksta-token\">b</span> c</em></p>"]);
         let pieces = &markup.blocks()[0].pieces;
 
         assert_eq!(pieces[0], Piece::Html("<em>a </em>".to_string()));
@@ -721,8 +725,14 @@ mod tests {
     }
 
     #[test]
-    fn blocks_keep_the_page_headings() {
-        let markup = parse("<h1>Title</h1><p>Text</p><li>Item</li><blockquote>Q</blockquote>");
+    fn a_block_is_read_as_its_element() {
+        let markup = read(&[
+            "<h1>Title</h1>",
+            "<p>Text</p>",
+            "<li>Item</li>",
+            "<blockquote>Q</blockquote>",
+            "<div>Plain</div>",
+        ]);
         let kinds: Vec<_> = markup.blocks().iter().map(|block| block.kind).collect();
 
         assert_eq!(
@@ -731,43 +741,59 @@ mod tests {
                 BlockKind::Heading,
                 BlockKind::Paragraph,
                 BlockKind::Item,
-                BlockKind::Quote
+                BlockKind::Quote,
+                BlockKind::Paragraph,
             ]
         );
     }
 
+    /// Every entry the backend sends is one block, and the tokens are
+    /// numbered once across all of them: an exercise addresses its controls
+    /// by that number whichever block they stand in.
     #[test]
-    fn scripts_and_styles_never_reach_a_block() {
-        let markup = parse("<body><script>var a = '<p>x</p>';</script><p>Text</p></body>");
+    fn tokens_are_numbered_across_the_blocks() {
+        let markup = read(&[
+            "<p>Mun <span class=\"teaksta-token\">oidnen</span></p>",
+            "<p><span class=\"teaksta-token\">viesu</span> ikte.</p>",
+        ]);
 
-        assert_eq!(markup.blocks().len(), 1);
+        assert_eq!(markup.blocks().len(), 2);
+        assert_eq!(markup.tokens().len(), 2);
+        assert_eq!(markup.blocks()[0].pieces[1], Piece::Token(0));
+        assert_eq!(markup.blocks()[1].pieces[0], Piece::Token(1));
         assert_eq!(
-            markup.blocks()[0].pieces[0],
-            Piece::Html("Text".to_string())
+            markup.token(1).map(|token| token.text.as_str()),
+            Some("viesu")
         );
     }
 
+    /// An entry whose markup never closes cannot run into the next one: the
+    /// block ends where the backend ended it.
     #[test]
-    fn only_the_body_of_a_page_is_read() {
-        let markup = parse("<html><head><title>Head</title></head><body><p>Body</p></body></html>");
+    fn an_unclosed_block_ends_with_its_entry() {
+        let markup = read(&["<p><em>Mun", "<p>Viesut</p>"]);
 
-        assert_eq!(markup.blocks().len(), 1);
+        assert_eq!(markup.blocks().len(), 2);
         assert_eq!(
             markup.blocks()[0].pieces[0],
-            Piece::Html("Body".to_string())
+            Piece::Html("<em>Mun</em>".to_string())
+        );
+        assert_eq!(
+            markup.blocks()[1].pieces[0],
+            Piece::Html("Viesut".to_string())
         );
     }
 
     #[test]
     fn attributes_need_no_space_between_them() {
-        let markup = parse("<p><span class=\"teaksta-token\"lemma=\"viessu\">viesu</span></p>");
+        let markup = read(&["<p><span class=\"teaksta-token\"lemma=\"viessu\">viesu</span></p>"]);
 
         assert_eq!(markup.tokens()[0].lemma.as_deref(), Some("viessu"));
     }
 
     #[test]
     fn a_nested_span_never_ends_the_token() {
-        let markup = parse("<p><span class=\"teaksta-token\"><span>vie</span>su</span> a</p>");
+        let markup = read(&["<p><span class=\"teaksta-token\"><span>vie</span>su</span> a</p>"]);
 
         assert_eq!(markup.tokens().len(), 1);
         assert_eq!(markup.tokens()[0].text, "viesu");
@@ -776,7 +802,7 @@ mod tests {
 
     #[test]
     fn parallel_forms_are_all_accepted() {
-        let markup = parse(TOKEN);
+        let markup = read(&[TOKEN]);
         let token = &markup.tokens()[0];
 
         assert!(token.accepts("viesu"));
@@ -788,19 +814,19 @@ mod tests {
 
     #[test]
     fn the_hint_separates_the_parallel_forms() {
-        assert_eq!(parse(TOKEN).tokens()[0].hint(), "viesu/viesuid");
+        assert_eq!(read(&[TOKEN]).tokens()[0].hint(), "viesu/viesuid");
     }
 
     #[test]
-    fn the_hint_falls_back_to_the_page_form() {
-        let markup = parse("<p><span class=\"teaksta-token\">viesu</span></p>");
+    fn the_hint_falls_back_to_the_form_read() {
+        let markup = read(&["<p><span class=\"teaksta-token\">viesu</span></p>"]);
 
         assert_eq!(markup.tokens()[0].hint(), "viesu");
     }
 
     #[test]
     fn the_answer_attribute_is_accepted_too() {
-        let markup = parse("<p><span class=\"teaksta-token\" answer=\"lei leai\">lei</span></p>");
+        let markup = read(&["<p><span class=\"teaksta-token\" answer=\"lei leai\">lei</span></p>"]);
 
         assert!(markup.tokens()[0].accepts("leai"));
         assert_eq!(markup.tokens()[0].hint(), "lei/leai");
@@ -808,7 +834,8 @@ mod tests {
 
     #[test]
     fn entities_are_decoded_in_text_and_values() {
-        let markup = parse("<p><span class=\"teaksta-token\" lemma=\"a&amp;b\">x&amp;y</span></p>");
+        let markup =
+            read(&["<p><span class=\"teaksta-token\" lemma=\"a&amp;b\">x&amp;y</span></p>"]);
 
         assert_eq!(markup.tokens()[0].text, "x&y");
         assert_eq!(markup.tokens()[0].lemma.as_deref(), Some("a&b"));
@@ -816,7 +843,7 @@ mod tests {
 
     #[test]
     fn a_comment_carries_nothing_to_the_page() {
-        let markup = parse("<p>a<!-- <span class=\"teaksta-token\">b</span> -->c</p>");
+        let markup = read(&["<p>a<!-- <span class=\"teaksta-token\">b</span> -->c</p>"]);
 
         assert!(markup.tokens().is_empty());
         assert_eq!(markup.blocks()[0].pieces[0], Piece::Html("ac".to_string()));

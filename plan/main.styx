@@ -506,6 +506,7 @@ children (
                 title "Wire the UI to the span endpoint: page plus span map spliced client-side"
                 kind @feat
                 deps (hd-topic-classes hd-click-decoys)
+                sealed true
                 log (
                     {
                         at 2026-09-10T21:51:25.306634Z
@@ -519,6 +520,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @decision
                         text "Course correction (operator, 2026-09-11): the original premise was wrong — the POST span map is the dead add-on's PER-TOKEN protocol (one entry per token span, no prose/punctuation; positions index a document text the SPA never receives; teaksta-page = ported wertiview inline-neutralizer, not a block wrapper). Verified by live capture and the Java (JSONEnhancer wraps single e-tag groups). Operator decision: build a BLOCK-KEYED v2 — the endpoint (new shape or new endpoint) serves the analysed text block-by-block with token/topic spans inline, spec'd as a teaksta-native addition (new rules; do NOT bump the ported json-enhancer/render-spans rules to claim behavior the Java lacks — the per-token shape stays as the documented add-on contract). UI renders exercises from the block JSON; markup.rs shrinks to fragment parsing. PageMap.segments already carries the block structure server-side."
+                    }
+
+                    {
+                        at 2026-09-11T10:03:34.066402Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }

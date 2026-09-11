@@ -4,8 +4,10 @@
 //! models each test reports itself skipped and passes.
 //!
 //! The requests go through the router, so what is exercised is the handler
-//! layer a deployment serves: the topic registry, the whole-page and span
-//! enhancement endpoints, and the upload gate.
+//! layer a deployment serves: the topic registry, the whole-page, span and
+//! block enhancement endpoints, and the upload gate. The web client's
+//! exercise fixtures are checked against the same server here, and rewritten
+//! from it on request, so a fixture cannot drift from what is answered.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -50,6 +52,64 @@ fn models_available() -> bool {
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
+
+/// Set this to rewrite the web client's fixtures from what the server
+/// answers, rather than checking them against it.
+const UPDATE_ENV: &str = "TEAKSTA_UPDATE_FIXTURES";
+
+/// The North Sámi page the substantive exercises are taken from: a heading
+/// and three paragraphs, the last of them carrying a conjunction so the
+/// decoys of the click exercise have something beside nouns in them.
+const FIXTURE_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head>\n",
+    "<meta charset=\"utf-8\">\n",
+    "<title>Teakstabihtt\u{e1}</title>\n",
+    "</head>\n",
+    "<body>\n",
+    "<h1>Teakstabihtt\u{e1}</h1>\n",
+    "<p>Mun oidnen viesu ikte. Viesut leat stuorr\u{e1}t.</p>\n",
+    "<p>B\u{e1}rdni lea skuvllas. Nieida logai girjji.</p>\n",
+    "<p>Beana viehk\u{e1} olgun, ja mii boahtit ruoktot.</p>\n",
+    "\n",
+    "</body></html>\n"
+);
+
+/// A page written for the conjunction topic, whose class is not its own name
+/// by coincidence, so the client's derivation of a hit class is exercised by
+/// a topic that would not survive guessing it.
+const CONJUNCTIONS_PAGE: &str = concat!(
+    "<!DOCTYPE html><html lang=\"se\"><head>\n",
+    "<meta charset=\"utf-8\">\n",
+    "<title>Konjunk\u{161}uvnnat</title>\n",
+    "</head>\n",
+    "<body>\n",
+    "<h1>Konjunk\u{161}uvnnat</h1>\n",
+    "<p>Mun oidnen viesu ja beatnaga ikte.</p>\n",
+    "<p>B\u{e1}rdni lea skuvllas, muhto nieida lea ruovttus.</p>\n",
+    "<p>Mii boahtit ruoktot, go beaivi loahpp\u{e1}.</p>\n",
+    "\n",
+    "</body></html>\n"
+);
+
+/// Every fixture the web client's tests read: the file it is saved as, the
+/// page it is taken from, the topic and the exercise.
+const FIXTURES: &[(&str, &str, &str, &str)] = &[
+    (
+        "substantive-colorize",
+        FIXTURE_PAGE,
+        "Substantive",
+        "colorize",
+    ),
+    ("substantive-click", FIXTURE_PAGE, "Substantive", "click"),
+    ("substantive-mc", FIXTURE_PAGE, "Substantive", "mc"),
+    ("substantive-cloze", FIXTURE_PAGE, "Substantive", "cloze"),
+    (
+        "conjunctions-colorize",
+        CONJUNCTIONS_PAGE,
+        "Conjunctions",
+        "colorize",
+    ),
+];
 
 /// The deployment every test is served from: the shipped activity tree and
 /// descriptors, with the caches under a directory of their own. The model
@@ -145,6 +205,35 @@ async fn spans(activity: &str, mode: &str) -> HashMap<String, String> {
     response.assert_content_type("application/json");
     let body = response.0.into_body().into_string().await.expect("a body");
     serde_json::from_str(&body).expect("a JSON object")
+}
+
+/// One block request over the inline document, answered as the markup of
+/// each block in document order.
+async fn blocks(activity: &str, mode: &str) -> Vec<String> {
+    let response = client()
+        .post("/api/enhance/blocks")
+        .body_json(&serde_json::json!({
+            "html": DOCUMENT,
+            "activity": activity,
+            "mode": mode,
+        }))
+        .send()
+        .await;
+
+    response.assert_status_is_ok();
+    response.assert_content_type("application/json");
+    let body = response.0.into_body().into_string().await.expect("a body");
+    let answered: Vec<Value> = serde_json::from_str(&body).expect("a JSON array");
+
+    answered
+        .into_iter()
+        .map(|block| {
+            block["html"]
+                .as_str()
+                .expect("a block carries its markup")
+                .to_string()
+        })
+        .collect()
 }
 
 #[tokio::test]
@@ -317,6 +406,149 @@ async fn each_mode_attaches_its_own_fields() {
     assert!(mc[0].contains("answer=\"viesu\""), "{}", mc[0]);
     assert!(mc[0].contains("distractors="), "{}", mc[0]);
     assert!(cloze[0].contains("possibleforms=\"viesu"), "{}", cloze[0]);
+}
+
+/// What the exercises are rendered from: the page's own prose, cut where the
+/// page cuts it, with the topic's spans standing in the sentences they were
+/// found in.
+#[tokio::test]
+async fn the_block_endpoint_answers_the_analysed_text() {
+    if !models_available() {
+        return;
+    }
+    let blocks = blocks("Substantive", "colorize").await;
+
+    assert_eq!(
+        blocks,
+        vec![
+            concat!(
+                "<p>Mun oidnen ",
+                "<span class=\"teaksta-token teaksta-Substantive\" ",
+                "id=\"teaksta-span-viessu-N-Sem/Build-Sg-Acc-@xOBJ-1\" lemma=\"viessu\">",
+                "viesu</span> ikte.</p>"
+            )
+            .to_string(),
+            concat!(
+                "<p><span class=\"teaksta-token teaksta-Substantive\" ",
+                "id=\"teaksta-span-viessu-N-Sem/Build-Pl-Nom-@SUBJy-1\" lemma=\"viessu\">",
+                "Viesut</span> leat stuorr\u{e1}t.</p>"
+            )
+            .to_string(),
+        ]
+    );
+
+    // Neither the page's own scaffolding nor its title reaches a block: what
+    // a client holds is the text, not a document it has to take apart.
+    for block in &blocks {
+        for absent in ["<html", "<head", "<body", "<title", "<base", "<script"] {
+            assert!(!block.contains(absent), "{absent} in {block}");
+        }
+    }
+}
+
+/// Click is the one exercise the decoys reach, in the blocks exactly as in
+/// the page: every other word carries a bare token span so the learner has
+/// something to pick wrongly.
+#[tokio::test]
+async fn the_click_blocks_carry_the_decoys() {
+    if !models_available() {
+        return;
+    }
+    let click = blocks("Substantive", "click").await;
+    let colorize = blocks("Substantive", "colorize").await;
+
+    assert_eq!(click.len(), colorize.len());
+    let click_markup = click.join("");
+    let colorize_markup = colorize.join("");
+
+    for hit in [">viesu</span>", ">Viesut</span>"] {
+        assert!(click_markup.contains(hit), "{click_markup}");
+        assert!(colorize_markup.contains(hit), "{colorize_markup}");
+    }
+    for decoy in ["Mun", "oidnen", "ikte", "leat", "stuorrát"] {
+        assert!(
+            click_markup.contains(&format!(">{decoy}</span>")),
+            "click marked no decoy for {decoy}: {click_markup}"
+        );
+        assert!(
+            !colorize_markup.contains(&format!(">{decoy}</span>")),
+            "colorize marked {decoy}: {colorize_markup}"
+        );
+    }
+
+    // Seven words, two of them the topic's, and the punctuation between them
+    // still where the page put it.
+    assert_eq!(click_markup.matches("teaksta-token").count(), 7);
+    assert_eq!(colorize_markup.matches("teaksta-token").count(), 2);
+    for block in &click {
+        assert!(block.ends_with("</span>.</p>"), "{block}");
+    }
+}
+
+/// Each exercise attaches its own fields to the spans standing in the blocks,
+/// exactly as it attaches them to the spans of a rendered page.
+#[tokio::test]
+async fn each_mode_fills_its_own_block_fields() {
+    if !models_available() {
+        return;
+    }
+    let colorize = blocks("Substantive", "colorize").await.join("");
+    let mc = blocks("Substantive", "mc").await.join("");
+    let cloze = blocks("Substantive", "cloze").await.join("");
+
+    assert!(!colorize.contains("distractors="), "{colorize}");
+    assert!(!colorize.contains("possibleforms="), "{colorize}");
+    assert!(mc.contains("answer=\"viesu\""), "{mc}");
+    assert!(mc.contains("distractors="), "{mc}");
+    assert!(cloze.contains("possibleforms=\"viesu"), "{cloze}");
+}
+
+/// The web client renders its exercises from what the block endpoint
+/// answers, so its fixtures are only worth anything if they are blocks this
+/// server really wrote. Each is checked against a fresh reply here, and
+/// rewritten from it when `TEAKSTA_UPDATE_FIXTURES` is set — which is how a
+/// fixture is regenerated after an enhancer changes what a span carries.
+#[tokio::test]
+async fn the_web_fixtures_are_what_the_server_answers() {
+    if !models_available() {
+        return;
+    }
+    let updating = std::env::var(UPDATE_ENV).is_ok();
+    let into = repository_root().join("crates/teaksta-web/tests/fixtures");
+
+    for (name, page, activity, mode) in FIXTURES {
+        let response = client()
+            .post("/api/enhance/blocks")
+            .body_json(&serde_json::json!({
+                "html": page,
+                "activity": activity,
+                "mode": mode,
+            }))
+            .send()
+            .await;
+        response.assert_status_is_ok();
+
+        let body = response.0.into_body().into_string().await.expect("a body");
+        let answered: Value = serde_json::from_str(&body).expect("a JSON array");
+        // The value is the server's; the indentation is ours, so a fixture
+        // can be read.
+        let written = format!(
+            "{}\n",
+            serde_json::to_string_pretty(&answered).expect("the reply writes back")
+        );
+        let at = into.join(format!("{name}.json"));
+
+        if updating {
+            std::fs::write(&at, &written).expect("the fixture is written");
+            continue;
+        }
+
+        let saved = std::fs::read_to_string(&at).expect("the fixture is saved");
+        assert_eq!(
+            saved, written,
+            "{name}.json is not what the server answers — rerun with {UPDATE_ENV}=1"
+        );
+    }
 }
 
 #[tokio::test]

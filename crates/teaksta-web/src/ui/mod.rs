@@ -98,7 +98,6 @@ mod tests {
 
         assert!(params.is_complete());
         assert!(html.contains(stored));
-        assert!(html.contains("url=file%3A%2F%2F%2Fsrv%2Fteaksta%2Fupload%2FaB3xY9zQ1w"));
     }
 
     #[test]
@@ -115,9 +114,11 @@ mod tests {
     fn the_exercise_view_shows_the_api_target() {
         let html = render_at("/exercise?topic=Subject&mode=colorize&url=http%3A%2F%2Fa.example");
 
-        assert!(html.contains("/api/enhance?url=http%3A%2F%2Fa.example"));
-        assert!(html.contains("activity=Subject"));
-        assert!(html.contains("mode=colorize"));
+        // The address the text is asked for at, which carries no parameters:
+        // the topic, the exercise and the page travel in the request body.
+        assert!(html.contains("/api/enhance/blocks"));
+        assert!(html.contains("Subject"));
+        assert!(html.contains("colorize"));
         // Nothing of the old servlet's naming survives anywhere in what the
         // view puts on the page — not the endpoint, not a class, not an id.
         assert!(!html.contains("WERTi"));

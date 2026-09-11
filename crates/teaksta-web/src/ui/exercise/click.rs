@@ -101,7 +101,8 @@ mod tests {
     use crate::ui::exercise::markup::parse;
 
     fn token(class: &str) -> TokenSpan {
-        parse(&format!("<p><span class=\"{class}\">Viesut</span></p>")).tokens()[0].clone()
+        let block = format!("<p><span class=\"{class}\">Viesut</span></p>");
+        parse(std::slice::from_ref(&block)).tokens()[0].clone()
     }
 
     #[test]
