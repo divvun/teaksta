@@ -109,6 +109,81 @@ fn a_doubled_document_yields_exactly_double_the_tokens() {
     assert_eq!(cohorts(&doubled_cg), cohorts(&single_cg) * 2);
 }
 
+/// The acceptance test for the handle pool. A document's chunks are analysed
+/// concurrently, each through a pipeline handle of its own, and a chunk
+/// boundary was cut where one sentence group ends and the next begins
+/// precisely because this analysis answers for a group without reference to
+/// its neighbours. So the width of the pool is a question about how long the
+/// answer takes and not about what it is: a pool of one, which runs the
+/// chunks one after another through one handle, and a pool of four, which
+/// runs four of them at once through four, answer the same bytes.
+#[test]
+fn a_wide_pool_answers_what_one_handle_answers() {
+    if !models_available() {
+        return;
+    }
+    // Wider than the pool, so a handle is reused and not merely filled once.
+    let text = long_text(47);
+    let sequential = MorphoPipeline::with_workers(1);
+    let parallel = MorphoPipeline::with_workers(4);
+
+    let sequential_tokens = sequential.tokenize(&text).expect("tokenize");
+    let parallel_tokens = parallel.tokenize(&text).expect("tokenize");
+    assert_eq!(parallel_tokens, sequential_tokens);
+    assert!(sequential_tokens.len() > 100, "{}", sequential_tokens.len());
+
+    assert_eq!(
+        parallel
+            .analyze_disambiguate(&parallel_tokens)
+            .expect("analyze"),
+        sequential
+            .analyze_disambiguate(&sequential_tokens)
+            .expect("analyze")
+    );
+
+    assert_eq!(
+        parallel.sentence_spans(&text).expect("sentences"),
+        sequential.sentence_spans(&text).expect("sentences")
+    );
+}
+
+/// Two documents analysed from two threads at once come back as themselves.
+/// Handles are taken out of the pool for one chunk's run and given back at
+/// the end of it, so no chunk ever reads output another chunk's forward left
+/// behind — which is what crossed answers would be made of.
+#[test]
+fn two_documents_analyse_side_by_side() {
+    if !models_available() {
+        return;
+    }
+    let first = long_text(23);
+    let second: String = SENTENCES
+        .iter()
+        .rev()
+        .cycle()
+        .take(23)
+        .map(|sentence| format!("{sentence} "))
+        .collect();
+
+    let (a, b) = std::thread::scope(|scope| {
+        let a = scope.spawn(|| MorphoPipeline::shared().tokenize(&first));
+        let b = scope.spawn(|| MorphoPipeline::shared().tokenize(&second));
+        (
+            a.join().expect("the first document is analysed"),
+            b.join().expect("the second document is analysed"),
+        )
+    });
+    let (a, b) = (a.expect("tokenize"), b.expect("tokenize"));
+
+    // Each thread got its own document back, and neither got the other's.
+    assert_eq!(a, MorphoPipeline::shared().tokenize(&first).expect("alone"));
+    assert_eq!(
+        b,
+        MorphoPipeline::shared().tokenize(&second).expect("alone")
+    );
+    assert_ne!(a, b);
+}
+
 #[test]
 fn tokenize_yields_surface_tokens() {
     if !models_available() {

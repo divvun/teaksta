@@ -57,9 +57,25 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_FILES_ANL_DIR` | `./data/analyzedTexts` | Where analysed documents are cached. |
 | `TEAKSTA_FILES_PRM_DIR` | `./data/fileUpload/prm` | Where an upload is kept when the teacher asked for it to be retained. |
 | `TEAKSTA_FILES_TMP_DIR` | `./data/fileUpload/tmp` | Where an upload lands otherwise. |
+| `TEAKSTA_ANALYSIS_WORKERS` | the machine's parallelism, capped at 4 | How many pieces of a document are analysed at once. |
 
 The three directories are created on startup; a path that cannot be created
 fails the boot rather than the first request that needs it.
+
+A document is analysed in pieces cut between sentences, and
+`TEAKSTA_ANALYSIS_WORKERS` is how many of them go through the language
+technology at the same time. A worker holds a pipeline of its own, built over
+its own copy of the bundle, so the setting buys wall-time with memory: the sme
+models weigh some 450MB resident per worker per pipeline, and a server that
+has built all of them holds a few gigabytes. The default is capped at four
+because that is where the buying stops paying — over one article of
+se.wikipedia, four workers answered in 19s against 36s at one, and eight
+answered no sooner for twice the memory. A deployment that serves long
+documents from a server that stays up, and has the memory, can raise it.
+
+Pipelines are built on demand, and the first document a freshly started server
+analyses waits for the ones it needs — a few seconds each, and one per worker
+— which is why a cold request is slower than the ones after it.
 
 ### Building the web client
 

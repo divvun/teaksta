@@ -16,7 +16,7 @@ use teaksta::context::{
     ANALYSIS_DIR_ENV, Config, LISTEN_ENV, TOPICS_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV,
     WEBAPP_DIST_ENV,
 };
-use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV};
+use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV, WORKERS_ENV, analysis_workers};
 use teaksta::server::api::{AppState, routes};
 
 #[tokio::main]
@@ -70,5 +70,18 @@ fn report(config: &Config) {
             Ok(path) => info!("{name}: {path}"),
             Err(_) => warn!("{name} is not set; every analysis request will fail"),
         }
+    }
+
+    // The effective count rather than the variable, because a value that
+    // could not be read as a count is replaced by the derived one (which the
+    // seam warns about where it happens) and the deployment is whichever of
+    // the two is actually in force.
+    let workers = analysis_workers();
+    match std::env::var(WORKERS_ENV) {
+        Ok(_) => info!("{WORKERS_ENV}: {workers} chunks of a document are analysed at once"),
+        Err(_) => info!(
+            "{WORKERS_ENV} is not set; {workers} chunks of a document are analysed at once, \
+             derived from the machine"
+        ),
     }
 }

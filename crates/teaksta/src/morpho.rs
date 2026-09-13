@@ -15,22 +15,40 @@
 //!   used in-process for word-form generation, replacing the inverted-FST
 //!   `lookup` invocation.
 //!
-//! Every method blocks on an internally owned single-thread tokio runtime;
-//! callers on an async executor must reach this seam through a blocking
-//! section (e.g. `spawn_blocking`), never directly from a worker thread.
+//! Every method blocks on an internally owned tokio runtime; callers on an
+//! async executor must reach this seam through a blocking section (e.g.
+//! `spawn_blocking`), never directly from a worker thread. The runtime is a
+//! multi-threaded one, so the stage tasks the handles below own are spread
+//! over worker threads instead of taking turns on the single thread that a
+//! `block_on` was driving them from.
 //!
 //! Input reaches a pipeline in ordered chunks rather than as one document.
 //! divvun-runtime wires each pipeline stage to the next through a 16-event
 //! `tokio::sync::broadcast` channel, and a stage that fans one input out
 //! into a batch — the sentence splitter emits one value per sentence — sends
-//! that whole batch before the consumer on this seam's single-threaded
-//! runtime is scheduled to read any of it. A document with more sentences
-//! than the buffer holds therefore lost the overflow, and the run failed
-//! with `channel lagged by N`. Chunking is confined to this module: every
-//! method still takes a whole document and answers for the whole document,
-//! with the per-chunk outputs concatenated in input order.
+//! that whole batch before the consumer reading it is scheduled. A document
+//! with more sentences than the buffer holds therefore lost the overflow,
+//! and the run failed with `channel lagged by N`. Chunking is confined to
+//! this module: every method still takes a whole document and answers for
+//! the whole document, with the per-chunk outputs concatenated in input
+//! order.
+//!
+//! The chunks of one run are analysed concurrently rather than one after
+//! another, which is what a chunk boundary was chosen to allow: a cut falls
+//! where a sentence ends, and this analysis answers for a group of sentences
+//! without reference to the groups around it. Each pipeline keeps a pool of
+//! handles, grown to demand up to [`analysis_workers`], and a chunk takes one
+//! out for its run. Handles share nothing: a handle is built over a bundle
+//! opened for it alone, because divvun-runtime keeps a command's grammars and
+//! transducers behind locks and two handles over one bundle would hand the
+//! chunks straight back to the queue this pool exists to remove. The price is
+//! paid on the way in — the first chunk to find the pool empty waits for a
+//! bundle to be reopened, and a run wide enough to use the whole pool pays
+//! that once per handle, concurrently — and in memory, one bundle's resident
+//! assets per handle.
 
 use std::collections::HashMap;
+use std::num::NonZeroUsize;
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
 use anyhow::{Context as _, Result, anyhow, bail};
@@ -42,11 +60,28 @@ use hfst::hfst_flag_diacritics::FdOperation;
 use hfst::hfst_input_stream::HfstInputStream;
 use hfst::hfst_transducer::AnyTransducer;
 use hfst::transducer::IStream;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+use tracing::warn;
 
 /// Environment variable naming the `.drb` bundle backing the pipelines.
 pub const BUNDLE_ENV: &str = "TEAKSTA_BUNDLE";
 /// Environment variable naming the normative generator `.hfstol`.
 pub const GENERATOR_ENV: &str = "TEAKSTA_GENERATOR";
+/// Environment variable capping how many of a document's chunks are analysed
+/// at once.
+pub const WORKERS_ENV: &str = "TEAKSTA_ANALYSIS_WORKERS";
+
+/// The ceiling the derived worker count is held under, which is what binds on
+/// any host with cores to spare. It is set where measurement put it rather
+/// than at whatever the machine offers, because a handle is expensive in both
+/// directions: the sme models weigh some 450MB resident per handle, and a
+/// cold request pays for every handle it opens before it can answer. Over one
+/// article of se.wikipedia, on an eighteen-core machine, four workers answered
+/// in 19.0s against 36.4s at one, and eight answered in 19.6s for twice the
+/// memory — the analysis keeps getting faster past four and the bundle loads
+/// keep getting slower, and they cancel. A deployment with memory to spare and
+/// a server that stays warm can say so with [`WORKERS_ENV`].
+const DEFAULT_WORKER_CEILING: usize = 4;
 
 /// Why the normative generator could not be used. Every variant describes a
 /// fault in the transducer or its configuration, never an input the
@@ -67,12 +102,159 @@ pub enum GeneratorError {
     Lookup { input: String, message: String },
 }
 
-/// One pipeline's execution slot: `None` until its handle has been built,
-/// and emptied again when a run panics (see [`lock_slot`]). Slots are handed
-/// out of the registry by clone, so running a pipeline holds no registry
-/// lock — `PipelineHandle` is neither cloneable nor safe to `forward`
-/// through concurrently, so each one keeps its own lock instead.
-type HandleSlot = Arc<Mutex<Option<PipelineHandle>>>;
+/// How many of a document's chunks are analysed at once, and so how many
+/// handles a pipeline's pool may hold and how many worker threads the seam's
+/// runtime runs. Read once, from [`WORKERS_ENV`], on first use.
+pub fn analysis_workers() -> usize {
+    static WORKERS: OnceLock<usize> = OnceLock::new();
+    *WORKERS.get_or_init(|| resolve_workers(std::env::var(WORKERS_ENV).ok().as_deref()))
+}
+
+/// How many chunks are analysed at once, given what the environment said. An
+/// unset variable derives the count from the machine, held under
+/// [`DEFAULT_WORKER_CEILING`]. A value that is not a positive number is
+/// reported and the derived count used instead: a typo in one variable is no
+/// reason to refuse to serve, and the value that was actually taken is
+/// logged at startup either way.
+fn resolve_workers(configured: Option<&str>) -> usize {
+    let derived = || {
+        std::thread::available_parallelism()
+            .map(NonZeroUsize::get)
+            .unwrap_or(1)
+            .min(DEFAULT_WORKER_CEILING)
+    };
+
+    let Some(configured) = configured else {
+        return derived();
+    };
+    match configured.trim().parse::<usize>() {
+        Ok(workers) if workers > 0 => workers,
+        _ => {
+            warn!(
+                "{WORKERS_ENV}={configured:?} is not a positive number; \
+                 analysing {} chunks at once",
+                derived()
+            );
+            derived()
+        }
+    }
+}
+
+/// One pipeline's pool of handles. A `PipelineHandle` is neither cloneable
+/// nor safe to `forward` through concurrently — it carries one input channel
+/// and one output channel, and output a forward left unread would be
+/// delivered to whichever forward read next — so a chunk takes one out of the
+/// pool for its run and gives it back at the end of it. The permits bound how
+/// many are out at once, and so how many the pool ever builds: a handle is
+/// created only when a permit was granted and no idle one was there to take.
+struct Pool {
+    pipeline: &'static str,
+    permits: Arc<Semaphore>,
+    idle: Mutex<Vec<PipelineHandle>>,
+}
+
+impl Pool {
+    fn new(pipeline: &'static str, workers: usize) -> Pool {
+        Pool {
+            pipeline,
+            permits: Arc::new(Semaphore::new(workers)),
+            idle: Mutex::new(Vec::new()),
+        }
+    }
+
+    /// Takes a handle out of the pool, waiting when every handle it may hold
+    /// is already out and building one when it has not yet grown that far.
+    async fn checkout(self: &Arc<Self>, bundle_path: &str) -> Result<Lease> {
+        let permit = Arc::clone(&self.permits)
+            .acquire_owned()
+            .await
+            .expect("a pool's permits are never closed");
+        // Popped in a statement of its own: the guard is dropped at the end
+        // of it, so no lock is held across the bundle load that follows.
+        let pooled = self.idle().pop();
+        let handle = match pooled {
+            Some(handle) => handle,
+            None => build(self.pipeline, bundle_path).await?,
+        };
+        Ok(Lease {
+            pool: Arc::clone(self),
+            handle: Some(handle),
+            _permit: permit,
+        })
+    }
+
+    /// The idle handles, recovering from poisoning. The lock covers a push
+    /// and a pop and nothing else, so a panic under it cannot have torn the
+    /// list; the handle a panicked run held is not in it to begin with.
+    fn idle(&self) -> MutexGuard<'_, Vec<PipelineHandle>> {
+        self.idle
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+}
+
+/// One handle out of the pool for the length of one chunk's run.
+///
+/// It goes back into the pool when the run reached the end of its stream, and
+/// is dropped when it did not: a run that failed or panicked abandoned its
+/// stream mid-flight, and output the abandoned run never consumed would
+/// otherwise surface as the next chunk's result. The pool then builds a
+/// replacement for whichever checkout next finds it empty, so a panic costs
+/// that one handle rather than the pool.
+struct Lease {
+    pool: Arc<Pool>,
+    handle: Option<PipelineHandle>,
+    _permit: OwnedSemaphorePermit,
+}
+
+impl Lease {
+    /// Forwards one chunk through the leased handle and returns every value
+    /// it streamed back. The handle is held outside the lease for the length
+    /// of the run and put back into it only once the stream has ended, so
+    /// every way out of here that is not that — an error, a panic, the task
+    /// being dropped — drops the handle rather than pooling it.
+    async fn run(mut self, chunk: String) -> Result<Vec<PipelineValue>> {
+        let pipeline = self.pool.pipeline;
+        let mut handle = self
+            .handle
+            .take()
+            .expect("a lease holds its handle until it runs");
+
+        let mut stream = handle.forward(PipelineValue::String(chunk)).await;
+        let mut values = Vec::new();
+        while let Some(item) = stream.next().await {
+            values.push(item.map_err(|e| anyhow!("pipeline {pipeline:?} failed: {e}"))?);
+        }
+
+        self.handle = Some(handle);
+        Ok(values)
+    }
+}
+
+impl Drop for Lease {
+    fn drop(&mut self) {
+        if let Some(handle) = self.handle.take() {
+            self.pool.idle().push(handle);
+        }
+        // The permit is released after that push, so a checkout woken by it
+        // finds the handle this lease returned rather than building another.
+    }
+}
+
+/// A handle of its own for the named pipeline, over a bundle opened for it
+/// alone. Reopening the bundle per handle is what makes the handles
+/// independent: the command instances a bundle builds hold the grammars and
+/// transducers behind locks, and handles sharing one bundle would share those
+/// locks.
+async fn build(pipeline: &'static str, bundle_path: &str) -> Result<PipelineHandle> {
+    let bundle = Bundle::from_bundle_named(bundle_path, pipeline)
+        .await
+        .with_context(|| format!("loading pipeline {pipeline:?} from bundle {bundle_path:?}"))?;
+    bundle
+        .create(serde_json::json!({}))
+        .await
+        .with_context(|| format!("creating pipeline {pipeline:?}"))
+}
 
 /// How many sentence boundaries one chunk of pipeline input carries. The
 /// widest burst a stage can answer one chunk with is one value per sentence
@@ -197,69 +379,105 @@ fn token_line_chunks(tokens: &[String]) -> Vec<String> {
 }
 
 pub struct MorphoPipeline {
-    runtime: tokio::runtime::Runtime,
-    handles: Mutex<HashMap<&'static str, HandleSlot>>,
+    // Declared before the runtime and so dropped before it: a handle closes
+    // its pipeline and stops the stage tasks it spawned, which is a thing to
+    // do while the runtime those tasks belong to is still there. The process-
+    // wide instance is never dropped; one built for a test is.
+    workers: usize,
+    pools: Mutex<HashMap<&'static str, Arc<Pool>>>,
     generator: OnceLock<Mutex<AnyTransducer>>,
+    runtime: tokio::runtime::Runtime,
 }
 
 static SHARED: OnceLock<MorphoPipeline> = OnceLock::new();
 
 impl MorphoPipeline {
-    /// Process-wide pipeline instance: one bundle-backed pipeline set and
+    /// Process-wide pipeline instance: one pool of handles per pipeline and
     /// one generator transducer, shared by every request and every topic.
     pub fn shared() -> &'static MorphoPipeline {
-        SHARED.get_or_init(|| MorphoPipeline {
-            runtime: tokio::runtime::Builder::new_current_thread()
+        SHARED.get_or_init(|| MorphoPipeline::with_workers(analysis_workers()))
+    }
+
+    /// A pipeline set of its own, analysing at most `workers` chunks at once.
+    /// A deployment wants [`MorphoPipeline::shared`], which is this with the
+    /// configured worker count; this is for a caller that needs a second set
+    /// beside it — a test asking whether two pool sizes answer the same.
+    pub fn with_workers(workers: usize) -> MorphoPipeline {
+        let workers = workers.max(1);
+        MorphoPipeline {
+            workers,
+            pools: Mutex::new(HashMap::new()),
+            generator: OnceLock::new(),
+            runtime: tokio::runtime::Builder::new_multi_thread()
+                // One worker thread per handle, and never fewer than two.
+                // These threads carry the plumbing rather than the
+                // linguistics — divvun-runtime's cg3 and hfst commands each
+                // own a thread apiece and do their work on it — so what the
+                // count has to cover is one chunk's stages being driven while
+                // another chunk's output is drained, not the analysis itself.
+                .worker_threads(workers.max(2))
                 .enable_all()
                 .build()
                 .expect("tokio runtime for the morpho seam"),
-            handles: Mutex::new(HashMap::new()),
-            generator: OnceLock::new(),
-        })
+        }
     }
 
-    /// Runs the named bundle pipeline over `chunks`, one `forward` per chunk
-    /// in input order, and returns every value they streamed in that same
-    /// order (batch producers like sentence splitting emit one value per
-    /// element). The whole run holds the pipeline's slot for its length, so
-    /// a request's chunks reach the handle as one uninterrupted sequence and
-    /// no second caller's chunk lands between two of them. Handles are
-    /// created lazily per pipeline name and reused; the bundle is reopened
-    /// per handle, which keeps creation simple at the cost of a slower first
-    /// call per pipeline.
+    /// Runs the named bundle pipeline over `chunks` and returns every value
+    /// they streamed, in input order (batch producers like sentence
+    /// splitting emit one value per element).
+    ///
+    /// The chunks run concurrently, each through a handle of its own out of
+    /// the pipeline's pool, and their outputs are reassembled by chunk index.
+    /// Ordered concatenation is what every caller here reads, and a chunk
+    /// boundary falls between two sentences the analysis treats separately,
+    /// so the answer is the one a chunk-at-a-time run gives — arrived at in
+    /// the time the widest of them took rather than the sum.
     fn run(&self, pipeline: &'static str, chunks: Vec<String>) -> Result<Vec<PipelineValue>> {
-        let bundle_path = std::env::var(BUNDLE_ENV)
-            .map_err(|_| anyhow!("{BUNDLE_ENV} is not set; point it at the sme .drb bundle"))?;
-        let slot = self.slot(pipeline);
-        // The registry lock is already released here: creating and running a
-        // pipeline reaches into divvun-runtime, cg3 and hfst, and a panic
-        // down there must cost this pipeline alone rather than poisoning the
-        // registry every other pipeline is looked up through.
-        let mut slot = lock_slot(&slot);
-        self.runtime.block_on(async {
-            if slot.is_none() {
-                let bundle = Bundle::from_bundle_named(&bundle_path, pipeline)
-                    .await
-                    .with_context(|| {
-                        format!("loading pipeline {pipeline:?} from bundle {bundle_path:?}")
-                    })?;
-                let handle = bundle
-                    .create(serde_json::json!({}))
-                    .await
-                    .with_context(|| format!("creating pipeline {pipeline:?}"))?;
-                *slot = Some(handle);
-            }
-            let handle = slot.as_mut().expect("pipeline handle created above");
-            let mut values = Vec::new();
+        let bundle_path: Arc<str> = std::env::var(BUNDLE_ENV)
+            .map_err(|_| anyhow!("{BUNDLE_ENV} is not set; point it at the sme .drb bundle"))?
+            .into();
+        // The registry lock is released before anything runs: creating and
+        // running a pipeline reaches into divvun-runtime, cg3 and hfst, and a
+        // panic down there must cost that one handle rather than poisoning
+        // the registry every other pipeline is looked up through.
+        let pool = self.pool(pipeline);
+
+        self.runtime.block_on(async move {
+            let mut running = Vec::with_capacity(chunks.len());
             for chunk in chunks {
-                // Each chunk's stream is drained to its end before the next
-                // chunk is forwarded. The handle carries one input channel
-                // and one output channel, so output a forward left unread
-                // would be delivered to whichever forward reads next.
-                let mut stream = handle.forward(PipelineValue::String(chunk)).await;
-                while let Some(item) = stream.next().await {
-                    values.push(item.map_err(|e| anyhow!("pipeline {pipeline:?} failed: {e}"))?);
-                }
+                let pool = Arc::clone(&pool);
+                let bundle_path = Arc::clone(&bundle_path);
+                running.push(tokio::spawn(async move {
+                    pool.checkout(&bundle_path).await?.run(chunk).await
+                }));
+            }
+
+            // Every chunk is awaited, in chunk order, even once one of them
+            // has failed: dropping a task's join handle detaches the task
+            // rather than stopping it, and a detached chunk would give its
+            // pipeline handle back to the pool long after this run reported.
+            let mut answered = Vec::with_capacity(running.len());
+            let mut panicked = None;
+            for task in running {
+                answered.push(match task.await {
+                    Ok(result) => result,
+                    Err(join) if join.is_panic() => {
+                        // Raised again below, once every chunk is off the
+                        // pool, so the panic reaches the caller it reached
+                        // when the chunks ran one after another.
+                        panicked.get_or_insert(join.into_panic());
+                        Err(anyhow!("pipeline {pipeline:?} panicked"))
+                    }
+                    Err(join) => Err(anyhow!("pipeline {pipeline:?} was interrupted: {join}")),
+                });
+            }
+            if let Some(payload) = panicked {
+                std::panic::resume_unwind(payload);
+            }
+
+            let mut values = Vec::new();
+            for chunk in answered {
+                values.extend(chunk?);
             }
             if values.is_empty() {
                 bail!("pipeline {pipeline:?} produced no output");
@@ -268,16 +486,20 @@ impl MorphoPipeline {
         })
     }
 
-    /// The execution slot for a pipeline, created empty on first mention.
-    /// The registry lock covers this lookup and nothing else; a poisoned
-    /// registry is recovered rather than treated as fatal, since the map
-    /// holds names and slot handles that no pipeline run can tear.
-    fn slot(&self, pipeline: &'static str) -> HandleSlot {
+    /// The handle pool for a pipeline, created empty on first mention. The
+    /// registry lock covers this lookup and nothing else; a poisoned registry
+    /// is recovered rather than treated as fatal, since the map holds names
+    /// and pool handles that no pipeline run can tear.
+    fn pool(&self, pipeline: &'static str) -> Arc<Pool> {
         let mut registry = self
-            .handles
+            .pools
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner());
-        Arc::clone(registry.entry(pipeline).or_default())
+        Arc::clone(
+            registry
+                .entry(pipeline)
+                .or_insert_with(|| Arc::new(Pool::new(pipeline, self.workers))),
+        )
     }
 
     /// Runs a pipeline that answers one value per chunk and renders those
@@ -443,24 +665,6 @@ impl MorphoPipeline {
     }
 }
 
-/// Locks a pipeline's slot, recovering from poisoning. The handle a panicked
-/// run left behind is dropped rather than reused: its stream was abandoned
-/// mid-flight, and output the abandoned run never consumed would otherwise
-/// surface as the next caller's result. The next run pays one bundle load to
-/// rebuild it. Clearing the poison keeps that cost to the one run that
-/// followed the panic.
-fn lock_slot(slot: &Mutex<Option<PipelineHandle>>) -> MutexGuard<'_, Option<PipelineHandle>> {
-    match slot.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => {
-            slot.clear_poison();
-            let mut guard = poisoned.into_inner();
-            *guard = None;
-            guard
-        }
-    }
-}
-
 /// Reads the normative generator named by `TEAKSTA_GENERATOR`.
 fn load_generator() -> Result<AnyTransducer, GeneratorError> {
     let path = std::env::var(GENERATOR_ENV).map_err(|_| GeneratorError::Unset)?;
@@ -533,6 +737,31 @@ fn find_from(text: &str, cursor: usize, needle: &str) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A worker count is taken as written when it is a positive number, with
+    /// the surrounding space a shell leaves in a variable ignored.
+    #[test]
+    fn a_configured_worker_count_is_taken_as_written() {
+        assert_eq!(resolve_workers(Some("1")), 1);
+        assert_eq!(resolve_workers(Some("3")), 3);
+        assert_eq!(resolve_workers(Some(" 12 ")), 12);
+        // A host may be asked for more handles than it has cores: the
+        // ceiling is on what is derived, not on what is asked for.
+        assert_eq!(resolve_workers(Some("64")), 64);
+    }
+
+    /// Anything that is not a positive count — a typo, an empty variable, a
+    /// zero that would leave no worker to analyse anything — falls back to
+    /// the derived count rather than failing the deployment.
+    #[test]
+    fn an_unusable_count_falls_back_to_the_derived() {
+        let derived = resolve_workers(None);
+        assert!((1..=DEFAULT_WORKER_CEILING).contains(&derived), "{derived}");
+
+        for configured in ["0", "", "  ", "many", "-4", "2.5"] {
+            assert_eq!(resolve_workers(Some(configured)), derived, "{configured:?}");
+        }
+    }
 
     /// `count` sentences of five words each, separated by single spaces.
     fn sentences(count: usize) -> String {
