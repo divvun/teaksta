@@ -729,6 +729,20 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-parallel
+                title "Analysis parallelises: a pipeline-handle pool runs chunks concurrently"
+                kind @perf
+                log (
+                    {
+                        at 2026-09-13T17:43:35.692975Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator-prompted (2026-09-13): \"the whole purpose of our backend is it's easy to parallelise\" — and the seam defeats it twice. (1) morpho.rs caches ONE PipelineHandle per pipeline name behind a slot mutex → concurrent requests queue globally per pipeline. (2) The chunked feed (ux-stream) forwards chunks sequentially under that one handle, on a current_thread runtime → one core does all CG3 work; Sápmi ≈37s cold. Design: pool of N handles per pipeline (each bundle.create() independent; N = available_parallelism capped ~8, env-tunable, reported at startup), runtime switched to multi_thread (worker count matched), chunks fanned across the pool concurrently with outputs reassembled in chunk index order (the existing concatenation contract makes ordered-join equivalence exact). Keep per-handle poison-drop-rebuild semantics. Measure: RSS cost per extra handle (bundle assets likely mmap-shared — verify), and cold Sápmi wall time before/after (expect ≥3-4x on this machine). Equivalence: fixtures unregenerated, all model suites green, and a test that parallel output == sequential output for a multi-chunk document."
+                    }
+                )
+            }
         )
     }
 
