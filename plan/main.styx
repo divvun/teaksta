@@ -937,6 +937,20 @@ children (
                     }
                 )
             }
+
+            {
+                id prod-capability
+                title "Uploads are a capability: no store configured, no teacher flow visible"
+                kind @fix
+                log (
+                    {
+                        at 2026-09-14T13:44:43.357507Z
+                        author "brendan@bbqsrc.net"
+                        kind @decision
+                        text "Operator ruling (2026-09-14): if the Azure store is not configured, the teacher upload functionality is simply NOT VISIBLE — no silent local fallback in production. Design: the text store becomes an explicit capability — Azure trio set → Azure store, uploads on; OR TEAKSTA_FILES_PRM_DIR explicitly set (loses its default) → LocalFileSystem store, uploads on (dev/tests set it; k8s does not); NEITHER → uploads off: POST /api/upload and GET /api/texts absent/refusing, and the FRONTEND hides the whole flow — /api/activities gains an \"uploads\": bool capability field (spec-bump activities-fn; serde-default tolerant), the Sádde teavsttaid route/link render only when true, direct /upload navigation lands somewhere honest. Partial Azure trio stays a boot failure; Azure + prm-dir both set: Azure wins with a warn (or boot error — implementer's call, documented). Temp-upload dir keeps its default (harmless when the feature is off). Fixtures: activities.json may need regeneration via the established TEAKSTA_UPDATE_FIXTURES flow."
+                    }
+                )
+            }
         )
     }
 )
