@@ -1,0 +1,39 @@
+# The build context is the source of the two crates and nothing else. The
+# models arrive through the `models` build context or a release URL, never
+# through here; a stray 200MB bundle.drb in the tree would otherwise be shipped
+# to the daemon on every build.
+
+# Build output. The workspace target directory is shared with the web client, so
+# on a developer's machine this is several gigabytes.
+target/
+**/target/
+**/dist/
+
+# Version control and its metadata. Nothing in the graph has a build script that
+# reads this repository's git state.
+.git/
+.gitignore
+.gitattributes
+
+# Specification, plan and tooling configuration: read by people and by nplan,
+# never by cargo or dx.
+docs/
+plan/
+.config/
+.nplan/
+design/
+
+# Runtime artefacts of a local `cargo run`: the analysis cache, the upload
+# directories and the interaction log.
+data/
+InputLog.txt
+
+# The models, wherever a developer parked them.
+*.drb
+*.hfstol
+*.pkt.tar.zst
+
+# The image recipe itself, and the OS's litter.
+Dockerfile
+.dockerignore
+**/.DS_Store

@@ -71,4 +71,5 @@ assertions (
     {id native-naming, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T16:44:29.972172Z}
     {id native-purge, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T17:11:37.513315Z}
     {id ux-parallel, kind @complete, author "brendan@bbqsrc.net", at 2026-09-13T18:49:15.768346Z}
+    {id prod-image, kind @doing, author "brendan@bbqsrc.net", at 2026-09-14T12:17:15.504962Z}
 )
