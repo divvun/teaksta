@@ -1679,7 +1679,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
+source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime-macros"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
+source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1861,7 +1861,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4705,7 +4705,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5015,7 +5015,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5677,7 +5677,7 @@ dependencies = [
 [[package]]
 name = "syntax-highlight"
 version = "0.1.0"
-source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
+source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
 dependencies = [
  "once_cell",
  "syntect",
@@ -5792,7 +5792,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6874,7 +6874,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.52.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

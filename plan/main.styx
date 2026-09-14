@@ -31,6 +31,21 @@ children (
                     }
                 )
             }
+
+            {
+                id runtime-attribution-pin
+                title "Adopt the attribution-safe runtime workers: bump the divvun-runtime pin"
+                kind @build
+                sealed true
+                log (
+                    {
+                        at 2026-09-14T21:20:01.926245Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Done (nplan complete)"
+                    }
+                )
+            }
         )
     }
 
