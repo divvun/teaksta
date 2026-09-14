@@ -76,5 +76,5 @@ assertions (
     {id ux-stream, kind @complete, author "brendan@bbqsrc.net", at 2026-09-11T13:56:56.977656Z}
     {id prod-uploads, kind @complete, author "brendan@bbqsrc.net", at 2026-09-14T13:34:14.173975Z}
     {id prod-capability, kind @complete, author "brendan@bbqsrc.net", at 2026-09-14T14:15:16.061818Z}
-    {id ux-shared-assets, kind @doing, author "brendan@bbqsrc.net", at 2026-09-14T20:23:08.287631Z}
+    {id ux-shared-assets, kind @complete, author "brendan@bbqsrc.net", at 2026-09-14T20:40:33.780998Z}
 )

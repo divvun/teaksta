@@ -756,6 +756,7 @@ children (
                 id ux-shared-assets
                 title "Adopt the runtime's shared-asset caches: bump pins, re-measure, retune the pool"
                 kind @perf
+                sealed true
                 log (
                     {
                         at 2026-09-14T20:22:22.939685Z
@@ -769,6 +770,13 @@ children (
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Addendum: cg3 origin/main also updated (through 417bf73) — per-grammar memory reductions (6949597 drops the capacity word from tag text, 5633f32 boxes varstring vectors off non-varstring tags) plus naming cleanups; no grammar-sharing split yet, so the CG3 share of per-worker marginal shrinks but still duplicates per handle. The cargo update must therefore bump all three git pins together: divvun-runtime (dbeffb3), hfst (0509ff0), cg3 (417bf73) — `cargo update -p divvun-runtime -p hfst -p cg3` and let the lock settle. The W-sweep measures the combined effect; attribute the marginal between pmatch-now-shared and cg3-now-smaller in the report."
+                    }
+
+                    {
+                        at 2026-09-14T20:40:33.780998Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
