@@ -912,12 +912,20 @@ children (
                 title "Health endpoints: cheap liveness, one-shot deep startup probe"
                 kind @feat
                 deps (prod-abuse)
+                sealed true
                 log (
                     {
                         at 2026-09-14T12:17:06.033491Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Per the cluster's probe doctrine (grammar-worker SIGKILL postmortem in k0s-config charts/grammar-language/templates/application.yaml): GET /api/health — cheap, no analysis, answers 200 when the registry/state is up (liveness + readiness target); GET /api/health/deep — runs one real tiny analysis through the bundle (startupProbe target, generous budget, exercised once at boot to prove the models load). Deep must not be reachable as a free DoS lever once started — either cheap-after-first-success (cache the verdict) or rate-limited with the prod-abuse machinery. Spec: teaksta-native rules (blocks-fn precedent). k8s manifests already reference both paths. Blocked behind prod-abuse (api.rs routes)."
+                    }
+
+                    {
+                        at 2026-09-14T12:50:54.838274Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
