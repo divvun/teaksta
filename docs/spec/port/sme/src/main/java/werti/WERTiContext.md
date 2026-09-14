@@ -1,7 +1,13 @@
 # sme/src/main/java/werti/WERTiContext.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+5]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+6]
 > pub struct RateLimit { pub burst: u32, pub count: u32, pub period: Duration }
+>
+> pub struct AzureStorage {
+>   pub account: String,
+>   pub container: String,
+>   pub access_key: String,
+> }
 >
 > pub struct Config {
 >   pub listen: String,
@@ -13,14 +19,19 @@
 >   pub trust_proxy: bool,
 >   pub rate_limit: Option<RateLimit>,
 >   pub max_page_bytes: usize,
+>   pub azure: Option<AzureStorage>,
 > }
 >
 > pub fn upload_dir(&self, keep: bool) -> &Path
+>
+> `AzureStorage` renders itself with the account key redacted, because the
+> startup report prints the whole configuration and a derived rendering would
+> print the key into it.
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
 > pub fn from_env() -> Result<Config>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
 > Reads the deployment's configuration from the process environment. There is
 > no properties file, no per-language model registry and no lazily
 > manufactured resource: the North Sámi pipelines are named by the morpho
@@ -78,12 +89,37 @@
 > served is what one file says. Whether it is there and parses is the
 > registry's to report, not this one's.
 >
+> Three more name the Azure container kept texts are stored in, and are the
+> one setting here that is read as a group: `TEAKSTA_AZURE_ACCOUNT`,
+> `TEAKSTA_AZURE_CONTAINER` and `TEAKSTA_AZURE_ACCESS_KEY`. All three set is a
+> deployment that stores kept texts in Azure; none of them set is one that
+> stores them under `TEAKSTA_FILES_PRM_DIR`, which is what a laptop, a test
+> and every deployment outside the cluster gets. What the store then does is
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`.
+>
+> A value that is empty or only whitespace counts as unset. A Kubernetes
+> secret whose optional key is absent mounts as an empty string rather than as
+> no variable at all, so a deployment with no Azure secret has to read as a
+> deployment with no Azure rather than as a half-configured one.
+>
+> One or two of the three set is neither, and is the one setting whose partial
+> spelling **fails the boot**, naming which of the three are missing. It is
+> the exception to the fall-back rule above, and it is the exception because
+> of what the fallback is: a directory that is deleted with the pod. A
+> deployment that meant to keep texts and is quietly throwing them away
+> answers every upload with an address that stops working at the next restart,
+> and nobody finds out until a teacher comes back for a text that is not
+> there. The account key is never quoted in the failure, only named.
+>
 > The three directories the server writes into — the analysis cache and the
 > two upload directories — are created, parents included, before the
 > configuration is handed back, and one that cannot be created fails the boot
 > naming it. A request never creates a directory, because a request that has
-> to has already accepted work it may not be able to finish. The web client
-> directory and the topics file are the deployment's own and are not created.
+> to has already accepted work it may not be able to finish. The keep
+> directory is created whether or not kept texts go to it, so a deployment can
+> be reconfigured either way without its filesystem being rearranged first.
+> The web client directory and the topics file are the deployment's own and
+> are not created.
 >
 > Port divergence: the descriptor tree is gone, and with it the configuration
 > that named one. The Java resolved each activity's `<pipeline desc>` through

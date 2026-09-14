@@ -10,15 +10,21 @@
 //!
 //! A value that will not read is reported and the fallback is used rather
 //! than failing the boot: a typo in one variable is no reason to refuse to
-//! serve, and the startup report says which value was actually taken. A
-//! directory that cannot be created is the exception, because a deployment
-//! that cannot write is one that cannot work.
+//! serve, and the startup report says which value was actually taken. Two
+//! things are the exception. A directory that cannot be created, because a
+//! deployment that cannot write is one that cannot work. And an Azure
+//! container named in part, because the fallback there is a directory that is
+//! deleted with the pod, and a deployment that meant to keep texts and is
+//! quietly throwing them away does not find out until a teacher comes back
+//! for one.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use anyhow::{Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use tracing::warn;
+
+pub use crate::server::texts::AzureStorage;
 
 /// Names the built web client the browser is served. `dx bundle --platform
 /// web` leaves it at `target/dx/teaksta-web/<profile>/web/public`, where the
@@ -46,6 +52,13 @@ pub const RATE_LIMIT_BURST_ENV: &str = "TEAKSTA_RATE_LIMIT_BURST";
 /// Names how much of a page this deployment fetches on a caller's behalf is
 /// read before the read is abandoned.
 pub const MAX_PAGE_BYTES_ENV: &str = "TEAKSTA_MAX_PAGE_BYTES";
+/// Names the Azure storage account kept texts are stored in.
+pub const AZURE_ACCOUNT_ENV: &str = "TEAKSTA_AZURE_ACCOUNT";
+/// Names the container in that account.
+pub const AZURE_CONTAINER_ENV: &str = "TEAKSTA_AZURE_CONTAINER";
+/// Names the shared access key that account is reached with. Secret material:
+/// the one variable of the three whose value is never logged.
+pub const AZURE_ACCESS_KEY_ENV: &str = "TEAKSTA_AZURE_ACCESS_KEY";
 
 const DEFAULT_LISTEN: &str = "127.0.0.1:8080";
 const DEFAULT_ANALYSIS_DIR: &str = "./data/analyzedTexts";
@@ -88,7 +101,7 @@ pub struct RateLimit {
     pub period: Duration,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+5]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+6]
 #[derive(Debug, Clone)]
 pub struct Config {
     pub listen: String,
@@ -118,11 +131,16 @@ pub struct Config {
     pub rate_limit: Option<RateLimit>,
     /// How much of a page fetched on a caller's behalf is read.
     pub max_page_bytes: usize,
+    /// The Azure container kept texts are stored in, when the deployment
+    /// names one. `None` is a deployment that keeps them under
+    /// [`Config::upload_keep_dir`] instead, which is every deployment that
+    /// is not in the cluster.
+    pub azure: Option<AzureStorage>,
 }
 
 impl Config {
-    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
+    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
     pub fn from_env() -> Result<Self> {
         let config = Config {
             listen: string_or(LISTEN_ENV, DEFAULT_LISTEN),
@@ -137,6 +155,7 @@ impl Config {
                 std::env::var(RATE_LIMIT_BURST_ENV).ok().as_deref(),
             ),
             max_page_bytes: count_or(MAX_PAGE_BYTES_ENV, DEFAULT_MAX_PAGE_BYTES),
+            azure: azure_storage()?,
         };
 
         for directory in [
@@ -273,6 +292,67 @@ fn create_directory(directory: &Path) -> Result<()> {
     std::fs::create_dir_all(directory).with_context(|| format!("creating {}", directory.display()))
 }
 
+/// The Azure container this deployment keeps texts in, if it named one.
+///
+/// All three variables or none of them. A deployment that set one or two of
+/// them meant to store in Azure, and the fallback — the keep directory — is a
+/// directory that is deleted with the pod, so taking it silently would leave
+/// a deployment answering every upload with an address that stops working at
+/// the next restart. This is the one setting whose partial spelling fails the
+/// boot, and the failure names which of the three are missing.
+///
+/// An empty value counts as unset, because a Kubernetes secret whose optional
+/// key is absent mounts as an empty string rather than as no variable at all,
+/// and a deployment with no Azure secret must read as a deployment with no
+/// Azure rather than as a half-configured one.
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+fn azure_storage() -> Result<Option<AzureStorage>> {
+    let read: Vec<Option<String>> = AzureStorage::VARIABLES
+        .iter()
+        .map(|name| {
+            std::env::var(name)
+                .ok()
+                .map(|value| value.trim().to_string())
+                .filter(|value| !value.is_empty())
+        })
+        .collect();
+
+    if read.iter().all(Option::is_none) {
+        return Ok(None);
+    }
+    let missing: Vec<&str> = AzureStorage::VARIABLES
+        .iter()
+        .zip(&read)
+        .filter(|(_, value)| value.is_none())
+        .map(|(name, _)| *name)
+        .collect();
+    if !missing.is_empty() {
+        bail!(
+            "{} names an Azure container, so {} must be set too; \
+             a deployment storing kept texts in Azure sets all three",
+            AzureStorage::VARIABLES
+                .iter()
+                .zip(&read)
+                .filter(|(_, value)| value.is_some())
+                .map(|(name, _)| *name)
+                .collect::<Vec<&str>>()
+                .join(" and "),
+            missing.join(" and ")
+        );
+    }
+
+    let [account, container, access_key] = read
+        .try_into()
+        .map(|values: [Option<String>; 3]| values.map(|value| value.expect("none are missing")))
+        .expect("three variables read into three values");
+    Ok(Some(AzureStorage {
+        account,
+        container,
+        access_key,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -294,6 +374,9 @@ mod tests {
         RATE_LIMIT_ENV,
         RATE_LIMIT_BURST_ENV,
         MAX_PAGE_BYTES_ENV,
+        AZURE_ACCOUNT_ENV,
+        AZURE_CONTAINER_ENV,
+        AZURE_ACCESS_KEY_ENV,
     ];
 
     struct Environment {
@@ -322,6 +405,10 @@ mod tests {
         fn set(&self, name: &str, value: &Path) {
             unsafe { std::env::set_var(name, value) };
         }
+
+        fn set_str(&self, name: &str, value: &str) {
+            unsafe { std::env::set_var(name, value) };
+        }
     }
 
     impl Drop for Environment {
@@ -343,7 +430,7 @@ mod tests {
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn every_directory_exists_once_built() {
         let environment = Environment::take();
@@ -361,7 +448,7 @@ mod tests {
         assert_eq!(config.upload_dir(false), config.upload_temp_dir);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn an_unset_variable_falls_back() {
         let environment = Environment::take();
@@ -380,7 +467,7 @@ mod tests {
         assert_eq!(config.topics, None);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn the_web_client_is_read_as_named() {
         let environment = Environment::take();
@@ -396,7 +483,7 @@ mod tests {
         assert!(!dist.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn the_topics_file_is_read_as_named() {
         let environment = Environment::take();
@@ -413,7 +500,7 @@ mod tests {
         assert!(!topics.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn a_directory_that_cannot_exist_fails() {
         let environment = Environment::take();
@@ -437,7 +524,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
     #[test]
     fn an_existing_directory_is_left_alone() {
         let environment = Environment::take();
@@ -455,5 +542,80 @@ mod tests {
 
         assert_eq!(config.analysis_dir, analysed);
         assert!(cached.is_file(), "an existing cache survives a restart");
+    }
+
+    /// The three Azure variables the deployment manifests pass, spelled once
+    /// here so a rename that missed one of them fails a test rather than a
+    /// cluster.
+    const AZURE: [(&str, &str); 3] = [
+        (AZURE_ACCOUNT_ENV, "teakstasa"),
+        (AZURE_CONTAINER_ENV, "kept-texts"),
+        (AZURE_ACCESS_KEY_ENV, "c2VjcmV0"),
+    ];
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    #[test]
+    fn all_three_azure_variables_name_a_container() {
+        let environment = Environment::take();
+        let root = tempfile::tempdir().expect("temp dir");
+        caches(root.path(), &environment);
+        for (name, value) in AZURE {
+            environment.set_str(name, value);
+        }
+
+        let config = Config::from_env().expect("the configuration builds");
+
+        let azure = config.azure.expect("the deployment names a container");
+        assert_eq!(azure.account, "teakstasa");
+        assert_eq!(azure.container, "kept-texts");
+        assert_eq!(azure.access_key, "c2VjcmV0");
+        // The startup report prints the whole configuration, so the key must
+        // not be in what a configuration prints as.
+        let rendered = format!("{azure:?}");
+        assert!(!rendered.contains("c2VjcmV0"), "{rendered}");
+        assert!(rendered.contains("<redacted>"), "{rendered}");
+        assert!(rendered.contains("teakstasa"), "{rendered}");
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    #[test]
+    fn no_azure_variable_is_a_deployment_without_one() {
+        let environment = Environment::take();
+        let root = tempfile::tempdir().expect("temp dir");
+        caches(root.path(), &environment);
+        // A secret whose optional key is absent mounts as an empty string,
+        // which must read as unset rather than as a half-configured account.
+        for (name, _) in AZURE {
+            environment.set_str(name, "  ");
+        }
+
+        let config = Config::from_env().expect("the configuration builds");
+
+        assert_eq!(config.azure, None);
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    #[test]
+    fn a_partly_named_container_fails_the_boot() {
+        for (omitted, _) in AZURE {
+            let environment = Environment::take();
+            let root = tempfile::tempdir().expect("temp dir");
+            caches(root.path(), &environment);
+            for (name, value) in AZURE {
+                if name != omitted {
+                    environment.set_str(name, value);
+                }
+            }
+
+            let Err(error) = Config::from_env() else {
+                panic!("{omitted} unset must fail the boot rather than fall back to a directory");
+            };
+
+            let reported = format!("{error:#}");
+            assert!(reported.contains(omitted), "{reported}");
+            // The failure is read by an operator fixing a manifest, so it
+            // names what is missing without quoting what is not.
+            assert!(!reported.contains("c2VjcmV0"), "{reported}");
+        }
     }
 }

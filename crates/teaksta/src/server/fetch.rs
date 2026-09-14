@@ -17,6 +17,35 @@
 //! `jar:` address is refused rather than handed to a library that might know
 //! what to do with it.
 //!
+//! Beside the three schemes there is one address that is not an address at
+//! all: a reference to a text this deployment stored, which is written
+//! `/api/texts/<id>` and carries no scheme and no host.
+//!
+//! # Stored texts, and why they carry no host
+//!
+//! A kept upload is answered with `/api/texts/<id>`, and that is what the
+//! enhancement endpoints are then handed back as their `url`. Fetching it
+//! over HTTP would mean this deployment connecting to itself — which the
+//! private-address policy refuses, correctly, and which would be a waste of a
+//! socket even if it did not.
+//!
+//! So a stored-text reference is recognised here and read from
+//! [`crate::server::texts::TextStore`] directly. What makes that safe is that
+//! the reference has no host to be wrong about. A request cannot tell this
+//! process its own name — `Host` is a header a caller writes — so an address
+//! that had to be compared against this deployment's hostname would be an
+//! address whose meaning a caller controls. A root-relative reference has
+//! nothing to compare: `/api/texts/<id>` names this deployment because it
+//! names no other, and `http://elsewhere.example/api/texts/<id>` is an
+//! ordinary web address that is fetched, vetted and refused exactly as
+//! `http://elsewhere.example/anything` is. The path shape opens no hole
+//! because it is only ever read off a reference that has no authority
+//! component for a caller to have chosen.
+//!
+//! The `id` is read by [`crate::server::texts::TextId::parse`], which admits
+//! thirty-two hex characters and nothing else, so no traversal, no separator
+//! and no encoded anything reaches an object key.
+//!
 //! # `file:` confinement
 //!
 //! The `file:` scheme exists because an accepted upload is handed back as a
@@ -129,6 +158,7 @@ use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
 use crate::server::reader;
+use crate::server::texts::{TEXTS_PATH, TextId, TextStore};
 
 /// How long a page fetch may take, start to finished body.
 pub const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
@@ -150,7 +180,9 @@ const USER_AGENT: &str = concat!("teaksta/", env!("CARGO_PKG_VERSION"));
 /// a 400 carrying its own message, because each is the caller's mistake.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
 pub enum Refusal {
-    #[error("only http, https and file addresses can be enhanced")]
+    #[error("url is not a valid address")]
+    Address,
+    #[error("only http, https, file and stored-text addresses can be enhanced")]
     Scheme,
     #[error("addresses on the private network cannot be enhanced")]
     Private,
@@ -175,7 +207,7 @@ pub struct Unreachable(pub String);
 /// unreachable for that same reason. Nor is it the 413 the endpoints answer
 /// an oversized request body with: that body is the caller's, and this one is
 /// a stranger's page the caller merely named.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("the page at {address} is larger than the {cap} byte limit")]
 pub struct Oversized {
@@ -209,6 +241,8 @@ pub struct Target {
 enum Read {
     /// A resolved path inside one of the directories this deployment serves.
     File(PathBuf),
+    /// A text this deployment stored for a teacher who asked to keep it.
+    Text(TextId),
     /// A page on the public network.
     Web(Url),
 }
@@ -218,20 +252,46 @@ impl Target {
         &self.address
     }
 
-    /// Whether this target is read from disk rather than over the network.
-    pub fn is_file(&self) -> bool {
-        matches!(self.read, Read::File(_))
+    /// Whether this target is read from this deployment's own storage rather
+    /// than over the network — a file under an upload directory, or a text in
+    /// the store.
+    pub fn is_stored(&self) -> bool {
+        matches!(self.read, Read::File(_) | Read::Text(_))
     }
 }
 
 /// Reads the address a request points at, refusing everything this deployment
 /// will not fetch. Nothing is opened here: a refusal costs no connection and
 /// no directory listing beyond resolving the path a `file:` address names.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
-pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal> {
-    let address = url.to_string();
+///
+/// The parsing is here rather than at the endpoints because what an address
+/// means and what may be reached with it are one decision. A string with no
+/// scheme is taken as `http`, so a learner may type a bare host; a string
+/// beginning with `/` is not an address at all but a reference to something
+/// this deployment holds, and is read as one before any absolutising is done
+/// to it.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+pub fn target(raw: &str, config: &Config) -> std::result::Result<Target, Refusal> {
+    let raw = raw.trim();
     let cap = config.max_page_bytes;
+
+    // A reference to something this deployment stored. It is recognised
+    // before anything else because it has no scheme to recognise it by, and
+    // it is recognised by its path alone because it carries no host for a
+    // caller to have chosen — see the module documentation.
+    if raw.starts_with('/') {
+        let named = raw.strip_prefix(TEXTS_PATH).ok_or(Refusal::Scheme)?;
+        let id = TextId::parse(named).ok_or(Refusal::Address)?;
+        return Ok(Target {
+            address: id.reference(),
+            read: Read::Text(id),
+            cap,
+        });
+    }
+
+    let url = page_url(raw)?;
+    let address = url.to_string();
     match url.scheme() {
         "file" => {
             let path = url.to_file_path().map_err(|()| Refusal::Confined)?;
@@ -243,10 +303,10 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
             })
         }
         "http" | "https" => {
-            public_host(url)?;
+            public_host(&url)?;
             Ok(Target {
                 address,
-                read: Read::Web(url.clone()),
+                read: Read::Web(url),
                 cap,
             })
         }
@@ -254,29 +314,53 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
     }
 }
 
-/// Reads a vetted target. A `file:` target is read from disk; a web one is
-/// fetched through the shared client, under the concurrency bound, and then
-/// reduced to its main content.
+/// An address a request carried, read as an absolute one. A string carrying
+/// no scheme is taken as `http`, which is what a learner types into an
+/// address field.
+///
+/// This only parses. Whether the address is one this deployment will read is
+/// [`target`]'s decision, which is the only caller.
+fn page_url(raw: &str) -> std::result::Result<Url, Refusal> {
+    let absolute = if raw.contains("://") || raw.starts_with("file:") {
+        raw.to_string()
+    } else {
+        format!("http://{raw}")
+    };
+    Url::parse(&absolute).map_err(|_| Refusal::Address)
+}
+
+/// Reads a vetted target. A `file:` target is read from disk, a stored-text
+/// one from the store, and a web one is fetched through the shared client,
+/// under the concurrency bound, and then reduced to its main content.
 ///
 /// This is where the reduction is scoped, because this is where the
 /// difference it turns on is known. A page off the network is a stranger's
 /// whole document, menus and all, and is cut down to the part of it somebody
-/// wrote; a page off the disk is one this deployment was given — an accepted
-/// upload, or a page shipped with an activity — and is answered as it was
-/// written. Neither endpoint chooses, and an inline body never arrives here.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+/// wrote; a page this deployment holds — an accepted upload, kept or
+/// temporary — is one it was given, and is answered as it was written.
+/// Neither endpoint chooses, and an inline body never arrives here.
+///
+/// The store is handed in rather than reached for, so a `Target` stays a
+/// decision about an address and nothing else, and so the endpoints that read
+/// one keep the store they were built with.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
-pub async fn fetch(target: Target) -> Result<String> {
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
+pub async fn fetch(target: Target, texts: &TextStore) -> Result<String> {
     let Target { address, read, cap } = target;
     match read {
         Read::File(path) => {
             let read = tokio::task::spawn_blocking(move || read_file(&path, &address, cap));
             read.await
                 .map_err(|join| anyhow!("the read ended: {join}"))?
+        }
+        Read::Text(id) => {
+            let bytes = texts.get(&id, cap).await?;
+            String::from_utf8(bytes)
+                .map_err(|error| anyhow::Error::new(error).context(Unreachable(address)))
         }
         Read::Web(url) => {
             let _slot = slot().await?;
@@ -527,7 +611,7 @@ async fn slot() -> Result<SemaphorePermit<'static>> {
 /// The weight is decided before the bytes are read as text, so an oversized
 /// page says it is oversized whatever encoding it is in rather than failing
 /// as invalid UTF-8 at whichever byte the cap fell inside.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 fn read_file(path: &Path, address: &str, cap: usize) -> Result<String> {
     let unreachable = || Unreachable(address.to_string());
 
@@ -537,7 +621,7 @@ fn read_file(path: &Path, address: &str, cap: usize) -> Result<String> {
     String::from_utf8(bytes).map_err(|error| anyhow::Error::new(error).context(unreachable()))
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
     let unreachable = || Unreachable(address.to_string());
 
@@ -565,8 +649,8 @@ fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
 /// exactly the cap is read; a page that is one byte more is refused, and is
 /// refused rather than cut down because half a document analysed as a whole
 /// one is a worse answer than none.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 fn capped(source: impl std::io::Read, cap: usize, address: &str) -> Result<Vec<u8>> {
     let mut bytes = Vec::new();
     source

@@ -119,7 +119,7 @@ fn a_request_naming_nobody_is_one_client() {
 
 /// The bucket is emptied at the burst and refills at the sustained rate, and
 /// the wait it reports is that rate's replenishment rather than nothing.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1/test]
 #[test]
 fn the_burst_is_spent_before_the_rate_binds() {
     let gate = Gate::new(
@@ -152,7 +152,7 @@ fn the_burst_is_spent_before_the_rate_binds() {
 /// The sweep drops the clients that are no longer being counted, so what the
 /// store holds is the clients inside their window rather than every client
 /// the deployment has ever seen.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1/test]
 #[test]
 fn the_store_holds_only_the_clients_being_counted() {
     // One request a nanosecond: a client's allowance is replenished before
@@ -185,7 +185,7 @@ fn the_store_holds_only_the_clients_being_counted() {
 /// A wait is rounded up, so a client told to come back in a second does not
 /// come back a fraction of one too early, and is never told to come back in
 /// no time at all.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1/test]
 #[test]
 fn the_retry_after_is_whole_seconds_never_zero() {
     for (wait, expected) in [

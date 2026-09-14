@@ -55,8 +55,11 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_WEBAPP_DIST` | unset | The directory holding the built web client. Unset, only the API is served. |
 | `TEAKSTA_TOPICS` | unset | A topics file to read instead of the registry compiled into the binary. |
 | `TEAKSTA_FILES_ANL_DIR` | `./data/analyzedTexts` | Where analysed documents are cached. |
-| `TEAKSTA_FILES_PRM_DIR` | `./data/fileUpload/prm` | Where an upload is kept when the teacher asked for it to be retained. |
-| `TEAKSTA_FILES_TMP_DIR` | `./data/fileUpload/tmp` | Where an upload lands otherwise. |
+| `TEAKSTA_FILES_PRM_DIR` | `./data/fileUpload/prm` | Where a kept text is stored when no Azure container is named. |
+| `TEAKSTA_FILES_TMP_DIR` | `./data/fileUpload/tmp` | Where an upload lands when the teacher did not ask for it to be kept. |
+| `TEAKSTA_AZURE_ACCOUNT` | unset | The Azure storage account kept texts are stored in. |
+| `TEAKSTA_AZURE_CONTAINER` | unset | The container in that account. |
+| `TEAKSTA_AZURE_ACCESS_KEY` | unset | The shared access key. Secret; never logged. |
 | `TEAKSTA_ANALYSIS_WORKERS` | the machine's parallelism, capped at 4 | How many pieces of a document are analysed at once. |
 | `TEAKSTA_RATE_LIMIT` | `30/minute` | What one client may ask of the endpoints that analyse. `<count>/second`, `<count>/minute`, `<count>/hour`, or `off` for no limit. |
 | `TEAKSTA_RATE_LIMIT_BURST` | `10` | How many of those may arrive at once. |
@@ -64,10 +67,43 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_MAX_PAGE_BYTES` | `5242880` (5 MiB) | How much of a fetched page is read before the read is abandoned. |
 
 The three directories are created on startup; a path that cannot be created
-fails the boot rather than the first request that needs it. Every other value
-that will not read is reported and the default is used, so a typo in one
-variable does not stop the server; the startup report says which value was
-actually taken.
+fails the boot rather than the first request that needs it. The three
+`TEAKSTA_AZURE_*` variables are read as a group and one or two of them set
+fails the boot as well — see [Storage](#storage). Every other value that will
+not read is reported and the default is used, so a typo in one variable does
+not stop the server; the startup report says which value was actually taken.
+
+### Storage
+
+A teacher offering a text answers one question about it: keep this, or not.
+
+**Kept** texts go to a store that outlives the process. Set all three of
+`TEAKSTA_AZURE_ACCOUNT`, `TEAKSTA_AZURE_CONTAINER` and
+`TEAKSTA_AZURE_ACCESS_KEY` and they go to that Azure Blob Storage container;
+set none of them and they go under `TEAKSTA_FILES_PRM_DIR` instead, which is
+what a laptop and the test suites get and what keeps every suite runnable with
+no Azure at all. Set **one or two** and the boot fails naming the missing
+ones: the fallback is a directory that is deleted with the pod, and a
+deployment that meant to keep texts and is quietly throwing them away answers
+every upload with an address that stops working at the next restart.
+
+An accepted kept text is answered as `/api/texts/<id>`, where `<id>` is 128
+bits of the text's own content digest. Nothing a teacher typed reaches the
+object key, the same text stored twice is one object under one address, and a
+write is create-only — what a name holds is what it held when it was first
+written. That address is stable, is what a teacher can share, and is what the
+enhancement endpoints take back as their `url`; when they do, the text is read
+from the store directly rather than fetched over HTTP.
+
+**Unkept** texts are written into `TEAKSTA_FILES_TMP_DIR` at mode `0400` and
+answered as a `file:` URL, exactly as before. They are read once by the
+exercise being set up and swept, so a durable store would only have to sweep
+them somewhere else.
+
+In the cluster this means teaksta needs no persistent volume: the models are
+baked into the image, the analysis cache and the temporary uploads are scratch
+that may be thrown away with the pod, and the one thing that has to survive is
+in Azure behind a secret.
 
 ### Serving it to strangers
 
@@ -78,6 +114,17 @@ not, because it reads state built at startup, and neither is the web client.
 One allowance covers all four endpoints together rather than one each. A
 client over it gets `429` with `{"error": "rate-limited"}` and a `Retry-After`
 header, answered before anything is fetched, read or analysed.
+
+`GET /api/texts/<id>` is not limited either, and for a reason worth stating.
+It neither analyses nor fetches, and the exercise path does not go through it
+— an enhancement request naming a stored text reads the store directly. What
+does reach it is a teacher's shared link opened by a whole class at once, and
+a class is behind one school's address, which a per-client allowance counts as
+one client. What bounds it instead is the read cap and the address itself: a
+name is a 128-bit content digest, so a caller can only ask for texts they were
+already given the address of. The residual is Azure egress, which is a rate of
+bytes rather than of requests and belongs to the ingress layer that can see
+all of it.
 
 Which client a request is from is the peer that opened the connection —
 **unless** `TEAKSTA_TRUST_PROXY=1`. Read that flag carefully:
@@ -106,9 +153,10 @@ oversized page is a `502`, like any other page that could not be read from
 where the request pointed; it is not a `400`, because nothing about the
 address said how much was behind it, and not a `413`, because that body is a
 stranger's page and not the caller's request. The cap applies to `file:`
-addresses too: every one of those names something this deployment stored
-itself, under the 5 MiB upload limit, so anything larger in a served directory
-is not a file it put there.
+addresses too, and to a text read out of the store: every one of those names
+something this deployment stored itself, under the 5 MiB upload limit, so
+anything larger in a served directory or a container is not something it put
+there.
 
 Every request writes one access line at info level, carrying the client, the
 method, the path, the status and how long it took. The query is not logged —
@@ -196,9 +244,10 @@ docker run --rm -p 8080:8080 teaksta
 
 The container runs as a non-root user, listens on `0.0.0.0:8080`, serves the
 client at `/` and the API under `/api/`, and keeps its analysis cache and
-upload scratch under `/cache` — the one directory a deployment may want to give
-a volume. It carries no `HEALTHCHECK`: in the cluster the Kubernetes probes own
-that.
+upload scratch under `/cache`. That directory is scratch and wants no volume:
+kept texts go to the store [Storage](#storage) describes, so nothing under
+`/cache` has to survive the pod. It carries no `HEALTHCHECK`: in the cluster
+the Kubernetes probes own that.
 
 ## Architecture
 
@@ -212,8 +261,11 @@ application. The whole URL map is:
   analysed text. This is the browser add-on's protocol.
 - `POST /api/enhance/blocks` — the analysed text block by block, for a client
   that renders the exercise itself. This is what the web client asks for.
-- `POST /api/upload` — a teacher's own text in, a `file:` URL the enhancement
-  endpoints can be pointed at out.
+- `POST /api/upload` — a teacher's own text in, an address the enhancement
+  endpoints can be pointed at out: `/api/texts/<id>` for a text they asked to
+  keep, a `file:` URL for one they did not.
+- `GET /api/texts/<id>` — one kept text, as it was stored. See
+  [Storage](#storage).
 
 **Language technology** — `crates/teaksta/src/morpho.rs` is the seam over
 divvun-runtime and HFST. The legacy system shelled out to `preprocess`,

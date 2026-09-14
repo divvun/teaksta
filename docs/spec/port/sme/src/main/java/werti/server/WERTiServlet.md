@@ -1,9 +1,10 @@
 # sme/src/main/java/werti/server/WERTiServlet.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+4]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+5]
 > pub struct AppState {
 >   pub config: Config,
 >   pub registry: Registry,
+>   pub texts: TextStore,
 > }
 >
 > pub struct Topic { pub name: String, pub label: String, pub enabled: bool }
@@ -13,6 +14,11 @@
 > The topic list and the pipelines built from it are one thing, so the state
 > holds one registry rather than a pipeline map beside a list of names that
 > has to agree with it.
+>
+> The store kept texts live in is built once and held here beside them. It
+> carries a client with a connection pool, so a per-request one would cost a
+> pool per request; and a deployment whose store will not open should be told
+> at boot rather than at the first upload.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
 > pub enum Mode { Colorize, Click, Mc, Cloze }
@@ -47,18 +53,18 @@
 > hand, so an enhancer never has to decide what to do without one, and the
 > four cases a topic distinguishes are exhaustive.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
 > async fn index() -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
 > What the root answers depends on whether the deployment carries a built web
 > client, which is what `TEAKSTA_WEBAPP_DIST` names.
 >
 > Without one, `GET /` answers a plain-text listing of the endpoints the
 > server offers, as `text/plain;charset=UTF-8`, so an API-only deployment can
 > be probed without a client. It takes no parameters and reads no state. The
-> listing is every path the map answers, the two health endpoints included, so
-> what it offers is what is there.
+> listing is every path the map answers — the two health endpoints and `GET
+> /api/texts/<id>` included — so what it offers is what is there.
 >
 > With one, the client's directory is served from the root instead, and `GET
 > /` answers its `index.html`. Any path the directory has no file for is
@@ -84,10 +90,13 @@
 > `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`
 > describes. `GET /api/activities` is not: it reads state built at startup and
 > costs nothing worth counting, and a client that has spent its allowance on
-> analysis can still ask what this deployment offers. Neither is the web
-> client, which is a directory of files. One limiter is built with one map and
-> the four routes share it, so a client's allowance is spent across the
-> endpoints that analyse together rather than four times over.
+> analysis can still ask what this deployment offers. Neither is `GET
+> /api/texts/<id>`, for a reason of its own that
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]`
+> gives. Neither is the web client, which is a directory of files. One limiter
+> is built with one map and the four routes share it, so a client's allowance
+> is spent across the endpoints that analyse together rather than four times
+> over.
 >
 > Neither health route is limited either, and for a reason of its own rather
 > than because it is cheap. `GET /api/health` and `GET /api/health/deep` are
@@ -131,16 +140,18 @@
 > of the reply has a null in it. The wire shape is otherwise unchanged: a
 > client reading `label` as optional still reads what it always did.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
-> pub fn target(url: &Url, config: &Config) -> Result<Target, Refusal>
+> pub fn target(raw: &str, config: &Config) -> Result<Target, Refusal>
 >
-> pub async fn fetch(target: Target) -> Result<String>
+> pub async fn fetch(target: Target, texts: &TextStore) -> Result<String>
 >
-> pub enum Refusal { Scheme, Private, Confined }
+> pub enum Refusal { Address, Scheme, Private, Confined }
+>
+> impl Target { pub fn address(&self) -> &str; pub fn is_stored(&self) -> bool }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -155,17 +166,45 @@
 > selects a topic and an exercise, and nothing else about the pipeline is
 > settable per request.
 >
-> `url` is read as an absolute address; one carrying no scheme is taken as
-> `http`, so a learner may type a bare host. An address that will not parse is
-> a 400. What the address is allowed to reach is decided in full before
-> anything is opened, and only `http`, `https` and `file` addresses may reach
-> anything at all; a refused address is a 400 naming what was refused, exactly
-> as a mode or an activity that does not exist is.
+> `url` is read, and what it is allowed to reach is decided, in one place and
+> in full before anything is opened. A string beginning with `/` is a
+> reference to something this deployment holds and is read as one; anything
+> else is read as an absolute address, and one carrying no scheme is taken as
+> `http`, so a learner may type a bare host. A string that is neither is a 400
+> naming what was refused, exactly as a mode or an activity that does not
+> exist is — and so is an address whose scheme is none of `http`, `https` and
+> `file`.
 >
-> A `file:` address is read from the filesystem, which is how an accepted
-> upload is reached, and only from inside the directories this deployment
-> itself mints such addresses under: the two upload directories, and nothing
-> else. The path is resolved through every symlink on it before it is judged,
+> The one reference this deployment mints is `/api/texts/<id>`, which names a
+> text a teacher asked to keep. It is read from the store
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`
+> describes, directly: fetching it over HTTP would mean this deployment
+> opening a connection to itself, which the private-address policy below
+> refuses — correctly — and which would be a waste of a socket even if it did
+> not. The `<id>` is read by the store's own parse, which admits thirty-two
+> hex characters and nothing else, so nothing a caller wrote reaches an object
+> key; a well-formed name that holds nothing is a 404, and so is one that is
+> not a name. A root-relative path that is not a reference at all reaches
+> nothing and is not turned into a host either.
+>
+> **The reference carries no host, and that is the whole of why recognising it
+> by its path opens nothing.** A request cannot tell this process its own name
+> — `Host` is a header the caller writes — so an address that had to be
+> compared against this deployment's hostname would be an address whose
+> meaning a caller controls. A reference with no authority component has
+> nothing to compare: `/api/texts/<id>` names this deployment because it names
+> no other. An address that *does* carry a host —
+> `http://127.0.0.1/api/texts/<id>`, `http://elsewhere.example/api/texts/<id>`,
+> or the protocol-relative `//169.254.169.254/api/texts/<id>` — is an ordinary
+> address of that host whatever its path spells, and is fetched, judged and
+> refused exactly as any other address of that host would be. The path shape
+> is only ever read off something that has no authority component to have
+> chosen.
+>
+> A `file:` address is read from the filesystem, which is how a temporarily
+> stored upload is reached and how every text kept before the store existed
+> still is, and only from inside the directories this deployment itself mints
+> such addresses under: the two upload directories, and nothing else. The path is resolved through every symlink on it before it is judged,
 > so a link planted inside one of those directories pointing outside does not
 > escape, and a path is judged whether or not it exists yet, so a stored text
 > that has since been swept is unreadable rather than refused. A path anywhere
@@ -177,8 +216,8 @@
 > also held the activity tree and the web application root, which is where the
 > pages an activity shipped with lived; a topic is a handful of tag lists in
 > the registry now, with no directory of its own and no files to serve out of
-> one, so an accepted upload is the only `file:` address this deployment ever
-> hands a client and the only one it will read back.
+> one, so a temporary upload is the only `file:` address this deployment
+> still mints and the only kind it will read back.
 >
 > An `http` or `https` address must land on the public network; there is no
 > host allowlist, because fetching pages nobody listed is the point. An
@@ -219,9 +258,10 @@
 > reduces one. The servlet analysed whatever the far end sent, so a learner
 > pointed at a newspaper practised on its navigation menus, its cookie banner
 > and its footer as readily as on its article. What is analysed here is the
-> article. A page read from a `file:` address is not reduced — it is one this
-> deployment was given rather than one it went and found — so an accepted
-> upload and a page shipped with an activity are still analysed whole.
+> article. A page this deployment holds — a stored text or a file under an
+> upload directory — is not reduced: it is one it was given rather than one it
+> went and found, so an accepted upload is analysed whole whichever of the two
+> places it was put.
 >
 > The page is then analysed by the topic's pipeline pair for the requested
 > exercise, which is handed to the pipeline along with the page, and the
@@ -230,17 +270,19 @@
 > the analysis, so requests are analysed concurrently. A topic with no
 > pipeline registered is a 500, because the registry offered it.
 >
-> The analysed document is cached under a key derived from the address, so the
-> same page requested again is answered from the cache. What is cached is the
+> The analysed document is cached under a key derived from the vetted address
+> — the reference itself for a stored text — so the same page requested again
+> is answered from the cache. That address is also what the enhanced page
+> carries as its base URL and what is logged. What is cached is the
 > analysis of the reduced page, and the encoding version the key carries is
 > what keeps an analysis written before the reduction from being served after
 > it. One line is logged per answered request carrying the address, the
 > exercise and the elapsed time; nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 > async fn enhance_spans(CappedJson(request): CappedJson<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -248,18 +290,20 @@
 > (the page itself) and `url` (where to fetch it). A body that will not parse,
 > one missing `activity` or `mode`, one carrying neither `html` nor `url`, and
 > one carrying both are each a 400. `mode` and `activity` are validated as for
-> the whole-page endpoint, and `url` is read, judged and fetched exactly as
-> that endpoint reads, judges and fetches one: the same three schemes, the same
-> confinement of a `file:` address to the directories this deployment serves,
-> the same refusal of the private network, and the same 400 for an address that
-> is refused, 502 for a page that cannot be fetched and 503 for a fetch that
-> found no slot. An inline `html` body reaches no address and is judged against
-> none.
+> the whole-page endpoint, and `url` is read, judged and read from exactly as
+> that endpoint reads, judges and reads one: the same three schemes and the
+> same `/api/texts/<id>` reference, the same confinement of a `file:` address
+> to the directories this deployment serves, the same reading of a stored text
+> from the store rather than over a socket, the same refusal of the private
+> network, and the same 400 for an address that is refused, 404 for a stored
+> text that is not held, 502 for a page that cannot be fetched and 503 for a
+> fetch that found no slot. An inline `html` body reaches no address and is
+> judged against none.
 >
 > Port divergence: a page the request named and this endpoint went and fetched
 > over `http` or `https` is reduced to its main content before it is analysed,
-> exactly as the whole-page endpoint's is, and by the same step. A page read
-> from a `file:` address is not, and neither is an inline `html` body: both are
+> exactly as the whole-page endpoint's is, and by the same step. A page this
+> deployment holds is not, and neither is an inline `html` body: both are
 > pages the caller provided deliberately, and what the caller provided is what
 > is analysed, chrome and all. The scope is the fetch's, not the endpoint's —
 > the two endpoints that take a `url` cannot differ about it.
@@ -291,9 +335,9 @@
 > The page is analysed exactly as the whole-page endpoint analyses one, and
 > the result is the span map: one entry per enhancement that reached the page,
 > keyed by the position in the document text it covers. The analysed document
-> is cached under a key derived from the address for a fetched page and from
-> the page's own content for an inline one, so an inline request is never
-> answered from a fetched request's analysis or the other way round. The
+> is cached under a key derived from the vetted address for a page read from
+> one and from the page's own content for an inline one, so an inline request
+> is never answered from a read request's analysis or the other way round. The
 > exercise is no part of either key: what is cached is the preprocessor's
 > output, which no exercise varies.
 >
@@ -311,14 +355,14 @@
 > under the old one: they are never looked for again, rather than found and
 > failing to decode.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+3]
 > async fn enhance_blocks(CappedJson(request): CappedJson<BlockRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > struct BlockRequest { html: Option<String>, url: Option<String>, activity: String, mode: String }
 >
 > struct TextBlock { html: String }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+3]
 > `POST /api/enhance/blocks` answers the analysed text block by block, as
 > `application/json`, for a client that renders the exercise itself.
 >
@@ -333,18 +377,19 @@
 > uses.
 >
 > The body is a JSON object with `activity`, `mode`, and exactly one of `html`
-> (the page itself) and `url` (where to fetch it), read under the same cap and
-> the same content-type requirement as `POST /api/enhance` reads its own, and
-> answered with the same 400, 413, 415, 502 and 503 in the same cases. It is
-> rate limited per client out of the same allowance and answers the same 429
-> over it. `mode`
-> and `activity` are validated as they are for every other endpoint, the page
-> is fetched, confined and — when it came off the network — reduced to its
-> main content exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]`
-> fetches, confines and reduces one, and the analysed document is cached under
+> (the page itself) and `url` (where to read it from), read under the same cap
+> and the same content-type requirement as `POST /api/enhance` reads its own,
+> and answered with the same 400, 404, 413, 415, 502 and 503 in the same
+> cases. It is rate limited per client out of the same allowance and answers
+> the same 429 over it. `mode` and `activity` are validated as they are for
+> every other endpoint, the page is read, confined and — when it came off the
+> network — reduced to its main content exactly as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn]`
+> reads, confines and reduces one, and the analysed document is cached under
 > the same key derived from the same subject, so the two endpoints answer one
-> another's pages from one analysis. An inline `html` body is analysed as it
+> another's pages from one analysis. This is the endpoint the web client asks
+> with, so it is the one a kept text's `/api/texts/<id>` address usually
+> arrives at. An inline `html` body is analysed as it
 > was sent, which is what keeps the web client's own fixtures stable.
 >
 > The answer is a JSON array, one entry per block of the analysed text in
@@ -359,6 +404,67 @@
 >
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+> async fn stored_text(Path(id): Path<String>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+> `GET /api/texts/<id>` answers one kept text, as it was stored. This is
+> teaksta's own, with nothing behind it in the Java, whose upload servlet
+> handed back a path on a shared filesystem and left serving it to somebody
+> else.
+>
+> It is what makes the address a kept upload is answered with an address
+> rather than a token: a teacher who kept a text can open it, and a link they
+> shared with a class resolves for everyone they gave it to. The `<id>` is the
+> one a kept upload was answered with, and the text is read from the store
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`
+> describes, under the byte cap
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`
+> applies to every other way a page is read.
+>
+> The exercise path does not come through here. An enhancement request naming
+> a stored text reads the store directly, which is what
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn]`
+> recognises the reference for, so what this endpoint serves is a browser's
+> own traffic and never this deployment's.
+>
+> A name that is not thirty-two lowercase hex characters is answered 404
+> rather than looked up, so nothing a caller wrote reaches an object key; a
+> name that is well formed but holds nothing is answered 404 as well, so the
+> two are not told apart by anyone probing. There is no listing endpoint and
+> no enumeration: a name is 128 bits of a content digest, so the only way to
+> reach a text is to have been given its address.
+>
+> The type is the one the gate accepted, read back off the bytes as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn]`
+> reads one: `application/xhtml+xml` for bytes that announce themselves as
+> XHTML and `text/html; charset=UTF-8` otherwise. It is served with
+> `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`,
+> because what is being served is a page a stranger uploaded, from this
+> deployment's own origin. The sandbox puts it in an origin of its own, so a
+> script somebody hid in a page they offered as classroom material runs as
+> nobody.
+>
+> **The route is not rate limited**, and it is the one endpoint outside the
+> limit for a reason that is neither the registry's (it costs nothing) nor the
+> health probes' (a refused probe kills a pod). The reason is the shape of its
+> traffic. A teacher shares one link and a class opens it within the same
+> minute, and a class is behind one school's address — which is exactly what a
+> per-address allowance counts as one client, so an allowance sized for one
+> learner would refuse most of a room for asking at the same time as each
+> other. What bounds the endpoint instead is that it neither analyses nor
+> fetches on a caller's behalf, that every read is capped, and that a name
+> cannot be guessed, so a caller can only ask for texts they were already
+> given the address of.
+>
+> What that leaves is egress: somebody holding an address can ask for those
+> bytes as often as they like, and on the Azure backing those bytes are paid
+> for. That is a rate of bytes rather than a rate of requests, it is bounded
+> per text rather than per deployment, and the layer that can see all of it at
+> once is the operator's ingress — which is where a byte-rate bound belongs.
+> It is stated here rather than left implicit because it is the cost of the
+> decision above.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]
 > async fn health(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
@@ -392,7 +498,7 @@
 > configuration fault and restarting the pod does not fix one.
 >
 > The route stands outside the rate limit, for the reason
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]`
 > gives. It stands inside the access log, which covers the whole map: the
 > kubelet's probes therefore appear in it at one line per probe period per
 > pod. That is accepted rather than worked around — the exception would have
@@ -466,7 +572,7 @@
 > endpoint whose whole point is that the analysis is real.
 >
 > The route stands outside the rate limit, for the reason
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]`
 > gives, and inside the access log with every other route.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
@@ -590,14 +696,14 @@
 > one client rather than as none: a caller nobody can tell apart from another
 > is not thereby unlimited.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1]
 > pub struct Limit { .. }
 >
 > impl Limit { pub fn new(config: &Config) -> Limit }
 >
 > impl<E: Endpoint> Middleware<E> for Limit { type Output = Limited<E>; }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1]
 > What one client may ask of the endpoints that analyse. This is teaksta's
 > own, with nothing behind it in the Java.
 >
@@ -621,7 +727,10 @@
 > says it is. One allowance covers the three enhancement endpoints and the
 > upload together rather than one each: what is being protected is one pool of
 > language technology, and which path asked it to work is not the pool's
-> concern. `GET /api/activities` is not counted at all.
+> concern. `GET /api/activities` is not counted at all, and neither is `GET
+> /api/texts/<id>`, for the reason
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]`
+> gives.
 >
 > A request over the allowance is answered with 429 before it reaches the
 > handler, so nothing is fetched, no body is read and no analysis is started.
@@ -679,20 +788,28 @@
 > logged like any other answer. It coexists with the per-analysis timing lines
 > the endpoints write; neither replaces the other.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 > pub struct Oversized { pub address: String, pub cap: usize }
 >
 > fn capped(source: impl Read, cap: usize, address: &str) -> Result<Vec<u8>>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 > How much of a page fetched on a caller's behalf is read. This is teaksta's
 > own, with nothing behind it in the Java, which read whatever the far end
 > sent.
 >
 > A page is read up to `TEAKSTA_MAX_PAGE_BYTES`, which defaults to 5 MiB —
 > larger than any article anybody wrote, the same weight an upload may have so
-> the two ways a page reaches the analyser are bounded alike, and small enough
+> the ways a page reaches the analyser are bounded alike, and small enough
 > that sixteen of them at once are not a memory problem.
+>
+> The same cap bounds every way a page arrives: fetched over the network, read
+> from a `file:` address under an upload directory, read from the store a kept
+> text lives in, and served back out of that store by `GET /api/texts/<id>`.
+> Nothing this deployment stores can be over it, since the upload gate refuses
+> anything that weighs more — so a stored object over the cap names a
+> container or a directory holding something the deployment did not put there,
+> and reading it whole is not the way to find that out.
 >
 > The cap bounds the read itself. One byte past the cap is read and the read
 > then stops, so nothing beyond the cap is ever held and a far end streaming
