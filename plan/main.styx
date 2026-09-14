@@ -751,6 +751,20 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-shared-assets
+                title "Adopt the runtime's shared-asset caches: bump pins, re-measure, retune the pool"
+                kind @perf
+                log (
+                    {
+                        at 2026-09-14T20:22:22.939685Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Upstream landed (2026-09-14, pushed to github divvun repos): divvun-runtime 37cbcb2+dbeffb3 — Context::file_identity (bundle path+member or path+len+mtime) with process-wide Weak-entry caches for the pmatch core, lookup transducers, and cgspell speller; racing first loads converge; entries live while referenced. hfst 8c59666+0509ff0 — the OL/pmatch run-state split (LookupState, AlphabetOverlay OOV adoption) + 4-byte OOV tests. Upstream-measured: marginal per additional bundle +244 → +103 MiB (their GC pipeline; remainder = CG3 grammars, uncached — teaksta's grammars are small so our remainder should be less). Our benchmark evidence (scratch A/B, release): the adaptation is exactly 2 mechanical lines in morpho.rs (delete `use hfst::transducer::IStream;`, `IStream::new_owned(Cursor::new(bytes))`+`new_istream` → `Cursor` + `HfstInputStream::read_from(&mut input)` in load_generator); lookup_fd_string is now &self so the Mutex sites still compile. Work: cargo update the divvun-runtime + hfst git pins; apply the 2 lines; full suites plain+models, fixtures unregenerated; RELEASE W-sweep (1/2/4/8) with the 60-sentence inline cold protocol measuring marginal RSS/worker and cold time; retune DEFAULT_WORKER_CEILING on the evidence (the 4-cap was memory-motivated — if marginal drops to ~100-200MiB, available_parallelism cap 8 is right again); update README (memory paragraph + workers var), morpho module docs (handles now share assets process-wide via the runtime — bundle-per-handle stays, it is execution isolation not asset duplication anymore). Also CHECK AND REPORT (do not fix): whether divvun-runtime main at 37cbcb2 conflicts with or partially obsoletes the unmerged fix/forward-response-attribution branch (2129ded) — the shared-core commit 8fc4a6a claims lock-free sharing, some worker threads may already be gone."
+                    }
+                )
+            }
         )
     }
 
