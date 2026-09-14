@@ -889,12 +889,20 @@ children (
                 id prod-image
                 title "The container image: one Dockerfile, models baked, boots with zero external files"
                 kind @feat
+                sealed true
                 log (
                     {
                         at 2026-09-14T12:16:57.753647Z
                         author "brendan@bbqsrc.net"
                         kind @note
                         text "Multi-stage root Dockerfile per the CI/deploy recon: build stage compiles the release server and dx-bundles the web client (dioxus-cli binstalled inside the builder — the CI agent image deliberately unmodified); models stage acquires the pinned lang-sme release assets (teaksta-sme dev/vX bundle .drb + fst-sme pkt containing generator-gt-norm.hfstol) — the teaksta-sme release does not exist until the divvun-actions lang wiring merges and runs, so the stage must support a local override (buildx named build-context) for verification now, with the release URLs as the CI default, versions pinned by ARG not dev-latest; runtime stage: slim base, non-root, ENV defaults TEAKSTA_LISTEN=0.0.0.0:8080, TEAKSTA_BUNDLE/TEAKSTA_GENERATOR at the baked paths, TEAKSTA_WEBAPP_DIST at the copied dist — the k8s manifests set only LISTEN/dirs/RUST_LOG and rely on these image defaults. Verification bar: local docker build using the real local models via context override, container boots, /api/activities answers, one real enhance round-trips. Plus .dockerignore (target/, design/, docs/, plan/ etc)."
+                    }
+
+                    {
+                        at 2026-09-14T12:39:30.696621Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
