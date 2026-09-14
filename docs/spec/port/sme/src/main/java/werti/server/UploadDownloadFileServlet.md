@@ -45,7 +45,7 @@
 > deployment will label a stored text: nothing an uploader sent is echoed into
 > the answer.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
 > pub fn accept(upload: &Upload) -> Result<()>
 >
 > pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf>
@@ -54,10 +54,21 @@
 >
 > async fn upload_text(mut multipart: Multipart, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
 > `POST /api/upload` takes a teacher's text as `multipart/form-data` and, if
 > it passes every gate, stores it and answers the address it is now reachable
 > at — which is what the enhancement endpoints take as their `url`.
+>
+> **It exists only on a deployment that has somewhere to keep a text.** One
+> that named neither an Azure container nor a keep directory does not register
+> the route, so the path answers the 404 any path the map does not hold
+> answers, `GET /api/activities` says `"uploads": false`, and the client
+> offers no teacher a file to send at all. There is no state in which a text
+> is accepted and written where the next restart takes it with it. What
+> decides is `Config::accepts_uploads`, which
+> `[spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn]`
+> reads; the handler keeps the check as well, because it needs a store to do
+> anything at all.
 >
 > The body is walked field by field. The first field carrying a filename is
 > the text, whatever its field name; a field named `keep` whose value is
@@ -94,10 +105,10 @@
 > a text that fails a gate is not stored in either of them.
 >
 > **A text the teacher asked to keep** goes to the store
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]`
 > describes, and the reply is a JSON object whose single `url` member is
 > `/api/texts/<id>` — an address of this deployment, reachable at
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]`,
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]`,
 > and read back by the enhancement endpoints without a socket being opened to
 > anything. It carries no scheme and no host, which is not an abbreviation but
 > the point: a reference with no authority component is one a caller cannot
@@ -169,7 +180,7 @@
 > forms the analyser recognises in an English or Norwegian page are shared
 > proper nouns.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
 > pub struct TextId(String);
 >
 > impl TextId {
@@ -182,7 +193,7 @@
 > pub struct TextStore { .. }
 >
 > impl TextStore {
->   pub fn from_config(config: &Config) -> Result<TextStore>;
+>   pub fn from_config(config: &Config) -> Result<Option<TextStore>>;
 >   pub async fn put(&self, content: Vec<u8>) -> Result<TextId>;
 >   pub async fn get(&self, id: &TextId, cap: usize) -> Result<Vec<u8>>;
 >   pub fn describe(&self) -> String;
@@ -193,7 +204,7 @@
 >
 > pub const TEXTS_PATH: &str = "/api/texts/";
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
 > Where a kept text lives, and the one seam every reader and writer of one
 > goes through. This is teaksta's own, with nothing behind it in the Java,
 > which wrote a file into a directory and had no seam at all.
@@ -203,22 +214,39 @@
 > image is rebuilt, the pod is rescheduled, and the text is gone. So a kept
 > text goes to a store that outlives the process.
 >
-> **The two backings.** All three of `TEAKSTA_AZURE_ACCOUNT`,
-> `TEAKSTA_AZURE_CONTAINER` and `TEAKSTA_AZURE_ACCESS_KEY` set is a deployment
-> that stores in Azure Blob Storage; none of them set is one that stores under
-> `TEAKSTA_FILES_PRM_DIR`. One or two of them set is neither and fails the
-> boot, which is
+> **The two backings, and having neither.** All three of
+> `TEAKSTA_AZURE_ACCOUNT`, `TEAKSTA_AZURE_CONTAINER` and
+> `TEAKSTA_AZURE_ACCESS_KEY` set is a deployment that stores in Azure Blob
+> Storage; a named `TEAKSTA_FILES_PRM_DIR` is one that stores under it. One or
+> two of the three is neither and fails the boot, which is
 > `[spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn]`'s
 > to refuse. Both backings answer the same observable semantics and nothing
 > above this seam learns which it has, so a laptop, the test suites and the
 > model suites all run with no Azure at all, and the local backing is rooted at
-> the keep directory the deployment already configured — a deployment that
-> never had Azure keeps its texts exactly where it kept them.
+> the keep directory the deployment named — a deployment that never had Azure
+> keeps its texts exactly where it kept them.
 >
-> The startup report names which backing is in force, and warns when it is the
-> local one, since a deployment whose filesystem does not outlive its process
-> keeps nothing. It names the account and the container; it never names the
-> key.
+> **Both named is Azure**, with a warning naming the directory that was passed
+> over. The keep directory is the switch development turns the flow on with
+> and the container is what a deployment means by storage once it has one, so
+> a pod carrying both is one whose scratch directory was left in the manifest
+> beside a secret somebody has since minted — and writing a teacher's text to
+> the scratch directory because it was named too would be reading the leftover
+> as the intent.
+>
+> **Neither named is no store**, and `from_config` answers `None` rather than
+> failing: a deployment that keeps no texts is a configuration, not an error.
+> It takes no uploads and serves no stored text —
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn]`
+> and
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]`
+> are where that is answered — and says so in its registry, so nothing offers
+> a teacher a flow this deployment cannot finish.
+>
+> The startup report names which backing is in force, or that there is none.
+> It warns when the backing is the local one, since a deployment whose
+> filesystem does not outlive its process keeps nothing. It names the account
+> and the container; it never names the key.
 >
 > Azure is reached through `object_store`'s own shared-key signing rather than
 > through an Azure SDK, because the `azure_storage_blobs` stack a Rust service

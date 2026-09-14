@@ -1,11 +1,13 @@
 # sme/src/main/java/werti/server/WERTiServlet.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+5]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+6]
 > pub struct AppState {
 >   pub config: Config,
 >   pub registry: Registry,
->   pub texts: TextStore,
+>   pub texts: Option<TextStore>,
 > }
+>
+> pub fn accepts_uploads(&self) -> bool
 >
 > pub struct Topic { pub name: String, pub label: String, pub enabled: bool }
 >
@@ -19,6 +21,13 @@
 > carries a client with a connection pool, so a per-request one would cost a
 > pool per request; and a deployment whose store will not open should be told
 > at boot rather than at the first upload.
+>
+> It is optional, and `None` is a deployment that was given nowhere to keep a
+> text. Nothing else records the capability: `accepts_uploads` is the store's
+> presence and nothing besides, and it is the same question
+> `Config::accepts_uploads` answers off the configuration the store was built
+> from — so what the map offers, what the root lists and what the registry
+> announces cannot come apart.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.enhancement-type+2]
 > pub enum Mode { Colorize, Click, Mc, Cloze }
@@ -53,18 +62,32 @@
 > hand, so an enhancer never has to decide what to do without one, and the
 > four cases a topic distinguishes are exhaustive.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
-> async fn index() -> Response
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]
+> async fn index(state: Data<&Arc<AppState>>) -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]
 > What the root answers depends on whether the deployment carries a built web
 > client, which is what `TEAKSTA_WEBAPP_DIST` names.
 >
 > Without one, `GET /` answers a plain-text listing of the endpoints the
 > server offers, as `text/plain;charset=UTF-8`, so an API-only deployment can
-> be probed without a client. It takes no parameters and reads no state. The
-> listing is every path the map answers — the two health endpoints and `GET
-> /api/texts/<id>` included — so what it offers is what is there.
+> be probed without a client. It takes no parameters. The listing is every
+> path the map answers — the two health endpoints included — so what it offers
+> is what is there.
+>
+> Which makes it two listings rather than one. `POST /api/upload` and `GET
+> /api/texts/<id>` are listed by a deployment that keeps texts and left out by
+> one that does not, exactly as the map registers them. That is the one thing
+> the handler reads state for, and it is worth reading state for: the listing
+> is read by somebody deciding what to ask for, and a path named there that
+> answers 404 is worse than no listing at all.
+>
+> The map is where the two are decided. A deployment with no store — neither
+> an Azure container nor a keep directory — **does not register them at all**,
+> so both answer the 404 any path this map does not hold answers, rather than
+> being registered as a pair that refuse. What a deployment offers is then the
+> list of routes it built, which is what keeps the map readable and what the
+> listing above is a rendering of.
 >
 > With one, the client's directory is served from the root instead, and `GET
 > /` answers its `index.html`. Any path the directory has no file for is
@@ -92,7 +115,7 @@
 > costs nothing worth counting, and a client that has spent its allowance on
 > analysis can still ask what this deployment offers. Neither is `GET
 > /api/texts/<id>`, for a reason of its own that
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]`
 > gives. Neither is the web client, which is a directory of files. One limiter
 > is built with one map and the four routes share it, so a client's allowance
 > is spent across the endpoints that analyse together rather than four times
@@ -112,25 +135,40 @@
 > `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]`
 > are each answerable for — rather than being limited to make them safe.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
 > `GET /api/activities` answers the topic registry as JSON, so a client can
 > offer what this deployment actually has rather than a list compiled into it.
 >
-> The body is an object with two members. `activities` is one entry per topic
-> the registry loaded, in ascending name order — the order the registry keeps,
-> whatever order the topics were declared in — each carrying `name` (the
-> registry name, which is what the enhancement endpoints take as `activity`
-> and what the client derives a hit class from), `label` (the topic's North
-> Sámi name) and `enabled` (what the topic declared). `modes` is one entry per
-> exercise, in the fixed order `colorize`, `click`, `mc`, `cloze`, each
-> carrying `name` and its North Sámi `label`.
+> The body is an object with three members. `activities` is one entry per
+> topic the registry loaded, in ascending name order — the order the registry
+> keeps, whatever order the topics were declared in — each carrying `name`
+> (the registry name, which is what the enhancement endpoints take as
+> `activity` and what the client derives a hit class from), `label` (the
+> topic's North Sámi name) and `enabled` (what the topic declared). `modes` is
+> one entry per exercise, in the fixed order `colorize`, `click`, `mc`,
+> `cloze`, each carrying `name` and its North Sámi `label`.
+>
+> `uploads` is a boolean: whether this deployment takes a teacher's own text.
+> It belongs here beside what the deployment can analyse because it is the
+> same question — what is on offer — and it is the one thing a client cannot
+> find out for itself. A deployment with nowhere to keep a text serves no
+> upload endpoint at all, so a client that guessed and asked would be answered
+> 404 by a teacher who had already chosen a file. It is the same value the two
+> upload routes are registered on, so a client told yes can ask and a client
+> told no shows nobody a form that could not work.
+>
+> A client reading a reply without the member reads a deployment that takes no
+> uploads. False is the conservative answer and the honest one: every
+> deployment that has the capability writes the field, so its absence is an
+> answer rather than a gap.
 >
 > The registry is read from the state built at startup, so the endpoint costs
 > no filesystem work and a change to the topics appears when the server is
-> restarted.
+> restarted. So is the upload capability, which is fixed for the life of the
+> process: a deployment is reconfigured by being restarted.
 >
 > Port divergence: every topic has a label and the field is never null. The
 > Java had no labels at all — an earlier port kept a table beside the
@@ -140,18 +178,18 @@
 > of the reply has a null in it. The wire shape is otherwise unchanged: a
 > client reading `label` as optional still reads what it always did.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > pub fn target(raw: &str, config: &Config) -> Result<Target, Refusal>
 >
-> pub async fn fetch(target: Target, texts: &TextStore) -> Result<String>
+> pub async fn fetch(target: Target, texts: Option<&TextStore>) -> Result<String>
 >
 > pub enum Refusal { Address, Scheme, Private, Confined }
 >
 > impl Target { pub fn address(&self) -> &str; pub fn is_stored(&self) -> bool }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -177,7 +215,7 @@
 >
 > The one reference this deployment mints is `/api/texts/<id>`, which names a
 > text a teacher asked to keep. It is read from the store
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]`
 > describes, directly: fetching it over HTTP would mean this deployment
 > opening a connection to itself, which the private-address policy below
 > refuses — correctly — and which would be a waste of a socket even if it did
@@ -186,6 +224,13 @@
 > key; a well-formed name that holds nothing is a 404, and so is one that is
 > not a name. A root-relative path that is not a reference at all reaches
 > nothing and is not turned into a host either.
+>
+> A deployment that keeps no texts holds none under any name, so a reference
+> named as a page to enhance is a 404 there too. The shape is still read as a
+> reference rather than refused as an address: what the caller asked for is a
+> text of this deployment's, and the answer is that it does not have it —
+> which is what a name it never stored gets, and is one answer rather than two
+> for a caller to tell apart.
 >
 > **The reference carries no host, and that is the whole of why recognising it
 > by its path opens nothing.** A request cannot tell this process its own name
@@ -405,10 +450,10 @@
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]
 > async fn stored_text(Path(id): Path<String>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]
 > `GET /api/texts/<id>` answers one kept text, as it was stored. This is
 > teaksta's own, with nothing behind it in the Java, whose upload servlet
 > handed back a path on a shared filesystem and left serving it to somebody
@@ -418,7 +463,7 @@
 > rather than a token: a teacher who kept a text can open it, and a link they
 > shared with a class resolves for everyone they gave it to. The `<id>` is the
 > one a kept upload was answered with, and the text is read from the store
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]`
 > describes, under the byte cap
 > `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`
 > applies to every other way a page is read.
@@ -435,6 +480,13 @@
 > two are not told apart by anyone probing. There is no listing endpoint and
 > no enumeration: a name is 128 bits of a content digest, so the only way to
 > reach a text is to have been given its address.
+>
+> **The route exists only on a deployment that keeps texts.** One that named
+> no store does not register it, so every name under it is the 404 a path this
+> map does not hold answers — which is the same answer a name it never stored
+> would have got, and tells a caller nothing it did not already know. The
+> handler keeps the check as well, because it needs a store to do anything at
+> all and answering any other way without one would be inventing a state.
 >
 > The type is the one the gate accepted, read back off the bytes as
 > `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn]`
@@ -498,7 +550,7 @@
 > configuration fault and restarting the pod does not fix one.
 >
 > The route stands outside the rate limit, for the reason
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]`
 > gives. It stands inside the access log, which covers the whole map: the
 > kubelet's probes therefore appear in it at one line per probe period per
 > pod. That is accepted rather than worked around — the exception would have
@@ -572,7 +624,7 @@
 > endpoint whose whole point is that the analysis is real.
 >
 > The route stands outside the rate limit, for the reason
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]`
 > gives, and inside the access log with every other route.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
@@ -729,7 +781,7 @@
 > language technology, and which path asked it to work is not the pool's
 > concern. `GET /api/activities` is not counted at all, and neither is `GET
 > /api/texts/<id>`, for the reason
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]`
 > gives.
 >
 > A request over the allowance is answered with 429 before it reaches the

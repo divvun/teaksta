@@ -166,6 +166,18 @@ pub struct Registry {
     pub activities: Vec<Activity>,
     #[serde(default)]
     pub modes: Vec<Mode>,
+    /// Whether this deployment takes a teacher's own text. It is the one
+    /// thing here the app cannot find out any other way: a deployment with
+    /// nowhere to keep a text does not serve the upload endpoint at all, so
+    /// asking would be a 404 and a teacher would have filled in a form that
+    /// could never have worked.
+    ///
+    /// A reply that does not say is a reply from a deployment that takes
+    /// none. False is the conservative reading and the honest one: the field
+    /// is written by every deployment that has the capability, so its absence
+    /// is an answer rather than a gap.
+    #[serde(default)]
+    pub uploads: bool,
 }
 
 impl Registry {
@@ -323,7 +335,7 @@ mod tests {
         r#"{"activities":[{"name":"Substantive","label":"Substantiivvat","enabled":true},"#,
         r#"{"name":"Preps","label":null,"enabled":false}],"#,
         r#""modes":[{"name":"colorize","label":"Geahča ivdnejuvvon sániid."},"#,
-        r#"{"name":"cloze","label":"Čále rivttes sániid!"}]}"#
+        r#"{"name":"cloze","label":"Čále rivttes sániid!"}],"uploads":true}"#
     );
 
     fn sample() -> BlockRequest {
@@ -399,6 +411,20 @@ mod tests {
         assert!(registry.activity("Substantive").unwrap().enabled);
         assert!(!registry.activity("Preps").unwrap().enabled);
         assert_eq!(registry.activity("Nonesuch"), None);
+        assert!(registry.uploads);
+    }
+
+    /// Whether the deployment takes uploads is read as it is written, and a
+    /// reply that does not write it is a deployment that takes none — which
+    /// is what a client shows a teacher nothing about.
+    #[test]
+    fn a_registry_without_uploads_says_so() {
+        let refused = REGISTRY.replace(r#","uploads":true"#, r#","uploads":false"#);
+        let silent = REGISTRY.replace(r#","uploads":true"#, "");
+
+        assert!(!parse_registry(&refused).unwrap().uploads);
+        assert!(!parse_registry(&silent).unwrap().uploads);
+        assert!(!Registry::default().uploads);
     }
 
     #[test]

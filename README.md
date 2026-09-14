@@ -55,7 +55,7 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_WEBAPP_DIST` | unset | The directory holding the built web client. Unset, only the API is served. |
 | `TEAKSTA_TOPICS` | unset | A topics file to read instead of the registry compiled into the binary. |
 | `TEAKSTA_FILES_ANL_DIR` | `./data/analyzedTexts` | Where analysed documents are cached. |
-| `TEAKSTA_FILES_PRM_DIR` | `./data/fileUpload/prm` | Where a kept text is stored when no Azure container is named. |
+| `TEAKSTA_FILES_PRM_DIR` | unset | Where a kept text is stored when no Azure container is named. Naming it turns uploads on; with no Azure either, the deployment takes none. |
 | `TEAKSTA_FILES_TMP_DIR` | `./data/fileUpload/tmp` | Where an upload lands when the teacher did not ask for it to be kept. |
 | `TEAKSTA_AZURE_ACCOUNT` | unset | The Azure storage account kept texts are stored in. |
 | `TEAKSTA_AZURE_CONTAINER` | unset | The container in that account. |
@@ -66,7 +66,8 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_TRUST_PROXY` | unset (off) | Whether `X-Forwarded-For` names the client. Set to `1` only behind a proxy you control. |
 | `TEAKSTA_MAX_PAGE_BYTES` | `5242880` (5 MiB) | How much of a fetched page is read before the read is abandoned. |
 
-The three directories are created on startup; a path that cannot be created
+The analysis cache and the temporary upload directory are created on startup,
+and the keep directory is too when one is named; a path that cannot be created
 fails the boot rather than the first request that needs it. The three
 `TEAKSTA_AZURE_*` variables are read as a group and one or two of them set
 fails the boot as well — see [Storage](#storage). Every other value that will
@@ -75,17 +76,34 @@ not stop the server; the startup report says which value was actually taken.
 
 ### Storage
 
-A teacher offering a text answers one question about it: keep this, or not.
+**Taking a teacher's text is a capability this deployment has or has not.** It
+has somewhere to keep one — an Azure container, or a keep directory it named —
+or it takes no uploads at all: `POST /api/upload` and `GET /api/texts/<id>`
+are not served, `GET /api/activities` answers `"uploads": false`, and the web
+client offers no teacher a file to send. There is no third state where a text
+is accepted and written somewhere the next restart takes it with it.
+
+So there is no default for `TEAKSTA_FILES_PRM_DIR`. A default would mean every
+deployment that never thought about storage quietly offering the flow, which
+is how a teacher ends up with an address that stops working. The container
+image names neither the keep directory nor the Azure trio, so an image
+deployed as it ships has uploads off until an operator turns them on where
+they can also say where a kept text goes.
+
+With the capability on, a teacher offering a text answers one question about
+it: keep this, or not.
 
 **Kept** texts go to a store that outlives the process. Set all three of
 `TEAKSTA_AZURE_ACCOUNT`, `TEAKSTA_AZURE_CONTAINER` and
 `TEAKSTA_AZURE_ACCESS_KEY` and they go to that Azure Blob Storage container;
-set none of them and they go under `TEAKSTA_FILES_PRM_DIR` instead, which is
-what a laptop and the test suites get and what keeps every suite runnable with
-no Azure at all. Set **one or two** and the boot fails naming the missing
-ones: the fallback is a directory that is deleted with the pod, and a
-deployment that meant to keep texts and is quietly throwing them away answers
-every upload with an address that stops working at the next restart.
+name `TEAKSTA_FILES_PRM_DIR` alone and they go under it, which is what a
+laptop and the test suites use and what keeps every suite runnable with no
+Azure at all. Name **both** and Azure wins, with a warning: the directory is
+the switch development turns the flow on with, and the container is what a
+deployment means by storage once it has one. Set **one or two** of the three
+and the boot fails naming the missing ones, because a deployment that meant to
+keep texts in Azure and is quietly putting them somewhere else answers every
+upload with an address that was never going to work.
 
 An accepted kept text is answered as `/api/texts/<id>`, where `<id>` is 128
 bits of the text's own content digest. Nothing a teacher typed reaches the
@@ -98,12 +116,17 @@ from the store directly rather than fetched over HTTP.
 **Unkept** texts are written into `TEAKSTA_FILES_TMP_DIR` at mode `0400` and
 answered as a `file:` URL, exactly as before. They are read once by the
 exercise being set up and swept, so a durable store would only have to sweep
-them somewhere else.
+them somewhere else. That directory keeps its default: it is where a text
+lands on the way to an exercise, and it is unused by a deployment that takes
+no uploads.
 
 In the cluster this means teaksta needs no persistent volume: the models are
 baked into the image, the analysis cache and the temporary uploads are scratch
 that may be thrown away with the pod, and the one thing that has to survive is
-in Azure behind a secret.
+in Azure behind a secret. Until that secret is minted the manifests name no
+store at all, so the deployment serves the exercises over web pages and offers
+no upload — which is the state it should be in rather than one where texts are
+accepted into an emptyDir.
 
 ### Serving it to strangers
 
@@ -254,7 +277,8 @@ the Kubernetes probes own that.
 **HTTP server** — `crates/teaksta`, a [poem](https://github.com/poem-web/poem)
 application. The whole URL map is:
 
-- `GET /api/activities` — the topics and exercise modes this deployment offers.
+- `GET /api/activities` — the topics and exercise modes this deployment
+  offers, and whether it takes uploads.
 - `GET /api/enhance?url=&activity=&mode=` — fetch a page and hand back the
   whole enhanced document as HTML.
 - `POST /api/enhance` — the per-token span map, keyed by position in the
@@ -264,8 +288,11 @@ application. The whole URL map is:
 - `POST /api/upload` — a teacher's own text in, an address the enhancement
   endpoints can be pointed at out: `/api/texts/<id>` for a text they asked to
   keep, a `file:` URL for one they did not.
-- `GET /api/texts/<id>` — one kept text, as it was stored. See
-  [Storage](#storage).
+- `GET /api/texts/<id>` — one kept text, as it was stored.
+
+The last two are registered only by a deployment that has somewhere to keep a
+text, and a deployment without one answers 404 at both and leaves them out of
+the plain-text listing at `/`. See [Storage](#storage).
 
 **Language technology** — `crates/teaksta/src/morpho.rs` is the seam over
 divvun-runtime and HFST. The legacy system shelled out to `preprocess`,
@@ -294,7 +321,11 @@ Java descriptor file every value was extracted from recorded beside it.
 **Web client** — `crates/teaksta-web`, a [Dioxus](https://dioxuslabs.com/) app
 for the browser. It reads the topic and mode lists from `/api/activities`
 rather than carrying a table of its own, asks `/api/enhance/blocks` for the
-analysed text, and renders the four exercise modes itself.
+analysed text, and renders the four exercise modes itself. The same reply says
+whether the backend takes uploads: where it does not, the file route is
+offered nowhere — not in the bar, not as the seam under the entry form — and
+somebody who arrives at `/upload` by its address is told so rather than shown
+a form.
 
 **Design system** — `design/` holds the standalone HTML references the client
 is built against: the colour and type foundations, one file per component,
@@ -321,10 +352,13 @@ cargo test --workspace
 ```
 
 The web client's fixtures under `crates/teaksta-web/tests/fixtures/` are
-checked against what the server actually answers by
-`the_web_fixtures_are_what_the_server_answers` in that model-gated run, so a
-fixture cannot quietly drift from the backend. When a change is meant to move
-them, rerun with `TEAKSTA_UPDATE_FIXTURES=1` and commit the result.
+checked against what the server actually answers, so a fixture cannot quietly
+drift from the backend. The exercise fixtures are checked by
+`the_web_fixtures_are_what_the_server_answers` in that model-gated run;
+`activities.json` is checked by `registry_fixture.rs`, which needs no models
+because the registry is read off state built at startup. When a change is
+meant to move either, rerun with `TEAKSTA_UPDATE_FIXTURES=1` and commit the
+result.
 
 The project is spec-tracked and plan-tracked with nplan: the rules live under
 `docs/spec/` and are pinned to the code that answers them by

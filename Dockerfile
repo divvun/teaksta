@@ -184,18 +184,26 @@ COPY LICENSE /usr/share/doc/teaksta/LICENSE
 # The server creates these on boot and fails the boot if it cannot, so they
 # exist and belong to the user that will run. In the cluster an emptyDir is
 # mounted over /cache and supplies its own permissions.
-RUN mkdir -p /cache/analysed /cache/uploads-prm /cache/uploads-tmp \
+RUN mkdir -p /cache/analysed /cache/uploads-tmp \
  && chown -R 10001:10001 /cache
 
 # Everything the deployment would otherwise have to know about this image's
-# layout. The k8s manifests set only TEAKSTA_LISTEN, the three cache
-# directories and RUST_LOG, and inherit the rest from here.
+# layout. The k8s manifests set only TEAKSTA_LISTEN, the cache directories and
+# RUST_LOG, and inherit the rest from here.
+#
+# TEAKSTA_FILES_PRM_DIR is deliberately not among them, and neither is the
+# Azure trio. Between them they are the switch that turns uploads on, and a
+# directory under /cache is an emptyDir that dies with the pod — so an image
+# naming one would hand every deployment built from it an upload flow that
+# answers teachers with addresses stopping at the next restart. The image
+# ships the capability off; an operator turns it on where they can also say
+# where a kept text goes: the Azure secret in the cluster, and
+# TEAKSTA_FILES_PRM_DIR on a machine whose disk outlives the process.
 ENV TEAKSTA_LISTEN=0.0.0.0:8080 \
     TEAKSTA_BUNDLE=/models/bundle.drb \
     TEAKSTA_GENERATOR=/models/generator-gt-norm.hfstol \
     TEAKSTA_WEBAPP_DIST=/app/web \
     TEAKSTA_FILES_ANL_DIR=/cache/analysed \
-    TEAKSTA_FILES_PRM_DIR=/cache/uploads-prm \
     TEAKSTA_FILES_TMP_DIR=/cache/uploads-tmp
 
 USER 10001:10001

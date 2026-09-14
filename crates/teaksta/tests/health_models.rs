@@ -56,7 +56,7 @@ fn served(root: &TempDir) -> TestClient<impl Endpoint> {
         webapp_dist: None,
         topics: None,
         analysis_dir: root.path().join("analysed"),
-        upload_keep_dir: root.path().join("keep"),
+        upload_keep_dir: Some(root.path().join("keep")),
         upload_temp_dir: root.path().join("temp"),
         trust_proxy: false,
         // The probes stand outside the limiter, which `api_tests.rs` shows
@@ -66,11 +66,10 @@ fn served(root: &TempDir) -> TestClient<impl Endpoint> {
         max_page_bytes: 5 * 1024 * 1024,
         azure: None,
     };
-    for directory in [
-        &config.analysis_dir,
-        &config.upload_keep_dir,
-        &config.upload_temp_dir,
-    ] {
+    for directory in [&config.analysis_dir, &config.upload_temp_dir]
+        .into_iter()
+        .chain(&config.upload_keep_dir)
+    {
         std::fs::create_dir_all(directory).expect("a cache directory");
     }
     let state = Arc::new(AppState::new(config).expect("the shipped deployment boots"));

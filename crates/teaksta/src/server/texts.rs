@@ -8,22 +8,27 @@
 //! Storage, which is what the university runs — and the address handed back
 //! names this deployment rather than a disk.
 //!
-//! # The two backings
+//! # The two backings, and having neither
 //!
 //! [`TextStore::from_config`] reads the deployment. All three of
 //! [`AZURE_ACCOUNT_ENV`], [`AZURE_CONTAINER_ENV`] and [`AZURE_ACCESS_KEY_ENV`]
-//! set is a deployment that stores in Azure; none of them set is one that
-//! stores under its own keep directory. One or two of them set is neither, and
-//! fails the boot: a deployment that meant to store in Azure and quietly wrote
-//! to a directory that is deleted with the pod is the failure this whole node
+//! set is a deployment that stores in Azure; a named keep directory is one
+//! that stores under it. One or two of the three is neither, and fails the
+//! boot: a deployment that meant to store in Azure and quietly wrote to a
+//! directory that is deleted with the pod is the failure this whole seam
 //! exists to remove, and it is invisible until a teacher comes back for a text
 //! that is not there.
+//!
+//! Naming **neither** is a deployment that stores no texts, and that is a
+//! configuration rather than an accident: it takes no uploads, serves no
+//! stored text, and tells its client so. What it does not do is accept a
+//! teacher's text and put it somewhere it will not survive.
 //!
 //! Both backings are `object_store`'s, so the code above this seam is the
 //! same either way and a test, a laptop and the model suites run with no Azure
 //! at all. The local backing is rooted at the keep directory the deployment
-//! already configured, so a deployment that never had Azure keeps its texts
-//! exactly where it kept them.
+//! named, so a deployment that never had Azure keeps its texts exactly where
+//! it kept them.
 //!
 //! Azure is reached through `object_store`'s own shared-key signing rather
 //! than through an Azure SDK: the `azure_storage_blobs` stack a Rust service
@@ -55,8 +60,11 @@ use object_store::path::Path as ObjectPath;
 use object_store::{
     Error as StoreError, ObjectStore, ObjectStoreExt as _, PutMode, PutOptions, PutPayload,
 };
+use tracing::warn;
 
-use crate::context::{AZURE_ACCESS_KEY_ENV, AZURE_ACCOUNT_ENV, AZURE_CONTAINER_ENV, Config};
+use crate::context::{
+    AZURE_ACCESS_KEY_ENV, AZURE_ACCOUNT_ENV, AZURE_CONTAINER_ENV, Config, UPLOAD_KEEP_DIR_ENV,
+};
 use crate::server::fetch::{Oversized, Unreachable};
 
 /// How many hex characters a stored text's name carries. 128 bits: past the
@@ -166,18 +174,38 @@ impl std::fmt::Debug for TextStore {
 }
 
 impl TextStore {
-    /// The store this deployment was configured for.
+    /// The store this deployment was configured for, or `None` for a
+    /// deployment that was configured with none.
+    ///
+    /// Azure wins over a named keep directory when both are there. The
+    /// directory is the switch a laptop turns the flow on with, and the
+    /// container is what a deployment means by storage when it has one: a
+    /// pod that carries both is a pod whose emptyDir was left in the manifest
+    /// beside the secret somebody has since minted, and writing a teacher's
+    /// text to the emptyDir because it was named too would be reading the
+    /// leftover as the intent.
     ///
     /// # Errors
     ///
     /// A deployment whose Azure settings are incomplete, or whose keep
     /// directory will not open as a store root.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
-    pub fn from_config(config: &Config) -> Result<Self> {
-        match &config.azure {
-            Some(azure) => Self::azure(azure),
-            None => Self::local(&config.upload_keep_dir),
+    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
+    pub fn from_config(config: &Config) -> Result<Option<Self>> {
+        match (&config.azure, config.upload_keep_dir.as_deref()) {
+            (Some(azure), named) => {
+                if let Some(directory) = named {
+                    warn!(
+                        "{} names an Azure container and {UPLOAD_KEEP_DIR_ENV} names {}; \
+                         kept texts go to Azure",
+                        AZURE_ACCOUNT_ENV,
+                        directory.display()
+                    );
+                }
+                Self::azure(azure).map(Some)
+            }
+            (None, Some(directory)) => Self::local(directory).map(Some),
+            (None, None) => Ok(None),
         }
     }
 
@@ -245,8 +273,8 @@ impl TextStore {
     /// content's digest — the object that is there is these bytes — so the
     /// second teacher to offer the same text is answered with the same
     /// address rather than a conflict.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
     pub async fn put(&self, content: Vec<u8>) -> Result<TextId> {
         let id = TextId::of(&content);
         let options = PutOptions {
@@ -278,8 +306,8 @@ impl TextStore {
     /// object over the cap names a container holding something this
     /// deployment did not put there, and reading it whole is not the way to
     /// find that out.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
-    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
+    // [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]
     // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
     pub async fn get(&self, id: &TextId, cap: usize) -> Result<Vec<u8>> {
         let reference = id.reference();

@@ -71,14 +71,19 @@ const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 /// Everything a request is served from: the deployment configuration, the
 /// topic registry with the pipeline pair each topic runs, and the store kept
 /// texts live in.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+6]
 pub struct AppState {
     pub config: Config,
     pub registry: Registry,
-    /// Where a text a teacher asked to keep is written and read back. Built
-    /// once, because the client behind it holds a connection pool and because
-    /// a deployment whose store will not open should find out at boot.
-    pub texts: TextStore,
+    /// Where a text a teacher asked to keep is written and read back, for a
+    /// deployment that keeps texts at all. Built once, because the client
+    /// behind it holds a connection pool and because a deployment whose store
+    /// will not open should find out at boot.
+    ///
+    /// `None` is a deployment that named neither an Azure container nor a
+    /// keep directory. It is the one thing here that decides which routes
+    /// exist: see [`routes`].
+    pub texts: Option<TextStore>,
     /// Whether the deep check has already analysed a sentence in this
     /// process. It is the one thing here that is written after startup, and
     /// it is written once and never back: see
@@ -106,12 +111,20 @@ impl AppState {
             started.elapsed()
         );
         let texts = TextStore::from_config(&config)?;
-        info!("Kept texts are stored in {}", texts.describe());
-        if !texts.is_durable() {
-            warn!(
-                "Kept texts are stored on this machine's filesystem; a deployment whose \
-                 filesystem does not outlive the process keeps nothing"
-            );
+        match &texts {
+            Some(store) => {
+                info!("Kept texts are stored in {}", store.describe());
+                if !store.is_durable() {
+                    warn!(
+                        "Kept texts are stored on this machine's filesystem; a deployment whose \
+                         filesystem does not outlive the process keeps nothing"
+                    );
+                }
+            }
+            None => info!(
+                "No store is configured, so this deployment takes no uploads: neither the \
+                 upload endpoint nor the stored-text route is served, and the registry says so"
+            ),
         }
 
         Ok(AppState {
@@ -124,6 +137,15 @@ impl AppState {
 
     pub fn knows_topic(&self, name: &str) -> bool {
         self.registry.knows(name)
+    }
+
+    /// Whether this deployment takes a teacher's text. It is the store's
+    /// presence and nothing else, which is the same question
+    /// [`Config::accepts_uploads`] answers off the configuration the store
+    /// was built from — so what the routes offer and what the registry
+    /// announces cannot come apart.
+    pub fn accepts_uploads(&self) -> bool {
+        self.texts.is_some()
     }
 
     /// Runs one topic pipeline over a page for the requested exercise and
@@ -176,6 +198,14 @@ impl AppState {
 /// The limiter is built here, so one map is one limiter and the four routes
 /// it covers share it: a client's allowance is spent across the endpoints
 /// that analyse together rather than four times over.
+///
+/// Two of the paths are there only when this deployment keeps texts. A
+/// deployment that named no store has nowhere to put an upload and nothing to
+/// serve back, so `POST /api/upload` and `GET /api/texts/<id>` are not
+/// registered at all and both answer 404 — the same answer any other path
+/// this map does not hold gets. Not registering them rather than registering
+/// a pair that refuse is what keeps the map readable: what a deployment
+/// offers is the list of routes it built.
 pub fn routes(config: &Config) -> impl Endpoint + use<> {
     let analysis = access::Limit::new(config);
 
@@ -183,7 +213,6 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
         .at("/api/health", get(health))
         .at("/api/health/deep", get(health_deep))
         .at("/api/activities", get(registry))
-        .at("/api/texts/:id", get(stored_text))
         .at(
             "/api/enhance",
             get(enhance_page).post(enhance_spans).with(analysis.clone()),
@@ -191,13 +220,18 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
         .at(
             "/api/enhance/blocks",
             post(enhance_blocks).with(analysis.clone()),
-        )
-        .at(
+        );
+
+    let api = if config.accepts_uploads() {
+        api.at("/api/texts/:id", get(stored_text)).at(
             "/api/upload",
             post(upload_text)
                 .with(SizeLimit::new(MAX_UPLOAD_BODY))
                 .with(analysis.clone()),
-        );
+        )
+    } else {
+        api
+    };
 
     #[cfg(test)]
     let api = api.at("/api/panic", get(panics));
@@ -239,22 +273,28 @@ async fn panics() -> &'static str {
 
 /// The root of a deployment with no web client: the endpoint listing, so an
 /// API-only deployment can be probed without one.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
+///
+/// The listing is of the map this deployment actually built, so the two
+/// upload paths appear exactly when they answer. A listing that named a path
+/// answering 404 would be worse than no listing at all: it is read by
+/// somebody deciding what to ask for.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6]
 #[handler]
-async fn index() -> Response {
-    let body = concat!(
+async fn index(state: Data<&Arc<AppState>>) -> Response {
+    let mut body = String::from(concat!(
         "teaksta\n",
         "\n",
         "GET  /api/activities\n",
         "GET  /api/enhance?url=&activity=&mode=\n",
         "POST /api/enhance\n",
         "POST /api/enhance/blocks\n",
-        "POST /api/upload\n",
-        "GET  /api/texts/<id>\n",
-        "GET  /api/health\n",
-        "GET  /api/health/deep\n",
-    );
+    ));
+    if state.0.accepts_uploads() {
+        body.push_str(concat!("POST /api/upload\n", "GET  /api/texts/<id>\n"));
+    }
+    body.push_str(concat!("GET  /api/health\n", "GET  /api/health/deep\n"));
+
     Response::builder()
         .header(CONTENT_TYPE, "text/plain;charset=UTF-8")
         .body(body)
@@ -398,8 +438,8 @@ fn degraded(reason: &str) -> Response {
         .into_response()
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
 #[handler]
 async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value> {
     let modes: Vec<serde_json::Value> = Mode::ALL
@@ -407,7 +447,16 @@ async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value> {
         .map(|mode| json!({ "name": mode.name(), "label": mode_label(mode) }))
         .collect();
 
-    Json(json!({ "activities": state.0.registry.topics(), "modes": modes }))
+    // Whether this deployment takes a teacher's own text belongs here beside
+    // what it can analyse, because it is the same question: what is on offer.
+    // It is the one thing a client cannot work out for itself — the upload
+    // path is simply absent when the answer is no — and a client that asked
+    // and was 404'd would have shown a teacher a form that could never work.
+    Json(json!({
+        "activities": state.0.registry.topics(),
+        "modes": modes,
+        "uploads": state.0.accepts_uploads(),
+    }))
 }
 
 /// The query the whole-page endpoint takes. A missing member is a malformed
@@ -419,8 +468,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -438,7 +487,9 @@ async fn enhance_page(
     let key = cache_key(&requested);
 
     let started = Instant::now();
-    let source = fetch::fetch(target, &state.texts).await.map_err(failure)?;
+    let source = fetch::fetch(target, state.texts.as_ref())
+        .await
+        .map_err(failure)?;
     let base = requested.clone();
     let page = blocking(move || {
         let document = state.analyse(&activity, mode, &source, &key)?;
@@ -562,7 +613,9 @@ async fn page_source(
                 fetch::target(&raw, &state.config).map_err(|refusal| failure(refusal.into()))?;
             let key = cache_key(target.address());
             Ok((
-                fetch::fetch(target, &state.texts).await.map_err(failure)?,
+                fetch::fetch(target, state.texts.as_ref())
+                    .await
+                    .map_err(failure)?,
                 key,
             ))
         }
@@ -626,14 +679,22 @@ async fn enhance_blocks(
         .body(blocks))
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
 #[handler]
 async fn upload_text(
     mut multipart: Multipart,
     state: Data<&Arc<AppState>>,
 ) -> poem::Result<Response> {
     let state = state.0.clone();
+    // The route is registered only by a deployment that has a store, so this
+    // is the second lock on the same door rather than the first. It is here
+    // because the handler needs a store to do anything at all, and answering
+    // the way the unregistered path answers is the only honest thing to do
+    // without one.
+    let Some(texts) = state.texts.clone() else {
+        return Err(poem::Error::from_status(StatusCode::NOT_FOUND));
+    };
     let mut collected = Upload::default();
 
     while let Some(field) = multipart.next_field().await? {
@@ -652,7 +713,7 @@ async fn upload_text(
         }
     }
 
-    match accepted_upload(&state, collected).await {
+    match accepted_upload(&state, &texts, collected).await {
         Ok(Ok(url)) => {
             info!("Stored an upload at {url}");
             Ok(Json(json!({ "url": url })).into_response())
@@ -680,6 +741,7 @@ async fn upload_text(
 /// putting it somewhere durable would mean sweeping it out of there too.
 async fn accepted_upload(
     state: &AppState,
+    texts: &TextStore,
     collected: Upload,
 ) -> std::result::Result<Result<String>, tokio::task::JoinError> {
     if !collected.keep {
@@ -701,11 +763,7 @@ async fn accepted_upload(
         Err(error) => return Ok(Err(error)),
     };
 
-    Ok(state
-        .texts
-        .put(collected.content)
-        .await
-        .map(|id| id.reference()))
+    Ok(texts.put(collected.content).await.map(|id| id.reference()))
 }
 
 /// `GET /api/texts/<id>` — one stored text, as it was stored.
@@ -728,20 +786,25 @@ async fn accepted_upload(
 /// a text a stranger uploaded is served here from this deployment's own
 /// origin: the sandbox puts it in an origin of its own, so a script somebody
 /// hid in a page they offered as classroom material runs as nobody.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]
 #[handler]
 async fn stored_text(
     Path(id): Path<String>,
     state: Data<&Arc<AppState>>,
 ) -> poem::Result<Response> {
     let state = state.0.clone();
+    // A deployment with no store holds no text under any name, which is what
+    // it says. The route is not registered without one, so reaching here is
+    // the same belt-and-braces the upload endpoint keeps.
+    let Some(texts) = state.texts.as_ref() else {
+        return Err(missing(&id));
+    };
     let Some(id) = TextId::parse(&id) else {
         return Err(missing(&id));
     };
 
-    let text = state
-        .texts
+    let text = texts
         .get(&id, state.config.max_page_bytes)
         .await
         .map_err(failure)?;

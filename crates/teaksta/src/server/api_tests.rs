@@ -62,7 +62,7 @@ fn config_for(root: &Path) -> Config {
         webapp_dist: None,
         topics: Some(root.join("topics.toml")),
         analysis_dir: root.join("analysed"),
-        upload_keep_dir: root.join("keep"),
+        upload_keep_dir: Some(root.join("keep")),
         upload_temp_dir: root.join("temp"),
         trust_proxy: false,
         rate_limit: None,
@@ -102,7 +102,7 @@ fn modes_are_the_four_exercise_names() {
     assert_eq!(Mode::parse(""), None);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[test]
 fn a_bare_host_is_taken_as_http() {
     let root = tempfile::tempdir().expect("temp dir");
@@ -163,7 +163,7 @@ fn the_key_of_a_page_is_fixed() {
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
 #[test]
 fn the_registry_lists_each_declared_topic() {
     let root = topics_with(&["Substantive", "Adverbial"]);
@@ -221,7 +221,7 @@ async fn blocks<E: Endpoint>(client: &TestClient<E>, body: &serde_json::Value) -
 }
 
 /// A deployment carrying no web client, which is the API-only one.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6/test]
 #[tokio::test]
 async fn the_index_lists_every_endpoint() {
     let root = topics_with(&["Substantive"]);
@@ -244,7 +244,7 @@ async fn the_index_lists_every_endpoint() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6/test]
 #[tokio::test]
 async fn a_configured_client_answers_the_root() {
     let root = topics_with(&["Substantive"]);
@@ -258,7 +258,7 @@ async fn a_configured_client_answers_the_root() {
     assert_eq!(body, CLIENT_INDEX);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6/test]
 #[tokio::test]
 async fn a_client_route_is_answered_by_the_document() {
     let root = topics_with(&["Substantive"]);
@@ -277,7 +277,7 @@ async fn a_client_route_is_answered_by_the_document() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6/test]
 #[tokio::test]
 async fn an_asset_is_served_from_the_bundle() {
     let root = topics_with(&["Substantive"]);
@@ -291,7 +291,7 @@ async fn an_asset_is_served_from_the_bundle() {
     assert_eq!(body, CLIENT_ASSET);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
 #[tokio::test]
 async fn the_api_answers_before_the_client() {
     let root = topics_with(&["Substantive"]);
@@ -305,7 +305,7 @@ async fn the_api_answers_before_the_client() {
     assert!(body.contains("\"Substantive\""), "{body}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
 #[tokio::test]
 async fn the_registry_answers_topics_and_modes() {
     let root = topics_with(&["Substantive", "Adverbial"]);
@@ -328,11 +328,13 @@ async fn the_registry_answers_topics_and_modes() {
                 { "name": "mc", "label": "V\u{e1}llje rivttes s\u{e1}niid!" },
                 { "name": "cloze", "label": "\u{10c}\u{e1}le rivttes s\u{e1}niid!" },
             ],
+            // This deployment names a keep directory, so it takes uploads.
+            "uploads": true,
         }))
         .await;
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn the_page_endpoint_needs_all_three() {
     let root = topics_with(&["Substantive"]);
@@ -576,7 +578,7 @@ async fn the_block_path_is_its_own() {
     .assert_status(StatusCode::BAD_REQUEST);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+6/test]
 #[tokio::test]
 async fn a_panicking_handler_is_answered_rather_than_dropped() {
     let root = topics_with(&["Substantive"]);
@@ -593,7 +595,7 @@ async fn a_panicking_handler_is_answered_rather_than_dropped() {
 /// socket to turn away: each names its IP or its path outright, so no name is
 /// looked up and no connection is tried. A 400 rather than the 502 a
 /// connection that was made and failed would answer with is what says so.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn a_refused_address_reaches_nothing() {
     let root = topics_with(&["Substantive"]);
@@ -656,7 +658,7 @@ async fn the_span_endpoint_refuses_them_too() {
 /// analyser. Anything but a 400 says the address was accepted — the page is
 /// enhanced when this build has the models beside it and the analysis fails
 /// when it does not, and neither outcome is a refusal of the address.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn a_stored_upload_clears_the_confinement() {
     let root = topics_with(&["Substantive"]);
@@ -679,7 +681,7 @@ async fn a_stored_upload_clears_the_confinement() {
 /// A path this deployment serves that holds nothing is unreadable, not
 /// forbidden: the caller is told the far end failed rather than that they
 /// asked for something they may not have.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn a_swept_upload_is_unreadable_rather_than_refused() {
     let root = topics_with(&["Substantive"]);
@@ -693,7 +695,7 @@ async fn a_swept_upload_is_unreadable_rather_than_refused() {
         .assert_status(StatusCode::BAD_GATEWAY);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn the_retired_paths_answer_nothing() {
     let root = topics_with(&["Substantive"]);
@@ -905,7 +907,7 @@ async fn an_unlimited_deployment_counts_nothing() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6/test]
 #[tokio::test]
 async fn an_upload_without_a_file_is_refused() {
     let root = topics_with(&["Substantive"]);

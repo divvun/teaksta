@@ -17,8 +17,8 @@ pub use choices::{
 };
 pub use chrome::Chrome;
 pub use exercise::Exercise;
-pub use home::{Home, Picker, PickerProps};
-pub use upload::{Upload, UploadPicker, UploadPickerProps};
+pub use home::{Home, Picker, PickerProps, Start, StartProps};
+pub use upload::{Upload, UploadPicker, UploadPickerProps, UploadStart, UploadStartProps};
 
 /// The registry fetch the chrome puts in context, shared by every view beneath
 /// it so the topics are asked for once per visit.
@@ -68,10 +68,13 @@ mod tests {
             let html = render_at(path);
 
             // The wordmark is lowercase everywhere, and the bar carries the
-            // two ways into an exercise whichever view is under it.
+            // ways into an exercise whichever view is under it. One of them
+            // here: nothing has answered yet, and a deployment that takes a
+            // teacher's own text is the only one whose bar offers sending one.
             assert!(html.contains("class=\"tk-wordmark\""), "{path}");
             assert!(html.contains(">teaksta<"), "{path}");
-            assert_eq!(html.matches("class=\"bar-link\"").count(), 2, "{path}");
+            assert_eq!(html.matches("class=\"bar-link\"").count(), 1, "{path}");
+            assert!(html.contains("Vállje neahttasiiddu"), "{path}");
             assert!(html.contains("chrome-main"), "{path}");
         }
     }

@@ -4,11 +4,16 @@
 //! registry rather than from a table of this app's own, so a topic is named
 //! here exactly as the deployment names it.
 //!
-//! One panel, two ways in. Naming a page and sending a text of your own ask
-//! the same two questions and differ only in where the page comes from, so
-//! the topic and the mode are chosen once at the top and the seam below them
-//! leads across to the other route. They really are two forms, and each ends
-//! in its own *Sádde*.
+//! One panel, two ways in — when the deployment has two. Naming a page and
+//! sending a text of your own ask the same two questions and differ only in
+//! where the page comes from, so the topic and the mode are chosen once at the
+//! top and the seam below them leads across to the other route. They really
+//! are two forms, and each ends in its own *Sádde*.
+//!
+//! The second way exists only where the backend keeps texts. A deployment
+//! that was given nowhere to put one says so in its registry, and then there
+//! is no seam and no way across: a teacher is shown one way in rather than
+//! two, of which the second could only have failed.
 
 use std::rc::Rc;
 
@@ -34,40 +39,61 @@ pub fn Home() -> Element {
                 }
             },
             Some(Ok(offered)) => rsx! {
-                div { class: "start",
-                    div { class: "start-head",
-                        h2 { "Start an exercise" }
-                        p {
-                            "Any North Sámi page will do. Name one, or send a file of your own — "
-                            "either way the text is analysed once and every mode plays over it."
-                        }
-                    }
-                    Picker {
-                        registry: Rc::new(offered.clone()),
-                        onstart: move |params| {
-                            navigator.push(Route::Exercise { params });
-                        },
-                    }
-                    div { class: "or", lang: "se", "dahje / or" }
-                    label { class: "field", lang: "se",
-                        "Vállje fiilla maid háliidat geavahit"
-                        span { class: "tk-gloss", "Choose a file to use" }
-                    }
-                    Link { to: Route::Upload {}, class: "drop",
-                        span { class: "drop-icon", {upload_icon()} }
-                        span { class: "drop-body",
-                            span { class: "drop-label", lang: "se", "Vállje fiilla" }
-                            span { class: "drop-sub", lang: "se",
-                                "Teaksta ferte leat .html formáhtas. "
-                                span { class: "tk-gloss", "· max 5 MB" }
-                            }
-                        }
-                    }
+                Start {
+                    registry: Rc::new(offered.clone()),
+                    onstart: move |params| {
+                        navigator.push(Route::Exercise { params });
+                    },
                 }
             },
             Some(Err(error)) => rsx! {
                 p { class: "state state-error", "{error}" }
             },
+        }
+    }
+}
+
+/// The entry panel over one registry: the picker, and — where the deployment
+/// takes uploads — the seam across to the file form. Where a filled-in form
+/// leads is the caller's business, so the panel stands on its own.
+#[component]
+pub fn Start(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> Element {
+    let uploads = registry.uploads;
+
+    rsx! {
+        div { class: "start",
+            div { class: "start-head",
+                h2 { "Start an exercise" }
+                if uploads {
+                    p {
+                        "Any North Sámi page will do. Name one, or send a file of your own — "
+                        "either way the text is analysed once and every mode plays over it."
+                    }
+                } else {
+                    p {
+                        "Any North Sámi page will do. Name one and the text is analysed "
+                        "once — every mode then plays over it."
+                    }
+                }
+            }
+            Picker { registry, onstart }
+            if uploads {
+                div { class: "or", lang: "se", "dahje / or" }
+                label { class: "field", lang: "se",
+                    "Vállje fiilla maid háliidat geavahit"
+                    span { class: "tk-gloss", "Choose a file to use" }
+                }
+                Link { to: Route::Upload {}, class: "drop",
+                    span { class: "drop-icon", {upload_icon()} }
+                    span { class: "drop-body",
+                        span { class: "drop-label", lang: "se", "Vállje fiilla" }
+                        span { class: "drop-sub", lang: "se",
+                            "Teaksta ferte leat .html formáhtas. "
+                            span { class: "tk-gloss", "· max 5 MB" }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -203,6 +229,10 @@ mod tests {
                     label: None,
                 },
             ],
+            // What the picker offers is the same whether or not the
+            // deployment also takes a file; the seam that leads to one is the
+            // panel above it, and `tests/uploads.rs` is where that is read.
+            uploads: false,
         }
     }
 

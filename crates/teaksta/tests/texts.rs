@@ -37,7 +37,7 @@ fn config_under(root: &Path) -> Config {
         webapp_dist: None,
         topics: None,
         analysis_dir: root.join("analysed"),
-        upload_keep_dir: root.join("keep"),
+        upload_keep_dir: Some(root.join("keep")),
         upload_temp_dir: root.join("temp"),
         trust_proxy: false,
         rate_limit: None,
@@ -58,15 +58,16 @@ fn config_under(root: &Path) -> Config {
 async fn deployment(pages: &[&str]) -> (TempDir, TestClient<impl Endpoint>, Vec<String>) {
     let root = TempDir::new().expect("a deployment root");
     let config = config_under(root.path());
-    for directory in [
-        &config.analysis_dir,
-        &config.upload_keep_dir,
-        &config.upload_temp_dir,
-    ] {
+    for directory in [&config.analysis_dir, &config.upload_temp_dir]
+        .into_iter()
+        .chain(&config.upload_keep_dir)
+    {
         std::fs::create_dir_all(directory).expect("a deployment directory");
     }
 
-    let store = TextStore::from_config(&config).expect("the text store opens");
+    let store = TextStore::from_config(&config)
+        .expect("the text store opens")
+        .expect("a deployment naming a keep directory keeps texts");
     let mut addresses = Vec::new();
     for page in pages {
         let id = store
@@ -96,7 +97,7 @@ async fn enhanced<E: Endpoint>(client: &TestClient<E>, address: &str) -> TestRes
 /// A kept text is reachable at the address the upload endpoint hands back,
 /// served as the type the gate accepted and under the headers that keep a
 /// page somebody uploaded from running as this deployment.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1/test]
 #[tokio::test]
 async fn a_kept_text_is_served_at_its_address() {
     let (_root, client, addresses) = deployment(&[PAGE, XHTML]).await;
@@ -121,8 +122,8 @@ async fn a_kept_text_is_served_at_its_address() {
 /// A name that holds nothing, a name that is not a name, and a name asked for
 /// through the enhancement endpoints are one 404: nothing a caller writes
 /// reaches an object key, and probing tells them nothing.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn an_unheld_text_is_not_found() {
     let (_root, client, _) = deployment(&[]).await;
@@ -156,7 +157,7 @@ async fn an_unheld_text_is_not_found() {
 /// fetched, so the address reaches the analyser instead of being refused by
 /// the policy that would — quite correctly — refuse this deployment a
 /// connection to itself.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+3/test]
 #[tokio::test]
 async fn a_kept_text_is_enhanced_without_being_fetched() {
@@ -187,7 +188,7 @@ async fn a_kept_text_is_enhanced_without_being_fetched() {
 /// looks like one and carries a host is an ordinary address of that host, and
 /// is judged exactly as any other address of it would be — so nothing about
 /// the stored-text shape lets a caller past the private-address policy.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn a_text_path_on_a_host_is_refused() {
     // A name that really is held here, so what the table below shows is the
