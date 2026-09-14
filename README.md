@@ -152,6 +152,54 @@ With it set, the server serves the client from `/` and answers any path the
 bundle has no file for with `index.html`, so the client's own router owns
 those. Without it, `/` answers a plain-text listing of the endpoints.
 
+## Container
+
+The `Dockerfile` at the root builds the whole service into one image: the
+server binary, the web client it serves, and both model files. The environment
+defaults are baked in too, pointing at where the image put them, so the
+container needs nothing mounted and nothing configured — it boots with zero
+external files.
+
+The models come from the [lang-sme](https://github.com/giellalt/lang-sme)
+releases, pinned to the version in the asset filename
+(`teaksta-sme_<version>_noarch-all.drb` and
+`fst-sme_<version>_noarch-all.pkt.tar.zst`, from which the generator is
+extracted):
+
+```sh
+docker build \
+  --build-arg TEAKSTA_BUNDLE_VERSION=1.0.0+build.1700 \
+  --build-arg TEAKSTA_FST_VERSION=4.5.2+build.1664 \
+  -t ghcr.io/divvun/teaksta .
+```
+
+There are no defaults for those versions, because a default would silently pin
+every image to a model nobody chose. Add `--build-arg TEAKSTA_BUNDLE_TAG=` /
+`TEAKSTA_FST_TAG=` when the asset hangs off a rolling tag such as
+`speller-sme/dev-latest` rather than off its own `<product>/v<version>`.
+
+Models already on disk are substituted instead, which is how the image is built
+against a bundle that has not been released — as the `teaksta-sme` one has not
+yet:
+
+```sh
+docker build --build-context models=/path/to/models -t teaksta .
+```
+
+where that directory holds `bundle.drb` and `generator-gt-norm.hfstol`. A named
+build context replaces the image's `models` stage outright, so such a build
+never reaches the network for a model and needs no version at all.
+
+```sh
+docker run --rm -p 8080:8080 teaksta
+```
+
+The container runs as a non-root user, listens on `0.0.0.0:8080`, serves the
+client at `/` and the API under `/api/`, and keeps its analysis cache and
+upload scratch under `/cache` — the one directory a deployment may want to give
+a volume. It carries no `HEALTHCHECK`: in the cluster the Kubernetes probes own
+that.
+
 ## Architecture
 
 **HTTP server** — `crates/teaksta`, a [poem](https://github.com/poem-web/poem)
