@@ -1,6 +1,7 @@
-//! The HTTP surface: a topic registry, three enhancement endpoints and an
-//! upload endpoint, over one shared analysis state, with the built web client
-//! under them when the deployment carries one.
+//! The HTTP surface: a topic registry, three enhancement endpoints, an
+//! upload endpoint and the two the cluster's probes read, over one shared
+//! analysis state, with the built web client under them when the deployment
+//! carries one.
 //!
 //! The three enhancement endpoints answer the same analysis three ways: a
 //! whole page for a caller that wants the document back, the per-token span
@@ -21,9 +22,10 @@
 
 use std::any::Any;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
-use anyhow::{Context as _, Result};
+use anyhow::{Context as _, Result, bail};
 use poem::endpoint::StaticFilesEndpoint;
 use poem::error::ParseJsonError;
 use poem::http::StatusCode;
@@ -40,6 +42,7 @@ use serde_json::json;
 use tracing::{info, warn};
 
 use crate::context::Config;
+use crate::morpho::{BUNDLE_ENV, GENERATOR_ENV, MorphoPipeline};
 use crate::server::access;
 use crate::server::fetch::{self, Overloaded, Oversized, Refusal, Unreachable};
 use crate::server::registry::Registry;
@@ -71,6 +74,17 @@ const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 pub struct AppState {
     pub config: Config,
     pub registry: Registry,
+    /// Whether the deep check has already analysed a sentence in this
+    /// process. It is the one thing here that is written after startup, and
+    /// it is written once and never back: see
+    /// [`health_deep`] for why only a success is remembered.
+    ///
+    /// Relaxed is the whole ordering this needs. Nothing is published through
+    /// the flag — the models it stands for are behind the morpho seam's own
+    /// synchronisation — so it says only that some earlier request got an
+    /// answer out of them, and a reader that briefly misses a store runs the
+    /// check again and reaches the same verdict.
+    models_proven: AtomicBool,
 }
 
 impl AppState {
@@ -90,6 +104,7 @@ impl AppState {
         Ok(AppState {
             config,
             registry: loaded,
+            models_proven: AtomicBool::new(false),
         })
     }
 
@@ -123,6 +138,14 @@ impl AppState {
 /// over the registry, which is a read of state built at startup and costs
 /// nothing worth counting.
 ///
+/// The two health routes are registered outside the limiter for a different
+/// reason: they are read by the cluster, not by a client, and a probe that
+/// is answered 429 is a probe that failed. The kubelet asks from the pod
+/// network, so every probe of every pod on a node presents as one address —
+/// exactly the shape a per-address allowance is built to bound — and a busy
+/// node would spend a pod's own allowance on the requests that decide whether
+/// that pod lives.
+///
 /// The limiter is built here, so one map is one limiter and the four routes
 /// it covers share it: a client's allowance is spent across the endpoints
 /// that analyse together rather than four times over.
@@ -130,6 +153,8 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
     let analysis = access::Limit::new(config);
 
     let api = Route::new()
+        .at("/api/health", get(health))
+        .at("/api/health/deep", get(health_deep))
         .at("/api/activities", get(registry))
         .at(
             "/api/enhance",
@@ -186,8 +211,8 @@ async fn panics() -> &'static str {
 
 /// The root of a deployment with no web client: the endpoint listing, so an
 /// API-only deployment can be probed without one.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
 #[handler]
 async fn index() -> Response {
     let body = concat!(
@@ -198,10 +223,150 @@ async fn index() -> Response {
         "POST /api/enhance\n",
         "POST /api/enhance/blocks\n",
         "POST /api/upload\n",
+        "GET  /api/health\n",
+        "GET  /api/health/deep\n",
     );
     Response::builder()
         .header(CONTENT_TYPE, "text/plain;charset=UTF-8")
         .body(body)
+}
+
+/// The sentence the deep check analyses: four words of North Sámi, one of
+/// them a noun the analyser has a reading for, which is the smallest input
+/// that makes the tokeniser and the analyser do their real work.
+const HEALTH_SENTENCE: &str = "Mun oidnen viesu ikte.";
+
+/// The lookup the deep check asks the generator for. A form the generator
+/// knows, so a transducer that loaded answers with one rather than with the
+/// `+?` echo — though the echo would pass too: what is being proved is that
+/// the transducer is there and can be queried, not what it knows.
+const HEALTH_LOOKUP: &str = "viessu+N+Sg+Nom";
+
+/// The liveness and readiness probe: is this process still answering?
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]
+#[handler]
+async fn health(state: Data<&Arc<AppState>>) -> Json<serde_json::Value> {
+    // A slice read off state built at startup. Nothing here fetches, analyses,
+    // opens a file or takes a lock, so a process spending every core on an
+    // analysis answers this as fast as an idle one does — which is the whole
+    // requirement, because a liveness probe that times out under load is a
+    // liveness probe that kills the pods doing the most work.
+    Json(json!({ "status": "ok", "topics": state.0.registry.topics().len() }))
+}
+
+/// The startup probe: do the models this deployment was given actually load
+/// and answer?
+///
+/// The expensive path runs at most once per process. A startup probe asks
+/// until it is answered and then stops asking, so a verdict that was reached
+/// is the verdict for the life of the process, and remembering it is what
+/// keeps a stranger who found the address from being able to ask for an
+/// analysis, unmetered, as often as they like. A failure is not remembered:
+/// the probe that asked is going to ask again, and the models may be a moment
+/// from ready.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]
+#[handler]
+async fn health_deep(state: Data<&Arc<AppState>>) -> Response {
+    let state = state.0.clone();
+    if state.models_proven.load(Ordering::Relaxed) {
+        return loaded();
+    }
+
+    // Named before anything is spawned, so the deployment that has no models
+    // at all — which is every deployment built without them — is told what is
+    // missing without a thread being taken for it.
+    if let Some(missing) = unset_model_variables() {
+        return degraded(&missing);
+    }
+
+    // The morpho seam owns a runtime of its own and blocks on it, so the
+    // analysis goes to a blocking thread exactly as every analysing endpoint's
+    // does.
+    let started = Instant::now();
+    match tokio::task::spawn_blocking(analyse_one_sentence).await {
+        Ok(Ok(())) => {
+            state.models_proven.store(true, Ordering::Relaxed);
+            info!("The models answered a sentence in {:?}", started.elapsed());
+            loaded()
+        }
+        Ok(Err(error)) => {
+            warn!("The models did not answer: {error:?}");
+            degraded(&format!("{error:#}"))
+        }
+        Err(join) => {
+            warn!("The deep health check terminated: {join}");
+            degraded(&format!("the check terminated: {join}"))
+        }
+    }
+}
+
+/// The two variables naming this deployment's models, when either is unset.
+/// A deployment without them serves the registry and refuses every analysis,
+/// which is a state worth being told about by name rather than being left to
+/// show up as a failed request.
+fn unset_model_variables() -> Option<String> {
+    let missing: Vec<&str> = [BUNDLE_ENV, GENERATOR_ENV]
+        .into_iter()
+        .filter(|name| std::env::var_os(name).is_none())
+        .collect();
+    if missing.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "{} is not set; this deployment analyses nothing",
+        missing.join(" and ")
+    ))
+}
+
+/// One sentence through both models. The bundle is asked to tokenise and then
+/// to analyse, which is the path every exercise is built on; the generator is
+/// asked for one form, because a deployment whose generator will not load
+/// answers the multiple-choice and cloze exercises with nothing and the probe
+/// that exists to catch a model that is not there should catch that one too.
+///
+/// Both answers are weighed rather than merely awaited: a pipeline that
+/// returned an empty stream has failed in the way that matters here, and a
+/// check that only asked whether a call returned would pass on it.
+fn analyse_one_sentence() -> Result<()> {
+    let pipeline = MorphoPipeline::shared();
+
+    let tokens = pipeline
+        .tokenize(HEALTH_SENTENCE)
+        .context("the tokenise pipeline")?;
+    if tokens.is_empty() {
+        bail!("the tokenise pipeline answered {HEALTH_SENTENCE:?} with no tokens");
+    }
+
+    let stream = pipeline
+        .analyze_disambiguate(&tokens)
+        .context("the analyse pipeline")?;
+    if stream.trim().is_empty() {
+        bail!("the analyse pipeline answered {HEALTH_SENTENCE:?} with an empty stream");
+    }
+
+    pipeline
+        .generate(HEALTH_LOOKUP)
+        .context("the normative generator")?;
+    Ok(())
+}
+
+/// What a proved deployment answers, whether it was proved a moment ago or at
+/// boot. The two are the same answer deliberately: which of them a caller got
+/// is this process's business, and a body that told them apart would be a
+/// thing to hold stable for a reader who started reading it.
+fn loaded() -> Response {
+    Json(json!({ "status": "ok", "models": "loaded" })).into_response()
+}
+
+/// What a deployment that cannot analyse answers: 503, with what went wrong
+/// in the body, so an operator reading the probe's own reply is told rather
+/// than being sent to the logs.
+fn degraded(reason: &str) -> Response {
+    Json(json!({ "status": "failed", "error": reason }))
+        .with_status(StatusCode::SERVICE_UNAVAILABLE)
+        .into_response()
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]

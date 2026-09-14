@@ -214,7 +214,7 @@ async fn blocks<E: Endpoint>(client: &TestClient<E>, body: &serde_json::Value) -
 }
 
 /// A deployment carrying no web client, which is the API-only one.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4/test]
 #[tokio::test]
 async fn the_index_lists_every_endpoint() {
     let root = topics_with(&["Substantive"]);
@@ -229,12 +229,14 @@ async fn the_index_lists_every_endpoint() {
         "POST /api/enhance",
         "POST /api/enhance/blocks",
         "POST /api/upload",
+        "GET  /api/health",
+        "GET  /api/health/deep",
     ] {
         assert!(body.contains(path), "{path} is missing from {body}");
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4/test]
 #[tokio::test]
 async fn a_configured_client_answers_the_root() {
     let root = topics_with(&["Substantive"]);
@@ -248,7 +250,7 @@ async fn a_configured_client_answers_the_root() {
     assert_eq!(body, CLIENT_INDEX);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4/test]
 #[tokio::test]
 async fn a_client_route_is_answered_by_the_document() {
     let root = topics_with(&["Substantive"]);
@@ -267,7 +269,7 @@ async fn a_client_route_is_answered_by_the_document() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4/test]
 #[tokio::test]
 async fn an_asset_is_served_from_the_bundle() {
     let root = topics_with(&["Substantive"]);
@@ -566,7 +568,7 @@ async fn the_block_path_is_its_own() {
     .assert_status(StatusCode::BAD_REQUEST);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4/test]
 #[tokio::test]
 async fn a_panicking_handler_is_answered_rather_than_dropped() {
     let root = topics_with(&["Substantive"]);

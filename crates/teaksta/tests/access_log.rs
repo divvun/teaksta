@@ -8,46 +8,18 @@
 //! line would be written or not depending on the order the tests ran in. One
 //! test alone in a process has no such neighbour, and this needs no models.
 
-use std::io::Write;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use poem::EndpointExt;
 use poem::http::StatusCode;
 use poem::test::TestClient;
-use tracing_subscriber::fmt::MakeWriter;
 
 use teaksta::context::Config;
 use teaksta::server::api::{AppState, routes};
 
-/// Whatever the subscriber wrote, so a line can be read back rather than only
-/// looked at.
-#[derive(Clone, Default)]
-struct Recorded(Arc<Mutex<Vec<u8>>>);
+mod common;
 
-impl Recorded {
-    fn read(&self) -> String {
-        String::from_utf8(self.0.lock().expect("the log").clone()).expect("a readable log")
-    }
-}
-
-impl Write for Recorded {
-    fn write(&mut self, written: &[u8]) -> std::io::Result<usize> {
-        self.0.lock().expect("the log").extend_from_slice(written);
-        Ok(written.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
-impl<'a> MakeWriter<'a> for Recorded {
-    type Writer = Recorded;
-
-    fn make_writer(&'a self) -> Self::Writer {
-        self.clone()
-    }
-}
+use common::Recorded;
 
 /// One line for every request: the client, the method, the path, the status
 /// and how long it took — and never the query, which on this endpoint carries
@@ -75,12 +47,7 @@ async fn every_request_writes_one_line_without_its_query() {
     let client = TestClient::new(routes(&state.config).data(state));
 
     let written = Recorded::default();
-    let subscriber = tracing_subscriber::fmt()
-        .with_writer(written.clone())
-        .with_ansi(false)
-        .with_max_level(tracing::Level::INFO)
-        .finish();
-    let _recording = tracing::subscriber::set_default(subscriber);
+    let _recording = written.recording();
 
     // A topic the registry has not loaded, so the request reaches a handler,
     // is refused there, and fetches nothing — and the address it named is in
