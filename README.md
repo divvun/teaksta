@@ -188,17 +188,29 @@ it carries the address a learner asked to read.
 A document is analysed in pieces cut between sentences, and
 `TEAKSTA_ANALYSIS_WORKERS` is how many of them go through the language
 technology at the same time. A worker holds a pipeline of its own, built over
-its own copy of the bundle, so the setting buys wall-time with memory: the sme
-models weigh some 450MB resident per worker per pipeline, and a server that
-has built all of them holds a few gigabytes. The default is capped at four
-because that is where the buying stops paying — over one article of
-se.wikipedia, four workers answered in 19s against 36s at one, and eight
-answered no sooner for twice the memory. A deployment that serves long
-documents from a server that stays up, and has the memory, can raise it.
+a bundle opened for it alone, so the setting buys wall-time with memory.
 
-Pipelines are built on demand, and the first document a freshly started server
-analyses waits for the ones it needs — a few seconds each, and one per worker
-— which is why a cold request is slower than the ones after it.
+It buys less memory than it used to. The runtime caches a bundle's heavy
+assets — the pmatch cores, the lookup transducers, the spellers — process-wide
+and keyed on the file they were read from, so the workers share one copy of
+each instead of loading their own. What a worker still holds alone is the part
+that is not yet shared, chiefly its cg3 grammars. Measured on an eighteen-core
+Apple M5 Pro on 2026-09-14, over a sixty-sentence page with a fresh server and
+an empty analysis cache per setting: one worker settles at 311MiB resident,
+two at 838MiB, four at 1672MiB — about 450MiB per worker past the first, down
+from about 1100MiB before the caches landed.
+
+The default is capped at four because that is where the buying stops paying:
+the same page is answered in 0.12s at four workers against 0.10s at eight, and
+eight was the only setting whose memory would not settle, wandering between
+1.4GB and 2.1GB with peaks over 4GB. A deployment that serves long documents
+from a server that stays up, and has the memory, can raise it.
+
+Pipelines are built on demand, so a cold request is still slower than the ones
+after it — but only just. The first worker over a bundle reads its assets and
+the rest take them from the cache, so a cold sixty-sentence request costs
+about half a second at any of these settings, every worker's pipeline
+included.
 
 ### Building the web client
 

@@ -38,14 +38,24 @@
 //! where a sentence ends, and this analysis answers for a group of sentences
 //! without reference to the groups around it. Each pipeline keeps a pool of
 //! handles, grown to demand up to [`analysis_workers`], and a chunk takes one
-//! out for its run. Handles share nothing: a handle is built over a bundle
-//! opened for it alone, because divvun-runtime keeps a command's grammars and
-//! transducers behind locks and two handles over one bundle would hand the
-//! chunks straight back to the queue this pool exists to remove. The price is
-//! paid on the way in — the first chunk to find the pool empty waits for a
-//! bundle to be reopened, and a run wide enough to use the whole pool pays
-//! that once per handle, concurrently — and in memory, one bundle's resident
-//! assets per handle.
+//! out for its run. A handle is built over a bundle opened for it alone, and
+//! that is what keeps the handles independent: divvun-runtime keeps a
+//! command's grammars and transducers behind locks, and two handles over one
+//! bundle would hand the chunks straight back to the queue this pool exists
+//! to remove.
+//!
+//! Opening a bundle per handle is execution isolation, not duplication. The
+//! runtime keeps process-wide caches keyed on file identity, so the pmatch
+//! cores, lookup transducers and spellers that dominate a bundle's weight are
+//! read once and shared by every handle built over that file — including
+//! across separate bundles that name the same file. What a handle still pays
+//! for alone is whatever the runtime does not yet share, chiefly its cg3
+//! grammars; [`DEFAULT_WORKER_CEILING`] carries what that measures out at.
+//! The price is still paid on the way in — the first chunk to find the pool
+//! empty waits for a bundle to be opened, and a run wide enough to use the
+//! whole pool pays that once per handle, concurrently — but the caches have
+//! taken that wait down to a fraction of what it was, because only the first
+//! handle over a file reads it.
 
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
@@ -59,7 +69,6 @@ use futures_util::StreamExt;
 use hfst::hfst_flag_diacritics::FdOperation;
 use hfst::hfst_input_stream::HfstInputStream;
 use hfst::hfst_transducer::AnyTransducer;
-use hfst::transducer::IStream;
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tracing::warn;
 
@@ -73,14 +82,28 @@ pub const WORKERS_ENV: &str = "TEAKSTA_ANALYSIS_WORKERS";
 
 /// The ceiling the derived worker count is held under, which is what binds on
 /// any host with cores to spare. It is set where measurement put it rather
-/// than at whatever the machine offers, because a handle is expensive in both
-/// directions: the sme models weigh some 450MB resident per handle, and a
-/// cold request pays for every handle it opens before it can answer. Over one
-/// article of se.wikipedia, on an eighteen-core machine, four workers answered
-/// in 19.0s against 36.4s at one, and eight answered in 19.6s for twice the
-/// memory — the analysis keeps getting faster past four and the bundle loads
-/// keep getting slower, and they cancel. A deployment with memory to spare and
-/// a server that stays warm can say so with [`WORKERS_ENV`].
+/// than at whatever the machine offers, because a handle is still expensive
+/// in memory even though the runtime's shared-asset caches have made it cheap
+/// in time.
+///
+/// Re-measured 2026-09-14 against a release build over divvun-runtime
+/// `dbeffb3`, hfst `0509ff0` and cg3 `417bf73`, on an eighteen-core Apple M5
+/// Pro: one cold block request over a sixty-sentence page, a fresh server and
+/// an empty analysis cache per worker count, four rounds. Resident size
+/// settles at 311MiB for one worker, 838MiB for two and 1672MiB for four —
+/// some 450MiB per worker past the first. That is what a worker cost when
+/// this ceiling was first chosen and it is what a worker costs again: the
+/// caches took the figure back down from the ~1101MiB per worker these
+/// pipelines had drifted to, by reading the pmatch cores and lookup
+/// transducers once for the process instead of once per handle. What is left
+/// is the part that is still per-handle, chiefly the cg3 grammars — the
+/// disambiguator alone rebuilds for every handle.
+///
+/// So four stands. Eight buys almost nothing for another 1.8GB: the same page
+/// is answered in 0.12s at four workers and 0.10s at eight, and eight was the
+/// only count whose resident size would not settle, ranging over 1.4-2.1GB
+/// with peaks between 2.2GB and 4.4GB. A deployment with memory to spare and
+/// a server that stays warm can still say so with [`WORKERS_ENV`].
 const DEFAULT_WORKER_CEILING: usize = 4;
 
 /// Why the normative generator could not be used. Every variant describes a
@@ -672,8 +695,8 @@ fn load_generator() -> Result<AnyTransducer, GeneratorError> {
         path: path.clone(),
         message: e.to_string(),
     })?;
-    let input = IStream::new_owned(std::io::Cursor::new(bytes));
-    let mut stream = HfstInputStream::new_istream(input).map_err(|e| GeneratorError::Open {
+    let mut input = std::io::Cursor::new(bytes);
+    let mut stream = HfstInputStream::read_from(&mut input).map_err(|e| GeneratorError::Open {
         path: path.clone(),
         message: e.to_string(),
     })?;

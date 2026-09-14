@@ -579,7 +579,7 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 [[package]]
 name = "cg3"
 version = "0.4.0"
-source = "git+https://github.com/divvun/cg3-rs#398345a3723d3441a75578ba0d013dd7646e98a8"
+source = "git+https://github.com/divvun/cg3-rs#417bf73285bc413183654919fcfa4bba6db88694"
 dependencies = [
  "ariadne 0.6.0",
  "bitflags",
@@ -1643,7 +1643,7 @@ dependencies = [
 [[package]]
 name = "divvun-fst"
 version = "1.0.0-beta.13"
-source = "git+https://github.com/divvun/divvunspell#80b2ed0211dc76f3a3722353b1151b21860732c1"
+source = "git+https://github.com/divvun/divvunspell#b786aacf29d0254eb0d8ae9a98d6e97a5a61ac3a"
 dependencies = [
  "box-format",
  "byteorder",
@@ -1679,7 +1679,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#53337a70f31ddb283da5096b46c41a9928fd970f"
+source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime-macros"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#53337a70f31ddb283da5096b46c41a9928fd970f"
+source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1861,7 +1861,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2544,7 +2544,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "hfst"
 version = "0.1.0"
-source = "git+https://github.com/divvun/hfst-rs#db4b2d84810c423f56686cb12a0e144546c1909a"
+source = "git+https://github.com/divvun/hfst-rs#0509ff05e7eeba95f959bfd534628dc6b190858a"
 dependencies = [
  "ariadne 0.5.1",
  "foma",
@@ -2567,7 +2567,7 @@ dependencies = [
 [[package]]
 name = "hfst-openfst"
 version = "0.1.0"
-source = "git+https://github.com/divvun/hfst-rs#db4b2d84810c423f56686cb12a0e144546c1909a"
+source = "git+https://github.com/divvun/hfst-rs#0509ff05e7eeba95f959bfd534628dc6b190858a"
 dependencies = [
  "anyhow",
  "rustfst",
@@ -4705,7 +4705,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5015,7 +5015,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -5677,7 +5677,7 @@ dependencies = [
 [[package]]
 name = "syntax-highlight"
 version = "0.1.0"
-source = "git+https://github.com/divvun/divvun-runtime#53337a70f31ddb283da5096b46c41a9928fd970f"
+source = "git+https://github.com/divvun/divvun-runtime#dbeffb38c3036c90592132907f025a6cd649ffdb"
 dependencies = [
  "once_cell",
  "syntect",
@@ -5792,7 +5792,7 @@ dependencies = [
  "getrandom 0.4.3",
  "once_cell",
  "rustix",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -6874,7 +6874,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
