@@ -47,16 +47,18 @@
 > hand, so an enhancer never has to decide what to do without one, and the
 > four cases a topic distinguishes are exhaustive.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
 > async fn index() -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
 > What the root answers depends on whether the deployment carries a built web
 > client, which is what `TEAKSTA_WEBAPP_DIST` names.
 >
 > Without one, `GET /` answers a plain-text listing of the endpoints the
 > server offers, as `text/plain;charset=UTF-8`, so an API-only deployment can
-> be probed without a client. It takes no parameters and reads no state.
+> be probed without a client. It takes no parameters and reads no state. The
+> listing is every path the map answers, the two health endpoints included, so
+> what it offers is what is there.
 >
 > With one, the client's directory is served from the root instead, and `GET
 > /` answers its `index.html`. Any path the directory has no file for is
@@ -86,6 +88,20 @@
 > client, which is a directory of files. One limiter is built with one map and
 > the four routes share it, so a client's allowance is spent across the
 > endpoints that analyse together rather than four times over.
+>
+> Neither health route is limited either, and for a reason of its own rather
+> than because it is cheap. `GET /api/health` and `GET /api/health/deep` are
+> read by the cluster, not by a client, and a probe answered 429 is a probe
+> that failed — for the liveness probe, a pod that is killed. The kubelet asks
+> from the pod network, so every probe of every pod on a node presents as one
+> address, which is exactly the shape a per-address allowance is built to
+> bound; a busy node would spend a pod's own allowance on the requests that
+> decide whether that pod lives. The endpoints are cheap enough to stand
+> outside the limit without being a lever — that is what
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]`
+> and
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]`
+> are each answerable for — rather than being limited to make them safe.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
@@ -343,6 +359,115 @@
 >
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]
+> async fn health(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-fn]
+> `GET /api/health` answers whether this process is still answering, as
+> `application/json`. This is teaksta's own, with nothing behind it in the
+> Java, which was deployed into a container that decided such things by
+> whether the port accepted a connection.
+>
+> It is the liveness and the readiness probe both, and its whole contract is
+> what it does **not** do. It runs no analysis, opens no file, resolves no
+> address and takes no lock that an analysis in flight could be holding. What
+> it reads is the topic count off the registry built at startup — a slice
+> length — so a process spending every core on a page answers it in the time
+> an idle process does.
+>
+> That is a requirement rather than a preference, and it was learned the
+> expensive way: a liveness probe that does real work is a probe that times
+> out precisely on the pods doing the most, and the kubelet answers a timed-out
+> liveness probe by killing the container. A probe that reported load as death
+> took the loaded pods out one after another, and the ones that inherited
+> their traffic after them.
+>
+> The body is an object with `status`, always `ok` — a process that could not
+> answer `ok` is a process that did not answer — and `topics`, how many topics
+> the registry loaded. The count is there because a deployment whose registry
+> came up empty is answering requests and serving nothing, which is a state
+> worth being visible in the reply an operator is already looking at; nothing
+> decides the status by it, because a registry with no topics is a
+> configuration fault and restarting the pod does not fix one.
+>
+> The route stands outside the rate limit, for the reason
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]`
+> gives. It stands inside the access log, which covers the whole map: the
+> kubelet's probes therefore appear in it at one line per probe period per
+> pod. That is accepted rather than worked around — the exception would have
+> to be a path match inside a middleware that otherwise knows no paths — and
+> it is not only a cost, since an operator reading a restart loop wants to see
+> whether the probes were arriving at all.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]
+> async fn health_deep(state: Data<&Arc<AppState>>) -> Response
+>
+> fn analyse_one_sentence() -> Result<()>
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]
+> `GET /api/health/deep` answers whether the models this deployment was given
+> actually load and answer, as `application/json`. This is teaksta's own, with
+> nothing behind it in the Java. It is the startup probe, and it is the only
+> endpoint that will do real work for a caller who asked for no analysis.
+>
+> The two probes are split because the two questions are: whether the process
+> is alive, which must be asked cheaply and often, and whether the models are
+> there, which is worth real work and is worth asking once. A startup probe
+> asks until it is answered and then stops, and nothing is sent to the pod
+> until it has been — so a deployment whose bundle was not baked into the
+> image, or was baked in at a path the environment does not name, is caught
+> before a learner ever reaches it instead of showing up as the first
+> enhancement request failing.
+>
+> What it proves is one short North Sámi sentence through both models: the
+> bundle is asked to tokenise it and then to analyse it, which is the path
+> every exercise is built on, and the generator is asked for one word form,
+> because a deployment whose generator will not load answers the
+> multiple-choice and cloze exercises with nothing and a probe that exists to
+> catch a model that is not there should catch that one too. Each answer is
+> weighed and not merely awaited — an empty token list or an empty stream is a
+> failure, since a check that only asked whether a call returned would pass on
+> one. The analysis runs on a blocking thread, as every analysing endpoint's
+> does, because the morpho seam blocks on a runtime of its own.
+>
+> A deployment naming no models does not reach any of that. When
+> `TEAKSTA_BUNDLE` or `TEAKSTA_GENERATOR` is unset the endpoint answers
+> without spawning anything, naming the variables that are missing: such a
+> deployment serves the registry and refuses every analysis, and saying which
+> variable is absent is more use than reporting the failure the first request
+> would have hit.
+>
+> Success is 200 with an object carrying `status` `ok` and `models` `loaded`.
+> Anything else is 503 with `status` `failed` and an `error` member carrying
+> what went wrong — the unset variables, or the failure the models reported.
+> 503 rather than 500: the deployment is intact and its API endpoints answer,
+> and what is unavailable is the analysis behind them.
+>
+> **A success is remembered for the life of the process, and a failure is
+> not.** After the first success the endpoint answers from a flag, so the
+> expensive path runs at most once — which is exactly the endpoint's role, a
+> probe asked until it succeeds and then not again. Without that it would be
+> an unmetered analysis endpoint standing outside the rate limit, and a
+> stranger who found the address could spend the deployment's language
+> technology on it for as long as they liked. A failure is not remembered
+> because the probe that asked is going to ask again and the models may be a
+> moment from ready; nothing is ever written back to false, because a process
+> whose models answered once and then stopped is a case for the liveness probe
+> and a restart, not for a startup probe that has finished asking.
+>
+> The remembered and the freshly proved answers are byte-identical. Which of
+> the two a caller got is this process's business, and a body that told them
+> apart would be a thing to keep stable for whoever started reading it.
+>
+> Concurrent first asks may each run the check — the flag is a flag and not a
+> lock — which costs a second analysis at boot and reaches the same verdict.
+> Serialising them would mean holding something across an analysis on the one
+> endpoint whose whole point is that the analysis is real.
+>
+> The route stands outside the rate limit, for the reason
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]`
+> gives, and inside the access log with every other route.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
 > pub fn reduce(page: String, address: &str) -> String
