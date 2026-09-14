@@ -5,6 +5,13 @@
 //! stored copy is reached at, which is a page source like any other. So an
 //! accepted text leads into exactly the exercise the entry form leads into,
 //! and everything but where the page came from is the same question twice.
+//!
+//! Not every deployment keeps texts. One that was given nowhere to put one
+//! serves no upload endpoint and says so in its registry, and nothing in the
+//! app leads here — but the address is an address, and somebody who kept it
+//! or was given it arrives anyway. They are told so, in the panel a closed
+//! gate is told in, rather than being shown a form whose *Sádde* could only
+//! have been answered 404.
 
 use std::rc::Rc;
 
@@ -41,38 +48,85 @@ pub fn Upload() -> Element {
                 }
             },
             Some(Ok(offered)) => rsx! {
-                div { class: "start",
-                    div { class: "start-head",
-                        h2 { "Start an exercise" }
-                        p {
-                            "Send a page of your own and the text is analysed once, just as a "
-                            "page already on the web is — every mode then plays over it."
-                        }
-                    }
-                    UploadPicker {
-                        registry: Rc::new(offered.clone()),
-                        backend: backend.clone(),
-                        onstart: move |params| {
-                            navigator.push(Route::Exercise { params });
-                        },
-                    }
-                    div { class: "or", lang: "se", "dahje / or" }
-                    label { class: "field", lang: "se",
-                        "Vállje neahttasiiddu"
-                        span { class: "tk-gloss", "Choose a web page" }
-                    }
-                    Link { to: Route::Home {}, class: "drop",
-                        span { class: "drop-icon", {upload_icon()} }
-                        span { class: "drop-body",
-                            span { class: "drop-label", lang: "se", "Vállje neahttasiiddu" }
-                            span { class: "drop-sub", "Practise on a page already on the web" }
-                        }
-                    }
+                UploadStart {
+                    registry: Rc::new(offered.clone()),
+                    backend: backend.clone(),
+                    onstart: move |params| {
+                        navigator.push(Route::Exercise { params });
+                    },
                 }
             },
             Some(Err(error)) => rsx! {
                 p { class: "state state-error", "{error}" }
             },
+        }
+    }
+}
+
+/// The file panel over one registry: the form, and the seam back across to
+/// naming a page — or, from a deployment that keeps no texts, the sentence
+/// saying so and nothing to fill in.
+#[component]
+pub fn UploadStart(
+    registry: Rc<Registry>,
+    backend: Backend,
+    onstart: EventHandler<ExerciseQuery>,
+) -> Element {
+    if !registry.uploads {
+        return rsx! {
+            Unavailable {}
+        };
+    }
+
+    rsx! {
+        div { class: "start",
+            div { class: "start-head",
+                h2 { "Start an exercise" }
+                p {
+                    "Send a page of your own and the text is analysed once, just as a "
+                    "page already on the web is — every mode then plays over it."
+                }
+            }
+            UploadPicker { registry, backend, onstart }
+            div { class: "or", lang: "se", "dahje / or" }
+            label { class: "field", lang: "se",
+                "Vállje neahttasiiddu"
+                span { class: "tk-gloss", "Choose a web page" }
+            }
+            Link { to: Route::Home {}, class: "drop",
+                span { class: "drop-icon", {upload_icon()} }
+                span { class: "drop-body",
+                    span { class: "drop-label", lang: "se", "Vállje neahttasiiddu" }
+                    span { class: "drop-sub", "Practise on a page already on the web" }
+                }
+            }
+        }
+    }
+}
+
+/// What this deployment does not do, said in the panel a closed gate is said
+/// in — because it is the same kind of news: something the teacher came here
+/// to do is not going to happen, and the way forward is the other route.
+///
+/// English only for now: the North Sámi wording is the translator's, and an
+/// invented one would be worse than an untranslated sentence. It is flagged
+/// here for the translation pass, as the other strings awaiting one are.
+#[component]
+fn Unavailable() -> Element {
+    rsx! {
+        div { class: "refusal", role: "alert",
+            span { class: "refusal-icon", {alert_icon()} }
+            div { class: "refusal-body",
+                p { class: "refusal-en",
+                    "This deployment does not accept uploads. Practise on a page already "
+                    "on the web instead."
+                }
+                div { class: "refusal-act",
+                    Link { to: Route::Home {}, class: "tk-btn", lang: "se",
+                        "Vállje neahttasiiddu"
+                    }
+                }
+            }
         }
     }
 }

@@ -13,10 +13,20 @@
 //! serve, and the startup report says which value was actually taken. Two
 //! things are the exception. A directory that cannot be created, because a
 //! deployment that cannot write is one that cannot work. And an Azure
-//! container named in part, because the fallback there is a directory that is
-//! deleted with the pod, and a deployment that meant to keep texts and is
-//! quietly throwing them away does not find out until a teacher comes back
-//! for one.
+//! container named in part, because a deployment that meant to keep texts in
+//! one and is quietly storing them somewhere else does not find out until a
+//! teacher comes back for one.
+//!
+//! # Taking uploads is a capability, not a default
+//!
+//! Somewhere to keep a teacher's text is named or it is not.
+//! [`Config::accepts_uploads`] is the whole of that question: an Azure
+//! container, or a keep directory the deployment asked for by name. Neither
+//! is a deployment that takes no uploads at all — not one that takes them and
+//! writes them where the next restart will throw them away. That is why the
+//! keep directory has no fallback: a default would turn every deployment that
+//! never thought about storage into one offering teachers an address that
+//! stops working, which is the failure this whole seam exists to remove.
 
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -37,7 +47,10 @@ pub const LISTEN_ENV: &str = "TEAKSTA_LISTEN";
 pub const TOPICS_ENV: &str = "TEAKSTA_TOPICS";
 /// Names the analysed-document cache directory.
 pub const ANALYSIS_DIR_ENV: &str = "TEAKSTA_FILES_ANL_DIR";
-/// Names the directory uploads are kept in when the teacher asked for that.
+/// Names the directory kept texts are stored under, for a deployment that
+/// keeps them on its own filesystem. Setting it is what turns uploads on
+/// without an Azure container, which is how a laptop and the test suites get
+/// the flow; leaving it unset is a deployment that takes no uploads.
 pub const UPLOAD_KEEP_DIR_ENV: &str = "TEAKSTA_FILES_PRM_DIR";
 /// Names the directory uploads land in otherwise.
 pub const UPLOAD_TEMP_DIR_ENV: &str = "TEAKSTA_FILES_TMP_DIR";
@@ -62,7 +75,6 @@ pub const AZURE_ACCESS_KEY_ENV: &str = "TEAKSTA_AZURE_ACCESS_KEY";
 
 const DEFAULT_LISTEN: &str = "127.0.0.1:8080";
 const DEFAULT_ANALYSIS_DIR: &str = "./data/analyzedTexts";
-const DEFAULT_UPLOAD_KEEP_DIR: &str = "./data/fileUpload/prm";
 const DEFAULT_UPLOAD_TEMP_DIR: &str = "./data/fileUpload/tmp";
 
 /// What one client may ask of the analysis endpoints unless the deployment
@@ -101,7 +113,7 @@ pub struct RateLimit {
     pub period: Duration,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+6]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+7]
 #[derive(Debug, Clone)]
 pub struct Config {
     pub listen: String,
@@ -113,7 +125,11 @@ pub struct Config {
     /// deployment names one.
     pub topics: Option<PathBuf>,
     pub analysis_dir: PathBuf,
-    pub upload_keep_dir: PathBuf,
+    /// The directory kept texts are stored under, when the deployment named
+    /// one. `None` is a deployment that named no directory; with no Azure
+    /// container either, it has nowhere to keep a text and therefore takes no
+    /// uploads. See [`Config::accepts_uploads`].
+    pub upload_keep_dir: Option<PathBuf>,
     pub upload_temp_dir: PathBuf,
     /// Whether a request's forwarding headers name the client.
     ///
@@ -133,21 +149,21 @@ pub struct Config {
     pub max_page_bytes: usize,
     /// The Azure container kept texts are stored in, when the deployment
     /// names one. `None` is a deployment that keeps them under
-    /// [`Config::upload_keep_dir`] instead, which is every deployment that
-    /// is not in the cluster.
+    /// [`Config::upload_keep_dir`] instead, or — with neither named — one
+    /// that keeps none.
     pub azure: Option<AzureStorage>,
 }
 
 impl Config {
-    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+    // [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
     pub fn from_env() -> Result<Self> {
         let config = Config {
             listen: string_or(LISTEN_ENV, DEFAULT_LISTEN),
             webapp_dist: optional_path(WEBAPP_DIST_ENV),
             topics: optional_path(TOPICS_ENV),
             analysis_dir: path_or(ANALYSIS_DIR_ENV, DEFAULT_ANALYSIS_DIR),
-            upload_keep_dir: path_or(UPLOAD_KEEP_DIR_ENV, DEFAULT_UPLOAD_KEEP_DIR),
+            upload_keep_dir: optional_path(UPLOAD_KEEP_DIR_ENV),
             upload_temp_dir: path_or(UPLOAD_TEMP_DIR_ENV, DEFAULT_UPLOAD_TEMP_DIR),
             trust_proxy: flag(TRUST_PROXY_ENV),
             rate_limit: rate_limit(
@@ -158,25 +174,35 @@ impl Config {
             azure: azure_storage()?,
         };
 
+        // The keep directory is created only when it was named. A directory
+        // nobody asked for is not a store, and creating one would leave a
+        // deployment that takes no uploads with an empty directory implying
+        // it does.
         for directory in [
-            &config.analysis_dir,
-            &config.upload_keep_dir,
-            &config.upload_temp_dir,
-        ] {
+            Some(&config.analysis_dir),
+            config.upload_keep_dir.as_ref(),
+            Some(&config.upload_temp_dir),
+        ]
+        .into_iter()
+        .flatten()
+        {
             create_directory(directory)?;
         }
 
         Ok(config)
     }
 
-    /// Where an upload is stored: the keep directory when the teacher asked
-    /// for the text to be retained, the temporary one otherwise.
-    pub fn upload_dir(&self, keep: bool) -> &Path {
-        if keep {
-            &self.upload_keep_dir
-        } else {
-            &self.upload_temp_dir
-        }
+    /// Whether this deployment takes a teacher's text at all.
+    ///
+    /// It has somewhere to keep one or it has not, and there is no third
+    /// state: an Azure container is the cluster's answer and a named keep
+    /// directory is a laptop's. A deployment that named neither does not
+    /// register the upload endpoint, does not serve stored texts, and says so
+    /// in the registry so its client offers no file field — rather than
+    /// taking a text and putting it where the pod's next restart will take it
+    /// with it.
+    pub fn accepts_uploads(&self) -> bool {
+        self.azure.is_some() || self.upload_keep_dir.is_some()
     }
 }
 
@@ -295,18 +321,20 @@ fn create_directory(directory: &Path) -> Result<()> {
 /// The Azure container this deployment keeps texts in, if it named one.
 ///
 /// All three variables or none of them. A deployment that set one or two of
-/// them meant to store in Azure, and the fallback — the keep directory — is a
-/// directory that is deleted with the pod, so taking it silently would leave
-/// a deployment answering every upload with an address that stops working at
-/// the next restart. This is the one setting whose partial spelling fails the
-/// boot, and the failure names which of the three are missing.
+/// them meant to store in Azure, and neither of the two things it would get
+/// instead is what it asked for: a directory that is deleted with the pod if
+/// it also named a keep directory, and a deployment offering no upload at all
+/// if it did not. Taking either silently is how a deployment ends up
+/// answering a teacher with an address that was never going to work. This is
+/// the one setting whose partial spelling fails the boot, and the failure
+/// names which of the three are missing.
 ///
 /// An empty value counts as unset, because a Kubernetes secret whose optional
 /// key is absent mounts as an empty string rather than as no variable at all,
 /// and a deployment with no Azure secret must read as a deployment with no
 /// Azure rather than as a half-configured one.
-// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+// [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
 fn azure_storage() -> Result<Option<AzureStorage>> {
     let read: Vec<Option<String>> = AzureStorage::VARIABLES
         .iter()
@@ -423,14 +451,16 @@ mod tests {
     }
 
     /// The three directories the server writes into, pointed at a temporary
-    /// tree so no test writes into the working directory.
+    /// tree so no test writes into the working directory. Naming the keep
+    /// directory is also what turns uploads on, which is what every test here
+    /// but the two about the capability itself wants.
     fn caches(root: &Path, environment: &Environment) {
         for name in [ANALYSIS_DIR_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
             environment.set(name, &root.join(name));
         }
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn every_directory_exists_once_built() {
         let environment = Environment::take();
@@ -442,13 +472,57 @@ mod tests {
         let config = Config::from_env().expect("the configuration builds");
 
         assert!(config.analysis_dir.is_dir());
-        assert!(config.upload_keep_dir.is_dir());
+        assert!(config.upload_keep_dir.as_deref().is_some_and(Path::is_dir));
         assert!(config.upload_temp_dir.is_dir());
-        assert_eq!(config.upload_dir(true), config.upload_keep_dir);
-        assert_eq!(config.upload_dir(false), config.upload_temp_dir);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    /// A deployment that named no keep directory is one that takes no
+    /// uploads: nothing is created where a default would have put one, and
+    /// the temporary directory — which is harmless when the feature is off —
+    /// is still there.
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
+    #[test]
+    fn no_keep_directory_takes_no_uploads() {
+        let environment = Environment::take();
+        let root = tempfile::tempdir().expect("temp dir");
+        for name in [ANALYSIS_DIR_ENV, UPLOAD_TEMP_DIR_ENV] {
+            environment.set(name, &root.path().join(name));
+        }
+
+        let config = Config::from_env().expect("the configuration builds");
+
+        assert_eq!(config.upload_keep_dir, None);
+        assert!(!config.accepts_uploads());
+        assert!(config.upload_temp_dir.is_dir());
+        assert!(
+            !root.path().join("prm").exists(),
+            "a keep directory nobody named was created anyway"
+        );
+    }
+
+    /// Naming one is the switch, and an Azure container is the other: either
+    /// alone is a deployment that takes uploads.
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
+    #[test]
+    fn either_store_is_a_deployment_that_takes_uploads() {
+        let environment = Environment::take();
+        let root = tempfile::tempdir().expect("temp dir");
+        caches(root.path(), &environment);
+
+        let named = Config::from_env().expect("the configuration builds");
+        assert!(named.accepts_uploads());
+
+        for (name, value) in AZURE {
+            environment.set_str(name, value);
+        }
+        unsafe { std::env::remove_var(UPLOAD_KEEP_DIR_ENV) };
+
+        let azure = Config::from_env().expect("the configuration builds");
+        assert_eq!(azure.upload_keep_dir, None);
+        assert!(azure.accepts_uploads());
+    }
+
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn an_unset_variable_falls_back() {
         let environment = Environment::take();
@@ -467,7 +541,7 @@ mod tests {
         assert_eq!(config.topics, None);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn the_web_client_is_read_as_named() {
         let environment = Environment::take();
@@ -483,7 +557,7 @@ mod tests {
         assert!(!dist.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn the_topics_file_is_read_as_named() {
         let environment = Environment::take();
@@ -500,7 +574,7 @@ mod tests {
         assert!(!topics.exists());
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn a_directory_that_cannot_exist_fails() {
         let environment = Environment::take();
@@ -524,7 +598,7 @@ mod tests {
         );
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn an_existing_directory_is_left_alone() {
         let environment = Environment::take();
@@ -553,7 +627,7 @@ mod tests {
         (AZURE_ACCESS_KEY_ENV, "c2VjcmV0"),
     ];
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn all_three_azure_variables_name_a_container() {
         let environment = Environment::take();
@@ -577,7 +651,7 @@ mod tests {
         assert!(rendered.contains("teakstasa"), "{rendered}");
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn no_azure_variable_is_a_deployment_without_one() {
         let environment = Environment::take();
@@ -594,7 +668,7 @@ mod tests {
         assert_eq!(config.azure, None);
     }
 
-    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6/test]
+    // [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7/test]
     #[test]
     fn a_partly_named_container_fails_the_boot() {
         for (omitted, _) in AZURE {

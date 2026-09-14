@@ -35,7 +35,7 @@ async fn every_request_writes_one_line_without_its_query() {
         // is under test is the layer over the map, not the map's contents.
         topics: None,
         analysis_dir: root.path().join("analysed"),
-        upload_keep_dir: root.path().join("keep"),
+        upload_keep_dir: Some(root.path().join("keep")),
         upload_temp_dir: root.path().join("temp"),
         // The log resolves a client the same way the limiter does, so the
         // header proves both that it is read and that the line carries it.

@@ -17,7 +17,7 @@ fn config_under(root: &Path) -> Config {
         webapp_dist: None,
         topics: None,
         analysis_dir: root.join("analysed"),
-        upload_keep_dir: root.join("keep"),
+        upload_keep_dir: Some(root.join("keep")),
         upload_temp_dir: root.join("temp"),
         // Nothing here goes through the HTTP surface, so no request is
         // counted and the client a limiter would count is never resolved.
@@ -35,11 +35,10 @@ fn config_under(root: &Path) -> Config {
 fn deployment() -> (tempfile::TempDir, Config) {
     let root = tempfile::tempdir().expect("temp dir");
     let config = config_under(root.path());
-    for directory in [
-        &config.analysis_dir,
-        &config.upload_keep_dir,
-        &config.upload_temp_dir,
-    ] {
+    for directory in [&config.analysis_dir, &config.upload_temp_dir]
+        .into_iter()
+        .chain(&config.upload_keep_dir)
+    {
         std::fs::create_dir_all(directory).expect("a deployment directory");
     }
     (root, config)
@@ -54,7 +53,9 @@ fn of(path: &Path) -> String {
 /// The store this deployment keeps texts in, which for every test here is the
 /// local one under the keep directory.
 fn store(config: &Config) -> TextStore {
-    TextStore::from_config(config).expect("the text store opens")
+    TextStore::from_config(config)
+        .expect("the text store opens")
+        .expect("a deployment naming a keep directory has one")
 }
 
 #[test]
@@ -191,7 +192,7 @@ fn only_three_schemes_are_fetchable() {
 /// process cannot know; and an address that *does* carry one is an address of
 /// that host, judged by the private-network policy exactly as any other
 /// address of it would be, whatever its path spells.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[tokio::test]
 async fn a_stored_text_is_read_from_the_store() {
     let (_root, config) = deployment();
@@ -207,7 +208,7 @@ async fn a_stored_text_is_read_from_the_store() {
     assert!(stored.is_stored(), "{reference} must be read, not fetched");
     assert_eq!(stored.address(), reference);
     assert_eq!(
-        fetch(stored, &store)
+        fetch(stored, Some(&store))
             .await
             .expect("the stored text is read"),
         page
@@ -244,7 +245,7 @@ async fn a_stored_text_is_read_from_the_store() {
 /// What a reference may hold, at the seam that reads one. Nothing a caller
 /// writes becomes an object key, so every shape that would mean something to
 /// a path is refused here rather than at the store.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]
 #[test]
 fn a_reference_holds_a_name_and_nothing_else() {
     let (_root, config) = deployment();
@@ -281,7 +282,13 @@ fn a_file_this_deployment_serves_is_readable() {
 
     // The two upload directories are the whole list: an accepted upload is
     // the only `file:` URL this deployment ever hands a client.
-    for directory in [&config.upload_keep_dir, &config.upload_temp_dir] {
+    for directory in [
+        config
+            .upload_keep_dir
+            .as_deref()
+            .expect("a keep directory is named"),
+        &config.upload_temp_dir,
+    ] {
         let page = directory.join("artihkal.html");
         std::fs::write(&page, "<p>a</p>").expect("a page");
 
@@ -396,7 +403,7 @@ async fn a_file_is_read_as_it_was_written() {
     std::fs::write(&at, &page).expect("a stored page");
 
     let target = target(&of(&at), &config).expect("a served file is readable");
-    let read = fetch(target, &store(&config))
+    let read = fetch(target, Some(&store(&config)))
         .await
         .expect("the stored page is read");
 
@@ -459,7 +466,7 @@ async fn a_stored_page_over_the_cap_is_refused() {
     std::fs::write(&under, "<p>Mun oidnen viesu.</p>").expect("an ordinary page");
 
     let enormous = target(&of(&over), &config).expect("a served file is readable");
-    let error = fetch(enormous, &store(&config))
+    let error = fetch(enormous, Some(&store(&config)))
         .await
         .expect_err("an oversized page is refused");
 
@@ -471,7 +478,7 @@ async fn a_stored_page_over_the_cap_is_refused() {
     // still read.
     let ordinary = target(&of(&under), &config).expect("a served file is readable");
     assert_eq!(
-        fetch(ordinary, &store(&config))
+        fetch(ordinary, Some(&store(&config)))
             .await
             .expect("an ordinary page is read"),
         "<p>Mun oidnen viesu.</p>"

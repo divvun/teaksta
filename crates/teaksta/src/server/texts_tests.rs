@@ -19,7 +19,77 @@ fn store() -> (tempfile::TempDir, TextStore) {
     (root, store)
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn/test]
+/// A deployment naming whichever of the two stores the caller wants it to.
+/// Nothing else about it is read here.
+fn configured(keep: Option<PathBuf>, azure: bool) -> Config {
+    Config {
+        listen: "127.0.0.1:0".to_string(),
+        webapp_dist: None,
+        topics: None,
+        analysis_dir: PathBuf::from("analysed"),
+        upload_keep_dir: keep,
+        upload_temp_dir: PathBuf::from("temp"),
+        trust_proxy: false,
+        rate_limit: None,
+        max_page_bytes: 5 * 1024 * 1024,
+        azure: azure.then(|| AzureStorage {
+            account: "teakstasa".to_string(),
+            container: "kept-texts".to_string(),
+            access_key: "c2VjcmV0".to_string(),
+        }),
+    }
+}
+
+/// What a deployment names is what it stores in, and naming nothing is a
+/// deployment that stores nothing.
+///
+/// Both named is Azure: the keep directory is the switch a laptop turns the
+/// flow on with, and a pod carrying both is one whose scratch directory was
+/// left in the manifest beside the secret somebody has since minted. Building
+/// the Azure client opens no socket, so this reaches nothing.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
+#[test]
+fn the_store_is_the_one_the_deployment_named() {
+    let root = tempfile::tempdir().expect("temp dir");
+    let keep = root.path().join("keep");
+
+    let local = TextStore::from_config(&configured(Some(keep.clone()), false))
+        .expect("the store opens")
+        .expect("a named directory is a store");
+    assert!(!local.is_durable());
+    assert!(local.describe().contains("keep"), "{}", local.describe());
+
+    let azure = TextStore::from_config(&configured(None, true))
+        .expect("the store opens")
+        .expect("a named container is a store");
+    assert!(azure.is_durable());
+    assert!(
+        azure.describe().contains("kept-texts"),
+        "{}",
+        azure.describe()
+    );
+
+    // Both named, and the container wins.
+    let both = TextStore::from_config(&configured(Some(keep), true))
+        .expect("the store opens")
+        .expect("a named container is a store");
+    assert!(both.is_durable(), "{}", both.describe());
+    assert!(
+        both.describe().contains("kept-texts"),
+        "{}",
+        both.describe()
+    );
+
+    // Neither named, and there is no store at all — which is a deployment
+    // that takes no uploads rather than one that fails.
+    assert!(
+        TextStore::from_config(&configured(None, false))
+            .expect("no store is not a failure")
+            .is_none()
+    );
+}
+
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
 #[test]
 fn a_name_is_a_digest_and_nothing_else() {
     let id = TextId::of(PAGE.as_bytes());
@@ -55,7 +125,7 @@ fn a_name_is_a_digest_and_nothing_else() {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
 #[tokio::test]
 async fn a_stored_text_reads_back_unchanged() {
     let (_root, store) = store();
@@ -70,7 +140,7 @@ async fn a_stored_text_reads_back_unchanged() {
 
 /// The immutability the stored file's `0400` mode used to carry, translated to
 /// a store: a name that is taken is not written over.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
 #[tokio::test]
 async fn a_taken_name_is_never_written_over() {
     let (_root, store) = store();
@@ -114,7 +184,7 @@ async fn a_taken_name_is_never_written_over() {
 
 /// The local backing keeps the owner-read-only mode the keep directory has
 /// always held its texts in, beside the store's own create-only write.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
 #[tokio::test]
 async fn a_locally_stored_text_is_read_only() {
     use std::os::unix::fs::PermissionsExt;
@@ -134,7 +204,7 @@ async fn a_locally_stored_text_is_read_only() {
     assert!(store.describe().contains("keep"), "{}", store.describe());
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1/test]
 #[tokio::test]
 async fn a_name_that_holds_nothing_is_missing() {
     let (_root, store) = store();

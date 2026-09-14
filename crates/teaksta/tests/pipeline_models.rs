@@ -127,7 +127,7 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
             webapp_dist: None,
             topics: None,
             analysis_dir: data_root.join("analysed"),
-            upload_keep_dir: data_root.join("keep"),
+            upload_keep_dir: Some(data_root.join("keep")),
             upload_temp_dir: data_root.join("temp"),
             // Every request this suite makes is one client as far as the
             // in-process transport is concerned — it carries no peer address
@@ -139,11 +139,10 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
             max_page_bytes: 5 * 1024 * 1024,
             azure: None,
         };
-        for directory in [
-            &config.analysis_dir,
-            &config.upload_keep_dir,
-            &config.upload_temp_dir,
-        ] {
+        for directory in [&config.analysis_dir, &config.upload_temp_dir]
+            .into_iter()
+            .chain(&config.upload_keep_dir)
+        {
             std::fs::create_dir_all(directory).expect("a cache directory");
         }
         let state = AppState::new(config).expect("the shipped deployment boots");
@@ -895,8 +894,8 @@ async fn a_second_run_is_answered_from_the_cache() {
 /// `keep` on it is analysed, stored, and answered with an address of this
 /// deployment's own — which is then reachable, and which the enhancement
 /// endpoints read back without a socket being opened to anything.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1/test]
 #[tokio::test]
 async fn a_kept_text_is_read_back_by_address() {
     if !models_available() {

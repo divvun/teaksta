@@ -158,7 +158,7 @@ use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
 use crate::server::reader;
-use crate::server::texts::{TEXTS_PATH, TextId, TextStore};
+use crate::server::texts::{Missing, TEXTS_PATH, TextId, TextStore};
 
 /// How long a page fetch may take, start to finished body.
 pub const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
@@ -270,8 +270,8 @@ impl Target {
 /// beginning with `/` is not an address at all but a reference to something
 /// this deployment holds, and is read as one before any absolutising is done
 /// to it.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
 pub fn target(raw: &str, config: &Config) -> std::result::Result<Target, Refusal> {
     let raw = raw.trim();
     let cap = config.max_page_bytes;
@@ -342,14 +342,18 @@ fn page_url(raw: &str) -> std::result::Result<Url, Refusal> {
 ///
 /// The store is handed in rather than reached for, so a `Target` stays a
 /// decision about an address and nothing else, and so the endpoints that read
-/// one keep the store they were built with.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+/// one keep the store they were built with. A deployment that has none holds
+/// no stored text, so a reference to one names nothing there — which is the
+/// answer a name that was never stored gets, and is why the reference shape is
+/// still recognised rather than refused: what the caller asked for is a text,
+/// and this deployment does not have it.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8]
 // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
-pub async fn fetch(target: Target, texts: &TextStore) -> Result<String> {
+pub async fn fetch(target: Target, texts: Option<&TextStore>) -> Result<String> {
     let Target { address, read, cap } = target;
     match read {
         Read::File(path) => {
@@ -358,6 +362,9 @@ pub async fn fetch(target: Target, texts: &TextStore) -> Result<String> {
                 .map_err(|join| anyhow!("the read ended: {join}"))?
         }
         Read::Text(id) => {
+            let Some(texts) = texts else {
+                return Err(Missing(id.to_string()).into());
+            };
             let bytes = texts.get(&id, cap).await?;
             String::from_utf8(bytes)
                 .map_err(|error| anyhow::Error::new(error).context(Unreachable(address)))
@@ -388,11 +395,14 @@ pub async fn fetch(target: Target, texts: &TextStore) -> Result<String> {
 ///
 /// A directory that does not resolve is left out rather than compared
 /// against unresolved, so a deployment naming a directory that is not there
-/// confines more tightly rather than less. With neither present nothing is
-/// servable and every `file:` address is refused.
+/// confines more tightly rather than less — and a deployment that named no
+/// keep directory at all confines to the temporary one alone. With neither
+/// present nothing is servable and every `file:` address is refused.
 fn served_roots(config: &Config) -> Vec<PathBuf> {
-    [&config.upload_keep_dir, &config.upload_temp_dir]
-        .into_iter()
+    config
+        .upload_keep_dir
+        .iter()
+        .chain(std::iter::once(&config.upload_temp_dir))
         .filter_map(|directory| directory.canonicalize().ok())
         .collect()
 }

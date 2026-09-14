@@ -97,8 +97,8 @@ pub struct Upload {
 /// has must not be able to disagree about what is accepted. The language gate
 /// runs the analyser over every word of the text, so this blocks and belongs
 /// on a blocking thread.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
 pub fn accept(upload: &Upload) -> Result<()> {
     let Some(file_name) = upload.file_name.as_deref() else {
         return Err(Rejection::NoFile.into());
@@ -128,8 +128,8 @@ pub fn accept(upload: &Upload) -> Result<()> {
 /// This is the temporary path: a text the teacher did not ask to keep, which
 /// is read once by the exercise being set up and swept afterwards. A kept text
 /// goes to [`crate::server::texts::TextStore`] instead.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+6]
 pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
     accept(upload)?;
 

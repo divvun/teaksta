@@ -1,6 +1,6 @@
 # sme/src/main/java/werti/WERTiContext.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+6]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+7]
 > pub struct RateLimit { pub burst: u32, pub count: u32, pub period: Duration }
 >
 > pub struct AzureStorage {
@@ -14,7 +14,7 @@
 >   pub webapp_dist: Option<PathBuf>,
 >   pub topics: Option<PathBuf>,
 >   pub analysis_dir: PathBuf,
->   pub upload_keep_dir: PathBuf,
+>   pub upload_keep_dir: Option<PathBuf>,
 >   pub upload_temp_dir: PathBuf,
 >   pub trust_proxy: bool,
 >   pub rate_limit: Option<RateLimit>,
@@ -22,29 +22,35 @@
 >   pub azure: Option<AzureStorage>,
 > }
 >
-> pub fn upload_dir(&self, keep: bool) -> &Path
+> pub fn accepts_uploads(&self) -> bool
 >
 > `AzureStorage` renders itself with the account key redacted, because the
 > startup report prints the whole configuration and a derived rendering would
 > print the key into it.
+>
+> `upload_keep_dir` is optional because naming it is a decision rather than a
+> detail. Together with `azure` it is the whole of whether this deployment
+> takes a teacher's text — which is what `accepts_uploads` answers, and what
+> the HTTP surface is built from.
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
 > pub fn from_env() -> Result<Config>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+7]
 > Reads the deployment's configuration from the process environment. There is
 > no properties file, no per-language model registry and no lazily
 > manufactured resource: the North Sámi pipelines are named by the morpho
 > seam's own two variables, and nothing else was ever loaded through this.
 >
-> Four values are read, each falling back when its variable is unset:
+> Three values are read, each falling back when its variable is unset:
 > `TEAKSTA_LISTEN` is the socket address to bind, defaulting to
 > `127.0.0.1:8080`; `TEAKSTA_FILES_ANL_DIR` is where analysed documents are
-> cached, defaulting to `./data/analyzedTexts`; and `TEAKSTA_FILES_PRM_DIR`
-> and `TEAKSTA_FILES_TMP_DIR` are where an upload is stored depending on
-> whether it was to be kept, defaulting to `./data/fileUpload/prm` and
+> cached, defaulting to `./data/analyzedTexts`; and `TEAKSTA_FILES_TMP_DIR` is
+> where an upload that is not to be kept lands, defaulting to
 > `./data/fileUpload/tmp`. A relative value stays relative to the working
-> directory.
+> directory. The temporary directory keeps its default because it is scratch
+> on the way to an exercise and costs a deployment that takes no uploads
+> nothing.
 >
 > Three more bound what a service reachable by strangers will do for one of
 > them, and each falls back as well.
@@ -74,8 +80,23 @@
 > variable is no reason to refuse to serve, and the startup report says which
 > value was actually taken.
 >
-> Two more have no fallback, because unset is a deployment that does without
+> Three more have no fallback, because unset is a deployment that does without
 > what they name rather than one that gets a default.
+>
+> `TEAKSTA_FILES_PRM_DIR` is where a kept text is stored on a deployment that
+> stores them on its own filesystem. Naming it is how a laptop and the test
+> suites turn the upload flow on; leaving it unset, with no Azure container
+> either, is a deployment that takes no uploads at all, which
+> `accepts_uploads` reports and
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn]`,
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn]`
+> and
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn]`
+> are the surface of. It is **the** variable with no default rather than one
+> of several, because a default here is not a convenience: it would turn every
+> deployment that never considered storage into one offering teachers an
+> address that stops working at the next restart, which is the failure the
+> partial-Azure rule below also exists to prevent.
 >
 > `TEAKSTA_WEBAPP_DIST` is the built web client the server hands a browser.
 > Unset is a deployment that serves the API alone, which is what a client
@@ -93,9 +114,10 @@
 > one setting here that is read as a group: `TEAKSTA_AZURE_ACCOUNT`,
 > `TEAKSTA_AZURE_CONTAINER` and `TEAKSTA_AZURE_ACCESS_KEY`. All three set is a
 > deployment that stores kept texts in Azure; none of them set is one that
-> stores them under `TEAKSTA_FILES_PRM_DIR`, which is what a laptop, a test
-> and every deployment outside the cluster gets. What the store then does is
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn]`.
+> stores them under `TEAKSTA_FILES_PRM_DIR` if it named one, and one that
+> stores none at all if it did not. Which store a deployment naming both gets,
+> and what a store then does, is
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.text-store-fn+1]`.
 >
 > A value that is empty or only whitespace counts as unset. A Kubernetes
 > secret whose optional key is absent mounts as an empty string rather than as
@@ -105,19 +127,20 @@
 > One or two of the three set is neither, and is the one setting whose partial
 > spelling **fails the boot**, naming which of the three are missing. It is
 > the exception to the fall-back rule above, and it is the exception because
-> of what the fallback is: a directory that is deleted with the pod. A
-> deployment that meant to keep texts and is quietly throwing them away
-> answers every upload with an address that stops working at the next restart,
-> and nobody finds out until a teacher comes back for a text that is not
+> of what falling back would mean: a directory that is deleted with the pod if
+> one was named, and a deployment silently offering no upload at all if one
+> was not. A deployment that meant to keep texts in Azure and is doing either
+> of those instead answers teachers with addresses that were never going to
+> work, and nobody finds out until one comes back for a text that is not
 > there. The account key is never quoted in the failure, only named.
 >
-> The three directories the server writes into — the analysis cache and the
-> two upload directories — are created, parents included, before the
-> configuration is handed back, and one that cannot be created fails the boot
-> naming it. A request never creates a directory, because a request that has
-> to has already accepted work it may not be able to finish. The keep
-> directory is created whether or not kept texts go to it, so a deployment can
-> be reconfigured either way without its filesystem being rearranged first.
+> The directories the server writes into are created, parents included, before
+> the configuration is handed back, and one that cannot be created fails the
+> boot naming it. A request never creates a directory, because a request that
+> has to has already accepted work it may not be able to finish. The analysis
+> cache and the temporary upload directory are always among them; the keep
+> directory is among them exactly when it was named, so a deployment that
+> takes no uploads is not left holding an empty directory implying it does.
 > The web client directory and the topics file are the deployment's own and
 > are not created.
 >

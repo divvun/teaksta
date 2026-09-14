@@ -49,25 +49,31 @@ fn report(config: &Config) {
         config.analysis_dir.display()
     );
     info!(
-        "{UPLOAD_KEEP_DIR_ENV}/{UPLOAD_TEMP_DIR_ENV}: uploads under {} and {}",
-        config.upload_keep_dir.display(),
+        "{UPLOAD_TEMP_DIR_ENV}: a text that is not kept lands under {}",
         config.upload_temp_dir.display()
     );
 
-    // Which of the two the deployment keeps texts in is the difference between
-    // a kept text that is there next term and one that goes with the pod, so
-    // it is said before anything is served rather than left to be inferred
-    // from three variables. The account key is never among what is printed.
-    match &config.azure {
-        Some(azure) => info!(
-            "{AZURE_ACCOUNT_ENV}/{AZURE_CONTAINER_ENV}/{AZURE_ACCESS_KEY_ENV}: kept texts stored \
-             in the container {} on the account {}",
+    // Whether this deployment takes a teacher's text at all, and if so where
+    // one that is kept ends up, is the difference between an address that is
+    // there next term, one that goes with the pod, and a flow no teacher is
+    // offered. It is said before anything is served rather than left to be
+    // inferred from four variables. The account key is never among what is
+    // printed.
+    match (&config.azure, &config.upload_keep_dir) {
+        (Some(azure), _) => info!(
+            "{AZURE_ACCOUNT_ENV}/{AZURE_CONTAINER_ENV}/{AZURE_ACCESS_KEY_ENV}: uploads are on and \
+             kept texts are stored in the container {} on the account {}",
             azure.container, azure.account
         ),
-        None => warn!(
-            "{AZURE_ACCOUNT_ENV} is not set; kept texts are stored under {} and last exactly as \
-             long as that directory does",
-            config.upload_keep_dir.display()
+        (None, Some(directory)) => warn!(
+            "{UPLOAD_KEEP_DIR_ENV}: uploads are on and kept texts are stored under {}, which \
+             lasts exactly as long as that directory does; {AZURE_ACCOUNT_ENV} is what makes one \
+             outlive this process",
+            directory.display()
+        ),
+        (None, None) => info!(
+            "neither {AZURE_ACCOUNT_ENV} nor {UPLOAD_KEEP_DIR_ENV} is set; this deployment takes \
+             no uploads, and its client offers no teacher a file to send"
         ),
     }
 
