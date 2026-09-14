@@ -58,9 +58,61 @@ Everything is read from the environment; there is no configuration file.
 | `TEAKSTA_FILES_PRM_DIR` | `./data/fileUpload/prm` | Where an upload is kept when the teacher asked for it to be retained. |
 | `TEAKSTA_FILES_TMP_DIR` | `./data/fileUpload/tmp` | Where an upload lands otherwise. |
 | `TEAKSTA_ANALYSIS_WORKERS` | the machine's parallelism, capped at 4 | How many pieces of a document are analysed at once. |
+| `TEAKSTA_RATE_LIMIT` | `30/minute` | What one client may ask of the endpoints that analyse. `<count>/second`, `<count>/minute`, `<count>/hour`, or `off` for no limit. |
+| `TEAKSTA_RATE_LIMIT_BURST` | `10` | How many of those may arrive at once. |
+| `TEAKSTA_TRUST_PROXY` | unset (off) | Whether `X-Forwarded-For` names the client. Set to `1` only behind a proxy you control. |
+| `TEAKSTA_MAX_PAGE_BYTES` | `5242880` (5 MiB) | How much of a fetched page is read before the read is abandoned. |
 
 The three directories are created on startup; a path that cannot be created
-fails the boot rather than the first request that needs it.
+fails the boot rather than the first request that needs it. Every other value
+that will not read is reported and the default is used, so a typo in one
+variable does not stop the server; the startup report says which value was
+actually taken.
+
+### Serving it to strangers
+
+The three enhancement endpoints and the upload are anonymous and expensive —
+a page the analysis cache has never seen costs seconds of CPU across a pool of
+language models — so they are rate limited per client. `/api/activities` is
+not, because it reads state built at startup, and neither is the web client.
+One allowance covers all four endpoints together rather than one each. A
+client over it gets `429` with `{"error": "rate-limited"}` and a `Retry-After`
+header, answered before anything is fetched, read or analysed.
+
+Which client a request is from is the peer that opened the connection —
+**unless** `TEAKSTA_TRUST_PROXY=1`. Read that flag carefully:
+
+- **Unset (the default).** `X-Forwarded-For`, `X-Real-IP` and `Forwarded` are
+  ignored entirely. This is the only safe setting for a server a client can
+  reach directly: those headers are written by whoever sent the request, so a
+  deployment that believed one would let a single caller be a different client
+  on every request.
+- **Set to `1`.** You are stating that **exactly one hop you control** sits in
+  front of this process and appends the peer it saw to `X-Forwarded-For` — a
+  Kubernetes ingress, or an nginx in front of the container. The client is
+  then the **last** entry of that header, which is the one your hop wrote and
+  the only entry a caller cannot choose. The header is never read leftwards.
+  `X-Real-IP` is used only when there is no `X-Forwarded-For` at all.
+
+With two trusted hops the last entry is the inner hop's own address, every
+client lands in one allowance and everybody gets 429. That is deliberate: the
+setting fails loudly and is fixed by putting one hop in front, rather than
+quietly letting callers pick their own allowance.
+
+A page fetched on a caller's behalf is read up to `TEAKSTA_MAX_PAGE_BYTES` and
+abandoned there — the read itself is bounded, so a far end that streams
+without end is dropped at the cap rather than at the 20 second deadline. An
+oversized page is a `502`, like any other page that could not be read from
+where the request pointed; it is not a `400`, because nothing about the
+address said how much was behind it, and not a `413`, because that body is a
+stranger's page and not the caller's request. The cap applies to `file:`
+addresses too: every one of those names something this deployment stored
+itself, under the 5 MiB upload limit, so anything larger in a served directory
+is not a file it put there.
+
+Every request writes one access line at info level, carrying the client, the
+method, the path, the status and how long it took. The query is not logged —
+it carries the address a learner asked to read.
 
 A document is analysed in pieces cut between sentences, and
 `TEAKSTA_ANALYSIS_WORKERS` is how many of them go through the language

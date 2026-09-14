@@ -6,6 +6,11 @@ use super::*;
 
 use std::path::Path;
 
+/// How much of a page these tests let through: well over every fixture here
+/// that is meant to be read, and small enough that a fixture meant not to be
+/// is written in one line rather than weighing megabytes.
+const TEST_CAP: usize = 64 * 1024;
+
 fn config_under(root: &Path) -> Config {
     Config {
         listen: "127.0.0.1:0".to_string(),
@@ -14,6 +19,11 @@ fn config_under(root: &Path) -> Config {
         analysis_dir: root.join("analysed"),
         upload_keep_dir: root.join("keep"),
         upload_temp_dir: root.join("temp"),
+        // Nothing here goes through the HTTP surface, so no request is
+        // counted and the client a limiter would count is never resolved.
+        trust_proxy: false,
+        rate_limit: None,
+        max_page_bytes: TEST_CAP,
     }
 }
 
@@ -281,6 +291,115 @@ async fn a_file_is_read_as_it_was_written() {
     let read = fetch(target).await.expect("the stored page is read");
 
     assert_eq!(read, page, "a page off the disk was reduced");
+}
+
+/// The cap bounds the read itself: one byte past it is all that is ever held,
+/// and the page is refused rather than cut down, because half a document
+/// analysed as a whole one is a worse answer than none.
+///
+/// A far end is not needed to show this. The fetch layer refuses every
+/// private address, so an HTTP server on this machine is one this deployment
+/// will not read from, and what the cap actually guards — the read — is the
+/// same read whatever produced the bytes.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+#[test]
+fn a_read_stops_one_byte_past_the_cap() {
+    let at_the_cap = "a".repeat(TEST_CAP);
+    let one_more = "a".repeat(TEST_CAP + 1);
+
+    assert_eq!(
+        capped(at_the_cap.as_bytes(), TEST_CAP, "http://example.org/a")
+            .expect("a page at the cap is read"),
+        at_the_cap.as_bytes()
+    );
+
+    let Err(error) = capped(one_more.as_bytes(), TEST_CAP, "http://example.org/a") else {
+        panic!("a page one byte over the cap must be refused");
+    };
+    let oversized = error
+        .downcast_ref::<Oversized>()
+        .expect("an oversized page names itself");
+    assert_eq!(oversized.cap, TEST_CAP);
+    assert_eq!(oversized.address, "http://example.org/a");
+
+    // A source that never ends is abandoned at the cap rather than read for
+    // as long as it streams.
+    let endless = std::io::repeat(b'a');
+    assert!(
+        capped(endless, TEST_CAP, "http://example.org/a")
+            .unwrap_err()
+            .downcast_ref::<Oversized>()
+            .is_some()
+    );
+}
+
+/// The cap applies to a page off the disk as much as to one off the network.
+/// Every `file:` address this deployment reads names something it stored
+/// itself, under a limit of its own, so a larger file in a served directory
+/// is a directory holding something the deployment did not put there.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+#[tokio::test]
+async fn a_stored_page_over_the_cap_is_refused() {
+    let (_root, config) = deployment();
+    let over = config.upload_temp_dir.join("enormous.html");
+    // Non-ASCII, so an oversized page is reported as oversized rather than as
+    // invalid UTF-8 at whichever byte the cap happened to fall inside.
+    std::fs::write(&over, "á".repeat(TEST_CAP)).expect("an oversized page");
+    let under = config.upload_temp_dir.join("ordinary.html");
+    std::fs::write(&under, "<p>Mun oidnen viesu.</p>").expect("an ordinary page");
+
+    let enormous = target(&of(&over), &config).expect("a served file is readable");
+    let error = fetch(enormous)
+        .await
+        .expect_err("an oversized page is refused");
+
+    assert!(
+        error.downcast_ref::<Oversized>().is_some(),
+        "{error:#} is not an oversized page"
+    );
+    // The address was never the problem, so the ordinary page beside it is
+    // still read.
+    let ordinary = target(&of(&under), &config).expect("a served file is readable");
+    assert_eq!(
+        fetch(ordinary).await.expect("an ordinary page is read"),
+        "<p>Mun oidnen viesu.</p>"
+    );
+}
+
+/// The charset a response declares is honoured, which is what reading the
+/// body ourselves rather than letting the client buffer it has to keep.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+#[test]
+fn a_declared_charset_is_read() {
+    assert_eq!(
+        charset_parameter("text/html; charset=iso-8859-1"),
+        Some("iso-8859-1")
+    );
+    assert_eq!(
+        charset_parameter("text/html;charset=\"UTF-8\""),
+        Some("UTF-8")
+    );
+    assert_eq!(
+        charset_parameter("text/html; boundary=x; Charset = latin1"),
+        Some("latin1")
+    );
+    assert_eq!(charset_parameter("text/html"), None);
+    // The parameter is a parameter: a media type that merely contains the
+    // word is not one.
+    assert_eq!(charset_parameter("text/charset=1"), None);
+
+    let mut headers = HeaderMap::new();
+    assert_eq!(charset(&headers).name(), UTF_8.name());
+    headers.insert(
+        CONTENT_TYPE,
+        "text/html; charset=iso-8859-1".parse().unwrap(),
+    );
+    assert_eq!(charset(&headers).name(), "windows-1252");
+    headers.insert(
+        CONTENT_TYPE,
+        "text/html; charset=not-an-encoding".parse().unwrap(),
+    );
+    assert_eq!(charset(&headers).name(), UTF_8.name());
 }
 
 #[test]

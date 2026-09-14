@@ -31,14 +31,14 @@
 > Empty content detects as nothing and is not a page. The comparison is a
 > substring test, so a detected `text/html; charset=UTF-8` matches `text/html`.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
+> [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
 > pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf>
 >
 > pub fn file_url(stored: &Path) -> Result<String>
 >
 > async fn upload_text(mut multipart: Multipart, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
 > `POST /api/upload` takes a teacher's text as `multipart/form-data` and, if
 > it passes every gate, stores it and answers the `file:` URL it is now
 > reachable at — which is what the enhancement endpoints take as their `url`.
@@ -50,8 +50,19 @@
 > exactly `true` asks for the text to be retained. Every other field is
 > ignored. There is no captcha field and no captcha check: the Google
 > reCAPTCHA v1 endpoint the original verified against no longer exists, and a
-> verifier that always fails would refuse every upload. Uploads are gated by
-> where the operator deploys the endpoint instead.
+> verifier that always fails would refuse every upload.
+>
+> What stands in its place is the per-client rate limit
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`
+> describes, which this endpoint is behind and whose allowance it spends out
+> of the same bucket the endpoints that analyse spend: it runs the analyser
+> over every text it accepts in order to weigh its language, so it is one of
+> the expensive endpoints. A request over the allowance is a 429 answered
+> before the body is read, so an uploader over the limit costs neither the
+> multipart parse nor the language gate. That bounds how fast anonymous
+> uploads may arrive and says nothing about who is sending them; who may reach
+> the endpoint at all remains the operator's to decide with where they deploy
+> it.
 >
 > Three gates run in order, and each closing one names itself in the reply:
 > a body carrying no file part, or a file part with no content, is `no-file`

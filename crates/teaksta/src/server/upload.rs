@@ -78,8 +78,8 @@ pub struct Upload {
 /// Runs the three gates over an upload and stores what passes them, handing
 /// back the path it was stored at. A closed gate is a [`Rejection`] carried
 /// by the error; anything else is a deployment failure.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
 pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
     let Some(file_name) = upload.file_name.as_deref() else {
         return Err(Rejection::NoFile.into());

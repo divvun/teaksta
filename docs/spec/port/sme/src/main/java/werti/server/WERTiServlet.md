@@ -47,10 +47,10 @@
 > hand, so an enhancer never has to decide what to do without one, and the
 > four cases a topic distinguishes are exhaustive.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
 > async fn index() -> Response
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
 > What the root answers depends on whether the deployment carries a built web
 > client, which is what `TEAKSTA_WEBAPP_DIST` names.
 >
@@ -71,6 +71,21 @@
 > `internal server error` body, and what was raised is logged, rather than the
 > connection being dropped with nothing on it — a caller sees a status it can
 > act on and the failure is recorded where the operator reads.
+>
+> The whole map, the web client included, is served behind the access log
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.access-log-fn]`
+> describes, which sits outside the panic guard so the 500 the guard writes is
+> logged like any other answer.
+>
+> The four routes that analyse — the three enhancement endpoints and the
+> upload — are additionally served behind the per-client rate limit
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`
+> describes. `GET /api/activities` is not: it reads state built at startup and
+> costs nothing worth counting, and a client that has spent its allowance on
+> analysis can still ask what this deployment offers. Neither is the web
+> client, which is a directory of files. One limiter is built with one map and
+> the four routes share it, so a client's allowance is spent across the
+> endpoints that analyse together rather than four times over.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+1]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
@@ -100,7 +115,7 @@
 > of the reply has a null in it. The wire shape is otherwise unchanged: a
 > client reading `label` as optional still reads what it always did.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
 > async fn enhance_page(Query(query): Query<PageQuery>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > pub fn target(url: &Url, config: &Config) -> Result<Target, Refusal>
@@ -109,7 +124,7 @@
 >
 > pub enum Refusal { Scheme, Private, Confined }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
 > `GET /api/enhance?url=&activity=&mode=` answers the whole enhanced page as
 > `text/html;charset=UTF-8`, in one request. There is no wait page and no
 > second request: analysis takes well under a second, so the response is the
@@ -167,13 +182,20 @@
 > way, and at most five are followed.
 >
 > A permitted page is fetched through one client shared by every request,
-> carrying a 20 second budget that covers the connection and the body. A fetch
-> that fails, is refused a redirect or answers an error status is a 502 — the
-> far end's failure, not the caller's. At most sixteen fetches are in flight at
-> once; a request arriving over that waits for a slot rather than occupying a
-> thread, and is a 503 if none comes free within the same 20 seconds, so pages
-> that answer slowly and forever cannot starve the upload endpoint or the
-> analysis behind this one.
+> carrying a 20 second budget that covers the connection and the body, and is
+> read under the byte cap
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`
+> describes. A fetch that fails, is refused a redirect, answers an error status
+> or weighs more than the cap is a 502 — the far end's failure, not the
+> caller's. At most sixteen fetches are in flight at once; a request arriving
+> over that waits for a slot rather than occupying a thread, and is a 503 if
+> none comes free within the same 20 seconds, so pages that answer slowly and
+> forever cannot starve the upload endpoint or the analysis behind this one.
+>
+> The endpoint itself is rate limited per client as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`
+> limits one, and a request over the allowance is a 429 that reaches no
+> handler and fetches nothing.
 >
 > Port divergence: a page that arrived over `http` or `https` is reduced to
 > its main content before it is analysed, as
@@ -199,10 +221,10 @@
 > it. One line is logged per answered request carrying the address, the
 > exercise and the elapsed time; nothing is appended to a file.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
 > async fn enhance_spans(CappedJson(request): CappedJson<SpanRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
 > `POST /api/enhance` answers the span map as `application/json`, for a client
 > that has the page already or wants only the fragments that changed.
 >
@@ -234,6 +256,15 @@
 > refused at the same weight instead of being read for as long as it streams.
 > The body must still announce itself as JSON, so a form post cannot reach the
 > analyser; one that announces nothing, or announces something else, is a 415.
+> A page fetched from a `url` is read under a cap of its own, which
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`
+> describes and which answers 502 rather than 413, because that body is a
+> stranger's page and not the caller's request.
+>
+> The allowance is weighed before even that. The endpoint is rate limited per
+> client as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`
+> limits one, and a request over it is a 429 with no body read at all.
 >
 > There is no protocol version member and no version gate: the 490, 491 and
 > 492 status codes the browser add-on was answered with are gone along with
@@ -264,14 +295,14 @@
 > under the old one: they are never looked for again, rather than found and
 > failing to decode.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
 > async fn enhance_blocks(CappedJson(request): CappedJson<BlockRequest>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 >
 > struct BlockRequest { html: Option<String>, url: Option<String>, activity: String, mode: String }
 >
 > struct TextBlock { html: String }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
 > `POST /api/enhance/blocks` answers the analysed text block by block, as
 > `application/json`, for a client that renders the exercise itself.
 >
@@ -288,11 +319,13 @@
 > The body is a JSON object with `activity`, `mode`, and exactly one of `html`
 > (the page itself) and `url` (where to fetch it), read under the same cap and
 > the same content-type requirement as `POST /api/enhance` reads its own, and
-> answered with the same 400, 413, 415, 502 and 503 in the same cases. `mode`
+> answered with the same 400, 413, 415, 502 and 503 in the same cases. It is
+> rate limited per client out of the same allowance and answers the same 429
+> over it. `mode`
 > and `activity` are validated as they are for every other endpoint, the page
 > is fetched, confined and — when it came off the network — reduced to its
 > main content exactly as
-> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]`
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]`
 > fetches, confines and reduces one, and the analysed document is cached under
 > the same key derived from the same subject, so the two endpoints answer one
 > another's pages from one analysis. An inline `html` body is analysed as it
@@ -384,6 +417,188 @@
 > the scorer settling on a teaser box and discarding an article many times its
 > size. A page that comes back is therefore either the page that went in or a
 > reduction that cleared both floors, and never blank.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.client-ip-fn]
+> pub type Client = Option<IpAddr>;
+>
+> pub fn client(request: &Request, trust_proxy: bool) -> Client
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.client-ip-fn]
+> Which client a request is from, which is what the rate limit counts against
+> and what the access log records. This is teaksta's own concern, with nothing
+> behind it in the Java: the servlet counted nothing and logged nothing per
+> caller, because it was deployed where the operator's own network decided who
+> could reach it.
+>
+> By default the client is the peer that opened the connection, and the
+> request's `X-Forwarded-For`, `X-Real-IP` and `Forwarded` headers are not
+> read at all. A header a client writes is a header a client chooses: a bare
+> deployment that believed one would let a single caller present itself as a
+> different client on every request, and a limiter counting carefully against
+> an invented name bounds nothing.
+>
+> `TEAKSTA_TRUST_PROXY=1` states the other arrangement: that exactly one hop
+> the operator controls sits in front of this process and appends the peer it
+> saw to `X-Forwarded-For`. Under it, the client is the **last** entry of that
+> header — the one the trusted hop wrote, and the only entry in it the caller
+> could not have chosen. The header is never walked leftwards: everything to
+> the left of the last entry is whatever the hop before it was willing to
+> believe, and at the far left it is whatever the caller typed.
+>
+> An entry may be a bare address, an address with the port it was seen on, or
+> a bracketed IPv6 literal, and all three name the same client. A last entry
+> that is not an address makes the header unusable rather than making the
+> entry before it the client. `X-Real-IP` is then read, and only then, since
+> the same hop writes both and a proxy that sets only that one is ordinary;
+> failing that, the peer.
+>
+> Two trusted hops is a misconfiguration this cannot detect, and its failure
+> mode is chosen. The last entry is then the inner hop's own address, every
+> client lands in one allowance, and the deployment answers 429 to everybody —
+> loud, and fixed by putting one hop in front. Searching leftwards for the
+> first entry that looks like a public address would survive two hops and
+> would also let any caller pick its own allowance, which is a silent hole
+> rather than a loud fault.
+>
+> A request whose peer is not an internet address — a Unix socket, or an
+> in-process test transport — has no client, and every such request counts as
+> one client rather than as none: a caller nobody can tell apart from another
+> is not thereby unlimited.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+> pub struct Limit { .. }
+>
+> impl Limit { pub fn new(config: &Config) -> Limit }
+>
+> impl<E: Endpoint> Middleware<E> for Limit { type Output = Limited<E>; }
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+> What one client may ask of the endpoints that analyse. This is teaksta's
+> own, with nothing behind it in the Java.
+>
+> Every endpoint here is anonymous and the ones that analyse are expensive: a
+> page the analysis cache has never seen costs seconds of CPU across a pool of
+> language-technology handles, each holding hundreds of megabytes of models.
+> A service reachable by strangers has to be able to say no to one caller
+> without saying no to the rest.
+>
+> The allowance is a token bucket per client, held in memory: `count` requests
+> over `period`, of which `burst` may arrive at once. It defaults to thirty a
+> minute with a burst of ten, which is set where a page of ordinary use costs
+> nothing — a learner moving between the four exercises over one text makes
+> four requests of which three are answered from the analysis cache — and a
+> script asking for a fresh analysis every second does not. `TEAKSTA_RATE_LIMIT`
+> and `TEAKSTA_RATE_LIMIT_BURST` set the two, and `TEAKSTA_RATE_LIMIT=off`
+> turns the limit off entirely.
+>
+> The client is whoever
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.client-ip-fn]`
+> says it is. One allowance covers the three enhancement endpoints and the
+> upload together rather than one each: what is being protected is one pool of
+> language technology, and which path asked it to work is not the pool's
+> concern. `GET /api/activities` is not counted at all.
+>
+> A request over the allowance is answered with 429 before it reaches the
+> handler, so nothing is fetched, no body is read and no analysis is started.
+> The body is a JSON object whose single `error` member is `rate-limited` —
+> the shape an upload's closed gate answers with, so a client reads one thing
+> to decide which words to show a learner — and a `Retry-After` header carries
+> the wait in whole seconds, rounded up, never less than one.
+>
+> The keyed state does not grow without bound. It is swept every few hundred
+> checks, and the sweep drops every client whose allowance has fully
+> replenished — every client that is no longer being counted. What is left is
+> therefore the clients inside their window plus at most one sweep interval of
+> new ones, a bound that grows with how many callers are active at once and
+> not with uptime or with how many distinct addresses have ever been seen. The
+> sweep is done by whichever request lands on the interval rather than by a
+> task of its own, so a router that is built and dropped leaves nothing
+> running behind it.
+>
+> Nothing is persisted and nothing is shared between processes. A restart
+> forgives everybody and two replicas each count their own share of the
+> traffic; both are acceptable for a limit whose job is to keep one caller
+> from taking the machine, and neither is a quota anybody is billed against.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.access-log-fn]
+> pub struct AccessLog { .. }
+>
+> impl AccessLog { pub fn new(trust_proxy: bool) -> AccessLog }
+>
+> impl<E: Endpoint> Middleware<E> for AccessLog { type Output = Logged<E>; }
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.access-log-fn]
+> One line per request, whatever answered it. This is teaksta's own, with
+> nothing behind it in the Java, which logged what each servlet chose to and
+> left the rest to the container.
+>
+> The line is written at info level once the answer is known, and carries the
+> client as
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.client-ip-fn]`
+> resolves one, the method, the path, the status and how long the answer took
+> in milliseconds. It is written as named fields rather than a sentence, so a
+> deployment can read it as structure.
+>
+> The path is logged without its query. A request to the whole-page endpoint
+> carries the address of whatever a learner is reading in its query, and an
+> access log is a file that is kept, copied and read by people with no
+> business knowing what any particular learner was practising on. The
+> enhancement endpoints log a line of their own naming the address they
+> fetched, which is the operator's record of what this deployment went and
+> read; that is a different thing from a line per request, and it is not
+> written for a request that was refused before it reached a handler.
+>
+> The log covers the whole map — the web client's files, every 404, every
+> refusal answered by an extractor, every request turned away by the rate
+> limit — and sits outside the panic guard, so the 500 the guard writes is
+> logged like any other answer. It coexists with the per-analysis timing lines
+> the endpoints write; neither replaces the other.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+> pub struct Oversized { pub address: String, pub cap: usize }
+>
+> fn capped(source: impl Read, cap: usize, address: &str) -> Result<Vec<u8>>
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+> How much of a page fetched on a caller's behalf is read. This is teaksta's
+> own, with nothing behind it in the Java, which read whatever the far end
+> sent.
+>
+> A page is read up to `TEAKSTA_MAX_PAGE_BYTES`, which defaults to 5 MiB —
+> larger than any article anybody wrote, the same weight an upload may have so
+> the two ways a page reaches the analyser are bounded alike, and small enough
+> that sixteen of them at once are not a memory problem.
+>
+> The cap bounds the read itself. One byte past the cap is read and the read
+> then stops, so nothing beyond the cap is ever held and a far end streaming
+> without end is abandoned at the cap rather than filling memory until the
+> fetch deadline. A page of exactly the cap is read; a page one byte over is
+> refused, and refused rather than cut down, because half a document analysed
+> as a whole one is a worse answer than none.
+>
+> It applies to a page read from a `file:` address as much as to one fetched
+> over the network. Every `file:` address this deployment will read names
+> something it stored itself, under an upload limit of its own, so a larger
+> file in a served directory is a directory holding something the deployment
+> did not put there — and reading it whole is not the way to find that out.
+> The weight is decided before the bytes are read as text, so an oversized
+> page is reported as oversized whatever encoding it is in rather than failing
+> as invalid UTF-8 at whichever byte the cap fell inside.
+>
+> An oversized page reaches the client as a 502, beside a page that could not
+> be fetched, and deliberately not as the 400 a refused address answers with.
+> A refusal is decided from the address alone before anything is opened, and
+> is therefore something the caller could have known; how many bytes are
+> behind an address is not, any more than whether a name resolves — which this
+> deployment already reports as unreachable rather than refused for that same
+> reason. Nor is it the 413 the endpoints answer an oversized request body
+> with: that body is the caller's, and this one is a stranger's page the
+> caller merely named.
+>
+> A fetched page is decoded by the charset its response declares, or as UTF-8
+> when it declares none or names an encoding nothing knows. That is what the
+> HTTP client's own body-to-text step would have done, and it is what has to
+> be kept when the body is read under a cap instead of buffered whole.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3]
 > pub fn new(config: Config) -> Result<AppState>

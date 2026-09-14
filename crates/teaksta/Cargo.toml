@@ -27,6 +27,8 @@ sanitizer = { git = "https://github.com/necessary-nu/sanitizer-rs" }
 html-escape = "0.2"
 toml = "0.9"
 urlencoding = "2"
+governor = { version = "0.10.4", default-features = false, features = ["std", "dashmap"] }
+encoding_rs = "0.8.41"
 
 [dev-dependencies]
 poem = { version = "3", features = ["multipart", "static-files", "test"] }

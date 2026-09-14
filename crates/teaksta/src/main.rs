@@ -2,9 +2,9 @@
 //!
 //! Everything the deployment needs is read from the environment: where the
 //! built web client lives, which topics file to read if not the compiled-in
-//! one, where uploads and analysed documents are kept, and what address to
-//! listen on. The models are named by the two variables the morpho seam
-//! reads.
+//! one, where uploads and analysed documents are kept, what address to listen
+//! on, and what a service reachable by strangers will do for one of them. The
+//! models are named by the two variables the morpho seam reads.
 
 use anyhow::Result;
 use poem::listener::TcpListener;
@@ -13,8 +13,8 @@ use std::sync::Arc;
 use tracing::{info, warn};
 
 use teaksta::context::{
-    ANALYSIS_DIR_ENV, Config, LISTEN_ENV, TOPICS_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV,
-    WEBAPP_DIST_ENV,
+    ANALYSIS_DIR_ENV, Config, LISTEN_ENV, MAX_PAGE_BYTES_ENV, RATE_LIMIT_BURST_ENV, RATE_LIMIT_ENV,
+    TOPICS_ENV, TRUST_PROXY_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV, WEBAPP_DIST_ENV,
 };
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV, WORKERS_ENV, analysis_workers};
 use teaksta::server::api::{AppState, routes};
@@ -52,6 +52,38 @@ fn report(config: &Config) {
         config.upload_keep_dir.display(),
         config.upload_temp_dir.display()
     );
+
+    info!(
+        "{MAX_PAGE_BYTES_ENV}: a page is read up to {} bytes and abandoned there",
+        config.max_page_bytes
+    );
+
+    // A limit that is off is a warning, because a deployment anyone can reach
+    // with the analysis endpoints unmetered is one request away from spending
+    // its machine on whoever asked first.
+    match config.rate_limit {
+        Some(limit) => info!(
+            "{RATE_LIMIT_ENV}/{RATE_LIMIT_BURST_ENV}: one client may make {} requests per {:?} of \
+             the endpoints that analyse, {} of them at once",
+            limit.count, limit.period, limit.burst
+        ),
+        None => warn!("{RATE_LIMIT_ENV} is off; the endpoints that analyse are not rate limited"),
+    }
+
+    // Trusting the headers is the unusual setting, but neither state is a
+    // warning: one is wrong behind a proxy and the other is wrong without
+    // one, and which is which is the operator's to know.
+    if config.trust_proxy {
+        info!(
+            "{TRUST_PROXY_ENV}: a client is the last X-Forwarded-For entry, so exactly one \
+             trusted hop must sit in front of this process"
+        );
+    } else {
+        info!(
+            "{TRUST_PROXY_ENV} is not set; a client is the peer address and forwarding headers \
+             are ignored"
+        );
+    }
 
     // An unset topics file is not a warning: the registry compiled into this
     // binary is the deployment's, and a named one is the exception.
