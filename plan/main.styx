@@ -875,12 +875,20 @@ children (
                 title "Kept uploads live in Azure Blob Storage; nothing of teaksta's touches the NFS"
                 kind @feat
                 deps (prod-abuse)
+                sealed true
                 log (
                     {
                         at 2026-09-14T12:13:56.534015Z
                         author "brendan@bbqsrc.net"
                         kind @decision
                         text "Operator ruling (2026-09-14): kept uploads (the teacher keep-file flow) store in AZURE BLOB STORAGE — UiT is an Azure shop; S3-compatible was the alternative. Reference implementation: ~/git/gitfabrik/cicada — uses the object_store crate (Apache Arrow) with its azure-base feature and OWN shared-key signing, deliberately avoiding the frozen azure_storage_blobs 0.21 stack (rationale documented in cicada's Cargo.toml ~:192-217); see crates/cicada-server/src/registry/org_blob.rs, tests/blob_azure.rs, and the Azurite container harness in tests/harness/containers.rs. Design constraints: (1) tmp/swept uploads stay local-ephemeral (pod emptyDir) — only KEPT uploads go to Azure; (2) the URL handed back must NOT route through the SSRF-guarded http fetch path (a self-fetch would be denied by the deny-private policy) — page_source/fetch recognizes deployment-owned upload references (e.g. /api/texts/<id> or an internal id scheme) and streams from the store directly; the file: confinement rules and their spec bodies adjust accordingly, spec-bumped honestly; (3) config via TEAKSTA_AZURE_* env per context.rs conventions (account, container, credential), with an object_store LocalFileSystem fallback so dev/tests run without Azure and the model-gated suites keep passing; Azurite-backed integration test only if the CI DinD agents make it cheap, else LocalFileSystem parity tests; (4) k8s consequence: zero NFS footprint for teaksta (models baked in image, cache emptyDir, tmp emptyDir, kept uploads Azure) — the deployment needs one sops-encrypted secret for the Azure credential instead of a PV/PVC. Blocked behind prod-abuse (same files: api.rs, upload.rs, fetch.rs)."
+                    }
+
+                    {
+                        at 2026-09-14T13:34:14.173975Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Doing → Done (nplan complete)"
                     }
                 )
             }
