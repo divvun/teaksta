@@ -129,6 +129,14 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
             analysis_dir: data_root.join("analysed"),
             upload_keep_dir: data_root.join("keep"),
             upload_temp_dir: data_root.join("temp"),
+            // Every request this suite makes is one client as far as the
+            // in-process transport is concerned — it carries no peer address
+            // — so a limit here would count a whole test run against one
+            // bucket. What is under test is the analysis; the limit is
+            // exercised where it lives.
+            trust_proxy: false,
+            rate_limit: None,
+            max_page_bytes: 5 * 1024 * 1024,
         };
         for directory in [
             &config.analysis_dir,

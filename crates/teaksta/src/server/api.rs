@@ -40,7 +40,8 @@ use serde_json::json;
 use tracing::{info, warn};
 
 use crate::context::Config;
-use crate::server::fetch::{self, Overloaded, Refusal, Unreachable};
+use crate::server::access;
+use crate::server::fetch::{self, Overloaded, Oversized, Refusal, Unreachable};
 use crate::server::registry::Registry;
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::Document;
@@ -114,16 +115,35 @@ impl AppState {
 /// own router owns it. The `/api` paths are static routes and the client's is
 /// a catch-all, so the API answers first whatever the client routes.
 ///
-/// The whole map is served behind a panic guard, so a handler that panics is
-/// answered rather than dropping the connection under the caller.
+/// Three layers stand over it. The panic guard, so a handler that panics is
+/// answered rather than dropping the connection under the caller. The access
+/// log, outside the guard so that the 500 the guard writes is logged like any
+/// other answer, and over the whole map so the static client is logged too.
+/// And the per-client rate limit, over the four routes that analyse and not
+/// over the registry, which is a read of state built at startup and costs
+/// nothing worth counting.
+///
+/// The limiter is built here, so one map is one limiter and the four routes
+/// it covers share it: a client's allowance is spent across the endpoints
+/// that analyse together rather than four times over.
 pub fn routes(config: &Config) -> impl Endpoint + use<> {
+    let analysis = access::Limit::new(config);
+
     let api = Route::new()
         .at("/api/activities", get(registry))
-        .at("/api/enhance", get(enhance_page).post(enhance_spans))
-        .at("/api/enhance/blocks", post(enhance_blocks))
+        .at(
+            "/api/enhance",
+            get(enhance_page).post(enhance_spans).with(analysis.clone()),
+        )
+        .at(
+            "/api/enhance/blocks",
+            post(enhance_blocks).with(analysis.clone()),
+        )
         .at(
             "/api/upload",
-            post(upload_text).with(SizeLimit::new(MAX_UPLOAD_BODY)),
+            post(upload_text)
+                .with(SizeLimit::new(MAX_UPLOAD_BODY))
+                .with(analysis.clone()),
         );
 
     #[cfg(test)]
@@ -140,6 +160,7 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
     };
 
     map.with(CatchPanic::new().with_handler(panicked))
+        .with(access::AccessLog::new(config.trust_proxy))
 }
 
 /// What a panicking handler is answered with. The guard unwinds the panic and
@@ -165,8 +186,8 @@ async fn panics() -> &'static str {
 
 /// The root of a deployment with no web client: the endpoint listing, so an
 /// API-only deployment can be probed without one.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+3]
 #[handler]
 async fn index() -> Response {
     let body = concat!(
@@ -204,8 +225,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -291,8 +312,8 @@ struct SpanRequest {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
 #[handler]
 async fn enhance_spans(
     CappedJson(request): CappedJson<SpanRequest>,
@@ -366,8 +387,8 @@ struct TextBlock {
     html: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
 #[handler]
 async fn enhance_blocks(
     CappedJson(request): CappedJson<BlockRequest>,
@@ -402,8 +423,8 @@ async fn enhance_blocks(
         .body(blocks))
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+3]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
 #[handler]
 async fn upload_text(
     mut multipart: Multipart,
@@ -487,9 +508,9 @@ where
 }
 
 /// An address this deployment will not fetch is the caller's mistake, and is
-/// named as such; a page that could not be fetched is the far end's failure;
-/// a fetch that found no slot is a load the deployment is asked to shed;
-/// anything else is ours.
+/// named as such; a page that could not be fetched, or that weighs more than
+/// this deployment reads, is the far end's failure; a fetch that found no slot
+/// is a load the deployment is asked to shed; anything else is ours.
 fn failure(error: anyhow::Error) -> poem::Error {
     if let Some(refusal) = error.downcast_ref::<Refusal>() {
         info!("Refused an address: {refusal}");
@@ -498,6 +519,10 @@ fn failure(error: anyhow::Error) -> poem::Error {
     if error.downcast_ref::<Overloaded>().is_some() {
         warn!("{error:#}");
         return poem::Error::from_string(format!("{error:#}"), StatusCode::SERVICE_UNAVAILABLE);
+    }
+    if error.downcast_ref::<Oversized>().is_some() {
+        info!("{error:#}");
+        return poem::Error::from_string(format!("{error:#}"), StatusCode::BAD_GATEWAY);
     }
     if error.downcast_ref::<Unreachable>().is_some() {
         info!("{error:#}");

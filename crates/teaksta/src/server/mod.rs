@@ -1,3 +1,4 @@
+pub mod access;
 pub mod api;
 pub mod fetch;
 pub mod reader;

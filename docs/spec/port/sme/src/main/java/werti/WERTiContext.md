@@ -1,6 +1,8 @@
 # sme/src/main/java/werti/WERTiContext.java
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+4]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context+5]
+> pub struct RateLimit { pub burst: u32, pub count: u32, pub period: Duration }
+>
 > pub struct Config {
 >   pub listen: String,
 >   pub webapp_dist: Option<PathBuf>,
@@ -8,14 +10,17 @@
 >   pub analysis_dir: PathBuf,
 >   pub upload_keep_dir: PathBuf,
 >   pub upload_temp_dir: PathBuf,
+>   pub trust_proxy: bool,
+>   pub rate_limit: Option<RateLimit>,
+>   pub max_page_bytes: usize,
 > }
 >
 > pub fn upload_dir(&self, keep: bool) -> &Path
 
-> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4]
+> [spec:teaksta:def:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
 > pub fn from_env() -> Result<Config>
 
-> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+4]
+> [spec:teaksta:sem:sme.src.main.java.werti.wer-ti-context.wer-ti-context.init-fn+5]
 > Reads the deployment's configuration from the process environment. There is
 > no properties file, no per-language model registry and no lazily
 > manufactured resource: the North Sámi pipelines are named by the morpho
@@ -29,6 +34,34 @@
 > whether it was to be kept, defaulting to `./data/fileUpload/prm` and
 > `./data/fileUpload/tmp`. A relative value stays relative to the working
 > directory.
+>
+> Three more bound what a service reachable by strangers will do for one of
+> them, and each falls back as well.
+>
+> `TEAKSTA_MAX_PAGE_BYTES` is how much of a page fetched on a caller's behalf
+> is read, defaulting to 5 MiB; what the cap does is
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`.
+>
+> `TEAKSTA_RATE_LIMIT` and `TEAKSTA_RATE_LIMIT_BURST` are what one client may
+> ask of the endpoints that analyse, defaulting to `30/minute` with a burst of
+> ten; what the limit does is
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]`.
+> The rate reads as `<count>/<period>`, the period spelled `second`, `minute`
+> or `hour`, and `off` turns the limit off entirely. The burst is a bare
+> count.
+>
+> `TEAKSTA_TRUST_PROXY` is whether a request's forwarding headers name the
+> client, and is off unless set to `1`, `true`, `yes` or `on`; what trusting
+> them means is
+> `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.client-ip-fn]`.
+> It is a switch rather than a list of trusted addresses, so a deployment
+> either has one hop it controls in front of it or it does not.
+>
+> A value that will not read — a rate that is not `<count>/<period>`, a count
+> that is not a positive number, a flag that is neither on nor off — is
+> reported and the fallback is used, as the worker count's is: a typo in one
+> variable is no reason to refuse to serve, and the startup report says which
+> value was actually taken.
 >
 > Two more have no fallback, because unset is a deployment that does without
 > what they name rather than one that gets a default.

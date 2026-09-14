@@ -87,8 +87,18 @@
 //! library does not offer, and it requires write access to a directory this
 //! deployment serves out of.
 //!
-//! A far end that answers slowly and forever. The whole fetch is bounded by
-//! [`FETCH_TIMEOUT`], which bounds the body too, but not by a byte count.
+//! A far end that answers as much as it likes within the time it has. The
+//! body is read up to the cap the deployment configured and abandoned at it,
+//! so what one fetch may hold is bounded; but [`MAX_CONCURRENT_FETCHES`] of
+//! them may be reading at once, so what all of them may hold together is that
+//! many caps, and the analysis each one then feeds costs several multiples of
+//! its page again. The cap is what keeps one page from being a memory
+//! problem, not what sizes the machine.
+//!
+//! A far end that answers slowly. The whole fetch is bounded by
+//! [`FETCH_TIMEOUT`], which bounds the body's arrival as well as the
+//! connection, so a page dribbled out a byte at a time ends at the deadline
+//! rather than at the cap.
 //!
 //! # One client, bounded concurrency
 //!
@@ -104,14 +114,17 @@
 //! answering 503 rather than queueing without end.
 
 use std::ffi::OsString;
+use std::io::Read as _;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs as _};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
 use anyhow::{Result, anyhow};
+use encoding_rs::{Encoding, UTF_8};
 use reqwest::Url;
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
+use reqwest::header::{CONTENT_TYPE, HeaderMap};
 use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
@@ -151,6 +164,25 @@ pub enum Refusal {
 #[error("the page at {0} could not be fetched")]
 pub struct Unreachable(pub String);
 
+/// The page is larger than this deployment reads, and the read was abandoned
+/// at the cap rather than finished.
+///
+/// It reaches the client as a 502, beside [`Unreachable`], and deliberately
+/// not as the 400 a [`Refusal`] answers with. A refusal is decided from the
+/// address alone, before anything is opened, and is therefore something the
+/// caller could have known; how many bytes are behind an address is not, any
+/// more than whether a name resolves — which this module already reports as
+/// unreachable for that same reason. Nor is it the 413 the endpoints answer
+/// an oversized request body with: that body is the caller's, and this one is
+/// a stranger's page the caller merely named.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("the page at {address} is larger than the {cap} byte limit")]
+pub struct Oversized {
+    pub address: String,
+    pub cap: usize,
+}
+
 /// Every fetch slot is taken and one did not come free. Reaches the client as
 /// a 503.
 #[derive(Debug, Clone, Copy, thiserror::Error)]
@@ -166,6 +198,11 @@ pub struct Target {
     /// the caller is told about. A confined path is never echoed back.
     address: String,
     read: Read,
+    /// How much of it will be read. It travels with the vetted address rather
+    /// than being passed to [`fetch`] beside it, because it is one more thing
+    /// this deployment decided about this target before anything was opened,
+    /// and a `Target` is where those decisions live.
+    cap: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -190,10 +227,11 @@ impl Target {
 /// Reads the address a request points at, refusing everything this deployment
 /// will not fetch. Nothing is opened here: a refusal costs no connection and
 /// no directory listing beyond resolving the path a `file:` address names.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
 pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal> {
     let address = url.to_string();
+    let cap = config.max_page_bytes;
     match url.scheme() {
         "file" => {
             let path = url.to_file_path().map_err(|()| Refusal::Confined)?;
@@ -201,6 +239,7 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
             Ok(Target {
                 address,
                 read: Read::File(confined),
+                cap,
             })
         }
         "http" | "https" => {
@@ -208,6 +247,7 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
             Ok(Target {
                 address,
                 read: Read::Web(url.clone()),
+                cap,
             })
         }
         _ => Err(Refusal::Scheme),
@@ -224,16 +264,17 @@ pub fn target(url: &Url, config: &Config) -> std::result::Result<Target, Refusal
 /// wrote; a page off the disk is one this deployment was given — an accepted
 /// upload, or a page shipped with an activity — and is answered as it was
 /// written. Neither endpoint chooses, and an inline body never arrives here.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+5]
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+6]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.reader-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
 pub async fn fetch(target: Target) -> Result<String> {
-    let Target { address, read } = target;
+    let Target { address, read, cap } = target;
     match read {
         Read::File(path) => {
-            let read = tokio::task::spawn_blocking(move || read_file(&path, &address));
+            let read = tokio::task::spawn_blocking(move || read_file(&path, &address, cap));
             read.await
                 .map_err(|join| anyhow!("the read ended: {join}"))?
         }
@@ -244,7 +285,7 @@ pub async fn fetch(target: Target) -> Result<String> {
             // not be doing, and the extractor's own document is not `Send`,
             // so it must live and die inside one closure.
             let fetch = tokio::task::spawn_blocking(move || {
-                let page = get(&url, &address)?;
+                let page = get(&url, &address, cap)?;
                 Ok(reader::reduce(page, url.as_str()))
             });
             fetch
@@ -475,12 +516,29 @@ async fn slot() -> Result<SemaphorePermit<'static>> {
     }
 }
 
-fn read_file(path: &Path, address: &str) -> Result<String> {
-    std::fs::read_to_string(path)
-        .map_err(|error| anyhow::Error::new(error).context(Unreachable(address.to_string())))
+/// A page off the disk, under the same cap a fetched one is read under.
+///
+/// The cap applies here too. Every `file:` address this deployment will read
+/// names something it stored itself, and it stores nothing over the upload
+/// limit — so a larger file in a served directory is a deployment whose
+/// directories hold something it did not put there, and reading it whole is
+/// not the way to find that out.
+///
+/// The weight is decided before the bytes are read as text, so an oversized
+/// page says it is oversized whatever encoding it is in rather than failing
+/// as invalid UTF-8 at whichever byte the cap fell inside.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+fn read_file(path: &Path, address: &str, cap: usize) -> Result<String> {
+    let unreachable = || Unreachable(address.to_string());
+
+    let file = std::fs::File::open(path)
+        .map_err(|error| anyhow::Error::new(error).context(unreachable()))?;
+    let bytes = capped(file, cap, address)?;
+    String::from_utf8(bytes).map_err(|error| anyhow::Error::new(error).context(unreachable()))
 }
 
-fn get(url: &Url, address: &str) -> Result<String> {
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
     let unreachable = || Unreachable(address.to_string());
 
     let response = CLIENT
@@ -488,9 +546,64 @@ fn get(url: &Url, address: &str) -> Result<String> {
         .send()
         .and_then(reqwest::blocking::Response::error_for_status)
         .map_err(|error| anyhow::Error::new(error).context(unreachable()))?;
-    response
-        .text()
-        .map_err(|error| anyhow::Error::new(error).context(unreachable()))
+
+    // The charset is read off the headers before the body is taken, because
+    // taking it consumes the response. This is what `Response::text` would
+    // have done for us, and it is what is given up by reading the body
+    // ourselves rather than letting it buffer however much arrives.
+    let encoding = charset(response.headers());
+    let bytes = capped(response, cap, address)?;
+    let (page, _, _) = encoding.decode(&bytes);
+    Ok(page.into_owned())
+}
+
+/// Reads a page up to `cap` bytes, refusing at it rather than truncating.
+///
+/// One byte past the cap is read and the read then stops, so nothing beyond
+/// the cap is ever held and a far end streaming without end is abandoned at
+/// the cap instead of filling memory until the deadline. A page that is
+/// exactly the cap is read; a page that is one byte more is refused, and is
+/// refused rather than cut down because half a document analysed as a whole
+/// one is a worse answer than none.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]
+fn capped(source: impl std::io::Read, cap: usize, address: &str) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    source
+        .take(cap as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|error| anyhow::Error::new(error).context(Unreachable(address.to_string())))?;
+
+    if bytes.len() > cap {
+        return Err(Oversized {
+            address: address.to_string(),
+            cap,
+        }
+        .into());
+    }
+    Ok(bytes)
+}
+
+/// The encoding a response declares, as `Response::text` reads one: the
+/// `charset` parameter of the content type when there is one and the label
+/// names an encoding, and UTF-8 otherwise.
+fn charset(headers: &HeaderMap) -> &'static Encoding {
+    headers
+        .get(CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(charset_parameter)
+        .and_then(|label| Encoding::for_label(label.as_bytes()))
+        .unwrap_or(UTF_8)
+}
+
+/// The `charset` parameter of a content-type header value.
+fn charset_parameter(content_type: &str) -> Option<&str> {
+    content_type.split(';').skip(1).find_map(|parameter| {
+        let (name, value) = parameter.split_once('=')?;
+        name.trim()
+            .eq_ignore_ascii_case("charset")
+            .then(|| value.trim().trim_matches('"'))
+    })
 }
 
 /// The client's DNS resolver: the system one, with every private address
