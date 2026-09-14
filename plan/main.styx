@@ -842,4 +842,25 @@ children (
             }
         )
     }
+
+    {
+        id prod
+        title "Production: a public service that survives the public"
+        kind @feat
+        children (
+            {
+                id prod-abuse
+                title "Abuse hardening for public launch: rate limits, fetch byte-cap, access logging"
+                kind @feat
+                log (
+                    {
+                        at 2026-09-14T11:51:28.689422Z
+                        author "brendan@bbqsrc.net"
+                        kind @note
+                        text "Operator decisions (2026-09-14): deploy target = container on the divvun k0s cluster (GitOps, argocd); CI = divvun-actions self-hosted; exposure = PUBLIC FROM DAY ONE — so before deploy: (1) per-IP rate limiting on the compute-expensive anonymous endpoints (enhance GET/POST/blocks + upload; the registry endpoint is cheap and can stay unlimited); behind the cluster ingress the peer address is the proxy's, so client IP must come from X-Forwarded-For/X-Real-IP — trusted ONLY when explicitly enabled (env, e.g. TEAKSTA_TRUST_PROXY=1) to avoid header spoofing when run bare; limits env-tunable with sane defaults. (2) A byte-cap on fetched page bodies in server/fetch.rs (documented caveat from hd-fetch: 20s time cap but no size cap — an attacker or a huge page can balloon memory); cap around a few MB, 502/400 shape consistent with existing refusals, spec-bumped. (3) Structured access logging: one line per request (method, path, status, duration, client IP as resolved above) via poem middleware at info — the analysis endpoints already log their timing; this adds the uniform layer. Follow-on nodes for CI (divvun-actions pipeline) and deploy (k0s app manifests) arrive after the infra recon reports."
+                    }
+                )
+            }
+        )
+    }
 )
