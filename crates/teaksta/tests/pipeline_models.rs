@@ -137,6 +137,7 @@ fn deployment() -> &'static (Arc<AppState>, TempDir) {
             trust_proxy: false,
             rate_limit: None,
             max_page_bytes: 5 * 1024 * 1024,
+            azure: None,
         };
         for directory in [
             &config.analysis_dir,
@@ -171,6 +172,26 @@ fn multipart(file_name: &str, content: &str) -> (String, Vec<u8>) {
     let boundary = "teaksta-test-boundary";
     let body = format!(
         "--{boundary}\r\n\
+         Content-Disposition: form-data; name=\"file\"; filename=\"{file_name}\"\r\n\
+         Content-Type: text/html\r\n\r\n\
+         {content}\r\n\
+         --{boundary}--\r\n"
+    );
+    (
+        format!("multipart/form-data; boundary={boundary}"),
+        body.into_bytes(),
+    )
+}
+
+/// The same body with the teacher's answer to the keep question on it, which
+/// is the one field that decides where an accepted text goes.
+fn multipart_kept(file_name: &str, content: &str) -> (String, Vec<u8>) {
+    let boundary = "teaksta-test-boundary";
+    let body = format!(
+        "--{boundary}\r\n\
+         Content-Disposition: form-data; name=\"keep\"\r\n\r\n\
+         true\r\n\
+         --{boundary}\r\n\
          Content-Disposition: form-data; name=\"file\"; filename=\"{file_name}\"\r\n\
          Content-Type: text/html\r\n\r\n\
          {content}\r\n\
@@ -868,6 +889,86 @@ async fn a_second_run_is_answered_from_the_cache() {
 
     assert_eq!(ordered(&first), ordered(&second));
     assert!(cached > 0, "the analysed document was not cached");
+}
+
+/// The whole kept-text round trip, over the real gate: a teacher's text with
+/// `keep` on it is analysed, stored, and answered with an address of this
+/// deployment's own — which is then reachable, and which the enhancement
+/// endpoints read back without a socket being opened to anything.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn/test]
+#[tokio::test]
+async fn a_kept_text_is_read_back_by_address() {
+    if !models_available() {
+        return;
+    }
+    let client = client();
+
+    let (content_type, body) = multipart_kept("sami.html", DOCUMENT);
+    let accepted = client
+        .post("/api/upload")
+        .content_type(content_type)
+        .header("content-length", body.len())
+        .body(body)
+        .send()
+        .await;
+    accepted.assert_status_is_ok();
+    let body = accepted.0.into_body().into_string().await.expect("a body");
+    let stored: Value = serde_json::from_str(&body).expect("a JSON object");
+    // The wire shape is the one it has always been: one `url` member. What
+    // changed is what is in it — an address of this deployment rather than of
+    // a directory on whichever machine happened to answer.
+    let url = stored["url"].as_str().expect("an address").to_string();
+    assert!(url.starts_with("/api/texts/"), "{url}");
+    assert!(!url.contains("file:"), "{url}");
+
+    // It is reachable, and it is the text that was offered.
+    let served = client.get(&url).send().await;
+    served.assert_status_is_ok();
+    served.assert_header("content-type", "text/html; charset=UTF-8");
+    served.assert_text(DOCUMENT).await;
+
+    // The same text offered again is the same address, because the address is
+    // the text's own digest — and what is already stored is left alone.
+    let (content_type, body) = multipart_kept("again.html", DOCUMENT);
+    let again = client
+        .post("/api/upload")
+        .content_type(content_type)
+        .header("content-length", body.len())
+        .body(body)
+        .send()
+        .await;
+    again.assert_status_is_ok();
+    let body = again.0.into_body().into_string().await.expect("a body");
+    let stored: Value = serde_json::from_str(&body).expect("a JSON object");
+    assert_eq!(stored["url"].as_str(), Some(url.as_str()));
+
+    // And the enhancement endpoints take it back as their `url` and analyse
+    // it, reading the store rather than fetching this deployment from itself.
+    let enhanced = client
+        .get("/api/enhance")
+        .query("url", &url)
+        .query("activity", &"Substantive")
+        .query("mode", &"click")
+        .send()
+        .await;
+    enhanced.assert_status_is_ok();
+    let page = enhanced.0.into_body().into_string().await.expect("a body");
+    assert!(page.contains("teaksta-token"), "{page}");
+
+    let blocks = client
+        .post("/api/enhance/blocks")
+        .body_json(&serde_json::json!({
+            "url": url,
+            "activity": "Substantive",
+            "mode": "colorize",
+        }))
+        .send()
+        .await;
+    blocks.assert_status_is_ok();
+    let body = blocks.0.into_body().into_string().await.expect("a body");
+    let answered: Vec<Value> = serde_json::from_str(&body).expect("a JSON array");
+    assert!(!answered.is_empty(), "a kept text analysed to no blocks");
 }
 
 #[tokio::test]

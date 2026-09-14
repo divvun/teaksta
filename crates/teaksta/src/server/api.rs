@@ -31,11 +31,10 @@ use poem::error::ParseJsonError;
 use poem::http::StatusCode;
 use poem::http::header::CONTENT_TYPE;
 use poem::middleware::{CatchPanic, SizeLimit};
-use poem::web::{Data, Json, Multipart, Query, RequestBody};
+use poem::web::{Data, Json, Multipart, Path, Query, RequestBody};
 use poem::{
     Endpoint, EndpointExt, FromRequest, IntoResponse, Request, Response, Route, get, handler, post,
 };
-use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -46,6 +45,7 @@ use crate::morpho::{BUNDLE_ENV, GENERATOR_ENV, MorphoPipeline};
 use crate::server::access;
 use crate::server::fetch::{self, Overloaded, Oversized, Refusal, Unreachable};
 use crate::server::registry::Registry;
+use crate::server::texts::{Missing, TextId, TextStore};
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
 use crate::types::Document;
 use crate::util::html_blocks;
@@ -68,12 +68,17 @@ const MAX_UPLOAD_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 /// upload may, with the same room for the framing around it.
 const MAX_ENHANCE_BODY: usize = MAX_UPLOAD_BYTES + 64 * 1024;
 
-/// Everything a request is served from: the deployment configuration and the
-/// topic registry, with the pipeline pair each topic runs.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+4]
+/// Everything a request is served from: the deployment configuration, the
+/// topic registry with the pipeline pair each topic runs, and the store kept
+/// texts live in.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet+5]
 pub struct AppState {
     pub config: Config,
     pub registry: Registry,
+    /// Where a text a teacher asked to keep is written and read back. Built
+    /// once, because the client behind it holds a connection pool and because
+    /// a deployment whose store will not open should find out at boot.
+    pub texts: TextStore,
     /// Whether the deep check has already analysed a sentence in this
     /// process. It is the one thing here that is written after startup, and
     /// it is written once and never back: see
@@ -100,10 +105,19 @@ impl AppState {
             loaded.topics().len(),
             started.elapsed()
         );
+        let texts = TextStore::from_config(&config)?;
+        info!("Kept texts are stored in {}", texts.describe());
+        if !texts.is_durable() {
+            warn!(
+                "Kept texts are stored on this machine's filesystem; a deployment whose \
+                 filesystem does not outlive the process keeps nothing"
+            );
+        }
 
         Ok(AppState {
             config,
             registry: loaded,
+            texts,
             models_proven: AtomicBool::new(false),
         })
     }
@@ -146,6 +160,19 @@ impl AppState {
 /// node would spend a pod's own allowance on the requests that decide whether
 /// that pod lives.
 ///
+/// The stored-text route is outside it for a third reason, which is that the
+/// shape of its traffic is the one a per-address allowance is worst at. It
+/// neither analyses nor fetches on a caller's behalf, and the exercise path
+/// does not go through it at all — an enhancement request naming a stored
+/// text reads the store directly. What reaches it is a teacher's shared link
+/// opened by a class at once, and a class is behind one school's address, so
+/// an allowance sized for one learner would refuse most of the room for
+/// asking at the same time as each other. What bounds it instead is the byte
+/// cap on the read, and the address itself: a name is a 128-bit digest, so a
+/// caller can only ask for texts they were already given the address of.
+/// Bounding the bytes a deployment will serve per second is the operator's,
+/// at the layer that can see them all.
+///
 /// The limiter is built here, so one map is one limiter and the four routes
 /// it covers share it: a client's allowance is spent across the endpoints
 /// that analyse together rather than four times over.
@@ -156,6 +183,7 @@ pub fn routes(config: &Config) -> impl Endpoint + use<> {
         .at("/api/health", get(health))
         .at("/api/health/deep", get(health_deep))
         .at("/api/activities", get(registry))
+        .at("/api/texts/:id", get(stored_text))
         .at(
             "/api/enhance",
             get(enhance_page).post(enhance_spans).with(analysis.clone()),
@@ -211,8 +239,8 @@ async fn panics() -> &'static str {
 
 /// The root of a deployment with no web client: the endpoint listing, so an
 /// API-only deployment can be probed without one.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.index-fn+5]
 #[handler]
 async fn index() -> Response {
     let body = concat!(
@@ -223,6 +251,7 @@ async fn index() -> Response {
         "POST /api/enhance\n",
         "POST /api/enhance/blocks\n",
         "POST /api/upload\n",
+        "GET  /api/texts/<id>\n",
         "GET  /api/health\n",
         "GET  /api/health/deep\n",
     );
@@ -390,8 +419,8 @@ struct PageQuery {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+6]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7]
 #[handler]
 async fn enhance_page(
     Query(query): Query<PageQuery>,
@@ -400,16 +429,20 @@ async fn enhance_page(
     let state = state.0.clone();
     let mode = parse_mode(&query.mode)?;
     let activity = known_topic(&state, query.activity)?;
-    let url = page_url(&query.url)?;
-    let target = fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
+    let target =
+        fetch::target(&query.url, &state.config).map_err(|refusal| failure(refusal.into()))?;
+    // The vetted address rather than the string the request carried: it is
+    // what the analysis is keyed by, what the enhanced page resolves its own
+    // relative links against, and what is logged.
     let requested = target.address().to_string();
-    let key = cache_key(url.as_str());
+    let key = cache_key(&requested);
 
     let started = Instant::now();
-    let source = fetch::fetch(target).await.map_err(failure)?;
+    let source = fetch::fetch(target, &state.texts).await.map_err(failure)?;
+    let base = requested.clone();
     let page = blocking(move || {
         let document = state.analyse(&activity, mode, &source, &key)?;
-        Ok(HtmlEnhancer::new(&document).enhance(Some(mode), url.as_str()))
+        Ok(HtmlEnhancer::new(&document).enhance(Some(mode), &base))
     })
     .await?;
 
@@ -477,8 +510,8 @@ struct SpanRequest {
     mode: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+7]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-post-fn+8]
 #[handler]
 async fn enhance_spans(
     CappedJson(request): CappedJson<SpanRequest>,
@@ -509,8 +542,11 @@ async fn enhance_spans(
 
 /// The page a request names, with the key its analysis is cached under.
 ///
-/// The page is keyed by its address when it is fetched and by its own content
-/// when it arrives inline, so neither is answered from the other's analysis.
+/// The page is keyed by its address when it is read from somewhere and by its
+/// own content when it arrives inline, so neither is answered from the other's
+/// analysis. Which of the three places an address names — the web, an upload
+/// directory, or the store kept texts live in — is [`fetch::target`]'s to
+/// decide and not this function's; what arrives here is a page.
 async fn page_source(
     state: &AppState,
     html: Option<String>,
@@ -522,11 +558,13 @@ async fn page_source(
             Ok((html, key))
         }
         (None, Some(raw)) => {
-            let url = page_url(&raw)?;
             let target =
-                fetch::target(&url, &state.config).map_err(|refusal| failure(refusal.into()))?;
-            let key = cache_key(url.as_str());
-            Ok((fetch::fetch(target).await.map_err(failure)?, key))
+                fetch::target(&raw, &state.config).map_err(|refusal| failure(refusal.into()))?;
+            let key = cache_key(target.address());
+            Ok((
+                fetch::fetch(target, &state.texts).await.map_err(failure)?,
+                key,
+            ))
         }
         _ => Err(bad_request("give exactly one of \"html\" and \"url\"")),
     }
@@ -552,8 +590,8 @@ struct TextBlock {
     html: String,
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.blocks-fn+3]
 #[handler]
 async fn enhance_blocks(
     CappedJson(request): CappedJson<BlockRequest>,
@@ -588,8 +626,8 @@ async fn enhance_blocks(
         .body(blocks))
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
 #[handler]
 async fn upload_text(
     mut multipart: Multipart,
@@ -614,14 +652,7 @@ async fn upload_text(
         }
     }
 
-    let stored = tokio::task::spawn_blocking(move || {
-        let directory = state.config.upload_dir(collected.keep).to_path_buf();
-        let stored = upload::store(&collected, &directory)?;
-        upload::file_url(&stored)
-    })
-    .await;
-
-    match stored {
+    match accepted_upload(&state, collected).await {
         Ok(Ok(url)) => {
             info!("Stored an upload at {url}");
             Ok(Json(json!({ "url": url })).into_response())
@@ -632,6 +663,98 @@ async fn upload_text(
             Err(poem::Error::from_status(StatusCode::INTERNAL_SERVER_ERROR))
         }
     }
+}
+
+/// Runs the gates and puts what passes them where the teacher asked, handing
+/// back the address it is now reachable at.
+///
+/// The gates run first and on a blocking thread, because weighing a text's
+/// language means analysing every word of it; nothing is written anywhere
+/// until they have all passed. Where an accepted text then goes is the only
+/// thing the `keep` field decides.
+///
+/// A kept text goes to the store, whichever backing the deployment gave it,
+/// and is answered with a `/api/texts/` address. A text that is not kept is
+/// written into the temporary directory and answered with its `file:` URL:
+/// it is read once by the exercise being set up and swept afterwards, so
+/// putting it somewhere durable would mean sweeping it out of there too.
+async fn accepted_upload(
+    state: &AppState,
+    collected: Upload,
+) -> std::result::Result<Result<String>, tokio::task::JoinError> {
+    if !collected.keep {
+        let directory = state.config.upload_temp_dir.clone();
+        return tokio::task::spawn_blocking(move || {
+            let stored = upload::store(&collected, &directory)?;
+            upload::file_url(&stored)
+        })
+        .await;
+    }
+
+    let gated = tokio::task::spawn_blocking(move || {
+        upload::accept(&collected)?;
+        Ok(collected)
+    })
+    .await?;
+    let collected: Upload = match gated {
+        Ok(collected) => collected,
+        Err(error) => return Ok(Err(error)),
+    };
+
+    Ok(state
+        .texts
+        .put(collected.content)
+        .await
+        .map(|id| id.reference()))
+}
+
+/// `GET /api/texts/<id>` — one stored text, as it was stored.
+///
+/// This is what makes the address handed back for a kept upload an address
+/// rather than a token: a teacher who kept a text can open it, and a link
+/// shared with a class resolves for everyone who was given it. The exercise
+/// path does not come through here — an enhancement request naming a stored
+/// text reads the store directly, which is the whole point of recognising the
+/// reference in [`fetch::target`] — so what this serves is the browser's own
+/// traffic.
+///
+/// A name that is not thirty-two hex characters is answered 404 rather than
+/// looked up, so nothing a caller wrote reaches an object key; a name that is
+/// well formed but names nothing is answered the same way, so the two are not
+/// told apart by anyone probing.
+///
+/// The type is the one the gate accepted, read back off the bytes. It is
+/// served with the sniffing turned off and under a sandboxing policy, because
+/// a text a stranger uploaded is served here from this deployment's own
+/// origin: the sandbox puts it in an origin of its own, so a script somebody
+/// hid in a page they offered as classroom material runs as nobody.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn]
+#[handler]
+async fn stored_text(
+    Path(id): Path<String>,
+    state: Data<&Arc<AppState>>,
+) -> poem::Result<Response> {
+    let state = state.0.clone();
+    let Some(id) = TextId::parse(&id) else {
+        return Err(missing(&id));
+    };
+
+    let text = state
+        .texts
+        .get(&id, state.config.max_page_bytes)
+        .await
+        .map_err(failure)?;
+
+    Ok(Response::builder()
+        .header(CONTENT_TYPE, upload::stored_content_type(&text))
+        .header("X-Content-Type-Options", "nosniff")
+        .header("Content-Security-Policy", "sandbox")
+        .body(text))
+}
+
+fn missing(id: &str) -> poem::Error {
+    poem::Error::from_string(Missing(id.to_string()).to_string(), StatusCode::NOT_FOUND)
 }
 
 /// A gate that closed is the client's business and names itself in the body;
@@ -673,13 +796,19 @@ where
 }
 
 /// An address this deployment will not fetch is the caller's mistake, and is
-/// named as such; a page that could not be fetched, or that weighs more than
-/// this deployment reads, is the far end's failure; a fetch that found no slot
-/// is a load the deployment is asked to shed; anything else is ours.
+/// named as such; a text this deployment does not hold is a 404, whether it
+/// was asked for directly or named as a page to enhance; a page that could not
+/// be fetched, or that weighs more than this deployment reads, is the far
+/// end's failure; a fetch that found no slot is a load the deployment is asked
+/// to shed; anything else is ours.
 fn failure(error: anyhow::Error) -> poem::Error {
     if let Some(refusal) = error.downcast_ref::<Refusal>() {
         info!("Refused an address: {refusal}");
         return bad_request(&refusal.to_string());
+    }
+    if let Some(absent) = error.downcast_ref::<Missing>() {
+        info!("{absent}");
+        return missing(&absent.0);
     }
     if error.downcast_ref::<Overloaded>().is_some() {
         warn!("{error:#}");
@@ -711,22 +840,6 @@ fn known_topic(state: &AppState, activity: String) -> poem::Result<String> {
     } else {
         Err(bad_request("activity is not a registered topic"))
     }
-}
-
-/// Reads the address a request points at. A bare host with no scheme is
-/// taken as `http`, which is what a learner types into an address field.
-///
-/// This only parses. Whether the address is one this deployment will fetch is
-/// [`fetch::target`]'s decision, and every caller makes it before reading
-/// anything.
-pub fn page_url(raw: &str) -> poem::Result<Url> {
-    let raw = raw.trim();
-    let absolute = if raw.contains("://") || raw.starts_with("file:") {
-        raw.to_string()
-    } else {
-        format!("http://{raw}")
-    };
-    Url::parse(&absolute).map_err(|_| bad_request("url is not a valid address"))
 }
 
 /// Which encoding the cached analysis is written in. A build that changes the

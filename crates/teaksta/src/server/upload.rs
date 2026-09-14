@@ -1,10 +1,24 @@
-//! Teacher text upload: an uploaded page in, a `file:` URL the enhancement
+//! Teacher text upload: an uploaded page in, an address the enhancement
 //! endpoints can be pointed at out.
 //!
 //! Three gates stand between the two. Size, so one request cannot fill the
 //! disk; media type, because the enhancement pass wants a page rather than a
 //! spreadsheet; and language, because a text the analyser does not recognise
-//! yields an exercise with no exercises in it.
+//! yields an exercise with no exercises in it. [`accept`] is all three of
+//! them and nothing else, so the gates run before a byte is stored whichever
+//! of the two places the text is going.
+//!
+//! # Where an accepted text goes
+//!
+//! A text the teacher asked to keep goes to [`crate::server::texts`], the
+//! store that outlives the pod, and is answered with the `/api/texts/` address
+//! it is now reachable at. A text they did not goes to the temporary
+//! directory, exactly as it always has, and is answered with its `file:` URL:
+//! it is read once by the exercise that was being set up and swept, so there
+//! is nothing for a store to hold.
+//!
+//! That split is why [`store`] still writes files. It is the temporary path,
+//! and the temporary path is a directory on this machine by design.
 //!
 //! Nothing here authenticates the uploader. The endpoint is reachable only
 //! where the operator's own deployment puts it.
@@ -75,12 +89,17 @@ pub struct Upload {
     pub keep: bool,
 }
 
-/// Runs the three gates over an upload and stores what passes them, handing
-/// back the path it was stored at. A closed gate is a [`Rejection`] carried
-/// by the error; anything else is a deployment failure.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+4]
-pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
+/// Runs the three gates over an upload and says nothing else. A closed gate
+/// is a [`Rejection`] carried by the error; anything else is a deployment
+/// failure.
+///
+/// Held apart from the storing because the two destinations an accepted text
+/// has must not be able to disagree about what is accepted. The language gate
+/// runs the analyser over every word of the text, so this blocks and belongs
+/// on a blocking thread.
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+pub fn accept(upload: &Upload) -> Result<()> {
     let Some(file_name) = upload.file_name.as_deref() else {
         return Err(Rejection::NoFile.into());
     };
@@ -100,6 +119,19 @@ pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
     if share < SME_READING_SHARE {
         return Err(Rejection::NotNorthSami.into());
     }
+    Ok(())
+}
+
+/// Runs the three gates over an upload and writes what passes them into a
+/// directory, handing back the path it was stored at.
+///
+/// This is the temporary path: a text the teacher did not ask to keep, which
+/// is read once by the exercise being set up and swept afterwards. A kept text
+/// goes to [`crate::server::texts::TextStore`] instead.
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.do-post-fn+5]
+pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
+    accept(upload)?;
 
     let stored = directory.join(random_name());
     std::fs::write(&stored, &upload.content)?;
@@ -118,12 +150,33 @@ pub fn store(upload: &Upload, directory: &Path) -> Result<PathBuf> {
 /// Whether the bytes are a page, by the two types the enhancement pass can
 /// read. The uploaded name is a hint for a page opening with neither a
 /// doctype nor a root element; the bytes decide otherwise.
-// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+1]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+1]
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+2]
 pub fn is_page(content: &[u8], file_name: &str) -> bool {
     match detect_content_type(content, file_name) {
         Some(detected) => PAGE_TYPES.iter().any(|kind| detected.contains(kind)),
         None => false,
+    }
+}
+
+/// What a stored text is served as.
+///
+/// The gate already decided the bytes are one of the two page types, so the
+/// question here is only which — and that is settled by the bytes rather than
+/// by anything stored beside them, so no second piece of state can drift out
+/// of step with the object it describes. A text admitted on the strength of
+/// its filename alone carries no markup to announce itself with and is served
+/// as HTML, which is what the filename claimed.
+///
+/// Nothing a caller sent is echoed into the answer. The uploaded name is read
+/// by the gate and dropped, and these two strings are the whole range of what
+/// this deployment will label a stored text.
+// [spec:teaksta:def:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.upload-download-file-servlet.upload-download-file-servlet.check-meta-data-fn+2]
+pub fn stored_content_type(content: &[u8]) -> &'static str {
+    match detect_content_type(content, "") {
+        Some("application/xhtml+xml") => "application/xhtml+xml",
+        _ => "text/html; charset=UTF-8",
     }
 }
 
@@ -253,7 +306,9 @@ pub(crate) fn set_read_only(file: &Path) -> Result<()> {
         .with_context(|| format!("setting {} read-only", file.display()))
 }
 
-/// The `file:` URL an accepted upload is reachable at.
+/// The `file:` URL a temporarily stored upload is reachable at. A kept text
+/// is addressed by [`crate::server::texts::TextId::reference`] instead, which
+/// names this deployment rather than a directory on it.
 ///
 /// Built from the path rather than written around it, so a deployment whose
 /// upload directory carries a space or a non-ASCII character hands back an

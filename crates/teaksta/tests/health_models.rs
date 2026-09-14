@@ -64,6 +64,7 @@ fn served(root: &TempDir) -> TestClient<impl Endpoint> {
         // check costs, so nothing counts it.
         rate_limit: None,
         max_page_bytes: 5 * 1024 * 1024,
+        azure: None,
     };
     for directory in [
         &config.analysis_dir,

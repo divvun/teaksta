@@ -42,6 +42,7 @@ async fn every_request_writes_one_line_without_its_query() {
         trust_proxy: true,
         rate_limit: None,
         max_page_bytes: 5 * 1024 * 1024,
+        azure: None,
     };
     let state = Arc::new(AppState::new(config).expect("the state boots"));
     let client = TestClient::new(routes(&state.config).data(state));

@@ -13,8 +13,9 @@ use std::sync::Arc;
 use tracing::{info, warn};
 
 use teaksta::context::{
-    ANALYSIS_DIR_ENV, Config, LISTEN_ENV, MAX_PAGE_BYTES_ENV, RATE_LIMIT_BURST_ENV, RATE_LIMIT_ENV,
-    TOPICS_ENV, TRUST_PROXY_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV, WEBAPP_DIST_ENV,
+    ANALYSIS_DIR_ENV, AZURE_ACCESS_KEY_ENV, AZURE_ACCOUNT_ENV, AZURE_CONTAINER_ENV, Config,
+    LISTEN_ENV, MAX_PAGE_BYTES_ENV, RATE_LIMIT_BURST_ENV, RATE_LIMIT_ENV, TOPICS_ENV,
+    TRUST_PROXY_ENV, UPLOAD_KEEP_DIR_ENV, UPLOAD_TEMP_DIR_ENV, WEBAPP_DIST_ENV,
 };
 use teaksta::morpho::{BUNDLE_ENV, GENERATOR_ENV, WORKERS_ENV, analysis_workers};
 use teaksta::server::api::{AppState, routes};
@@ -52,6 +53,23 @@ fn report(config: &Config) {
         config.upload_keep_dir.display(),
         config.upload_temp_dir.display()
     );
+
+    // Which of the two the deployment keeps texts in is the difference between
+    // a kept text that is there next term and one that goes with the pod, so
+    // it is said before anything is served rather than left to be inferred
+    // from three variables. The account key is never among what is printed.
+    match &config.azure {
+        Some(azure) => info!(
+            "{AZURE_ACCOUNT_ENV}/{AZURE_CONTAINER_ENV}/{AZURE_ACCESS_KEY_ENV}: kept texts stored \
+             in the container {} on the account {}",
+            azure.container, azure.account
+        ),
+        None => warn!(
+            "{AZURE_ACCOUNT_ENV} is not set; kept texts are stored under {} and last exactly as \
+             long as that directory does",
+            config.upload_keep_dir.display()
+        ),
+    }
 
     info!(
         "{MAX_PAGE_BYTES_ENV}: a page is read up to {} bytes and abandoned there",

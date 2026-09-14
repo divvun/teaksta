@@ -225,7 +225,7 @@ impl Gate {
 /// A deployment with no configured limit builds one of these carrying no
 /// gate, which passes every request through. That is the one shape the type
 /// has for "not limited", so no route has to be registered two ways.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1]
 #[derive(Clone)]
 pub struct Limit {
     gate: Option<Arc<Gate>>,
@@ -259,7 +259,7 @@ pub struct Limited<E> {
     gate: Option<Arc<Gate>>,
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.rate-limit-fn+1]
 impl<E: Endpoint> Endpoint for Limited<E> {
     type Output = Response;
 

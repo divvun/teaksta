@@ -3,4 +3,5 @@ pub mod api;
 pub mod fetch;
 pub mod reader;
 pub mod registry;
+pub mod texts;
 pub mod upload;

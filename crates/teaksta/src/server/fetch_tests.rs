@@ -24,6 +24,9 @@ fn config_under(root: &Path) -> Config {
         trust_proxy: false,
         rate_limit: None,
         max_page_bytes: TEST_CAP,
+        // Nothing here reaches Azure, and the store these tests read through
+        // is the local one rooted at the keep directory.
+        azure: None,
     }
 }
 
@@ -42,12 +45,16 @@ fn deployment() -> (tempfile::TempDir, Config) {
     (root, config)
 }
 
-fn address(url: &str) -> Url {
-    Url::parse(url).expect("a parsable address")
+fn of(path: &Path) -> String {
+    Url::from_file_path(path)
+        .expect("an absolute path")
+        .to_string()
 }
 
-fn of(path: &Path) -> Url {
-    Url::from_file_path(path).expect("an absolute path")
+/// The store this deployment keeps texts in, which for every test here is the
+/// local one under the keep directory.
+fn store(config: &Config) -> TextStore {
+    TextStore::from_config(config).expect("the text store opens")
 }
 
 #[test]
@@ -130,7 +137,7 @@ fn a_private_literal_is_refused_before_connecting() {
         "http://api.localhost/a",
     ] {
         assert_eq!(
-            target(&address(raw), &config),
+            target(raw, &config),
             Err(Refusal::Private),
             "{raw} must be refused"
         );
@@ -142,9 +149,9 @@ fn a_public_address_becomes_a_web_target() {
     let (_root, config) = deployment();
 
     for raw in ["http://example.org/artihkal", "https://8.8.8.8/a"] {
-        let target = target(&address(raw), &config).expect("a public address is fetchable");
+        let target = target(raw, &config).expect("a public address is fetchable");
 
-        assert!(!target.is_file(), "{raw} must be fetched, not read");
+        assert!(!target.is_stored(), "{raw} must be fetched, not read");
         assert_eq!(target.address(), raw);
     }
 }
@@ -155,14 +162,115 @@ fn only_three_schemes_are_fetchable() {
 
     for raw in [
         "ftp://example.org/a",
-        "data:text/html,<p>a</p>",
         "jar:file:///srv/a.jar!/b.html",
         "gopher://example.org/a",
     ] {
         assert_eq!(
-            target(&address(raw), &config),
+            target(raw, &config),
             Err(Refusal::Scheme),
             "{raw} must be refused"
+        );
+    }
+
+    // A `data:` URL never gets as far as having a scheme read off it. It
+    // carries no authority, so it is not one of the forms an address is
+    // recognised as absolute by, and read as a bare host it is not an address
+    // at all. Refused either way, and refused before anything is opened.
+    assert_eq!(
+        target("data:text/html,<p>a</p>", &config),
+        Err(Refusal::Address)
+    );
+}
+
+/// A stored-text reference is read from the store, and nothing else that
+/// merely resembles one is.
+///
+/// The two halves are the whole of why the recognition opens no hole. A
+/// reference carries no authority component, so there is nothing in it a
+/// caller could have chosen and nothing to compare against a hostname this
+/// process cannot know; and an address that *does* carry one is an address of
+/// that host, judged by the private-network policy exactly as any other
+/// address of it would be, whatever its path spells.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+#[tokio::test]
+async fn a_stored_text_is_read_from_the_store() {
+    let (_root, config) = deployment();
+    let store = store(&config);
+    let page = "<html><body><p>Mun oidnen viesu.</p></body></html>";
+    let id = store
+        .put(page.as_bytes().to_vec())
+        .await
+        .expect("the text is stored");
+    let reference = id.reference();
+
+    let stored = target(&reference, &config).expect("a stored text is readable");
+    assert!(stored.is_stored(), "{reference} must be read, not fetched");
+    assert_eq!(stored.address(), reference);
+    assert_eq!(
+        fetch(stored, &store)
+            .await
+            .expect("the stored text is read"),
+        page
+    );
+
+    // The same name on a host is that host's address, and is refused by the
+    // policy that refuses every private address — not admitted by its path.
+    for raw in [
+        format!("http://127.0.0.1{reference}"),
+        format!("http://localhost{reference}"),
+        format!("http://169.254.169.254{reference}"),
+        format!("http://[::1]{reference}"),
+        // The protocol-relative form names a host by leaving out only the
+        // scheme, so it is not a reference to anything here.
+        format!("/{reference}"),
+    ] {
+        assert!(
+            target(&raw, &config).is_err(),
+            "{raw} must not be read from the store"
+        );
+    }
+
+    // A public host with the same path is an ordinary web address: fetched,
+    // not read.
+    let elsewhere = format!("http://example.org{reference}");
+    let fetched = target(&elsewhere, &config).expect("a public address is fetchable");
+    assert!(
+        !fetched.is_stored(),
+        "{elsewhere} must be fetched from the host it names"
+    );
+    assert_eq!(fetched.address(), elsewhere);
+}
+
+/// What a reference may hold, at the seam that reads one. Nothing a caller
+/// writes becomes an object key, so every shape that would mean something to
+/// a path is refused here rather than at the store.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+7/test]
+#[test]
+fn a_reference_holds_a_name_and_nothing_else() {
+    let (_root, config) = deployment();
+
+    for raw in [
+        "/api/texts/",
+        "/api/texts/nonsense",
+        "/api/texts/../../etc/passwd",
+        "/api/texts/0123456789abcdef0123456789abcde",
+        "/api/texts/0123456789ABCDEF0123456789abcdef",
+        "/api/texts/0123456789abcdef0123456789abcdef/more",
+    ] {
+        assert_eq!(
+            target(raw, &config),
+            Err(Refusal::Address),
+            "{raw} must not name a stored text"
+        );
+    }
+
+    // A root-relative path that is not a reference at all names nothing this
+    // deployment holds and is not turned into a host either.
+    for raw in ["/", "/etc/passwd", "/api/enhance", "/api/texts"] {
+        assert_eq!(
+            target(raw, &config),
+            Err(Refusal::Scheme),
+            "{raw} must not be reachable"
         );
     }
 }
@@ -179,7 +287,7 @@ fn a_file_this_deployment_serves_is_readable() {
 
         let target = target(&of(&page), &config).expect("a served file is readable");
 
-        assert!(target.is_file(), "{} must be read", page.display());
+        assert!(target.is_stored(), "{} must be read", page.display());
     }
 }
 
@@ -241,7 +349,7 @@ fn climbing_out_of_a_served_directory_is_refused() {
     );
 
     assert_eq!(
-        target(&address(&raw), &config),
+        target(&raw, &config),
         Err(Refusal::Confined),
         "{raw} must be refused"
     );
@@ -288,7 +396,9 @@ async fn a_file_is_read_as_it_was_written() {
     std::fs::write(&at, &page).expect("a stored page");
 
     let target = target(&of(&at), &config).expect("a served file is readable");
-    let read = fetch(target).await.expect("the stored page is read");
+    let read = fetch(target, &store(&config))
+        .await
+        .expect("the stored page is read");
 
     assert_eq!(read, page, "a page off the disk was reduced");
 }
@@ -301,7 +411,7 @@ async fn a_file_is_read_as_it_was_written() {
 /// private address, so an HTTP server on this machine is one this deployment
 /// will not read from, and what the cap actually guards — the read — is the
 /// same read whatever produced the bytes.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1/test]
 #[test]
 fn a_read_stops_one_byte_past_the_cap() {
     let at_the_cap = "a".repeat(TEST_CAP);
@@ -337,7 +447,7 @@ fn a_read_stops_one_byte_past_the_cap() {
 /// Every `file:` address this deployment reads names something it stored
 /// itself, under a limit of its own, so a larger file in a served directory
 /// is a directory holding something the deployment did not put there.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1/test]
 #[tokio::test]
 async fn a_stored_page_over_the_cap_is_refused() {
     let (_root, config) = deployment();
@@ -349,7 +459,7 @@ async fn a_stored_page_over_the_cap_is_refused() {
     std::fs::write(&under, "<p>Mun oidnen viesu.</p>").expect("an ordinary page");
 
     let enormous = target(&of(&over), &config).expect("a served file is readable");
-    let error = fetch(enormous)
+    let error = fetch(enormous, &store(&config))
         .await
         .expect_err("an oversized page is refused");
 
@@ -361,14 +471,16 @@ async fn a_stored_page_over_the_cap_is_refused() {
     // still read.
     let ordinary = target(&of(&under), &config).expect("a served file is readable");
     assert_eq!(
-        fetch(ordinary).await.expect("an ordinary page is read"),
+        fetch(ordinary, &store(&config))
+            .await
+            .expect("an ordinary page is read"),
         "<p>Mun oidnen viesu.</p>"
     );
 }
 
 /// The charset a response declares is honoured, which is what reading the
 /// body ourselves rather than letting the client buffer it has to keep.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1/test]
 #[test]
 fn a_declared_charset_is_read() {
     assert_eq!(
@@ -411,7 +523,7 @@ fn a_file_not_yet_written_is_still_placed() {
     // therefore unreadable rather than refused; the read reports that.
     let target = target(&of(&missing), &config).expect("a path inside a served directory");
 
-    assert!(target.is_file());
+    assert!(target.is_stored());
 }
 
 #[test]

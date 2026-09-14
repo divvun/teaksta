@@ -44,6 +44,7 @@ fn served(root: &TempDir, limit: Option<RateLimit>) -> (Arc<AppState>, TestClien
         trust_proxy: false,
         rate_limit: limit,
         max_page_bytes: 5 * 1024 * 1024,
+        azure: None,
     };
     for directory in [
         &config.analysis_dir,
