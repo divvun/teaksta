@@ -46,6 +46,21 @@ children (
                     }
                 )
             }
+
+            {
+                id runtime-shared-grammars
+                title "Adopt shared CG-3 grammar cores: bump pins, lift the worker ceiling"
+                kind @perf
+                sealed true
+                log (
+                    {
+                        at 2026-09-15T01:09:23.595143Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Done (nplan complete)"
+                    }
+                )
+            }
         )
     }
 

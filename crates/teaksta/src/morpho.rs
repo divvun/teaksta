@@ -45,17 +45,16 @@
 //! to remove.
 //!
 //! Opening a bundle per handle is execution isolation, not duplication. The
-//! runtime keeps process-wide caches keyed on file identity, so the pmatch
-//! cores, lookup transducers and spellers that dominate a bundle's weight are
-//! read once and shared by every handle built over that file — including
-//! across separate bundles that name the same file. What a handle still pays
-//! for alone is whatever the runtime does not yet share, chiefly its cg3
-//! grammars; [`DEFAULT_WORKER_CEILING`] carries what that measures out at.
-//! The price is still paid on the way in — the first chunk to find the pool
-//! empty waits for a bundle to be opened, and a run wide enough to use the
-//! whole pool pays that once per handle, concurrently — but the caches have
-//! taken that wait down to a fraction of what it was, because only the first
-//! handle over a file reads it.
+//! runtime keeps process-wide caches keyed on file identity, so everything
+//! that gives a bundle its weight — the pmatch cores, lookup transducers,
+//! spellers, and the cg3 grammar cores — is read once and shared by every
+//! handle built over that file, including across separate bundles that name
+//! the same file. The caches are single-flight, so growing the pool wide in
+//! one burst still loads each file once: the first handle to want a file
+//! loads it and the rest wait for that load rather than repeating it. What a
+//! handle keeps to itself is its run state — a few MiB of scratch and
+//! overlay — which is why [`DEFAULT_WORKER_CEILING`] now bounds thread
+//! count, not memory.
 
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
@@ -80,31 +79,29 @@ pub const GENERATOR_ENV: &str = "TEAKSTA_GENERATOR";
 /// at once.
 pub const WORKERS_ENV: &str = "TEAKSTA_ANALYSIS_WORKERS";
 
-/// The ceiling the derived worker count is held under, which is what binds on
-/// any host with cores to spare. It is set where measurement put it rather
-/// than at whatever the machine offers, because a handle is still expensive
-/// in memory even though the runtime's shared-asset caches have made it cheap
-/// in time.
+/// The ceiling the derived worker count is held under. It used to be the
+/// load-bearing number in this module — four, because a handle rebuilt the
+/// cg3 grammars for itself at ~450MiB each. The runtime now shares grammar
+/// cores process-wide like everything else, so the ceiling no longer guards
+/// memory; it only keeps the handle pool (five runtime threads each) from
+/// growing absurd on very wide machines, and sits far above any count a
+/// deployment of ours derives.
 ///
-/// Re-measured 2026-09-14 against a release build over divvun-runtime
-/// `dbeffb3`, hfst `0509ff0` and cg3 `417bf73`, on an eighteen-core Apple M5
-/// Pro: one cold block request over a sixty-sentence page, a fresh server and
-/// an empty analysis cache per worker count, four rounds. Resident size
-/// settles at 311MiB for one worker, 838MiB for two and 1672MiB for four —
-/// some 450MiB per worker past the first. That is what a worker cost when
-/// this ceiling was first chosen and it is what a worker costs again: the
-/// caches took the figure back down from the ~1101MiB per worker these
-/// pipelines had drifted to, by reading the pmatch cores and lookup
-/// transducers once for the process instead of once per handle. What is left
-/// is the part that is still per-handle, chiefly the cg3 grammars — the
-/// disambiguator alone rebuilds for every handle.
-///
-/// So four stands. Eight buys almost nothing for another 1.8GB: the same page
-/// is answered in 0.12s at four workers and 0.10s at eight, and eight was the
-/// only count whose resident size would not settle, ranging over 1.4-2.1GB
-/// with peaks between 2.2GB and 4.4GB. A deployment with memory to spare and
-/// a server that stays warm can still say so with [`WORKERS_ENV`].
-const DEFAULT_WORKER_CEILING: usize = 4;
+/// Re-measured 2026-09-15 against a release build over divvun-runtime
+/// `49cc109` (shared cg3 grammar cores, single-flight caches) with cg3
+/// `9005fb1` and hfst `0509ff0`, on an eighteen-core Apple M5 Pro: one cold
+/// block request over a sixty-sentence page, a fresh server and an empty
+/// analysis cache per worker count. Resident size settles at 332MiB for one
+/// worker, 343MiB for four, 355MiB for eight and 372MiB for eighteen —
+/// about 2.4MiB per worker, where the same sweep measured ~450MiB per
+/// worker one pin earlier. Peak now equals settle at every count: the
+/// single-flight caches ended the burst where a pool growing to N loaded
+/// the same grammars N times. Cold wall time falls 3.24s → 1.46s from one
+/// worker to four and is chunk-bound past that on this page (1.39s at
+/// eight, 1.31s at eighteen); a warm server answers a fresh body in ~0.45s
+/// at any width. Cores now set the count; [`WORKERS_ENV`] still overrides
+/// in either direction.
+const DEFAULT_WORKER_CEILING: usize = 32;
 
 /// Why the normative generator could not be used. Every variant describes a
 /// fault in the transducer or its configuration, never an input the

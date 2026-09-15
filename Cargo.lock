@@ -579,7 +579,7 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 [[package]]
 name = "cg3"
 version = "0.4.0"
-source = "git+https://github.com/divvun/cg3-rs#417bf73285bc413183654919fcfa4bba6db88694"
+source = "git+https://github.com/divvun/cg3-rs#9005fb1ca8be9b7f9fd241c573f6814010156137"
 dependencies = [
  "ariadne 0.6.0",
  "bitflags",
@@ -1679,7 +1679,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
+source = "git+https://github.com/divvun/divvun-runtime#49cc109da85b45c03ef2f453c19019a8b4991ab4"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "divvun-runtime-macros"
 version = "0.4.0"
-source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
+source = "git+https://github.com/divvun/divvun-runtime#49cc109da85b45c03ef2f453c19019a8b4991ab4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5677,7 +5677,7 @@ dependencies = [
 [[package]]
 name = "syntax-highlight"
 version = "0.1.0"
-source = "git+https://github.com/divvun/divvun-runtime#a1e13b70fd33e5d9b4cd306837ba1f21d6589225"
+source = "git+https://github.com/divvun/divvun-runtime#49cc109da85b45c03ef2f453c19019a8b4991ab4"
 dependencies = [
  "once_cell",
  "syntect",
