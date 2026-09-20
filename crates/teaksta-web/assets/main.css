@@ -1421,8 +1421,41 @@ h3 {
    padding stacked three deep, a score pill that refuses to wrap, and
    pointer-sized targets. Nothing here changes the layout above 640px. */
 @media (max-width: 640px) {
+    /* A phone reads at arm's length: the desktop ramp is oversized for
+       it, so the whole scale steps down through the tokens every size
+       already resolves through. */
+    :root {
+        --tk-text-xs: 10px;
+        --tk-text-sm: 11.5px;
+        --tk-text-base: 13px;
+        --tk-text-md: 14px;
+        --tk-text-lg: 16px;
+        --tk-text-xl: 20px;
+        --tk-text-2xl: 24px;
+    }
+
     .col {
-        padding: var(--tk-space-5) var(--tk-space-4) var(--tk-space-7);
+        padding: var(--tk-space-4) var(--tk-space-4) var(--tk-space-6);
+    }
+
+    /* The exercise card's border, shadow and double padding are chrome
+       a 390px column cannot afford — the text takes the full width and
+       the page background does the framing. */
+    .stage {
+        padding: var(--tk-space-4) 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    /* Same for the score pill: on a phone it is a status line, not a
+       badge. */
+    .tk-score {
+        padding: 0;
+        border: none;
+        background: transparent;
+        box-shadow: none;
     }
 
     .bar {
