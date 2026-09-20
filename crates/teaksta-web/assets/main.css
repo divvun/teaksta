@@ -1425,13 +1425,15 @@ h3 {
        it, so the whole scale steps down through the tokens every size
        already resolves through. */
     :root {
-        --tk-text-xs: 9px;
-        --tk-text-sm: 10px;
-        --tk-text-base: 12px;
-        --tk-text-md: 13px;
-        --tk-text-lg: 14px;
-        --tk-text-xl: 17px;
-        --tk-text-2xl: 20px;
+        --tk-text-xs: 8.5px;
+        --tk-text-sm: 9.5px;
+        --tk-text-base: 11px;
+        --tk-text-md: 12px;
+        --tk-text-lg: 13px;
+        --tk-text-xl: 15px;
+        --tk-text-2xl: 17px;
+        --tk-prose-size: 14px;
+        --tk-prose-leading-inline: 1.8;
     }
 
     .col {
@@ -1501,12 +1503,22 @@ h3 {
         justify-content: center;
     }
 
-    /* The dropdowns are ours, not the platform's, so a gap nobody has
-       answered yet needs no select-shaped box: it collapses to a square
-       chip with the caret for an icon, and only grows once it has a
-       chosen word to show. */
+    /* The dropdowns are ours, not the platform's. An unanswered gap is
+       just an empty square in the sentence; tapping it opens the menu.
+       Once a form is chosen the control shows the word instead. */
     .tk-mc {
         min-width: 0;
+    }
+
+    .tk-mc .tk-caret {
+        display: none;
+    }
+
+    .tk-mc:has(.tk-mc-value--empty) {
+        width: 1.1em;
+        height: 1.1em;
+        padding: 0;
+        border-radius: 4px;
     }
 
     .tk-mc-value--empty {
