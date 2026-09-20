@@ -1425,13 +1425,13 @@ h3 {
        it, so the whole scale steps down through the tokens every size
        already resolves through. */
     :root {
-        --tk-text-xs: 10px;
-        --tk-text-sm: 11.5px;
-        --tk-text-base: 13px;
-        --tk-text-md: 14px;
-        --tk-text-lg: 16px;
-        --tk-text-xl: 20px;
-        --tk-text-2xl: 24px;
+        --tk-text-xs: 9px;
+        --tk-text-sm: 10px;
+        --tk-text-base: 12px;
+        --tk-text-md: 13px;
+        --tk-text-lg: 14px;
+        --tk-text-xl: 17px;
+        --tk-text-2xl: 20px;
     }
 
     .col {
@@ -1499,6 +1499,18 @@ h3 {
     .actions .tk-btn {
         width: 100%;
         justify-content: center;
+    }
+
+    /* The dropdowns are ours, not the platform's, so a gap nobody has
+       answered yet needs no select-shaped box: it collapses to a square
+       chip with the caret for an icon, and only grows once it has a
+       chosen word to show. */
+    .tk-mc {
+        min-width: 0;
+    }
+
+    .tk-mc-value--empty {
+        display: none;
     }
 
     /* The open mc menu may not leave the screen: clamp it to the
