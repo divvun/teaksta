@@ -61,6 +61,21 @@ children (
                     }
                 )
             }
+
+            {
+                id runtime-locales-pin
+                title "Track divvun-runtime: locales metadata, speller-config carry-through"
+                kind @build
+                sealed true
+                log (
+                    {
+                        at 2026-09-20T14:32:04.866808Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Done (nplan complete)"
+                    }
+                )
+            }
         )
     }
 

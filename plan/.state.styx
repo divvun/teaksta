@@ -79,4 +79,5 @@ assertions (
     {id ux-shared-assets, kind @complete, author "brendan@bbqsrc.net", at 2026-09-14T20:40:33.780998Z}
     {id runtime-attribution-pin, kind @complete, author "brendan@bbqsrc.net", at 2026-09-14T21:20:01.926245Z}
     {id runtime-shared-grammars, kind @complete, author "brendan@bbqsrc.net", at 2026-09-15T01:09:23.595143Z}
+    {id runtime-locales-pin, kind @complete, author "brendan@bbqsrc.net", at 2026-09-20T14:32:04.866808Z}
 )
