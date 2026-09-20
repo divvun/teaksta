@@ -1414,3 +1414,100 @@ h3 {
 .state-error {
     color: var(--tk-red-strong);
 }
+
+/* ══ Small screens ═════════════════════════════════════════════════
+   One breakpoint, phone-first corrections. The desktop layout is a
+   single centered column already; what breaks on a phone is width —
+   padding stacked three deep, a score pill that refuses to wrap, and
+   pointer-sized targets. Nothing here changes the layout above 640px. */
+@media (max-width: 640px) {
+    .col {
+        padding: var(--tk-space-5) var(--tk-space-4) var(--tk-space-7);
+    }
+
+    .bar {
+        padding: var(--tk-space-3) var(--tk-space-4);
+        gap: var(--tk-space-4);
+    }
+
+    .bar-link {
+        white-space: nowrap;
+    }
+
+    /* The one element that was wider than the screen: the score pill's
+       label + dots + gloss row. Let it wrap and drop the gloss — the
+       count and the dots carry the state, and the gloss repeats them. */
+    .tk-score {
+        flex-wrap: wrap;
+        max-width: 100%;
+        row-gap: 2px;
+    }
+
+    .tk-score > .tk-gloss {
+        display: none;
+    }
+
+    .tk-dots {
+        flex-wrap: wrap;
+    }
+
+    .tk-exhead {
+        gap: var(--tk-space-3);
+    }
+
+    /* The raw page address under the topic name is provenance for a
+       desktop reader, noise at 390px wide. The topic chip stays. */
+    .src-sep,
+    .src-url {
+        display: none;
+    }
+
+    /* Primary actions span the thumb zone instead of hugging a corner. */
+    .actions .tk-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* The open mc menu may not leave the screen: clamp it to the
+       viewport with a scroll instead of letting long paradigms run
+       under the fold. */
+    .tk-mc-menu {
+        max-height: 45vh;
+        overflow-y: auto;
+        max-width: calc(100vw - 2 * var(--tk-space-4));
+    }
+}
+
+/* Touch targets, keyed on the pointer rather than the width: a phone
+   in landscape and a tablet want finger-sized controls too. 44px is
+   the floor both platform HIG documents agree on. */
+@media (pointer: coarse) {
+    .tk-btn {
+        min-height: 44px;
+    }
+
+    .tk-mc {
+        min-height: 44px;
+    }
+
+    .tk-mc-option {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    .tk-cloze-input {
+        min-height: 40px;
+        font-size: 16px; /* under 16px, iOS zooms the page on focus */
+    }
+
+    .tk-pick {
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+
+    .bar-link {
+        display: inline-block;
+        padding: 10px 6px;
+    }
+}

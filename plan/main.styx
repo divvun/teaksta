@@ -825,6 +825,21 @@ children (
                     }
                 )
             }
+
+            {
+                id ux-mobile
+                title "Phone-viable UI: no overflow, touch targets, clamped menus"
+                kind @fix
+                sealed true
+                log (
+                    {
+                        at 2026-09-20T15:18:40.683312Z
+                        author "brendan@bbqsrc.net"
+                        kind @status
+                        text "Todo → Done (nplan complete)"
+                    }
+                )
+            }
         )
     }
 
