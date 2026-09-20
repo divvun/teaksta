@@ -1444,10 +1444,10 @@ h3 {
        a 390px column cannot afford — the text takes the full width and
        the page background does the framing. */
     .stage {
-        padding: var(--tk-space-4) 0;
+        padding: var(--tk-space-4) var(--tk-space-3);
         border: none;
-        border-radius: 0;
-        background: transparent;
+        border-radius: var(--tk-radius-sm);
+        background: var(--tk-paper-sunken);
         box-shadow: none;
     }
 
@@ -1515,10 +1515,13 @@ h3 {
     }
 
     .tk-mc:has(.tk-mc-value--empty) {
-        width: 1.1em;
+        width: 2.2em;
         height: 1.1em;
         padding: 0;
         border-radius: 4px;
+        border-color: var(--tk-blue-soft);
+        background: var(--tk-blue-tint);
+        vertical-align: text-bottom;
     }
 
     .tk-mc-value--empty {
