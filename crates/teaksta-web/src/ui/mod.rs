@@ -1,6 +1,7 @@
 //! The app's views: the site chrome, the two entry forms and the exercise
 //! view.
 
+mod alert;
 pub mod choices;
 mod chrome;
 pub mod exercise;

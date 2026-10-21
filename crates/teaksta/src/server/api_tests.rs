@@ -690,9 +690,113 @@ async fn a_swept_upload_is_unreadable_rather_than_refused() {
     let address = upload::file_url(&config.upload_temp_dir.join("swept")).expect("a file url");
     let client = served(config);
 
-    enhanced(&client, &address)
-        .await
-        .assert_status(StatusCode::BAD_GATEWAY);
+    let response = enhanced(&client, &address).await;
+    response.assert_status(StatusCode::BAD_GATEWAY);
+    response
+        .assert_json(serde_json::json!({ "error": "page-unreachable" }))
+        .await;
+}
+
+/// Each refusal is answered with the code that names it, on the endpoint the
+/// web client asks, so a learner who typed an address that cannot be read is
+/// told which kind it was.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+#[tokio::test]
+async fn a_refusal_names_itself() {
+    let root = topics_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+
+    for (address, code) in [
+        ("http://exa mple.org/", "bad-address"),
+        ("ftp://example.org/a", "bad-scheme"),
+        ("/elsewhere", "bad-scheme"),
+        ("http://127.0.0.1/a", "private-address"),
+        ("file:///etc/passwd", "not-served"),
+    ] {
+        let body = serde_json::json!({
+            "url": address,
+            "activity": "Substantive",
+            "mode": "colorize",
+        });
+
+        let response = blocks(&client, &body).await;
+        response.assert_status(StatusCode::BAD_REQUEST);
+        response
+            .assert_json(serde_json::json!({ "error": code }))
+            .await;
+    }
+}
+
+/// A stored text that is not held is named as such, rather than reported as
+/// a page that could not be reached.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+#[tokio::test]
+async fn a_text_not_held_is_named() {
+    let root = topics_with(&["Substantive"]);
+    let client = served(config_for(root.path()));
+    let reference = format!("/api/texts/{}", "0".repeat(32));
+
+    let body = serde_json::json!({
+        "url": reference,
+        "activity": "Substantive",
+        "mode": "colorize",
+    });
+    let response = blocks(&client, &body).await;
+    response.assert_status(StatusCode::NOT_FOUND);
+    response
+        .assert_json(serde_json::json!({ "error": "no-such-text" }))
+        .await;
+}
+
+/// What the client is told for each failure no test here can provoke without
+/// a far end: a site that answered with an error, a page over the cap, and no
+/// fetch slot. Anything untyped is this deployment's own failure and names no
+/// code.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+#[tokio::test]
+async fn a_failure_is_answered_with_its_code() {
+    let cases: [(anyhow::Error, StatusCode, serde_json::Value); 4] = [
+        (
+            ErrorStatus {
+                address: "https://kursa.oahpa.no/".to_string(),
+                status: 502,
+            }
+            .into(),
+            StatusCode::BAD_GATEWAY,
+            serde_json::json!({ "error": "site-error", "status": 502 }),
+        ),
+        (
+            Oversized {
+                address: "https://example.org/".to_string(),
+                cap: 1,
+            }
+            .into(),
+            StatusCode::BAD_GATEWAY,
+            serde_json::json!({ "error": "page-too-large" }),
+        ),
+        (
+            anyhow::anyhow!("connection refused")
+                .context(Unreachable("https://example.org/".to_string())),
+            StatusCode::BAD_GATEWAY,
+            serde_json::json!({ "error": "page-unreachable" }),
+        ),
+        (
+            Overloaded.into(),
+            StatusCode::SERVICE_UNAVAILABLE,
+            serde_json::json!({ "error": "busy" }),
+        ),
+    ];
+
+    for (error, status, body) in cases {
+        let response = failure(error).into_response();
+        assert_eq!(response.status(), status);
+        let text = response.into_body().into_string().await.expect("a body");
+        let read: serde_json::Value = serde_json::from_str(&text).expect("a JSON body");
+        assert_eq!(read, body);
+    }
+
+    let ours = failure(anyhow::anyhow!("the analyser fell over")).into_response();
+    assert_eq!(ours.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.do-get-fn+8/test]

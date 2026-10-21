@@ -16,8 +16,10 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+mod failure;
 mod upload;
 
+pub use failure::{PageFailure, site_of};
 pub use upload::{
     MAX_UPLOAD_BYTES, Rejection, UploadFile, boundary_for, multipart_body, parse_upload, upload,
 };
@@ -221,8 +223,11 @@ pub fn parse_blocks(body: &str) -> Result<EnhancedText, ApiError> {
 pub enum ApiError {
     /// The request never produced a response.
     Network(String),
-    /// The backend answered, but not with success.
+    /// The backend answered, but not with success, and named no reason the
+    /// app knows.
     Status(u16),
+    /// The page could not be read, for a reason the backend named.
+    Page(PageFailure),
     /// The body did not parse as the protocol says it should.
     Malformed(String),
     /// The request lacks a parameter the backend requires, so it was never
@@ -239,6 +244,7 @@ impl fmt::Display for ApiError {
         match self {
             ApiError::Network(detail) => write!(f, "network error: {detail}"),
             ApiError::Status(code) => write!(f, "backend answered {code}"),
+            ApiError::Page(failure) => write!(f, "{}", failure.explain(None)),
             ApiError::Malformed(detail) => write!(f, "malformed response: {detail}"),
             ApiError::Incomplete => write!(f, "no topic, exercise mode or page was given"),
             ApiError::Rejected(rejection) => {
@@ -308,13 +314,24 @@ async fn post_json(url: &str, body: &BlockRequest) -> Result<String, ApiError> {
 #[cfg(target_arch = "wasm32")]
 async fn read_body(response: gloo_net::http::Response) -> Result<String, ApiError> {
     if !response.ok() {
-        return Err(ApiError::Status(response.status()));
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(failed(status, &body));
     }
 
     response
         .text()
         .await
         .map_err(|error| ApiError::Network(error.to_string()))
+}
+
+/// What a reply that was not a success says went wrong: the failure its body
+/// names, or the bare status when it names none.
+pub fn failed(status: u16, body: &str) -> ApiError {
+    match PageFailure::parse(body) {
+        Some(failure) => ApiError::Page(failure),
+        None => ApiError::Status(status),
+    }
 }
 
 #[cfg(not(target_arch = "wasm32"))]

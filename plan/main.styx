@@ -1050,4 +1050,50 @@ children (
             }
         )
     }
+
+    {
+        id issues
+        title "Reported issues: what learners and teachers ran into"
+        kind @feat
+        children (
+            {
+                id issues.fetch-failures
+                title "A page that cannot be fetched says why, in North Sámi and English, naming the site"
+                kind @fix
+                implements {
+                    target-impl ([spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn] [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn])
+                }
+                log (
+                    {
+                        at 2026-10-21T16:25:29.730058Z
+                        author "brendan@necessary.nu"
+                        kind @note
+                        text "GitHub issue #1 (2026-10-19, snomos): https://kursa.oahpa.no/2013/12/30/ruovttus-leat-ollu-barggut/ gave 502. Cause found 2026-10-21: the whole of kursa.oahpa.no answers 502 from its own nginx, so teaksta's 502 is correct, but the learner reads only 'backend answered 502' because read_body (teaksta-web/src/api.rs) drops the reply body and the server's body is a reqwest error chain. Operator ruling: the message must be clearer. Design: fetch-path failures answer a JSON body {error: <code>} (site-error also carries the far end's status), the status codes stay as specified, and the exercise page shows them in the upload-refusal panel shape: North Sámi line, English gloss, code, a way back. The North Sámi wording is new (the old webapp had none for fetch failures) and needs review by a speaker."
+                    }
+
+                    {
+                        at 2026-10-21T16:25:33.350998Z
+                        author "brendan@necessary.nu"
+                        kind @status
+                        text "Todo → Doing (nplan start)"
+                    }
+                )
+            }
+
+            {
+                id issues.sample-texts
+                title "Each topic offers ready-made texts again, as the old webapp's recommended pages did"
+                kind @feat
+                deps (issues.fetch-failures)
+                log (
+                    {
+                        at 2026-10-21T16:25:29.774865Z
+                        author "brendan@necessary.nu"
+                        kind @decision
+                        text "GitHub issue #2 (2026-10-19, snomos). The old webapp's pre-created texts were sme/src/main/webapp/activities/<Topic>/recommended_pages.html at a4edb53^: six per-topic link lists (Substantive, SubstantiveSingular, SubstantivePlural, VerbConjugation, NegVerbs, InfiniteVerbs), 29 entries over 10 external pages (9 on kursa.oahpa.no, 1 on samimuseum.fi), each a title plus '(genre, su. N sáni[, tense note])'. Picking one filled the URL field and submitted. Operator rulings (2026-10-21): live links as before, not shipped copies; per-topic lists as before, topics without a list show none. Known at decision time: kursa.oahpa.no answers 502 for the whole site, so 9 of 10 links fail until it returns; issues.fetch-failures makes that failure legible, which is why it is a dep."
+                    }
+                )
+            }
+        )
+    }
 )

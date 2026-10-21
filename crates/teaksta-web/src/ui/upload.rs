@@ -21,6 +21,7 @@ use dioxus::prelude::*;
 use crate::api::{ApiError, Backend, DEFAULT_MODE, Registry, UploadFile, upload};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
+use crate::ui::alert::Alert;
 use crate::ui::choices::{Choice, Modes, Topics, first_topic};
 use crate::ui::home::upload_icon;
 
@@ -114,19 +115,9 @@ pub fn UploadStart(
 #[component]
 fn Unavailable() -> Element {
     rsx! {
-        div { class: "refusal", role: "alert",
-            span { class: "refusal-icon", {alert_icon()} }
-            div { class: "refusal-body",
-                p { class: "refusal-en",
-                    "This deployment does not accept uploads. Practise on a page already "
-                    "on the web instead."
-                }
-                div { class: "refusal-act",
-                    Link { to: Route::Home {}, class: "tk-btn", lang: "se",
-                        "Vállje neahttasiiddu"
-                    }
-                }
-            }
+        Alert {
+            en: "This deployment does not accept uploads. Practise on a page already on the web instead.",
+            Link { to: Route::Home {}, class: "tk-btn", lang: "se", "Vállje neahttasiiddu" }
         }
     }
 }
@@ -324,35 +315,11 @@ fn Refusal(error: ApiError) -> Element {
     };
 
     rsx! {
-        div { class: "refusal", role: "alert",
-            span { class: "refusal-icon", {alert_icon()} }
-            div { class: "refusal-body",
-                p { class: "refusal-sme", lang: "se", "{gate.message()}" }
-                p { class: "refusal-en", "{gate.gloss()}" }
-                div { class: "refusal-act",
-                    label { class: "tk-btn", r#for: FILE_FIELD, lang: "se", "Vállje fiilla" }
-                    span { class: "code", "{gate.code()}" }
-                }
-            }
-        }
-    }
-}
-
-/// The mark a refusal carries, so the panel is not red alone.
-fn alert_icon() -> Element {
-    rsx! {
-        svg {
-            width: "16",
-            height: "16",
-            view_box: "0 0 16 16",
-            "aria-hidden": "true",
-            path {
-                d: "M8 4v5M8 11.6v.1",
-                fill: "none",
-                stroke: "currentColor",
-                stroke_width: "2",
-                stroke_linecap: "round",
-            }
+        Alert {
+            sme: gate.message().to_string(),
+            en: gate.gloss().to_string(),
+            code: gate.code().to_string(),
+            label { class: "tk-btn", r#for: FILE_FIELD, lang: "se", "Vállje fiilla" }
         }
     }
 }

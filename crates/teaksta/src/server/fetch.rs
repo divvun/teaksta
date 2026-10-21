@@ -151,9 +151,9 @@ use std::time::Duration;
 
 use anyhow::{Result, anyhow};
 use encoding_rs::{Encoding, UTF_8};
-use reqwest::Url;
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use reqwest::header::{CONTENT_TYPE, HeaderMap};
+use reqwest::{StatusCode, Url};
 use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
@@ -190,11 +190,38 @@ pub enum Refusal {
     Confined,
 }
 
+impl Refusal {
+    /// The name the client is told this refusal by.
+    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+    pub fn code(self) -> &'static str {
+        match self {
+            Refusal::Address => "bad-address",
+            Refusal::Scheme => "bad-scheme",
+            Refusal::Private => "private-address",
+            Refusal::Confined => "not-served",
+        }
+    }
+}
+
 /// The page could not be read from where the request pointed. The far end's
 /// failure, not the caller's, so it reaches the client as a 502.
 #[derive(Debug, thiserror::Error)]
 #[error("the page at {0} could not be fetched")]
 pub struct Unreachable(pub String);
+
+/// The far end answered, and its answer was a 4xx or 5xx status.
+///
+/// Held apart from [`Unreachable`], though both reach the client as a 502,
+/// because the status is the one thing that tells a learner the site failed
+/// rather than teaksta: a page that answers 502 from its own server is down
+/// where it lives, and the client can say so.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+#[derive(Debug, Clone, thiserror::Error)]
+#[error("the page at {address} answered {status}")]
+pub struct ErrorStatus {
+    pub address: String,
+    pub status: u16,
+}
 
 /// The page is larger than this deployment reads, and the read was abandoned
 /// at the cap rather than finished.
@@ -638,8 +665,8 @@ fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
     let response = CLIENT
         .get(url.clone())
         .send()
-        .and_then(reqwest::blocking::Response::error_for_status)
         .map_err(|error| anyhow::Error::new(error).context(unreachable()))?;
+    answered(response.status(), address)?;
 
     // The charset is read off the headers before the body is taken, because
     // taking it consumes the response. This is what `Response::text` would
@@ -649,6 +676,20 @@ fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
     let bytes = capped(response, cap, address)?;
     let (page, _, _) = encoding.decode(&bytes);
     Ok(page.into_owned())
+}
+
+/// Whether the far end's status is one a page can be read out of. A 4xx or
+/// 5xx is refused with the status kept; anything else is read.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+fn answered(status: StatusCode, address: &str) -> Result<()> {
+    if status.is_client_error() || status.is_server_error() {
+        return Err(ErrorStatus {
+            address: address.to_string(),
+            status: status.as_u16(),
+        }
+        .into());
+    }
+    Ok(())
 }
 
 /// Reads a page up to `cap` bytes, refusing at it rather than truncating.

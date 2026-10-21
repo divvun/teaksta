@@ -1199,7 +1199,7 @@ h3 {
     margin-top: var(--tk-space-5);
 }
 
-/* ══ Upload refused ════════════════════════════════════════════════ */
+/* ══ Bad news: a refused upload, an unread page ════════════════════ */
 .refusal {
     display: flex;
     align-items: flex-start;

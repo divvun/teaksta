@@ -17,9 +17,10 @@ use std::rc::Rc;
 
 use dioxus::prelude::*;
 
-use crate::api::{Backend, BlockRequest, fetch_blocks};
+use crate::api::{ApiError, Backend, BlockRequest, PageFailure, fetch_blocks, site_of};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
+use crate::ui::alert::Alert;
 use crate::ui::choices::topic_subtitle;
 
 use click::ClickMode;
@@ -105,6 +106,9 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                         prompt: mode_label.clone(),
                     }
                 },
+                Some(Err(ApiError::Page(failure))) => rsx! {
+                    Unread { failure: *failure, url: params.url.clone() }
+                },
                 Some(Err(error)) => rsx! {
                     p { class: "state state-error", "{error}" }
                 },
@@ -132,6 +136,20 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Why the page did not load, naming the site it was asked from. Most of
+/// what the backend names here is the site's failure rather than teaksta's,
+/// and the learner is told so, with the way back to choosing another page.
+#[component]
+pub fn Unread(failure: PageFailure, url: String) -> Element {
+    rsx! {
+        Alert {
+            en: failure.explain(site_of(&url)),
+            code: failure.code().to_string(),
+            Link { to: Route::Home {}, class: "tk-btn", lang: "se", "Vállje neahttasiiddu" }
         }
     }
 }

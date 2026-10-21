@@ -43,7 +43,7 @@ use tracing::{info, warn};
 use crate::context::Config;
 use crate::morpho::{BUNDLE_ENV, GENERATOR_ENV, MorphoPipeline};
 use crate::server::access;
-use crate::server::fetch::{self, Overloaded, Oversized, Refusal, Unreachable};
+use crate::server::fetch::{self, ErrorStatus, Overloaded, Oversized, Refusal, Unreachable};
 use crate::server::registry::Registry;
 use crate::server::texts::{Missing, TextId, TextStore};
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
@@ -798,10 +798,10 @@ async fn stored_text(
     // it says. The route is not registered without one, so reaching here is
     // the same belt-and-braces the upload endpoint keeps.
     let Some(texts) = state.texts.as_ref() else {
-        return Err(missing(&id));
+        return Err(failure(Missing(id).into()));
     };
     let Some(id) = TextId::parse(&id) else {
-        return Err(missing(&id));
+        return Err(failure(Missing(id).into()));
     };
 
     let text = texts
@@ -814,10 +814,6 @@ async fn stored_text(
         .header("X-Content-Type-Options", "nosniff")
         .header("Content-Security-Policy", "sandbox")
         .body(text))
-}
-
-fn missing(id: &str) -> poem::Error {
-    poem::Error::from_string(Missing(id.to_string()).to_string(), StatusCode::NOT_FOUND)
 }
 
 /// A gate that closed is the client's business and names itself in the body;
@@ -864,29 +860,45 @@ where
 /// be fetched, or that weighs more than this deployment reads, is the far
 /// end's failure; a fetch that found no slot is a load the deployment is asked
 /// to shed; anything else is ours.
+///
+/// Each of those but the last is answered with a code naming it, because the
+/// client shows a learner why the page did not load, and two of the 502s mean
+/// different things to them.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
 fn failure(error: anyhow::Error) -> poem::Error {
-    if let Some(refusal) = error.downcast_ref::<Refusal>() {
+    let (status, body) = if let Some(refusal) = error.downcast_ref::<Refusal>() {
         info!("Refused an address: {refusal}");
-        return bad_request(&refusal.to_string());
-    }
-    if let Some(absent) = error.downcast_ref::<Missing>() {
+        (StatusCode::BAD_REQUEST, json!({ "error": refusal.code() }))
+    } else if let Some(absent) = error.downcast_ref::<Missing>() {
         info!("{absent}");
-        return missing(&absent.0);
-    }
-    if error.downcast_ref::<Overloaded>().is_some() {
+        (StatusCode::NOT_FOUND, json!({ "error": "no-such-text" }))
+    } else if error.downcast_ref::<Overloaded>().is_some() {
         warn!("{error:#}");
-        return poem::Error::from_string(format!("{error:#}"), StatusCode::SERVICE_UNAVAILABLE);
-    }
-    if error.downcast_ref::<Oversized>().is_some() {
+        (StatusCode::SERVICE_UNAVAILABLE, json!({ "error": "busy" }))
+    } else if let Some(answer) = error.downcast_ref::<ErrorStatus>() {
         info!("{error:#}");
-        return poem::Error::from_string(format!("{error:#}"), StatusCode::BAD_GATEWAY);
-    }
-    if error.downcast_ref::<Unreachable>().is_some() {
+        (
+            StatusCode::BAD_GATEWAY,
+            json!({ "error": "site-error", "status": answer.status }),
+        )
+    } else if error.downcast_ref::<Oversized>().is_some() {
         info!("{error:#}");
-        return poem::Error::from_string(format!("{error:#}"), StatusCode::BAD_GATEWAY);
-    }
-    warn!("{error:?}");
-    poem::Error::from_string(format!("{error:#}"), StatusCode::INTERNAL_SERVER_ERROR)
+        (
+            StatusCode::BAD_GATEWAY,
+            json!({ "error": "page-too-large" }),
+        )
+    } else if error.downcast_ref::<Unreachable>().is_some() {
+        info!("{error:#}");
+        (
+            StatusCode::BAD_GATEWAY,
+            json!({ "error": "page-unreachable" }),
+        )
+    } else {
+        warn!("{error:?}");
+        return poem::Error::from_string(format!("{error:#}"), StatusCode::INTERNAL_SERVER_ERROR);
+    };
+    poem::Error::from_response(Json(body).with_status(status).into_response())
 }
 
 fn bad_request(message: &str) -> poem::Error {

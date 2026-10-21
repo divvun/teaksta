@@ -450,6 +450,54 @@
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
 
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+> fn failure(error: anyhow::Error) -> poem::Error
+>
+> pub struct ErrorStatus { pub address: String, pub status: u16 }
+>
+> impl Refusal { pub fn code(self) -> &'static str }
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+> A page that could not be read is answered with a body that says why, as
+> `application/json`: an object whose `error` member is a code naming the
+> failure. The code is what a client tells a learner by. The status alone
+> cannot carry it: a 502 is answered both when a site was never reached and
+> when it answered with an error of its own, and a client told only the
+> status can say no more than that teaksta failed, which in both cases it
+> did not.
+>
+> The codes, by the status each is answered with:
+>
+> - 400, an address this deployment will not read: `bad-address` for one that
+>   does not parse, `bad-scheme` for a scheme other than the three or a
+>   root-relative reference that is not a stored text, `private-address` for
+>   one on the private network, `not-served` for a `file:` path outside the
+>   directories this deployment serves.
+> - 404, `no-such-text`: a stored text that is not held, whether it was asked
+>   for directly or named as a page to enhance.
+> - 502, `site-error`: the far end answered, and what it answered was a 4xx
+>   or 5xx status. The body also carries that status as a number in
+>   `status`, so a client can say what the site answered rather than only
+>   that it failed.
+> - 502, `page-unreachable`: the page could not be read from where it was
+>   named — no public address, no connection, no answer within the budget, a
+>   redirect refused, or a body that could not be read.
+> - 502, `page-too-large`: the page weighs more than the cap
+>   `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn]`
+>   sets.
+> - 503, `busy`: no fetch slot came free in time.
+>
+> What the codes name is the failure and nothing about the address beyond
+> what the request already carried, so a refused `file:` path is still not
+> echoed back. Everything else these endpoints report is a failure of this
+> deployment's own, answered 500 with a plain message as before, and a
+> request refused for a missing or unknown parameter is still answered 400
+> with a plain message: that is a client's mistake, not a learner's, and no
+> learner is shown it.
+>
+> Every route that reads a page or a stored text answers this way: the
+> whole-page, span and block endpoints, and `GET /api/texts/<id>`.
+
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.texts-fn+1]
 > async fn stored_text(Path(id): Path<String>, state: Data<&Arc<AppState>>) -> poem::Result<Response>
 

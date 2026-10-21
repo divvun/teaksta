@@ -82,3 +82,11 @@ assertions (
     {id runtime-locales-pin, kind @complete, author "brendan@bbqsrc.net", at 2026-09-20T14:32:04.866808Z}
     {id ux-mobile, kind @complete, author "brendan@bbqsrc.net", at 2026-09-20T15:18:40.683312Z}
 )
+
+impl_evidence (
+    {id issues.fetch-failures, covered_rules (
+        sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn
+    ), covered_claims (
+        {impl_name target-impl, rule sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn}
+    )}
+)
