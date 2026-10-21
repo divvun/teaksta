@@ -112,3 +112,20 @@ fn a_topic_the_backend_switched_off_is_dead() {
     assert!(html.contains("Adverbiála"));
     assert!(html.contains("Konjunkšuvnnat"));
 }
+
+/// The texts the backend offers reach the app topic by topic, as it answered
+/// them.
+#[test]
+fn the_registry_carries_each_topics_texts() {
+    let registry = offered();
+
+    assert_eq!(registry.texts("Substantive").len(), 8);
+    assert_eq!(registry.texts("NegVerbs").len(), 3);
+    assert!(registry.texts("Adverbial").is_empty());
+    assert!(registry.texts("Kitchens").is_empty());
+
+    let first = &registry.texts("VerbConjugation")[0];
+    assert_eq!(first.title, "Mearragáttis");
+    assert_eq!(first.genre, "story");
+    assert_eq!(first.tense.as_deref(), Some("present"));
+}

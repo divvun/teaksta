@@ -814,7 +814,8 @@ h3 {
     margin-bottom: var(--tk-space-6);
 }
 
-.topics {
+.topics,
+.sample-list {
     display: grid;
     gap: var(--tk-space-2);
     margin: 0;
@@ -822,7 +823,8 @@ h3 {
     list-style: none;
 }
 
-.topic {
+.topic,
+.sample {
     display: flex;
     align-items: center;
     gap: var(--tk-space-3);
@@ -838,7 +840,8 @@ h3 {
     transition: border-color 130ms ease, background-color 130ms ease;
 }
 
-.topic:hover {
+.topic:hover,
+.sample:hover {
     border-color: var(--tk-blue-soft);
     background: var(--tk-blue-tint);
 }
@@ -848,13 +851,15 @@ h3 {
     min-width: 0;
 }
 
-.topic-sme {
+.topic-sme,
+.sample-title {
     display: block;
     font-weight: 600;
     letter-spacing: -0.003em;
 }
 
-.topic-en {
+.topic-en,
+.sample-about {
     display: block;
     margin-top: 1px;
     color: var(--tk-ink-faint);
@@ -916,6 +921,21 @@ h3 {
 .topic[disabled]:hover {
     border-color: var(--tk-line);
     background: var(--tk-paper-sunken);
+}
+
+/* ── Ready-made texts ─────────────────────────────────────────────── */
+.samples {
+    margin-top: var(--tk-space-6);
+}
+
+.sample {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+}
+
+.sample-about--sme {
+    color: var(--tk-ink-muted);
 }
 
 /* ── Mode switch ──────────────────────────────────────────────────── */

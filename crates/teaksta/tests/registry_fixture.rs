@@ -51,7 +51,7 @@ fn deployment(root: &Path) -> Config {
     }
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
 #[tokio::test]
 async fn the_registry_fixture_is_what_the_server_answers() {
     let root = TempDir::new().expect("a deployment root");

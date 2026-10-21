@@ -58,3 +58,19 @@ mode-cloze = Čále rivttes sániid!
 right = Rivttes
 highlighted = Ivdnejuvvon sánit
 see-result = Geahča bohtosa
+
+## Ready-made texts
+#
+# The heading and the descriptions are the webapp's own: it headed the section
+# its lists stood in "Materiálat", and described each text as
+# "(muitalus, su. 190 sáni, vearbbat leat preseanssas)".
+
+texts-heading = Materiálat
+genre-story = muitalus
+genre-folktale = máinnas
+genre-factual = áššeteaksta
+genre-textbook = oahppogirjeteaksta
+text-about = { $genre }, su. { $words } sáni
+text-about-tense = { $genre }, su. { $words } sáni, { $tense }
+tense-present = vearbbat leat preseanssas
+tense-past = vearbbat leat preterihtas

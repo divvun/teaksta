@@ -24,6 +24,7 @@ use crate::api::{DEFAULT_MODE, Registry};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
 use crate::ui::choices::{Modes, Topics, first_topic};
+use crate::ui::samples::Samples;
 use crate::ui::words::{FileLimits, Or, Pending};
 
 #[component]
@@ -103,6 +104,7 @@ pub fn Picker(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> E
     let ready = !page_url().trim().is_empty() && !current_topic.is_empty();
     let topic_label = registry.activity_label(&current_topic).to_string();
     let mode_label = registry.mode_label(&current_mode).to_string();
+    let texts = registry.texts(&current_topic).to_vec();
 
     rsx! {
         Topics {
@@ -164,6 +166,16 @@ pub fn Picker(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> E
                 }
             }
         }
+
+        Samples {
+            texts,
+            onpick: move |url: String| {
+                let params = ExerciseQuery::new(chosen_topic(), chosen_mode(), url);
+                if params.is_complete() {
+                    onstart.call(params);
+                }
+            },
+        }
     }
 }
 
@@ -191,13 +203,14 @@ pub fn upload_icon() -> Element {
 mod tests {
     use super::*;
 
-    use crate::api::{Activity, Mode};
+    use crate::api::{Activity, Mode, SampleText};
 
     fn topic(name: &str, label: Option<&str>, enabled: bool) -> Activity {
         Activity {
             name: name.to_string(),
             label: label.map(str::to_string),
             enabled,
+            texts: Vec::new(),
         }
     }
 
@@ -306,6 +319,35 @@ mod tests {
         assert!(html.contains("class=\"chosen-ctx\""));
         assert!(html.contains("tk-chip tk-chip--topic"));
         assert!(html.contains("Geahča ivdnejuvvon sániid."));
+    }
+
+    /// The chosen topic's ready-made texts stand under the form, each with
+    /// what kind of text it is and how long, in North Sámi and English.
+    #[test]
+    fn the_chosen_topic_offers_its_texts() {
+        let mut registry = offered();
+        // Preps is the first topic switched on, so it starts out chosen.
+        registry.activities[1].texts = vec![SampleText {
+            title: "Mearragáttis".to_string(),
+            url: "https://kursa.oahpa.no/2011/11/01/mearragattis/".to_string(),
+            genre: "story".to_string(),
+            words: 190,
+            tense: None,
+        }];
+        let html = render(registry);
+
+        assert!(html.contains("class=\"samples\""));
+        assert!(html.contains("Materiálat"));
+        assert!(html.contains(">Mearragáttis<"));
+        assert!(html.contains("muitalus, su. 190 sáni"));
+        assert!(html.contains("story, about 190 words"));
+    }
+
+    #[test]
+    fn a_topic_with_no_texts_lists_none() {
+        let html = render(offered());
+
+        assert!(!html.contains("class=\"samples\""));
     }
 
     #[test]

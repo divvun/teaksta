@@ -132,3 +132,15 @@ mc-tries = { $tries ->
    *[other] { $tries } forms chosen so far
 }
 mc-result = { $settled } of the { $wanted } slots settled
+
+## Ready-made texts
+
+texts-heading = Ready-made texts
+genre-story = story
+genre-folktale = folktale
+genre-factual = factual text
+genre-textbook = textbook text
+text-about = { $genre }, about { $words } words
+text-about-tense = { $genre }, about { $words } words, { $tense }
+tense-present = the verbs are in the present tense
+tense-past = the verbs are in the past tense

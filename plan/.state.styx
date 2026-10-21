@@ -90,4 +90,9 @@ impl_evidence (
     ), covered_claims (
         {impl_name target-impl, rule sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn}
     )}
+    {id issues.sample-texts, covered_rules (
+        sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn
+    ), covered_claims (
+        {impl_name target-impl, rule sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn}
+    )}
 )

@@ -116,6 +116,44 @@ pub struct TopicConfig {
     /// Whether the generic token enhancer filters on the presence of a lemma.
     #[serde(default)]
     pub use_lemma_filter: bool,
+    /// The ready-made texts the topic offers, in the order they are shown.
+    #[serde(default)]
+    pub text: Vec<SampleText>,
+}
+
+/// What kind of text a ready-made text is: the four kinds the webapp this
+/// replaces described its recommended pages with.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Genre {
+    Story,
+    Folktale,
+    Factual,
+    Textbook,
+}
+
+/// The tense a text's verbs are in, for a topic whose learner chooses a text
+/// by it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Tense {
+    Present,
+    Past,
+}
+
+/// One ready-made text a topic offers: a page elsewhere, named here so a
+/// learner with no page of their own in mind has one to start from.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3]
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SampleText {
+    pub title: String,
+    pub url: String,
+    pub genre: Genre,
+    /// About how many words the text runs to.
+    pub words: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tense: Option<Tense>,
 }
 
 /// The file as a whole.
@@ -132,6 +170,7 @@ pub struct Topic {
     pub name: String,
     pub label: String,
     pub enabled: bool,
+    pub texts: Vec<SampleText>,
 }
 
 /// One topic's pipeline pair.
@@ -189,6 +228,21 @@ impl Registry {
             if config.tags.trim().is_empty() {
                 bail!("the topic {} declares no tags to mark", config.name);
             }
+            // A text is a link a learner follows, so one that could never be
+            // fetched is refused here rather than offered.
+            for text in &config.text {
+                if text.title.trim().is_empty() {
+                    bail!("the topic {} offers a text with no title", config.name);
+                }
+                if !text.url.starts_with("https://") && !text.url.starts_with("http://") {
+                    bail!(
+                        "the topic {} offers {} at {}, which is not a web address",
+                        config.name,
+                        text.title,
+                        text.url
+                    );
+                }
+            }
 
             let pre = Flow::preprocessor();
             let post = Flow::postprocessor(config)
@@ -209,6 +263,7 @@ impl Registry {
             name: config.name.clone(),
             label: config.label.clone(),
             enabled: config.enabled,
+            texts: config.text.clone(),
         }));
         topics.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -249,6 +304,7 @@ impl Registry {
                 name: topic.to_string(),
                 label: topic.to_string(),
                 enabled: true,
+                texts: Vec::new(),
             }],
         }
     }

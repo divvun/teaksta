@@ -217,13 +217,16 @@ fn a_topic_declaring_no_tags_is_refused() {
     }
 }
 
-/// The lemma filter is the one field a topic may leave out. What the two
-/// values do to the flow is [`crate::pipeline::flow`]'s to prove; that a file
-/// may omit it, and that declaring it is not an unknown key, is this one's.
+/// The lemma filter and the texts are the fields a topic may leave out. What
+/// the filter's two values do to the flow is [`crate::pipeline::flow`]'s to
+/// prove; that a file may omit either, and that declaring them is not an
+/// unknown key, is this one's.
 #[test]
-fn the_lemma_filter_is_the_only_optional_field() {
+fn only_the_lemma_filter_and_texts_are_optional() {
     assert!(!one_topic("Fáddá").contains("use_lemma_filter"));
-    Registry::parse(&one_topic("Fáddá")).expect("a topic may leave the lemma filter out");
+    let registry =
+        Registry::parse(&one_topic("Fáddá")).expect("a topic may leave the lemma filter out");
+    assert!(registry.topics()[0].texts.is_empty());
 
     let written = format!("{}use_lemma_filter = true\n", one_topic("Fáddá"));
     Registry::parse(&written).expect("and may declare it");
@@ -239,5 +242,83 @@ fn the_lemma_filter_is_the_only_optional_field() {
             Registry::parse(&without).is_err(),
             "a topic without {field} was accepted"
         );
+    }
+}
+
+/// One text, as a topic declares it under its own keys.
+fn with_text(text: &str) -> String {
+    format!("{}\n[[topic.text]]\n{text}", one_topic("Fáddá"))
+}
+
+/// The six topics the webapp recommended pages for offer them again, in its
+/// order, and the four it recommended none for offer none.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
+#[test]
+fn six_topics_offer_their_old_texts() {
+    let registry = Registry::from_config(None).expect("the compiled-in topics parse");
+    let offered: Vec<(&str, usize)> = registry
+        .topics()
+        .iter()
+        .map(|topic| (topic.name.as_str(), topic.texts.len()))
+        .collect();
+
+    assert_eq!(
+        offered,
+        [
+            ("Adverbial", 0),
+            ("Conjunctions", 0),
+            ("InfiniteVerbs", 4),
+            ("NegVerbs", 3),
+            ("Object", 0),
+            ("Subject", 0),
+            ("Substantive", 8),
+            ("SubstantivePlural", 4),
+            ("SubstantiveSingular", 5),
+            ("VerbConjugation", 5),
+        ]
+    );
+
+    let texts = registry.topics().iter().flat_map(|topic| &topic.texts);
+    for text in texts {
+        assert!(text.url.starts_with("https://"), "{}", text.url);
+        assert!(text.words > 0, "{}", text.title);
+    }
+
+    let conjugation = &registry.topics()[9];
+    assert_eq!(conjugation.texts[0].title, "Mearragáttis");
+    assert_eq!(conjugation.texts[0].tense, Some(Tense::Present));
+    assert_eq!(conjugation.texts[1].tense, None);
+    assert_eq!(conjugation.texts[2].tense, Some(Tense::Past));
+}
+
+/// A text is served as written, and one that names no web address, carries
+/// no title, or names a kind of text this build does not know is refused when
+/// the file is read rather than offered to a learner.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
+#[test]
+fn a_text_is_read_as_written_or_refused() {
+    let registry = Registry::parse(&with_text(
+        "title = \"Mearragáttis\"\nurl = \"https://example.org/a\"\ngenre = \"story\"\nwords = 190\n",
+    ))
+    .expect("a well-formed text");
+    assert_eq!(
+        registry.topics()[0].texts,
+        [SampleText {
+            title: "Mearragáttis".to_string(),
+            url: "https://example.org/a".to_string(),
+            genre: Genre::Story,
+            words: 190,
+            tense: None,
+        }]
+    );
+
+    for refused in [
+        "title = \"A\"\nurl = \"ftp://example.org/a\"\ngenre = \"story\"\nwords = 1\n",
+        "title = \"A\"\nurl = \"/api/texts/a\"\ngenre = \"story\"\nwords = 1\n",
+        "title = \" \"\nurl = \"https://example.org/a\"\ngenre = \"story\"\nwords = 1\n",
+        "title = \"A\"\nurl = \"https://example.org/a\"\ngenre = \"poem\"\nwords = 1\n",
+        "title = \"A\"\nurl = \"https://example.org/a\"\ngenre = \"story\"\nwords = 1\nlevel = 2\n",
+    ] {
+        assert!(Registry::parse(&with_text(refused)).is_err(), "{refused}");
     }
 }

@@ -6,6 +6,7 @@ pub mod choices;
 mod chrome;
 pub mod exercise;
 mod home;
+mod samples;
 mod upload;
 mod words;
 

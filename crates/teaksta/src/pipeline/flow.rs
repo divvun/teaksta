@@ -236,6 +236,7 @@ mod tests {
             tags: tags.to_string(),
             token_tags: token_tags.to_string(),
             use_lemma_filter: false,
+            text: Vec::new(),
         }
     }
 

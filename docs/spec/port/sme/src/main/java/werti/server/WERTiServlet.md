@@ -135,10 +135,12 @@
 > `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.health-deep-fn]`
 > are each answerable for — rather than being limited to make them safe.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3]
 > async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value>
+>
+> struct SampleText { title: String, url: String, genre: Genre, words: u32, tense: Option<Tense> }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3]
 > `GET /api/activities` answers the topic registry as JSON, so a client can
 > offer what this deployment actually has rather than a list compiled into it.
 >
@@ -147,9 +149,28 @@
 > keeps, whatever order the topics were declared in — each carrying `name`
 > (the registry name, which is what the enhancement endpoints take as
 > `activity` and what the client derives a hit class from), `label` (the
-> topic's North Sámi name) and `enabled` (what the topic declared). `modes` is
-> one entry per exercise, in the fixed order `colorize`, `click`, `mc`,
-> `cloze`, each carrying `name` and its North Sámi `label`.
+> topic's North Sámi name), `enabled` (what the topic declared) and `texts`.
+> `modes` is one entry per exercise, in the fixed order `colorize`, `click`,
+> `mc`, `cloze`, each carrying `name` and its North Sámi `label`.
+>
+> `texts` is the ready-made texts the topic offers a learner who has no page
+> of their own in mind, in the order the topics file declares them, and is
+> empty for a topic that declares none. Each is an object carrying `title`,
+> `url` (an `http` or `https` address, read as any other address a learner
+> names), `genre` (one of `story`, `folktale`, `factual` and `textbook`),
+> `words` (about how many words the text runs to) and, where the topic
+> declares it, `tense` (`present` or `past`: the tense the text's verbs are
+> in, which is what a verb topic's learner chooses a text by). A text's
+> address is not vetted here beyond its scheme: it is vetted when it is
+> asked for, as every address is, so a text whose site has gone away is
+> answered as any page that cannot be fetched is.
+>
+> A client reading an entry without `texts` reads a topic that offers none.
+>
+> Port restoration: these are the recommended pages the Java webapp listed
+> for six of its topics, in `activities/<Topic>/recommended_pages.html`, which
+> the port first left behind. They were links to pages elsewhere and they
+> still are: picking one names its address exactly as typing it would.
 >
 > `uploads` is a boolean: whether this deployment takes a teacher's own text.
 > It belongs here beside what the deployment can analyse because it is the

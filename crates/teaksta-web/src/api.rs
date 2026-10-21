@@ -149,6 +149,26 @@ pub struct Activity {
     /// Whether the deployment has the topic switched on.
     #[serde(default)]
     pub enabled: bool,
+    /// The ready-made texts the topic offers, in the order they are shown. A
+    /// reply that does not say offers none.
+    #[serde(default)]
+    pub texts: Vec<SampleText>,
+}
+
+/// One ready-made text a topic offers: a page elsewhere, picked rather than
+/// typed.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+pub struct SampleText {
+    pub title: String,
+    pub url: String,
+    /// story, folktale, factual or textbook. Read as a string, so a kind a
+    /// deployment adds is shown by its name rather than failing the registry.
+    pub genre: String,
+    /// About how many words the text runs to.
+    pub words: u32,
+    /// present or past, where the topic says which tense the verbs are in.
+    #[serde(default)]
+    pub tense: Option<String>,
 }
 
 /// One exercise mode the backend offers.
@@ -186,6 +206,12 @@ pub struct Registry {
 impl Registry {
     pub fn activity(&self, name: &str) -> Option<&Activity> {
         self.activities.iter().find(|item| item.name == name)
+    }
+
+    /// The ready-made texts a topic offers, none for a topic not on offer.
+    pub fn texts(&self, name: &str) -> &[SampleText] {
+        self.activity(name)
+            .map_or(&[], |item| item.texts.as_slice())
     }
 
     pub fn mode(&self, name: &str) -> Option<&Mode> {

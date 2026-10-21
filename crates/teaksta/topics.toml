@@ -42,6 +42,16 @@
 #              defaulting to `false`, which is the delegate default in
 #              `sme/desc/enhancers/TokenEnhancer.xml` and the value every
 #              shipped topic ran with: no aggregate descriptor overrides it.
+#   text       the ready-made texts the topic offers, one `[[topic.text]]`
+#              each, shown in the order written: `title`, `url` (http or
+#              https), `genre` (story, folktale, factual or textbook — in the
+#              webapp's words muitalus, máinnas, áššeteaksta and
+#              oahppogirjeteaksta), `words` (about how many) and, optionally,
+#              `tense` (present or past), the tense the text's verbs are in.
+#              From `activities/<name>/recommended_pages.html`, which six
+#              topics had. Those were links to pages elsewhere and these are
+#              too: a text whose site is down cannot be read, and the learner
+#              is told so.
 #
 # Not carried over: the `<client-cfg>` block every `activity.xml` holds. It is
 # ten copies of the same inline CSS for a browser add-on that no longer
@@ -85,6 +95,31 @@ tags = "PrfPrc, VGen, VAbess, Ger, Actio Ess, Inf, ConNeg"
 # from desc/operators/vislcg3PostProc_InfiniteVerb.xml Tags
 token_tags = "V PrfPrc, V VGen, V VAbess, V Ger, V Actio Ess, V Der/PassL V Inf"
 
+# from activities/InfiniteVerbs/recommended_pages.html
+[[topic.text]]
+title = "Buohccame"
+url = "https://kursa.oahpa.no/2013/05/15/2-4-buohcame/"
+genre = "story"
+words = 320
+
+[[topic.text]]
+title = "Ipmilmeahttun dálki"
+url = "https://kursa.oahpa.no/2013/12/30/ipmilmeahttun-dalki/"
+genre = "story"
+words = 425
+
+[[topic.text]]
+title = "Ruovttus leat ollu barggut"
+url = "https://kursa.oahpa.no/2013/12/30/ruovttus-leat-ollu-barggut/"
+genre = "textbook"
+words = 235
+
+[[topic.text]]
+title = "Boazodoallu"
+url = "https://kursa.oahpa.no/2012/10/12/boazodoallu/"
+genre = "factual"
+words = 320
+
 [[topic]]
 name = "NegVerbs"
 label = "Biehttalanvearbbat"
@@ -94,6 +129,25 @@ enhancer = "con-neg"
 tags = "Ind Prs ConNeg, Ind Prt ConNeg"
 # from desc/operators/vislcg3PostProc_ConNeg.xml Tags
 token_tags = "ConNeg"
+
+# from activities/NegVerbs/recommended_pages.html
+[[topic.text]]
+title = "Maid don barget ikte?"
+url = "https://kursa.oahpa.no/2011/11/04/maid-don-barget-ikte/"
+genre = "textbook"
+words = 100
+
+[[topic.text]]
+title = "Bárdni gii ii áigon skuvlii"
+url = "https://kursa.oahpa.no/2011/09/21/bardni-gii-ii-aigon-skuvlii-vuolgit/"
+genre = "folktale"
+words = 350
+
+[[topic.text]]
+title = "Buohccame"
+url = "https://kursa.oahpa.no/2013/05/15/2-4-buohcame/"
+genre = "story"
+words = 320
 
 [[topic]]
 name = "Object"
@@ -132,6 +186,55 @@ tags = "Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Pl Nom, Pl Acc, Pl Gen, 
 # was never in effect.
 token_tags = "blah,blubb"
 
+# from activities/Substantive/recommended_pages.html
+[[topic.text]]
+title = "Mearragáttis"
+url = "https://kursa.oahpa.no/2011/11/01/mearragattis/"
+genre = "story"
+words = 190
+
+[[topic.text]]
+title = "Bárdni gii ii áigon skuvlii"
+url = "https://kursa.oahpa.no/2011/09/21/bardni-gii-ii-aigon-skuvlii-vuolgit/"
+genre = "folktale"
+words = 350
+
+[[topic.text]]
+title = "Gánda ja stállu"
+url = "https://www.samimuseum.fi/maahisweb/sapmi/sa_poikajastaalo.html"
+genre = "folktale"
+words = 230
+
+[[topic.text]]
+title = "Darfegoahti"
+url = "https://kursa.oahpa.no/2014/12/10/darfegoahti/"
+genre = "factual"
+words = 350
+
+[[topic.text]]
+title = "Boazodoallu"
+url = "https://kursa.oahpa.no/2012/10/12/boazodoallu/"
+genre = "factual"
+words = 320
+
+[[topic.text]]
+title = "Ruovttus leat ollu barggut"
+url = "https://kursa.oahpa.no/2013/12/30/ruovttus-leat-ollu-barggut/"
+genre = "textbook"
+words = 235
+
+[[topic.text]]
+title = "Meahccetuvra"
+url = "https://kursa.oahpa.no/2013/12/30/meahcis-3/"
+genre = "story"
+words = 285
+
+[[topic.text]]
+title = "Ipmilmeahttun dálki"
+url = "https://kursa.oahpa.no/2013/12/30/ipmilmeahttun-dalki/"
+genre = "story"
+words = 425
+
 [[topic]]
 name = "SubstantivePlural"
 label = "Substantiivvat máŋggaidlogus"
@@ -142,6 +245,31 @@ enhancer = "noun-pl"
 tags = "Pl Nom, Pl Acc, Pl Gen, Pl Ill, Pl Loc, Pl Com"
 # from desc/operators/vislcg3PostProc_NounPl.xml Tags
 token_tags = "N Pl Nom, N Pl Acc, N Pl Gen, N Pl Ill, N Pl Loc, N Pl Com, N Ess"
+
+# from activities/SubstantivePlural/recommended_pages.html
+[[topic.text]]
+title = "Mearragáttis"
+url = "https://kursa.oahpa.no/2011/11/01/mearragattis/"
+genre = "story"
+words = 190
+
+[[topic.text]]
+title = "Ruovttus leat ollu barggut"
+url = "https://kursa.oahpa.no/2013/12/30/ruovttus-leat-ollu-barggut/"
+genre = "textbook"
+words = 235
+
+[[topic.text]]
+title = "Meahccetuvra"
+url = "https://kursa.oahpa.no/2013/12/30/meahcis-3/"
+genre = "story"
+words = 285
+
+[[topic.text]]
+title = "Ipmilmeahttun dálki"
+url = "https://kursa.oahpa.no/2013/12/30/ipmilmeahttun-dalki/"
+genre = "story"
+words = 425
 
 [[topic]]
 name = "SubstantiveSingular"
@@ -155,6 +283,37 @@ tags = "Sg Nom, Sg Acc, Sg Gen, Sg Ill, Sg Loc, Sg Com, Ess, Prop Sem/Mal Attr, 
 # original, kept verbatim for the reason given under Substantive.
 token_tags = "blah,blubb"
 
+# from activities/SubstantiveSingular/recommended_pages.html
+[[topic.text]]
+title = "Mearragáttis"
+url = "https://kursa.oahpa.no/2011/11/01/mearragattis/"
+genre = "story"
+words = 190
+
+[[topic.text]]
+title = "Bárdni gii ii áigon skuvlii"
+url = "https://kursa.oahpa.no/2011/09/21/bardni-gii-ii-aigon-skuvlii-vuolgit/"
+genre = "folktale"
+words = 350
+
+[[topic.text]]
+title = "Gánda ja stállu"
+url = "https://www.samimuseum.fi/maahisweb/sapmi/sa_poikajastaalo.html"
+genre = "folktale"
+words = 230
+
+[[topic.text]]
+title = "Darfegoahti"
+url = "https://kursa.oahpa.no/2014/12/10/darfegoahti/"
+genre = "factual"
+words = 350
+
+[[topic.text]]
+title = "Boazodoallu"
+url = "https://kursa.oahpa.no/2012/10/12/boazodoallu/"
+genre = "factual"
+words = 320
+
 [[topic]]
 name = "VerbConjugation"
 label = "Finihtta vearbbat"
@@ -164,3 +323,38 @@ enhancer = "verb-conjugation"
 tags = "Ind Prs, Ind Prt, Imprt, Cond Prs, Pot Prs, Neg Ind"
 # from desc/operators/vislcg3PostProc_VerbConjugation.xml Tags
 token_tags = "Ind Prs, Ind Prt"
+
+# from activities/VerbConjugation/recommended_pages.html
+[[topic.text]]
+title = "Mearragáttis"
+url = "https://kursa.oahpa.no/2011/11/01/mearragattis/"
+genre = "story"
+words = 190
+tense = "present"
+
+[[topic.text]]
+title = "Gánda ja stállu"
+url = "https://www.samimuseum.fi/maahisweb/sapmi/sa_poikajastaalo.html"
+genre = "folktale"
+words = 230
+
+[[topic.text]]
+title = "Meahccetuvra"
+url = "https://kursa.oahpa.no/2013/12/30/meahcis-3/"
+genre = "story"
+words = 285
+tense = "past"
+
+[[topic.text]]
+title = "Ipmilmeahttun dálki"
+url = "https://kursa.oahpa.no/2013/12/30/ipmilmeahttun-dalki/"
+genre = "story"
+words = 425
+tense = "past"
+
+[[topic.text]]
+title = "Darfegoahti"
+url = "https://kursa.oahpa.no/2014/12/10/darfegoahti/"
+genre = "factual"
+words = 350
+tense = "past"

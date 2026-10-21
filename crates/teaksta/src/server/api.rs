@@ -438,8 +438,8 @@ fn degraded(reason: &str) -> Response {
         .into_response()
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3]
 #[handler]
 async fn registry(state: Data<&Arc<AppState>>) -> Json<serde_json::Value> {
     let modes: Vec<serde_json::Value> = Mode::ALL

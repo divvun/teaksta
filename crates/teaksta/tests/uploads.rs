@@ -139,7 +139,7 @@ async fn no_store_answers_neither_upload_path() {
 /// store says so and one without says so, and the answer is the same thing
 /// the two routes are registered on — so a client told yes can ask, and one
 /// told no shows a teacher nothing that would 404.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
 #[tokio::test]
 async fn the_registry_says_whether_uploads_are_taken() {
     let root = TempDir::new().expect("a deployment root");

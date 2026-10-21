@@ -225,6 +225,7 @@ mod tests {
             tags: "Sg Nom".to_string(),
             token_tags: "N".to_string(),
             use_lemma_filter: false,
+            text: Vec::new(),
         })
         .expect("the token enhancer takes its tags");
 

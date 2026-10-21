@@ -163,7 +163,7 @@ fn the_key_of_a_page_is_fixed() {
 }
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3/test]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
 #[test]
 fn the_registry_lists_each_declared_topic() {
     let root = topics_with(&["Substantive", "Adverbial"]);
@@ -291,7 +291,7 @@ async fn an_asset_is_served_from_the_bundle() {
     assert_eq!(body, CLIENT_ASSET);
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
 #[tokio::test]
 async fn the_api_answers_before_the_client() {
     let root = topics_with(&["Substantive"]);
@@ -305,7 +305,7 @@ async fn the_api_answers_before_the_client() {
     assert!(body.contains("\"Substantive\""), "{body}");
 }
 
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+2/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.activities-fn+3/test]
 #[tokio::test]
 async fn the_registry_answers_topics_and_modes() {
     let root = topics_with(&["Substantive", "Adverbial"]);
@@ -319,8 +319,8 @@ async fn the_registry_answers_topics_and_modes() {
     response
         .assert_json(serde_json::json!({
             "activities": [
-                { "name": "Adverbial", "label": "Adverbi\u{e1}la", "enabled": true },
-                { "name": "Substantive", "label": "Substantiivvat", "enabled": true },
+                { "name": "Adverbial", "label": "Adverbi\u{e1}la", "enabled": true, "texts": [] },
+                { "name": "Substantive", "label": "Substantiivvat", "enabled": true, "texts": [] },
             ],
             "modes": [
                 { "name": "colorize", "label": "Geah\u{10d}a ivdnejuvvon s\u{e1}niid." },
