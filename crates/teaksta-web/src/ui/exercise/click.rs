@@ -11,9 +11,10 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{args, en, en_with, se_or_en};
 
 use super::markup::{Markup, TokenSpan};
-use super::score::{Dots, RESULT_LABEL, Review, Score, ScoreChip, review_of};
+use super::score::{Dots, Review, Score, ScoreChip, review_of};
 use super::{Setting, enhanced_text};
 use crate::ui::choices::mode_gloss;
 
@@ -100,9 +101,9 @@ pub fn ClickMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                     span { class: "tk-gloss", "{mode_gloss(MODE)}" }
                 }
                 ScoreChip {
-                    label: "Rivttes".to_string(),
+                    label: se_or_en("right"),
                     count: "{right} / {wanted}",
-                    gloss: format!("{wrong} words picked that the topic does not mark"),
+                    gloss: en_with("click-wrong", &args([("wrong", wrong)])),
                     dots: Dots::Settled { right, total: wanted },
                 }
             }
@@ -130,7 +131,7 @@ pub fn ClickMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                 Score {
                     right,
                     total: wanted,
-                    gloss: format!("{right} of the {wanted} marked words found"),
+                    gloss: en_with("click-result", &args([("right", right), ("wanted", wanted)])),
                     rows,
                 }
             } else {
@@ -140,8 +141,8 @@ pub fn ClickMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                         class: "tk-btn tk-btn--primary",
                         lang: "se",
                         onclick: move |_| showing.set(true),
-                        "{RESULT_LABEL}"
-                        span { class: "tk-gloss", "See how it went" }
+                        {se_or_en("see-result")}
+                        span { class: "tk-gloss", {en("see-result")} }
                     }
                 }
             }

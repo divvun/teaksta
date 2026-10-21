@@ -1058,7 +1058,7 @@ children (
         children (
             {
                 id issues.fetch-failures
-                title "A page that cannot be fetched says why, in North Sámi and English, naming the site"
+                title "A page that cannot be fetched says why, naming the site"
                 kind @fix
                 implements {
                     target-impl ([spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn] [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn])
@@ -1084,7 +1084,7 @@ children (
                 id issues.sample-texts
                 title "Each topic offers ready-made texts again, as the old webapp's recommended pages did"
                 kind @feat
-                deps (issues.fetch-failures)
+                deps (issues.fetch-failures l10n)
                 log (
                     {
                         at 2026-10-21T16:25:29.774865Z
@@ -1093,6 +1093,35 @@ children (
                         text "GitHub issue #2 (2026-10-19, snomos). The old webapp's pre-created texts were sme/src/main/webapp/activities/<Topic>/recommended_pages.html at a4edb53^: six per-topic link lists (Substantive, SubstantiveSingular, SubstantivePlural, VerbConjugation, NegVerbs, InfiniteVerbs), 29 entries over 10 external pages (9 on kursa.oahpa.no, 1 on samimuseum.fi), each a title plus '(genre, su. N sáni[, tense note])'. Picking one filled the URL field and submitted. Operator rulings (2026-10-21): live links as before, not shipped copies; per-topic lists as before, topics without a list show none. Known at decision time: kursa.oahpa.no answers 502 for the whole site, so 9 of 10 links fail until it returns; issues.fetch-failures makes that failure legible, which is why it is a dep."
                     }
                 )
+            }
+        )
+    }
+
+    {
+        id l10n
+        title "UI strings live in Fluent bundles: North Sámi and English .ftl files for the client and the server"
+        kind @refactor
+        sealed true
+        log (
+            {
+                at 2026-10-21T16:37:05.587204Z
+                author "brendan@necessary.nu"
+                kind @decision
+                text "Operator ruling (2026-10-21): every North Sámi and English UI string moves out of code literals into Fluent .ftl files — the web client's own strings (60 lang=se sites across 11 files in crates/teaksta-web/src, the English glosses beside them, the upload refusal messages in api/upload.rs, the fetch-failure explanations from issues.fetch-failures) and the North Sámi the server sends (the four mode labels hardcoded in util/html_enhancer.rs mode_label). Topic names stay in topics.toml as deployment data. Ordered before issues.sample-texts so its new strings land in .ftl directly. Shape note: the UI is bilingual on one screen (a North Sámi line with an English gloss), not a locale switch, so both bundles are read at once; a message the se bundle lacks shows the English alone, which replaces the comment-flagged 'English only' pattern."
+            }
+
+            {
+                at 2026-10-21T16:37:10.282593Z
+                author "brendan@necessary.nu"
+                kind @status
+                text "Todo → Doing (nplan start)"
+            }
+
+            {
+                at 2026-10-21T16:46:11.664657Z
+                author "brendan@necessary.nu"
+                kind @status
+                text "Doing → Done (nplan complete)"
             }
         )
     }

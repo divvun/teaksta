@@ -1,4 +1,4 @@
-# The build context is the source of the two crates and nothing else. The
+# The build context is the source of the workspace crates and nothing else. The
 # models arrive through the `models` build context or a release URL, never
 # through here; a stray 200MB bundle.drb in the tree would otherwise be shipped
 # to the daemon on every build.

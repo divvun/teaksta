@@ -46,6 +46,7 @@ toml = "0.9"
 urlencoding = "2"
 governor = { version = "0.10.4", default-features = false, features = ["std", "dashmap"] }
 encoding_rs = "0.8.41"
+teaksta-l10n = { path = "../teaksta-l10n" }
 
 [dev-dependencies]
 poem = { version = "3", features = ["multipart", "static-files", "test"] }

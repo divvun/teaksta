@@ -18,11 +18,13 @@
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{en, se_or_en};
 
 use crate::api::{DEFAULT_MODE, Registry};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
 use crate::ui::choices::{Modes, Topics, first_topic};
+use crate::ui::words::{FileLimits, Or, Pending};
 
 #[component]
 pub fn Home() -> Element {
@@ -33,10 +35,7 @@ pub fn Home() -> Element {
     rsx! {
         match &*value.read_unchecked() {
             None => rsx! {
-                p { class: "state state-pending", lang: "se",
-                    "Vuorddát…"
-                    span { class: "tk-gloss", "Asking the backend which topics it offers" }
-                }
+                Pending { id: "waiting-registry" }
             },
             Some(Ok(offered)) => rsx! {
                 Start {
@@ -59,38 +58,30 @@ pub fn Home() -> Element {
 #[component]
 pub fn Start(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> Element {
     let uploads = registry.uploads;
+    let lead = en(if uploads {
+        "start-lead-uploads"
+    } else {
+        "start-lead"
+    });
 
     rsx! {
         div { class: "start",
             div { class: "start-head",
-                h2 { "Start an exercise" }
-                if uploads {
-                    p {
-                        "Any North Sámi page will do. Name one, or send a file of your own — "
-                        "either way the text is analysed once and every mode plays over it."
-                    }
-                } else {
-                    p {
-                        "Any North Sámi page will do. Name one and the text is analysed "
-                        "once — every mode then plays over it."
-                    }
-                }
+                h2 { {en("start-heading")} }
+                p { "{lead}" }
             }
             Picker { registry, onstart }
             if uploads {
-                div { class: "or", lang: "se", "dahje / or" }
+                Or {}
                 label { class: "field", lang: "se",
-                    "Vállje fiilla maid háliidat geavahit"
-                    span { class: "tk-gloss", "Choose a file to use" }
+                    {se_or_en("choose-file-to-use")}
+                    span { class: "tk-gloss", {en("choose-file-to-use")} }
                 }
                 Link { to: Route::Upload {}, class: "drop",
                     span { class: "drop-icon", {upload_icon()} }
                     span { class: "drop-body",
-                        span { class: "drop-label", lang: "se", "Vállje fiilla" }
-                        span { class: "drop-sub", lang: "se",
-                            "Teaksta ferte leat .html formáhtas. "
-                            span { class: "tk-gloss", "· max 5 MB" }
-                        }
+                        span { class: "drop-label", lang: "se", {se_or_en("choose-file")} }
+                        FileLimits {}
                     }
                 }
             }
@@ -149,8 +140,8 @@ pub fn Picker(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> E
             },
 
             label { class: "field", r#for: "page-url", lang: "se",
-                "Vállje neahttasiiddu"
-                span { class: "tk-gloss", "Choose a web page" }
+                {se_or_en("choose-page")}
+                span { class: "tk-gloss", {en("choose-page")} }
             }
             div { class: "row",
                 input {
@@ -169,7 +160,7 @@ pub fn Picker(registry: Rc<Registry>, onstart: EventHandler<ExerciseQuery>) -> E
                     class: "tk-btn tk-btn--primary",
                     lang: "se",
                     disabled: !ready,
-                    "Sádde"
+                    {se_or_en("send")}
                 }
             }
         }

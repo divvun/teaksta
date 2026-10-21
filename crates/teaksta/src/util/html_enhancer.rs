@@ -13,16 +13,11 @@ use crate::util::html_utils;
 /// What the learner is asked to do, in North Sámi, for the registry endpoint
 /// to serve alongside each exercise.
 ///
-/// The exercises are four and are compiled in, so every one of them has a
-/// label and the lookup cannot miss. A topic's label is not here: topics are
+/// The wording is `se.ftl`'s, under `mode-<name>`, beside the English the
+/// client glosses it with. A topic's label is not there: topics are
 /// configuration, and each one carries its own in `topics.toml`.
-pub fn mode_label(mode: Mode) -> &'static str {
-    match mode {
-        Mode::Colorize => "Geah\u{10d}a ivdnejuvvon s\u{e1}niid.",
-        Mode::Click => "Coahkkal rivttes s\u{e1}niid!",
-        Mode::Mc => "V\u{e1}llje rivttes s\u{e1}niid!",
-        Mode::Cloze => "\u{10c}\u{e1}le rivttes s\u{e1}niid!",
-    }
+pub fn mode_label(mode: Mode) -> String {
+    teaksta_l10n::se_or_en(&format!("mode-{}", mode.name()))
 }
 
 // [spec:teaksta:def:sme.src.main.java.werti.util.html-enhancer.html-enhancer]
@@ -153,7 +148,9 @@ mod tests {
             "Geah\u{10d}a ivdnejuvvon s\u{e1}niid."
         );
         for mode in Mode::ALL {
-            assert!(!mode_label(mode).is_empty(), "{}", mode.name());
+            let label = mode_label(mode);
+            assert!(teaksta_l10n::se(&format!("mode-{}", mode.name())).is_some());
+            assert!(!label.is_empty(), "{}", mode.name());
         }
     }
 }

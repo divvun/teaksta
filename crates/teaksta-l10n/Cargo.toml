@@ -1,0 +1,14 @@
+[package]
+name = "teaksta-l10n"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0"
+
+[dependencies]
+# Divvun's fork, at the revision divvun-runtime already pins, so the server
+# carries one Fluent rather than two. It is plain Rust and builds for wasm.
+fluent-bundle = { git = "https://github.com/divvun/fluent-rs" }
+unic-langid = "0.9"
+
+[dev-dependencies]
+fluent-syntax = { git = "https://github.com/divvun/fluent-rs" }

@@ -11,15 +11,13 @@
 //! mark, and nothing turns red for being low.
 
 use dioxus::prelude::*;
+use teaksta_l10n::{en, se_or_en};
 
 use super::markup::{Markup, TokenSpan};
 
 /// Above this many words the dots stop being a glance and turn into counting,
 /// so a long text carries the number alone.
 const MAX_DOTS: usize = 20;
-
-/// What the learner reads once the exercise is over.
-pub const RESULT_LABEL: &str = "Geahča bohtosa";
 
 /// What the dots in a score chip stand for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -131,7 +129,7 @@ pub fn Score(right: usize, total: usize, gloss: String, rows: Vec<Review>) -> El
                         span { class: "res-of", "/ {total}" }
                     }
                     p { class: "res-label", lang: "se",
-                        "Rivttes"
+                        {se_or_en("right")}
                         span { class: "tk-gloss", "{gloss}" }
                     }
                 }
@@ -143,7 +141,7 @@ pub fn Score(right: usize, total: usize, gloss: String, rows: Vec<Review>) -> El
                 }
             }
 
-            p { class: "tk-eyebrow", "Word by word" }
+            p { class: "tk-eyebrow", {en("review-heading")} }
             ul { class: "review",
                 for (at , row) in rows.iter().enumerate() {
                     li { key: "{at}", class: "rev", {row_view(row)} }
@@ -166,7 +164,7 @@ fn row_view(row: &Review) -> Element {
         span { class: "{word}", lang: "se", "{row.word}" }
         span { class: "rev-meta",
             if let Some(gave) = row.gave.as_ref() {
-                "wrote "
+                "{en(\"review-wrote\")} "
                 em { lang: "se", "{gave}" }
                 if row.lemma.is_some() {
                     " · "

@@ -16,12 +16,14 @@ pub mod score;
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{en, se_or_en};
 
 use crate::api::{ApiError, Backend, BlockRequest, PageFailure, fetch_blocks, site_of};
 use crate::route::{ExerciseQuery, Route};
 use crate::ui::SharedRegistry;
 use crate::ui::alert::Alert;
 use crate::ui::choices::topic_subtitle;
+use crate::ui::words::Pending;
 
 use click::ClickMode;
 use cloze::ClozeMode;
@@ -93,10 +95,7 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
         section { class: "stage",
             match &*value.read_unchecked() {
                 None => rsx! {
-                    p { class: "state state-pending", lang: "se",
-                        "Vuorddát…"
-                        span { class: "tk-gloss", "Asking the backend for the analysed text" }
-                    }
+                    Pending { id: "waiting-text" }
                 },
                 Some(Ok(text)) => rsx! {
                     EnhancedText {
@@ -115,9 +114,7 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
             }
 
             div { class: "stage-foot",
-                span { class: "tk-gloss",
-                    "The same text is still loaded — switch mode to read it again."
-                }
+                span { class: "tk-gloss", {en("stage-foot")} }
                 span { class: "stage-swaps",
                     for (name , label) in others {
                         Link {
@@ -147,9 +144,10 @@ pub fn Exercise(params: ExerciseQuery) -> Element {
 pub fn Unread(failure: PageFailure, url: String) -> Element {
     rsx! {
         Alert {
+            sme: failure.explain_se(site_of(&url)),
             en: failure.explain(site_of(&url)),
             code: failure.code().to_string(),
-            Link { to: Route::Home {}, class: "tk-btn", lang: "se", "Vállje neahttasiiddu" }
+            Link { to: Route::Home {}, class: "tk-btn", lang: "se", {se_or_en("choose-page")} }
         }
     }
 }

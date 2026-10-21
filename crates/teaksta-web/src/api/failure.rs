@@ -9,6 +9,7 @@
 //! site.
 
 use serde::Deserialize;
+use teaksta_l10n::{FluentArgs, args, en_with, se_with};
 
 /// Why a page could not be read. Each variant is one code the page endpoints
 /// write into the reply.
@@ -70,45 +71,43 @@ impl PageFailure {
         })
     }
 
-    /// What the learner reads, naming the site when there is one to name.
-    ///
-    /// English only: the webapp this replaces had no North Sámi wording for
-    /// any of these to carry over, and an invented one would be worse than
-    /// none.
-    pub fn explain(self, site: Option<&str>) -> String {
-        let named = site.unwrap_or("The site");
-        match self {
-            PageFailure::SiteError(status) => format!(
-                "{named} answered with an error ({status}). The site itself is failing, \
-                 not teaksta: try again later, or choose another page."
+    /// The message the learner is told this in, naming the site when there is
+    /// one to name, and the placeables it takes.
+    pub fn message(self, site: Option<&str>) -> (&'static str, FluentArgs<'_>) {
+        let none = FluentArgs::new();
+        match (self, site) {
+            (PageFailure::SiteError(status), Some(site)) => (
+                "page-failure-site-error",
+                args([("site", site.to_string()), ("status", status.to_string())]),
             ),
-            PageFailure::Unreachable => match site {
-                Some(site) => format!(
-                    "{site} could not be reached, or did not answer in time. Check the \
-                     address, or try again later."
-                ),
-                None => "The text could not be read. Try again later.".to_string(),
-            },
-            PageFailure::TooLarge => {
-                "The page is too large to make an exercise from. Choose a shorter page.".to_string()
+            (PageFailure::SiteError(status), None) => (
+                "page-failure-site-error-unnamed",
+                args([("status", status.to_string())]),
+            ),
+            (PageFailure::Unreachable, Some(site)) => {
+                ("page-failure-unreachable", args([("site", site)]))
             }
-            PageFailure::Busy => {
-                "teaksta is reading too many pages at once. Try again in a moment.".to_string()
-            }
-            PageFailure::BadAddress => {
-                "That is not a web address teaksta can read. Check it and try again.".to_string()
-            }
-            PageFailure::BadScheme => {
-                "Only web pages, starting http:// or https://, can be used.".to_string()
-            }
-            PageFailure::PrivateAddress => {
-                "That address is on a private network, which teaksta cannot reach.".to_string()
-            }
-            PageFailure::NotServed => "That file is not one teaksta can read.".to_string(),
-            PageFailure::NoSuchText => {
-                "The text this link pointed to is no longer stored.".to_string()
-            }
+            (PageFailure::Unreachable, None) => ("page-failure-unreachable-unnamed", none),
+            (PageFailure::TooLarge, _) => ("page-failure-too-large", none),
+            (PageFailure::Busy, _) => ("page-failure-busy", none),
+            (PageFailure::BadAddress, _) => ("page-failure-bad-address", none),
+            (PageFailure::BadScheme, _) => ("page-failure-bad-scheme", none),
+            (PageFailure::PrivateAddress, _) => ("page-failure-private-address", none),
+            (PageFailure::NotServed, _) => ("page-failure-not-served", none),
+            (PageFailure::NoSuchText, _) => ("page-failure-no-such-text", none),
         }
+    }
+
+    /// The English the learner reads.
+    pub fn explain(self, site: Option<&str>) -> String {
+        let (id, args) = self.message(site);
+        en_with(id, &args)
+    }
+
+    /// The North Sámi the learner reads, where it has been written.
+    pub fn explain_se(self, site: Option<&str>) -> Option<String> {
+        let (id, args) = self.message(site);
+        se_with(id, &args)
     }
 }
 
@@ -183,11 +182,16 @@ mod tests {
         assert!(said.contains("not teaksta"));
     }
 
+    /// Every failure, with a site and without, is worded in English, so no
+    /// message id reaches the page in place of a sentence.
     #[test]
     fn every_failure_is_explained() {
         for failure in ALL {
-            assert!(!failure.explain(Some("example.org")).is_empty());
-            assert!(!failure.explain(None).is_empty());
+            for site in [Some("example.org"), None] {
+                let (id, _) = failure.message(site);
+                assert!(teaksta_l10n::has(id), "{id}");
+                assert_ne!(failure.explain(site), id);
+            }
         }
     }
 

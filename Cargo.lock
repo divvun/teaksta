@@ -5760,6 +5760,7 @@ dependencies = [
  "scraper",
  "serde",
  "serde_json",
+ "teaksta-l10n",
  "tempfile",
  "thiserror 2.0.20",
  "tokio",
@@ -5767,6 +5768,15 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "urlencoding",
+]
+
+[[package]]
+name = "teaksta-l10n"
+version = "0.1.0"
+dependencies = [
+ "fluent-bundle",
+ "fluent-syntax",
+ "unic-langid",
 ]
 
 [[package]]
@@ -5779,6 +5789,7 @@ dependencies = [
  "js-sys",
  "serde",
  "serde_json",
+ "teaksta-l10n",
  "urlencoding",
 ]
 

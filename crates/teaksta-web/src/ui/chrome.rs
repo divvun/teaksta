@@ -14,6 +14,7 @@
 //! leads somewhere refusing.
 
 use dioxus::prelude::*;
+use teaksta_l10n::se_or_en;
 
 use crate::api::{Backend, fetch_registry};
 use crate::route::Route;
@@ -29,18 +30,21 @@ pub fn Chrome() -> Element {
 
     let answered = registry.value();
     let uploads = matches!(&*answered.read_unchecked(), Some(Ok(offered)) if offered.uploads);
+    let choose_page = se_or_en("choose-page");
+    let choose_file = se_or_en("choose-file");
+    let footer = se_or_en("footer");
 
     rsx! {
         header { class: "bar",
             Link { to: Route::Home {}, class: "tk-wordmark", "teaksta" }
             nav { class: "bar-right",
-                Link { to: Route::Home {}, class: "bar-link", lang: "se", "Vállje neahttasiiddu" }
+                Link { to: Route::Home {}, class: "bar-link", lang: "se", "{choose_page}" }
                 if uploads {
-                    Link { to: Route::Upload {}, class: "bar-link", lang: "se", "Vállje fiilla" }
+                    Link { to: Route::Upload {}, class: "bar-link", lang: "se", "{choose_file}" }
                 }
             }
         }
         main { class: "col chrome-main", Outlet::<Route> {} }
-        p { class: "foot", lang: "se", "Divvun · UiT Norgga árktalaš universitehta" }
+        p { class: "foot", lang: "se", "{footer}" }
     }
 }

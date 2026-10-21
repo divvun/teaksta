@@ -17,6 +17,7 @@ use std::rc::Rc;
 
 use dioxus::html::FileData;
 use dioxus::prelude::*;
+use teaksta_l10n::{en, se, se_or_en};
 
 use crate::api::{ApiError, Backend, DEFAULT_MODE, Registry, UploadFile, upload};
 use crate::route::{ExerciseQuery, Route};
@@ -24,6 +25,7 @@ use crate::ui::SharedRegistry;
 use crate::ui::alert::Alert;
 use crate::ui::choices::{Choice, Modes, Topics, first_topic};
 use crate::ui::home::upload_icon;
+use crate::ui::words::{FileLimits, Or, Pending};
 
 /// The radio group asking what becomes of an accepted text, which is the one
 /// question this form asks that the backend does not answer for itself.
@@ -43,10 +45,7 @@ pub fn Upload() -> Element {
     rsx! {
         match &*value.read_unchecked() {
             None => rsx! {
-                p { class: "state state-pending", lang: "se",
-                    "Vuorddát…"
-                    span { class: "tk-gloss", "Asking the backend which topics it offers" }
-                }
+                Pending { id: "waiting-registry" }
             },
             Some(Ok(offered)) => rsx! {
                 UploadStart {
@@ -82,23 +81,20 @@ pub fn UploadStart(
     rsx! {
         div { class: "start",
             div { class: "start-head",
-                h2 { "Start an exercise" }
-                p {
-                    "Send a page of your own and the text is analysed once, just as a "
-                    "page already on the web is — every mode then plays over it."
-                }
+                h2 { {en("start-heading")} }
+                p { {en("upload-lead")} }
             }
             UploadPicker { registry, backend, onstart }
-            div { class: "or", lang: "se", "dahje / or" }
+            Or {}
             label { class: "field", lang: "se",
-                "Vállje neahttasiiddu"
-                span { class: "tk-gloss", "Choose a web page" }
+                {se_or_en("choose-page")}
+                span { class: "tk-gloss", {en("choose-page")} }
             }
             Link { to: Route::Home {}, class: "drop",
                 span { class: "drop-icon", {upload_icon()} }
                 span { class: "drop-body",
-                    span { class: "drop-label", lang: "se", "Vállje neahttasiiddu" }
-                    span { class: "drop-sub", "Practise on a page already on the web" }
+                    span { class: "drop-label", lang: "se", {se_or_en("choose-page")} }
+                    span { class: "drop-sub", {en("choose-page-sub")} }
                 }
             }
         }
@@ -108,16 +104,13 @@ pub fn UploadStart(
 /// What this deployment does not do, said in the panel a closed gate is said
 /// in — because it is the same kind of news: something the teacher came here
 /// to do is not going to happen, and the way forward is the other route.
-///
-/// English only for now: the North Sámi wording is the translator's, and an
-/// invented one would be worse than an untranslated sentence. It is flagged
-/// here for the translation pass, as the other strings awaiting one are.
 #[component]
 fn Unavailable() -> Element {
     rsx! {
         Alert {
-            en: "This deployment does not accept uploads. Practise on a page already on the web instead.",
-            Link { to: Route::Home {}, class: "tk-btn", lang: "se", "Vállje neahttasiiddu" }
+            sme: se("uploads-unavailable"),
+            en: en("uploads-unavailable"),
+            Link { to: Route::Home {}, class: "tk-btn", lang: "se", {se_or_en("choose-page")} }
         }
     }
 }
@@ -160,7 +153,7 @@ pub fn UploadPicker(
     let topic_label = registry.activity_label(&current_topic).to_string();
     let mode_label = registry.mode_label(&current_mode).to_string();
     let drop_label = if chosen_name.is_empty() {
-        "Vállje fiilla".to_string()
+        se_or_en("choose-file")
     } else {
         chosen_name
     };
@@ -218,17 +211,14 @@ pub fn UploadPicker(
             },
 
             label { class: "field", r#for: FILE_FIELD, lang: "se",
-                "Vállje fiilla maid háliidat geavahit"
-                span { class: "tk-gloss", "Choose a file to use" }
+                {se_or_en("choose-file-to-use")}
+                span { class: "tk-gloss", {en("choose-file-to-use")} }
             }
             label { class: "drop", r#for: FILE_FIELD,
                 span { class: "drop-icon", {upload_icon()} }
                 span { class: "drop-body",
                     span { class: "drop-label", lang: "se", "{drop_label}" }
-                    span { class: "drop-sub", lang: "se",
-                        "Teaksta ferte leat .html formáhtas. "
-                        span { class: "tk-gloss", "· max 5 MB" }
-                    }
+                    FileLimits {}
                 }
                 input {
                     id: FILE_FIELD,
@@ -246,27 +236,24 @@ pub fn UploadPicker(
 
             div { class: "keep",
                 p { class: "keep-lead", lang: "se",
-                    "Sáhtát addit hárjehusa liŋkka ohppiide. Vállje nuppi molssaeavttu:"
-                    span { class: "tk-gloss",
-                        "The exercise keeps a link you can hand out"
-                    }
+                    {se_or_en("keep-lead")}
+                    span { class: "tk-gloss", {en("keep-lead")} }
                 }
                 div { class: "opts",
                     Choice {
                         group: KEEP_GROUP.to_string(),
                         value: true.to_string(),
                         chosen: keep(),
-                        label: "Fiila vurkejuvvo nu ahte sáhtát geavahit liŋkka ođđasit eará háve."
-                            .to_string(),
-                        gloss: "The file is kept, so the link works again later.".to_string(),
+                        label: se_or_en("keep-yes"),
+                        gloss: en("keep-yes"),
                         onpick: move |wanted: String| keep.set(wanted == true.to_string()),
                     }
                     Choice {
                         group: KEEP_GROUP.to_string(),
                         value: false.to_string(),
                         chosen: !keep(),
-                        label: "Fiila sihkkojuvvo gaskaija áigge.".to_string(),
-                        gloss: "The file is deleted overnight.".to_string(),
+                        label: se_or_en("keep-no"),
+                        gloss: en("keep-no"),
                         onpick: move |wanted: String| keep.set(wanted == true.to_string()),
                     }
                 }
@@ -278,7 +265,7 @@ pub fn UploadPicker(
                     class: "tk-btn tk-btn--primary",
                     lang: "se",
                     disabled: !ready,
-                    "Sádde"
+                    {se_or_en("send")}
                 }
             }
         }
@@ -286,10 +273,7 @@ pub fn UploadPicker(
         match current_offer {
             Offer::Waiting => rsx! {},
             Offer::Sending => rsx! {
-                p { class: "state state-pending", lang: "se",
-                    "Vuorddát…"
-                    span { class: "tk-gloss", "The backend is reading the text you sent" }
-                }
+                Pending { id: "waiting-upload" }
             },
             Offer::Refused(error) => rsx! {
                 Refusal { error }
@@ -316,10 +300,10 @@ fn Refusal(error: ApiError) -> Element {
 
     rsx! {
         Alert {
-            sme: gate.message().to_string(),
-            en: gate.gloss().to_string(),
+            sme: gate.message(),
+            en: gate.gloss(),
             code: gate.code().to_string(),
-            label { class: "tk-btn", r#for: FILE_FIELD, lang: "se", "Vállje fiilla" }
+            label { class: "tk-btn", r#for: FILE_FIELD, lang: "se", {se_or_en("choose-file")} }
         }
     }
 }
@@ -334,7 +318,11 @@ mod tests {
     #[test]
     fn every_gate_is_named_in_both_languages() {
         for gate in Rejection::ALL {
-            assert!(!gate.message().is_empty(), "{:?}", gate.code());
+            assert!(
+                gate.message().is_some_and(|message| !message.is_empty()),
+                "{:?}",
+                gate.code()
+            );
             assert!(!gate.gloss().is_empty(), "{:?}", gate.code());
             assert!(gate.code().is_ascii());
         }

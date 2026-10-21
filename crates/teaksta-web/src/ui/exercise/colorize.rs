@@ -8,6 +8,7 @@
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{args, en_with, se_or_en};
 
 use super::markup::{Markup, TokenSpan};
 use super::score::{Dots, ScoreChip};
@@ -48,9 +49,9 @@ pub fn ColorizeMode(markup: Rc<Markup>, topic: String, prompt: String) -> Elemen
                     span { class: "tk-gloss", "{mode_gloss(MODE)}" }
                 }
                 ScoreChip {
-                    label: "Ivdnejuvvon sánit".to_string(),
+                    label: se_or_en("highlighted"),
                     count: found.to_string(),
-                    gloss: format!("{found} highlighted word forms"),
+                    gloss: en_with("colorize-found", &args([("found", found)])),
                     dots: Dots::Marked(found),
                 }
             }

@@ -19,9 +19,10 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{args, en, en_with, se_or_en};
 
 use super::markup::{Markup, TokenSpan, accepts};
-use super::score::{Dots, RESULT_LABEL, Review, Score, ScoreChip, review_of};
+use super::score::{Dots, Review, Score, ScoreChip, review_of};
 use super::{Setting, enhanced_text};
 use crate::ui::choices::mode_gloss;
 
@@ -277,7 +278,7 @@ pub fn McToken(
                 "aria-expanded": "{expanded}",
                 "aria-controls": "{menu}",
                 "aria-activedescendant": active,
-                "aria-label": "Choose the missing form",
+                "aria-label": en("mc-choose"),
                 onclick: move |_| onmove.call(Move::Press),
                 onblur: move |_| onmove.call(Move::Shut),
                 onkeydown: move |event| {
@@ -295,7 +296,7 @@ pub fn McToken(
                     class: "tk-mc-menu",
                     id: "{menu}",
                     role: "listbox",
-                    "aria-label": "Forms of the same word",
+                    "aria-label": en("mc-forms"),
                     for (at , choice) in choices.iter().enumerate() {
                         span {
                             key: "{at}",
@@ -362,9 +363,9 @@ pub fn McMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                     span { class: "tk-gloss", "{mode_gloss(MODE)}" }
                 }
                 ScoreChip {
-                    label: "Rivttes".to_string(),
+                    label: se_or_en("right"),
                     count: "{settled} / {wanted}",
-                    gloss: format!("{tries} forms chosen so far"),
+                    gloss: en_with("mc-tries", &args([("tries", tries)])),
                     dots: Dots::Settled { right: settled, total: wanted },
                 }
             }
@@ -425,7 +426,7 @@ pub fn McMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                 Score {
                     right: settled,
                     total: wanted,
-                    gloss: format!("{settled} of the {wanted} slots settled"),
+                    gloss: en_with("mc-result", &args([("settled", settled), ("wanted", wanted)])),
                     rows,
                 }
             } else {
@@ -435,8 +436,8 @@ pub fn McMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                         class: "tk-btn tk-btn--primary",
                         lang: "se",
                         onclick: move |_| showing.set(true),
-                        "{RESULT_LABEL}"
-                        span { class: "tk-gloss", "See how it went" }
+                        {se_or_en("see-result")}
+                        span { class: "tk-gloss", {en("see-result")} }
                     }
                 }
             }

@@ -16,9 +16,10 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{args, en, en_with, se_or_en};
 
 use super::markup::{Markup, accepts};
-use super::score::{Dots, RESULT_LABEL, Review, Score, ScoreChip, review_of};
+use super::score::{Dots, Review, Score, ScoreChip, review_of};
 use super::{Setting, enhanced_text};
 use crate::ui::choices::mode_gloss;
 
@@ -91,7 +92,7 @@ pub fn ClozeToken(
                 r#type: "text",
                 class: box_class(slot.state),
                 lang: "se",
-                "aria-label": "Write the missing form",
+                "aria-label": en("cloze-write"),
                 style: "width: {width}ch",
                 readonly: settled,
                 value: "{slot.written}",
@@ -110,7 +111,7 @@ pub fn ClozeToken(
                     button {
                         r#type: "button",
                         class: "tk-hint-btn",
-                        "aria-label": "Show the base form",
+                        "aria-label": en("cloze-show-lemma"),
                         onclick: move |_| onhint.call(()),
                         "?"
                     }
@@ -146,9 +147,9 @@ pub fn ClozeMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                     span { class: "tk-gloss", "{mode_gloss(MODE)}" }
                 }
                 ScoreChip {
-                    label: "Rivttes".to_string(),
+                    label: se_or_en("right"),
                     count: "{right} / {wanted}",
-                    gloss: format!("{tries} forms written so far"),
+                    gloss: en_with("cloze-tries", &args([("tries", tries)])),
                     dots: Dots::Settled { right, total: wanted },
                 }
             }
@@ -198,7 +199,7 @@ pub fn ClozeMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                 Score {
                     right,
                     total: wanted,
-                    gloss: format!("{right} of the {wanted} forms written right"),
+                    gloss: en_with("cloze-result", &args([("right", right), ("wanted", wanted)])),
                     rows,
                 }
             } else {
@@ -208,8 +209,8 @@ pub fn ClozeMode(markup: Rc<Markup>, topic: String, prompt: String) -> Element {
                         class: "tk-btn tk-btn--primary",
                         lang: "se",
                         onclick: move |_| showing.set(true),
-                        "{RESULT_LABEL}"
-                        span { class: "tk-gloss", "See how it went" }
+                        {se_or_en("see-result")}
+                        span { class: "tk-gloss", {en("see-result")} }
                     }
                 }
             }

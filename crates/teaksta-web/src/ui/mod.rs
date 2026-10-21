@@ -7,6 +7,7 @@ mod chrome;
 pub mod exercise;
 mod home;
 mod upload;
+mod words;
 
 use dioxus::prelude::*;
 

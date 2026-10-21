@@ -15,6 +15,7 @@
 use std::rc::Rc;
 
 use dioxus::prelude::*;
+use teaksta_l10n::{args, en, en_with, has, se_or_en};
 
 use crate::api::Registry;
 
@@ -45,59 +46,27 @@ pub fn first_topic(registry: &Registry) -> String {
 const TOPIC_GROUP: &str = "topic";
 const MODE_GROUP: &str = "mode";
 
-/// What each shipped topic marks, in English, under the North Sámi name.
-const TOPIC_SUBTITLES: &[(&str, &str)] = &[
-    ("Substantive", "Nouns in any form"),
-    ("SubstantiveSingular", "Singular nouns only"),
-    ("SubstantivePlural", "Plural nouns only"),
-    ("Subject", "The subject of each clause"),
-    ("Object", "The object of each clause"),
-    ("Adverbial", "Adverbial phrases"),
-    ("Conjunctions", "Coordinating conjunctions"),
-    ("NegVerbs", "Negation verbs"),
-    ("InfiniteVerbs", "Non-finite verb forms"),
-    ("VerbConjugation", "Finite verbs and their conjugation"),
-];
-
-/// What each mode asks for, in three or four words, so a segment says more
-/// than the backend's parameter value does on its own.
-const MODE_HINTS: &[(&str, &str)] = &[
-    ("colorize", "Read & notice"),
-    ("click", "Find them"),
-    ("mc", "Pick a form"),
-    ("cloze", "Type it"),
-];
-
-/// The English reading of each mode's North Sámi instruction.
-const MODE_GLOSSES: &[(&str, &str)] = &[
-    ("colorize", "Look at the coloured words."),
-    ("click", "Click the right words!"),
-    ("mc", "Choose the right words!"),
-    ("cloze", "Write the right words!"),
-];
-
-fn looked_up<'a>(table: &'a [(&'a str, &'a str)], name: &'a str) -> &'a str {
-    table
-        .iter()
-        .find(|(key, _)| *key == name)
-        .map(|(_, text)| *text)
-        .unwrap_or(name)
+/// A message keyed by a name the backend serves, or that name itself for one
+/// this app's messages do not know.
+fn named_message(prefix: &str, name: &str) -> String {
+    let id = format!("{prefix}-{name}");
+    if has(&id) { en(&id) } else { name.to_string() }
 }
 
 /// What a topic marks, in English. A topic this app has never met reads as the
 /// name the backend serves it under, which is all anyone knows about it.
-pub fn topic_subtitle(name: &str) -> &str {
-    looked_up(TOPIC_SUBTITLES, name)
+pub fn topic_subtitle(name: &str) -> String {
+    named_message("topic", name)
 }
 
 /// What a mode asks for, in a few English words.
-pub fn mode_hint(name: &str) -> &str {
-    looked_up(MODE_HINTS, name)
+pub fn mode_hint(name: &str) -> String {
+    named_message("mode-hint", name)
 }
 
 /// The English reading of a mode's North Sámi instruction.
-pub fn mode_gloss(name: &str) -> &str {
-    looked_up(MODE_GLOSSES, name)
+pub fn mode_gloss(name: &str) -> String {
+    named_message("mode", name)
 }
 
 /// The topics on offer, over the one the form is set to.
@@ -106,15 +75,16 @@ pub fn Topics(registry: Rc<Registry>, chosen: String, onpick: EventHandler<Strin
     let offered = named_topics(&registry);
     let picked = usize::from(offered.iter().any(|topic| topic.name == chosen));
     let total = offered.len();
+    let count = en_with("topic-count", &args([("picked", picked), ("total", total)]));
 
     rsx! {
         section { class: "picker",
             div { class: "tk-fieldhead",
                 h2 { lang: "se",
-                    "Fáddá "
-                    span { class: "tk-gloss", "Topic" }
+                    "{se_or_en(\"topic-heading\")} "
+                    span { class: "tk-gloss", {en("topic-heading")} }
                 }
-                span { class: "tk-gloss", "{picked} of {total}" }
+                span { class: "tk-gloss", "{count}" }
             }
             ul { class: "topics",
                 for topic in offered {
@@ -139,15 +109,16 @@ pub fn Modes(registry: Rc<Registry>, chosen: String, onpick: EventHandler<String
     let offered = named_modes(&registry);
     let ways = offered.len();
     let saying = registry.mode_label(&chosen).to_string();
+    let count = en_with("mode-count", &args([("ways", ways)]));
 
     rsx! {
         section { class: "exercises",
             div { class: "tk-fieldhead",
                 h2 { lang: "se",
-                    "Hárjehus "
-                    span { class: "tk-gloss", "Exercise" }
+                    "{se_or_en(\"mode-heading\")} "
+                    span { class: "tk-gloss", {en("mode-heading")} }
                 }
-                span { class: "tk-gloss", "Same text, {ways} ways in" }
+                span { class: "tk-gloss", "{count}" }
             }
             div { class: "seg", role: "tablist",
                 for mode in offered {
@@ -306,7 +277,20 @@ mod tests {
     fn every_shipped_topic_reads_in_english() {
         assert_eq!(topic_subtitle("Substantive"), "Nouns in any form");
         assert_eq!(topic_subtitle("NegVerbs"), "Negation verbs");
-        assert_eq!(TOPIC_SUBTITLES.len(), 10);
+        for name in [
+            "Adverbial",
+            "Conjunctions",
+            "InfiniteVerbs",
+            "NegVerbs",
+            "Object",
+            "Subject",
+            "Substantive",
+            "SubstantivePlural",
+            "SubstantiveSingular",
+            "VerbConjugation",
+        ] {
+            assert_ne!(topic_subtitle(name), name);
+        }
     }
 
     /// A deployment may offer a topic this app has never met, and the list has
@@ -322,6 +306,9 @@ mod tests {
     fn every_mode_says_what_it_asks_for() {
         assert_eq!(mode_hint("cloze"), "Type it");
         assert_eq!(mode_gloss("cloze"), "Write the right words!");
-        assert_eq!(MODE_HINTS.len(), MODE_GLOSSES.len());
+        for mode in ["colorize", "click", "mc", "cloze"] {
+            assert_ne!(mode_hint(mode), mode);
+            assert_ne!(mode_gloss(mode), mode);
+        }
     }
 }

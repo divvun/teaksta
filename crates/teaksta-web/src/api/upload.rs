@@ -102,26 +102,21 @@ impl Rejection {
             .find(|rejection| rejection.code() == code)
     }
 
+    /// The message id this gate is worded under.
+    fn message_id(self) -> String {
+        format!("upload-{}", self.code())
+    }
+
     /// What the teacher reads. The wording is the webapp's own, kept as it
     /// turned the same four gates away with it.
-    pub fn message(self) -> &'static str {
-        match self {
-            Rejection::NoFile => "Vajálduhttet sáddet fiilla!",
-            Rejection::TooLarge => "Fiila lea menddo stuoris! Lobálaš sturrodat: 5MB.",
-            Rejection::NotAPage => "Fiilla formáhta ii leat html! Lobálaš formáhta: html.",
-            Rejection::NotNorthSami => "Fiila ii sisttisdoala davvisámegiela!",
-        }
+    pub fn message(self) -> Option<String> {
+        teaksta_l10n::se(&self.message_id())
     }
 
     /// The English gloss shown beside the message, as beside every other North
     /// Sámi line in the app.
-    pub fn gloss(self) -> &'static str {
-        match self {
-            Rejection::NoFile => "No file was chosen",
-            Rejection::TooLarge => "The file is over the 5 MB limit",
-            Rejection::NotAPage => "The file is not an HTML page",
-            Rejection::NotNorthSami => "Too little of the text reads as North Sámi",
-        }
+    pub fn gloss(self) -> String {
+        teaksta_l10n::en(&self.message_id())
     }
 }
 
@@ -345,13 +340,17 @@ mod tests {
     #[test]
     fn every_gate_is_named_in_sami() {
         for rejection in Rejection::ALL {
-            assert!(!rejection.message().is_empty());
+            assert!(
+                rejection
+                    .message()
+                    .is_some_and(|message| !message.is_empty())
+            );
             assert!(!rejection.gloss().is_empty());
         }
 
         assert_eq!(
-            Rejection::NotNorthSami.message(),
-            "Fiila ii sisttisdoala davvisámegiela!"
+            Rejection::NotNorthSami.message().as_deref(),
+            Some("Fiila ii sisttisdoala davvisámegiela!")
         );
         assert_eq!(
             ApiError::Rejected(Rejection::NoFile).to_string(),

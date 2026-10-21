@@ -109,19 +109,23 @@ fn a_teacher_is_told_what_to_offer() {
 /// replaces turned the same four away with.
 #[test]
 fn every_gate_keeps_the_old_wording() {
-    assert_eq!(Rejection::NoFile.message(), "Vajálduhttet sáddet fiilla!");
-    assert_eq!(
-        Rejection::TooLarge.message(),
-        "Fiila lea menddo stuoris! Lobálaš sturrodat: 5MB."
-    );
-    assert_eq!(
-        Rejection::NotAPage.message(),
-        "Fiilla formáhta ii leat html! Lobálaš formáhta: html."
-    );
-    assert_eq!(
-        Rejection::NotNorthSami.message(),
-        "Fiila ii sisttisdoala davvisámegiela!"
-    );
+    for (gate, wording) in [
+        (Rejection::NoFile, "Vajálduhttet sáddet fiilla!"),
+        (
+            Rejection::TooLarge,
+            "Fiila lea menddo stuoris! Lobálaš sturrodat: 5MB.",
+        ),
+        (
+            Rejection::NotAPage,
+            "Fiilla formáhta ii leat html! Lobálaš formáhta: html.",
+        ),
+        (
+            Rejection::NotNorthSami,
+            "Fiila ii sisttisdoala davvisámegiela!",
+        ),
+    ] {
+        assert_eq!(gate.message().as_deref(), Some(wording));
+    }
 }
 
 /// The replies the endpoint answers an offered text with, as it writes them.

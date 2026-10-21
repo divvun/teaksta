@@ -15,6 +15,7 @@
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+use teaksta_l10n::{args, en, en_with};
 
 mod failure;
 mod upload;
@@ -241,17 +242,24 @@ pub enum ApiError {
 
 impl fmt::Display for ApiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ApiError::Network(detail) => write!(f, "network error: {detail}"),
-            ApiError::Status(code) => write!(f, "backend answered {code}"),
-            ApiError::Page(failure) => write!(f, "{}", failure.explain(None)),
-            ApiError::Malformed(detail) => write!(f, "malformed response: {detail}"),
-            ApiError::Incomplete => write!(f, "no topic, exercise mode or page was given"),
-            ApiError::Rejected(rejection) => {
-                write!(f, "the text was turned away: {}", rejection.gloss())
+        let said = match self {
+            ApiError::Network(detail) => {
+                en_with("error-network", &args([("detail", detail.as_str())]))
             }
-            ApiError::Unsupported => write!(f, "no fetch client outside the browser"),
-        }
+            ApiError::Status(code) => {
+                en_with("error-status", &args([("status", code.to_string())]))
+            }
+            ApiError::Page(failure) => failure.explain(None),
+            ApiError::Malformed(detail) => {
+                en_with("error-malformed", &args([("detail", detail.as_str())]))
+            }
+            ApiError::Incomplete => en("error-incomplete"),
+            ApiError::Rejected(rejection) => {
+                en_with("error-rejected", &args([("reason", rejection.gloss())]))
+            }
+            ApiError::Unsupported => en("error-unsupported"),
+        };
+        f.write_str(&said)
     }
 }
 
