@@ -567,7 +567,7 @@ fn resolution_follows_what_exists_and_keeps_the_rest() {
 /// A site that answered with an error is told apart from one that never
 /// answered, and keeps the status it answered with, which is what lets a
 /// learner be told the site is down rather than teaksta.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2/test]
 #[test]
 fn an_error_status_is_kept() {
     for status in [400, 403, 404, 410, 500, 502, 503, 504] {
@@ -589,7 +589,7 @@ fn an_error_status_is_kept() {
     }
 }
 
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2/test]
 #[test]
 fn every_refusal_has_a_code_of_its_own() {
     let codes = [

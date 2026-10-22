@@ -58,7 +58,7 @@ ARG TEAKSTA_FST_TAG=
 # The server binary and the web client, from one source tree and one target
 # directory. cg3 and hfst are pure-Rust ports in this graph, so the only C
 # compiled here is what zstd-sys/lzma-sys/ring vendor — all of which the
-# non-slim rust image already has a toolchain, pkg-config and libssl-dev for.
+# non-slim rust image already has a toolchain and pkg-config for.
 FROM ${RUST_IMAGE} AS builder
 
 ARG DIOXUS_CLI_VERSION
@@ -150,11 +150,11 @@ COPY --from=model-fetch /models/generator-gt-norm.hfstol /generator-gt-norm.hfst
 
 # --------------------------------------------------------------- runtime ---
 # A slim Debian rather than distroless, for two reasons that are about this
-# binary and not about taste. It links libssl and libcrypto (reqwest is built on
-# native-tls) AND liblzma, libz and libzstd — the compression the .drb's box
-# archive is read through, which pkg-config resolves to the system libraries at
-# build time. The distroless image closest to that is `base`, which carries
-# glibc and OpenSSL but neither liblzma nor libzstd, so it would not start.
+# binary and not about taste. It links liblzma, libz and libzstd — the
+# compression the .drb's box archive is read through, which pkg-config resolves
+# to the system libraries at build time. The distroless image closest to that
+# is `base`, which carries glibc but neither liblzma nor libzstd, so it would
+# not start.
 # Distroless also tracks Debian 12, and a binary built against glibc 2.41 will
 # not run on 2.36, so buying into it means building on bookworm and compiling
 # dioxus-cli from source on every build. Against an image that already carries a
@@ -163,13 +163,13 @@ COPY --from=model-fetch /models/generator-gt-norm.hfstol /generator-gt-norm.hfst
 # worth more than losing it.
 FROM ${RUNTIME_IMAGE} AS runtime
 
-# ca-certificates is load-bearing, not hygiene: the enhancement endpoints fetch
-# the learner's page over https, and without a trust store every one of them
-# fails. libssl3t64 and the compression libraries are already in the base;
-# naming the one the build pulls in keeps that an assertion, not an assumption.
+# ca-certificates is load-bearing, not hygiene: the Azure store kept texts live
+# in is reached over https and verified against the system trust store. The
+# pages learners name are verified against the roots compiled into the binary
+# instead, so they do not depend on it.
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends ca-certificates libssl3t64; \
+    apt-get install -y --no-install-recommends ca-certificates; \
     rm -rf /var/lib/apt/lists/*; \
     groupadd --system --gid 10001 teaksta; \
     useradd --system --uid 10001 --gid 10001 --home-dir /app \

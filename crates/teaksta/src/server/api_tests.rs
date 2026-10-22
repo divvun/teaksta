@@ -700,7 +700,7 @@ async fn a_swept_upload_is_unreadable_rather_than_refused() {
 /// Each refusal is answered with the code that names it, on the endpoint the
 /// web client asks, so a learner who typed an address that cannot be read is
 /// told which kind it was.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2/test]
 #[tokio::test]
 async fn a_refusal_names_itself() {
     let root = topics_with(&["Substantive"]);
@@ -729,7 +729,7 @@ async fn a_refusal_names_itself() {
 
 /// A stored text that is not held is named as such, rather than reported as
 /// a page that could not be reached.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2/test]
 #[tokio::test]
 async fn a_text_not_held_is_named() {
     let root = topics_with(&["Substantive"]);
@@ -749,13 +749,13 @@ async fn a_text_not_held_is_named() {
 }
 
 /// What the client is told for each failure no test here can provoke without
-/// a far end: a site that answered with an error, a page over the cap, and no
-/// fetch slot. Anything untyped is this deployment's own failure and names no
+/// a far end: a site that answered with an error, a page over the cap, a
+/// certificate that was not accepted, and no fetch slot. Anything untyped is this deployment's own failure and names no
 /// code.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn/test]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2/test]
 #[tokio::test]
 async fn a_failure_is_answered_with_its_code() {
-    let cases: [(anyhow::Error, StatusCode, serde_json::Value); 4] = [
+    let cases: [(anyhow::Error, StatusCode, serde_json::Value); 5] = [
         (
             ErrorStatus {
                 address: "https://kursa.oahpa.no/".to_string(),
@@ -779,6 +779,12 @@ async fn a_failure_is_answered_with_its_code() {
                 .context(Unreachable("https://example.org/".to_string())),
             StatusCode::BAD_GATEWAY,
             serde_json::json!({ "error": "page-unreachable" }),
+        ),
+        (
+            anyhow::anyhow!("invalid peer certificate")
+                .context(Untrusted("https://expired.example/".to_string())),
+            StatusCode::BAD_GATEWAY,
+            serde_json::json!({ "error": "site-certificate" }),
         ),
         (
             Overloaded.into(),

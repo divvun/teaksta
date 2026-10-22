@@ -22,6 +22,7 @@ pub enum PageFailure {
     NoSuchText,
     /// The site answered, with this 4xx or 5xx status.
     SiteError(u16),
+    SiteCertificate,
     Unreachable,
     TooLarge,
     Busy,
@@ -46,6 +47,7 @@ impl PageFailure {
             PageFailure::NotServed => "not-served",
             PageFailure::NoSuchText => "no-such-text",
             PageFailure::SiteError(_) => "site-error",
+            PageFailure::SiteCertificate => "site-certificate",
             PageFailure::Unreachable => "page-unreachable",
             PageFailure::TooLarge => "page-too-large",
             PageFailure::Busy => "busy",
@@ -64,6 +66,7 @@ impl PageFailure {
             "not-served" => PageFailure::NotServed,
             "no-such-text" => PageFailure::NoSuchText,
             "site-error" => PageFailure::SiteError(reply.status?),
+            "site-certificate" => PageFailure::SiteCertificate,
             "page-unreachable" => PageFailure::Unreachable,
             "page-too-large" => PageFailure::TooLarge,
             "busy" => PageFailure::Busy,
@@ -84,6 +87,10 @@ impl PageFailure {
                 "page-failure-site-error-unnamed",
                 args([("status", status.to_string())]),
             ),
+            (PageFailure::SiteCertificate, Some(site)) => {
+                ("page-failure-site-certificate", args([("site", site)]))
+            }
+            (PageFailure::SiteCertificate, None) => ("page-failure-site-certificate-unnamed", none),
             (PageFailure::Unreachable, Some(site)) => {
                 ("page-failure-unreachable", args([("site", site)]))
             }
@@ -136,13 +143,14 @@ pub fn site_of(url: &str) -> Option<&str> {
 mod tests {
     use super::*;
 
-    const ALL: [PageFailure; 9] = [
+    const ALL: [PageFailure; 10] = [
         PageFailure::BadAddress,
         PageFailure::BadScheme,
         PageFailure::PrivateAddress,
         PageFailure::NotServed,
         PageFailure::NoSuchText,
         PageFailure::SiteError(502),
+        PageFailure::SiteCertificate,
         PageFailure::Unreachable,
         PageFailure::TooLarge,
         PageFailure::Busy,
@@ -180,6 +188,17 @@ mod tests {
 
         assert!(said.starts_with("kursa.oahpa.no answered with an error (502)."));
         assert!(said.contains("not teaksta"));
+    }
+
+    /// A certificate that was not accepted is the site's to fix, and is not
+    /// told as a site that could not be reached: a browser may well open it.
+    #[test]
+    fn a_refused_certificate_is_not_unreachable() {
+        let said = PageFailure::SiteCertificate.explain(Some("kursa.oahpa.no"));
+
+        assert!(said.starts_with("kursa.oahpa.no's security certificate could not be verified"));
+        assert!(said.contains("A browser may still open it"));
+        assert!(!said.contains("could not be reached"));
     }
 
     /// Every failure, with a site and without, is worded in English, so no

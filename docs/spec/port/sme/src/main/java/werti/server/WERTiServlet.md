@@ -471,14 +471,16 @@
 > One line is logged per answered request carrying the exercise and the
 > elapsed time.
 
-> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
 > fn failure(error: anyhow::Error) -> poem::Error
 >
 > pub struct ErrorStatus { pub address: String, pub status: u16 }
 >
+> pub struct Untrusted(pub String)
+>
 > impl Refusal { pub fn code(self) -> &'static str }
 
-> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
 > A page that could not be read is answered with a body that says why, as
 > `application/json`: an object whose `error` member is a code naming the
 > failure. The code is what a client tells a learner by. The status alone
@@ -500,6 +502,13 @@
 >   or 5xx status. The body also carries that status as a number in
 >   `status`, so a client can say what the site answered rather than only
 >   that it failed.
+> - 502, `site-certificate`: the far end's certificate could not be
+>   verified — it has expired, names another host, or leads to no trusted
+>   root even once its chain is completed as
+>   `[spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn]`
+>   completes one. It is told apart from a site that could not be reached
+>   because a browser will often open the same page, and a learner told the
+>   site was unreachable would see that it was not.
 > - 502, `page-unreachable`: the page could not be read from where it was
 >   named — no public address, no connection, no answer within the budget, a
 >   redirect refused, or a body that could not be read.
@@ -962,6 +971,50 @@
 > when it declares none or names an encoding nothing knows. That is what the
 > HTTP client's own body-to-text step would have done, and it is what has to
 > be kept when the body is read under a cap instead of buffered whole.
+
+> [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn]
+> pub struct CompletingVerifier
+>
+> pub struct MissingIssuer { leaf, presented, server_name }
+>
+> pub fn complete(missing: &MissingIssuer) -> bool
+
+> [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn]
+> A page fetched over `https` is accepted on a certificate that leads, through
+> the intermediates the site sent, to a root in Mozilla's root store, which is
+> compiled in. Those roots are the whole of what is trusted, whatever the host
+> the deployment runs on would trust.
+>
+> A site that sends its certificate without the intermediate that issued it
+> is not refused for that alone. Browsers repair the omission, so such a site
+> opens for everyone who visits it and nothing tells its owners it is broken;
+> it is a fault teaksta would otherwise meet on pages that work everywhere
+> else. The repair is the one browsers make: the certificate names where its
+> issuer can be fetched, in its authority information access extension, and
+> the issuer is fetched from there.
+>
+> The verification itself does no fetching. It runs inside the handshake, on
+> the one thread every fetch in flight shares, so a slow address there would
+> stall all of them. When no path is found it tries once more with every
+> intermediate already fetched, and when that finds none either the
+> handshake fails carrying the site's certificate. The fetch that failed then
+> fetches the issuer on its own thread, verifies the chain again with what
+> arrived, and, when the chain is now complete, asks for the page once more.
+> A chain is followed up at most three links, and each link from at most two
+> addresses.
+>
+> An issuer's address is a stranger's string, so it is read under the
+> policy every other address is: `http` and `https` only, the private network
+> refused before a socket is opened and after a name resolves, through the
+> same client, under a five second budget and a 16 KiB cap. What arrives is
+> read as one DER or PEM certificate; anything else is no issuer.
+>
+> A fetched intermediate grants nothing. It is offered to path building
+> alongside the ones the site sent, and a chain through it is accepted only
+> when it ends at a trusted root and every signature on the way verifies, as
+> with any intermediate a site sends itself. Intermediates are held for the
+> life of the process, at most 64 of them, so a site met again is verified
+> without fetching anything.
 
 > [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.init-fn+3]
 > pub fn new(config: Config) -> Result<AppState>

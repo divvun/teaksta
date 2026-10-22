@@ -47,6 +47,8 @@ upload-not-north-sami = Too little of the text reads as North Sámi
 
 page-failure-site-error = { $site } answered with an error ({ $status }). The site itself is failing, not teaksta: try again later, or choose another page.
 page-failure-site-error-unnamed = The site answered with an error ({ $status }). The site itself is failing, not teaksta: try again later, or choose another page.
+page-failure-site-certificate = { $site }'s security certificate could not be verified, so teaksta did not read the page. A browser may still open it; the site's owners can fix this.
+page-failure-site-certificate-unnamed = The site's security certificate could not be verified, so teaksta did not read the page. A browser may still open it; the site's owners can fix this.
 page-failure-unreachable = { $site } could not be reached, or did not answer in time. Check the address, or try again later.
 page-failure-unreachable-unnamed = The text could not be read. Try again later.
 page-failure-too-large = The page is too large to make an exercise from. Choose a shorter page.

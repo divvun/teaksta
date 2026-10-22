@@ -21,7 +21,15 @@ poem = { version = "3", features = ["multipart", "static-files"] }
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
-reqwest = { version = "0.12", features = ["blocking"] }
+# Pages are fetched over rustls rather than the platform's TLS, because
+# verification is teaksta's own: a site that sends its certificate without
+# the issuing intermediate is completed from the certificate's own issuer
+# address, as browsers do, and native-tls offers no hook to do that from.
+# The crypto provider is ring, already in this graph through object_store.
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "system-proxy", "rustls-tls-manual-roots-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+webpki-roots = "1"
+x509-parser = "0.18"
 # Where a kept text lives. object_store (Apache Arrow) carries its own Azure
 # shared-key signing, so the Azure backend costs no `azure_*` crate — which
 # matters, because the `azure_storage_blobs` 0.21 stack this would otherwise

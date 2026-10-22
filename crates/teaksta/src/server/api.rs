@@ -43,7 +43,9 @@ use tracing::{info, warn};
 use crate::context::Config;
 use crate::morpho::{BUNDLE_ENV, GENERATOR_ENV, MorphoPipeline};
 use crate::server::access;
-use crate::server::fetch::{self, ErrorStatus, Overloaded, Oversized, Refusal, Unreachable};
+use crate::server::fetch::{
+    self, ErrorStatus, Overloaded, Oversized, Refusal, Unreachable, Untrusted,
+};
 use crate::server::registry::Registry;
 use crate::server::texts::{Missing, TextId, TextStore};
 use crate::server::upload::{self, MAX_UPLOAD_BYTES, Rejection, Upload};
@@ -864,8 +866,8 @@ where
 /// Each of those but the last is answered with a code naming it, because the
 /// client shows a learner why the page did not load, and two of the 502s mean
 /// different things to them.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
 fn failure(error: anyhow::Error) -> poem::Error {
     let (status, body) = if let Some(refusal) = error.downcast_ref::<Refusal>() {
         info!("Refused an address: {refusal}");
@@ -881,6 +883,12 @@ fn failure(error: anyhow::Error) -> poem::Error {
         (
             StatusCode::BAD_GATEWAY,
             json!({ "error": "site-error", "status": answer.status }),
+        )
+    } else if error.downcast_ref::<Untrusted>().is_some() {
+        info!("{error:#}");
+        (
+            StatusCode::BAD_GATEWAY,
+            json!({ "error": "site-certificate" }),
         )
     } else if error.downcast_ref::<Oversized>().is_some() {
         info!("{error:#}");

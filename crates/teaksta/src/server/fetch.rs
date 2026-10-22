@@ -141,6 +141,16 @@
 //! thread — waiting is free, so the blocking pool stays available to the
 //! upload endpoint and to analysis — and gives up after [`FETCH_TIMEOUT`],
 //! answering 503 rather than queueing without end.
+//!
+//! # Certificates
+//!
+//! An `https` page is verified against Mozilla's roots, compiled in, by
+//! [`crate::server::chain`], which also completes a chain a site sent without
+//! the intermediate that issued its certificate. The completion fetches, so
+//! it is done here, on the fetch's own blocking thread, and not in the
+//! handshake; the issuer's address is read under the same policy as any other
+//! address a stranger wrote, by [`issuer`]. A certificate that is still not
+//! accepted is reported as [`Untrusted`] rather than as unreachable.
 
 use std::ffi::OsString;
 use std::io::Read as _;
@@ -154,11 +164,12 @@ use encoding_rs::{Encoding, UTF_8};
 use reqwest::dns::{Addrs, Name, Resolve, Resolving};
 use reqwest::header::{CONTENT_TYPE, HeaderMap};
 use reqwest::{StatusCode, Url};
+use rustls::pki_types::UnixTime;
 use tokio::sync::{Semaphore, SemaphorePermit};
 
 use crate::context::Config;
-use crate::server::reader;
 use crate::server::texts::{Missing, TEXTS_PATH, TextId, TextStore};
+use crate::server::{chain, reader};
 
 /// How long a page fetch may take, start to finished body.
 pub const FETCH_TIMEOUT: Duration = Duration::from_secs(20);
@@ -192,7 +203,7 @@ pub enum Refusal {
 
 impl Refusal {
     /// The name the client is told this refusal by.
-    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+    // [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
     pub fn code(self) -> &'static str {
         match self {
             Refusal::Address => "bad-address",
@@ -209,13 +220,23 @@ impl Refusal {
 #[error("the page at {0} could not be fetched")]
 pub struct Unreachable(pub String);
 
+/// The far end's certificate was not accepted, even with its chain completed.
+///
+/// Held apart from [`Unreachable`], though both reach the client as a 502,
+/// because a browser will often open the same page: a learner told the site
+/// could not be reached would find that it could.
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
+#[derive(Debug, thiserror::Error)]
+#[error("the certificate of the page at {0} could not be verified")]
+pub struct Untrusted(pub String);
+
 /// The far end answered, and its answer was a 4xx or 5xx status.
 ///
 /// Held apart from [`Unreachable`], though both reach the client as a 502,
 /// because the status is the one thing that tells a learner the site failed
 /// rather than teaksta: a page that answers 502 from its own server is down
 /// where it lives, and the client can say so.
-// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+// [spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
 #[derive(Debug, Clone, thiserror::Error)]
 #[error("the page at {address} answered {status}")]
 pub struct ErrorStatus {
@@ -605,6 +626,7 @@ static CLIENT: LazyLock<reqwest::blocking::Client> = LazyLock::new(|| {
         .timeout(FETCH_TIMEOUT)
         .connect_timeout(CONNECT_TIMEOUT)
         .user_agent(USER_AGENT)
+        .use_preconfigured_tls(chain::client_config())
         .dns_resolver(Arc::new(PublicAddressesOnly))
         .redirect(reqwest::redirect::Policy::custom(|attempt| {
             if attempt.previous().len() >= MAX_REDIRECTS {
@@ -660,12 +682,22 @@ fn read_file(path: &Path, address: &str, cap: usize) -> Result<String> {
 
 // [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.page-cap-fn+1]
 fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
-    let unreachable = || Unreachable(address.to_string());
-
-    let response = CLIENT
-        .get(url.clone())
-        .send()
-        .map_err(|error| anyhow::Error::new(error).context(unreachable()))?;
+    let response = match CLIENT.get(url.clone()).send() {
+        Ok(response) => response,
+        // A site that sent its certificate short is asked once more, here on
+        // this fetch's own thread, once its chain is complete.
+        Err(error) => match chain::missing_issuer(&error) {
+            Some(missing)
+                if chain::complete(&missing, &chain::VERIFIER, issuer, UnixTime::now()) =>
+            {
+                CLIENT
+                    .get(url.clone())
+                    .send()
+                    .map_err(|error| failed(error, address))?
+            }
+            _ => return Err(failed(error, address)),
+        },
+    };
     answered(response.status(), address)?;
 
     // The charset is read off the headers before the body is taken, because
@@ -678,9 +710,37 @@ fn get(url: &Url, address: &str, cap: usize) -> Result<String> {
     Ok(page.into_owned())
 }
 
+/// A request that got no answer, as the client is told it: a certificate that
+/// was not accepted, or a page that could not be reached.
+fn failed(error: reqwest::Error, address: &str) -> anyhow::Error {
+    if chain::certificate_refused(&error) {
+        anyhow::Error::new(error).context(Untrusted(address.to_string()))
+    } else {
+        anyhow::Error::new(error).context(Unreachable(address.to_string()))
+    }
+}
+
+/// What an issuer address answers, read under the policy every address a
+/// stranger wrote is: `http` and `https` only, the private network refused
+/// before connecting and again once the name resolves, through the shared
+/// client, under a budget and a cap of its own.
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn]
+fn issuer(address: &str) -> Option<Vec<u8>> {
+    let url = Url::parse(address).ok()?;
+    if !matches!(url.scheme(), "http" | "https") {
+        return None;
+    }
+    public_host(&url).ok()?;
+    let response = CLIENT.get(url).timeout(chain::ISSUER_TIMEOUT).send().ok()?;
+    if !response.status().is_success() {
+        return None;
+    }
+    capped(response, chain::ISSUER_CAP, address).ok()
+}
+
 /// Whether the far end's status is one a page can be read out of. A 4xx or
 /// 5xx is refused with the status kept; anything else is read.
-// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn]
+// [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.failure-fn+2]
 fn answered(status: StatusCode, address: &str) -> Result<()> {
     if status.is_client_error() || status.is_server_error() {
         return Err(ErrorStatus {

@@ -1104,6 +1104,44 @@ children (
                     }
                 )
             }
+
+            {
+                id issues.certificate-chains
+                title "A site that sends its certificate without the intermediate is still read, and a certificate that cannot be verified is named"
+                kind @fix
+                implements {
+                    target-impl ([spec:teaksta:def:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn] [spec:teaksta:sem:sme.src.main.java.werti.server.wer-ti-servlet.wer-ti-servlet.issuer-fn])
+                }
+                log (
+                    {
+                        at 2026-10-22T20:10:54.860431Z
+                        author "brendan@necessary.nu"
+                        kind @note
+                        text "GitHub issue #1 reopened (2026-10-22, snomos): kursa.oahpa.no is back and opens in a browser, but teaksta.giellalt.org answers page-unreachable. Cause: the server sends its *.oahpa.no leaf (issued by 'GEANT TLS ECC 1', HARICA, since GEANT TCS moved to HARICA in 2025) with the old Sectigo chain ('GEANT OV ECC CA 4' -> USERTrust ECC), so the leaf's issuer is absent. Browsers and macOS fetch it from the leaf's AIA (http://crt.harica.gr/HARICA-GEANT-TLS-E1.cer); OpenSSL, which native-tls uses in the Linux container, does not, so the handshake fails. openssl verify fails on the leaf alone and passes with the AIA intermediate (chains to HARICA TLS ECC Root CA 2021). Local macOS fetches worked only because native-tls is Security.framework there. The root fix is UiT's (serve the HARICA intermediate)."
+                    }
+
+                    {
+                        at 2026-10-22T20:10:54.902854Z
+                        author "brendan@necessary.nu"
+                        kind @decision
+                        text "Operator ruling (2026-10-21): teaksta completes short chains itself by AIA fetching, as browsers do, and names a certificate that still cannot be verified with its own code (site-certificate) rather than page-unreachable. No comment on the GitHub issue. Design: fetching moves to rustls (ring, Mozilla roots via webpki-roots) with a verifier wrapping WebPkiServerVerifier; on UnknownIssuer it retries with intermediates held from earlier AIA fetches, else fails the handshake carrying the leaf. get(), already on a blocking thread, then fetches the leaf's caIssuers address through the shared public-only client (scheme and private-network checks, short timeout, small cap), follows at most three links, holds what it got for the process life (bounded), and retries once. No network I/O inside the handshake: the client's runtime is one thread shared by every fetch."
+                    }
+
+                    {
+                        at 2026-10-22T20:10:54.998905Z
+                        author "brendan@necessary.nu"
+                        kind @status
+                        text "Todo → Doing (nplan start)"
+                    }
+
+                    {
+                        at 2026-10-22T20:11:36.56351Z
+                        author "brendan@necessary.nu"
+                        kind @note
+                        text "Correction to the decision entry above: its text dates the ruling 2026-10-21; it was made on 2026-10-22."
+                    }
+                )
+            }
         )
     }
 
